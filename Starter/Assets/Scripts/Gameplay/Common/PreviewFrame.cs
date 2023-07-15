@@ -2,13 +2,15 @@ using Jazz;
 using UnityEngine;
 using UnityEngine.UI;
 
+#nullable enable
+
 namespace Nex
 {
     public class PreviewFrame : MonoBehaviour
     {
-        [SerializeField] RawImage rawImage;
+        [SerializeField] RawImage rawImage = null!;
 
-        CvDetectionManager cvDetectionManager;
+        CvDetectionManager cvDetectionManager = null!;
 
         int playerIndex;
         int numOfPlayers;

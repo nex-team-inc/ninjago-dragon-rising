@@ -1,16 +1,16 @@
-using System;
 using System.Collections.Generic;
 using Jazz;
 using UnityEngine;
-using UnityEngine.UI;
+
+#nullable enable
 
 namespace Nex
 {
     public class GameManager : MonoBehaviour
     {
-        [SerializeField] CvDetectionManager cvDetectionManager;
-        [SerializeField] BodyPoseDetectionManager bodyPoseDetectionManager;
-        [SerializeField] List<OnePlayerGameEngine> gameEngines;
+        [SerializeField] CvDetectionManager cvDetectionManager = null!;
+        [SerializeField] BodyPoseDetectionManager bodyPoseDetectionManager = null!;
+        [SerializeField] List<OnePlayerGameEngine> gameEngines = null!;
 
         #region Life Cycle
 

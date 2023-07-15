@@ -1,14 +1,15 @@
-using System;
 using Jazz;
 using UnityEngine;
+
+#nullable enable
 
 namespace Nex
 {
     public class OnePlayerGameEngine : MonoBehaviour
     {
-        [SerializeField] OnePlayerDetectionEngine detectionEngine;
-        [SerializeField] RectTransform referenceTransform;
-        [SerializeField] PreviewFrame previewFrame;
+        [SerializeField] OnePlayerDetectionEngine detectionEngine = null!;
+        [SerializeField] RectTransform referenceTransform = null!;
+        [SerializeField] PreviewFrame previewFrame = null!;
 
         int playerIndex;
         int numOfPlayers;

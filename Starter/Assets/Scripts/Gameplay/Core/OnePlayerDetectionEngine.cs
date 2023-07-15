@@ -15,6 +15,17 @@ namespace Nex
         [SerializeField] Transform leftHand = null!;
         [SerializeField] Transform rightHand = null!;
         [SerializeField] Transform chest = null!;
+        [SerializeField] Transform nose = null!;
+        [SerializeField] Transform leftShoulder = null!;
+        [SerializeField] Transform rightShoulder = null!;
+        [SerializeField] Transform leftElbow = null!;
+        [SerializeField] Transform rightElbow = null!;
+        [SerializeField] Transform leftWrist = null!;
+        [SerializeField] Transform rightWrist = null!;
+        [SerializeField] Transform leftHip = null!;
+        [SerializeField] Transform rightHip = null!;
+        [SerializeField] Transform leftKnee = null!;
+        [SerializeField] Transform rightKnee = null!;
 
         [Header("Auto Hide")]
         [SerializeField] bool autoHideIfNoDetection = true;
@@ -78,6 +89,17 @@ namespace Nex
             UpdateTargetByLerpNode(leftHand, pose?.LeftElbow(), pose?.LeftWrist(), ElbowWristLerpRatioForHand);
             UpdateTargetByLerpNode(rightHand, pose?.RightElbow(), pose?.RightWrist(), ElbowWristLerpRatioForHand);
             UpdateTargetByNode(chest, pose?.Chest());
+            UpdateTargetByNode(nose, pose?.Nose());
+            UpdateTargetByNode(leftShoulder, pose?.LeftShoulder());
+            UpdateTargetByNode(rightShoulder, pose?.RightShoulder());
+            UpdateTargetByNode(leftElbow, pose?.LeftElbow());
+            UpdateTargetByNode(rightElbow, pose?.RightElbow());
+            UpdateTargetByNode(leftWrist, pose?.LeftWrist());
+            UpdateTargetByNode(rightWrist, pose?.RightWrist());
+            UpdateTargetByNode(leftHip, pose?.LeftHip());
+            UpdateTargetByNode(rightHip, pose?.RightHip());
+            UpdateTargetByNode(leftKnee, pose?.LeftKnee());
+            UpdateTargetByNode(rightKnee, pose?.RightKnee());
         }
 
         #endregion
@@ -86,6 +108,11 @@ namespace Nex
 
         void UpdateTargetByNode(Transform targetTransform, PoseNode? optNode)
         {
+            if (targetTransform == null)
+            {
+                return;
+            }
+
             var updated = false;
             if (optNode != null)
             {
@@ -102,6 +129,11 @@ namespace Nex
 
         void UpdateTargetByLerpNode(Transform targetTransform, PoseNode? optNode1, PoseNode? optNode2, float lerpRatio)
         {
+            if (targetTransform == null)
+            {
+                return;
+            }
+
             var updated = false;
             if (optNode1 != null && optNode2 != null)
             {

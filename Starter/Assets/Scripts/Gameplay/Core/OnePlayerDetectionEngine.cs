@@ -13,6 +13,7 @@ namespace Starter
         [SerializeField] Transform rightHand = null!;
         [SerializeField] Transform chest = null!;
         [SerializeField] bool autoHideIfNoDetection = true;
+        [SerializeField] BodyPoseSmoothHelper? smoothHelper;
 
         BodyPoseDetectionManager bodyPoseDetectionManager = null!;
         int playerIndex;
@@ -37,6 +38,11 @@ namespace Starter
             referenceTransform = aReferenceTransform;
 
             bodyPoseDetectionManager.captureBodyPoseDetection += BodyPoseDetectionManagerOnCaptureBodyPoseDetection;
+
+            if (smoothHelper != null)
+            {
+                smoothHelper.Initialize();
+            }
         }
 
         #endregion
@@ -50,7 +56,13 @@ namespace Starter
             playerFrameSize = new Vector2(rawFrameSize.x / numOfPlayers, rawFrameSize.y);
             playerFrameCenter = new Vector2((0.5f + playerIndex) * playerFrameSize.x, 0.5f * rawFrameSize.y);
 
-            var pose = detection.GetPlayerPose(playerIndex)?.bodyPose;
+            var playerPose = detection.GetPlayerPose(playerIndex);
+            if (smoothHelper != null)
+            {
+                playerPose = smoothHelper.Smooth(playerPose);
+            }
+
+            var pose = playerPose?.bodyPose;
 
             UpdateTargetByLerpNode(leftHand, pose?.LeftElbow(), pose?.LeftWrist(), ElbowWristLerpRatioForHand);
             UpdateTargetByLerpNode(rightHand, pose?.RightElbow(), pose?.RightWrist(), ElbowWristLerpRatioForHand);

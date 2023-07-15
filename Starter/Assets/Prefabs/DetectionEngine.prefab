@@ -1,5 +1,50 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &5100194808726004522
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6203360138991893256}
+  - component: {fileID: 9189414769230236265}
+  m_Layer: 0
+  m_Name: SmoothHelper
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6203360138991893256
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5100194808726004522}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5980052819022952951}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &9189414769230236265
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5100194808726004522}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c8b371624fd04c33b233771f45915c15, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  poseNodeToSmooth: 01000000020000000300000004000000050000000600000007000000080000000b00000000000000
 --- !u!1 &5980052817498568074
 GameObject:
   m_ObjectHideFlags: 0
@@ -282,7 +327,7 @@ Transform:
   m_Children:
   - {fileID: 5980052818359190980}
   m_Father: {fileID: 5980052819022952951}
-  m_RootOrder: 1
+  m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &5980052818773372399
 GameObject:
@@ -314,7 +359,7 @@ Transform:
   m_Children:
   - {fileID: 5980052818206217592}
   m_Father: {fileID: 5980052819022952951}
-  m_RootOrder: 0
+  m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &5980052818937282728
 GameObject:
@@ -346,7 +391,7 @@ Transform:
   m_Children:
   - {fileID: 5980052817498568073}
   m_Father: {fileID: 5980052819022952951}
-  m_RootOrder: 2
+  m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &5980052819022952944
 GameObject:
@@ -377,6 +422,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 6203360138991893256}
   - {fileID: 5980052818773372398}
   - {fileID: 5980052818413063634}
   - {fileID: 5980052818937282735}
@@ -398,3 +444,5 @@ MonoBehaviour:
   leftHand: {fileID: 5980052818773372398}
   rightHand: {fileID: 5980052818413063634}
   chest: {fileID: 5980052818937282735}
+  autoHideIfNoDetection: 1
+  smoothHelper: {fileID: 9189414769230236265}

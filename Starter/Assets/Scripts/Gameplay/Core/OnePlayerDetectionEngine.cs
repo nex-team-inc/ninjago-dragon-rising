@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using Jazz;
+using NaughtyAttributes;
 using UnityEngine;
 
 #nullable enable
@@ -9,12 +11,21 @@ namespace Starter
     {
         const float ElbowWristLerpRatioForHand = 1.3f;
 
+        [Header("Targets")]
         [SerializeField] Transform leftHand = null!;
         [SerializeField] Transform rightHand = null!;
         [SerializeField] Transform chest = null!;
+
+        [Header("Auto Hide")]
         [SerializeField] bool autoHideIfNoDetection = true;
+
+        [ShowIf(nameof(autoHideIfNoDetection))]
+        [SerializeField] float autoHideWaitingTime = 0.5f;
+
+        [Header("Smoothing")]
         [SerializeField] BodyPoseSmoothHelper? smoothHelper;
 
+        readonly Dictionary<Transform, float> noDetectionStartTimeByTarget = new();
         BodyPoseDetectionManager bodyPoseDetectionManager = null!;
         int playerIndex;
         int numOfPlayers;
@@ -86,7 +97,7 @@ namespace Starter
                 }
             }
 
-            targetTransform.gameObject.SetActive(!autoHideIfNoDetection || updated);
+            UpdateTargetVisibility(targetTransform, updated);
         }
 
         void UpdateTargetByLerpNode(Transform targetTransform, PoseNode? optNode1, PoseNode? optNode2, float lerpRatio)
@@ -106,7 +117,45 @@ namespace Starter
                 }
             }
 
-            targetTransform.gameObject.SetActive(!autoHideIfNoDetection || updated);
+            UpdateTargetVisibility(targetTransform, updated);
+        }
+
+        void UpdateTargetVisibility(Transform target, bool hasDetection)
+        {
+            bool shouldShow;
+
+            // If we don't need to hide it, always show it.
+            if (!autoHideIfNoDetection)
+            {
+                shouldShow = true;
+            }
+            else
+            {
+                // If want to auto hide it, we initialize its "no detection start time" first.
+                if (!noDetectionStartTimeByTarget.ContainsKey(target))
+                {
+                    noDetectionStartTimeByTarget[target] = 0;
+                }
+
+                if (hasDetection)
+                {
+                    noDetectionStartTimeByTarget[target] = 0;
+                    shouldShow = true;
+                }
+                else
+                {
+                    var curTime = Time.fixedTime;
+                    var startTime = noDetectionStartTimeByTarget[target];
+                    if (startTime == 0)
+                    {
+                        noDetectionStartTimeByTarget[target] = startTime = curTime;
+                    }
+
+                    shouldShow = curTime - startTime < autoHideWaitingTime;
+                }
+            }
+
+            target.gameObject.SetActive(shouldShow);
         }
 
         Vector2 DetectionSpaceToReferenceSpace(Vector2 vec)

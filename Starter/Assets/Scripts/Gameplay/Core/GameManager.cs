@@ -4,7 +4,7 @@ using Jazz;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Starter
+namespace Nex
 {
     public class GameManager : MonoBehaviour
     {

@@ -2,7 +2,7 @@ using System;
 using Jazz;
 using UnityEngine;
 
-namespace Starter
+namespace Nex
 {
     public class OnePlayerGameEngine : MonoBehaviour
     {

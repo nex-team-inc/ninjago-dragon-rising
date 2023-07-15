@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using Jazz;
 using UnityEngine;
 
-namespace Starter
+namespace Nex
 {
     public interface IFilter
     {

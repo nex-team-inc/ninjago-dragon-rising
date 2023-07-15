@@ -5,7 +5,7 @@ using UnityEngine;
 
 #nullable enable
 
-namespace Starter
+namespace Nex
 {
     public class OnePlayerDetectionEngine : MonoBehaviour
     {

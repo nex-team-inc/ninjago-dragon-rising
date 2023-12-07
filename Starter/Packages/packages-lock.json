@@ -129,15 +129,6 @@
       },
       "url": "https://packages.unity.com"
     },
-    "com.unity.ai.navigation": {
-      "version": "1.1.5",
-      "depth": 0,
-      "source": "registry",
-      "dependencies": {
-        "com.unity.modules.ai": "1.0.0"
-      },
-      "url": "https://packages.unity.com"
-    },
     "com.unity.burst": {
       "version": "1.8.11",
       "depth": 1,
@@ -145,13 +136,6 @@
       "dependencies": {
         "com.unity.mathematics": "1.2.1"
       },
-      "url": "https://packages.unity.com"
-    },
-    "com.unity.collab-proxy": {
-      "version": "2.2.0",
-      "depth": 0,
-      "source": "registry",
-      "dependencies": {},
       "url": "https://packages.unity.com"
     },
     "com.unity.collections": {
@@ -332,6 +316,13 @@
       },
       "url": "https://packages.unity.com"
     },
+    "net.tnrd.serializableinterface": {
+      "version": "1.12.1",
+      "depth": 2,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://package.openupm.com"
+    },
     "team.nex.as-softmask": {
       "version": "1.7.0-nex",
       "depth": 1,
@@ -352,6 +343,28 @@
         "com.unity.modules.jsonserialize": "1.0.0",
         "com.unity.modules.imageconversion": "1.0.0",
         "team.nex.protobuf": "3.19.1-nex.1"
+      },
+      "url": "https://nex-verdaccio-uejdbriueq-uc.a.run.app"
+    },
+    "team.nex.camera-guard": {
+      "version": "1.0.11",
+      "depth": 3,
+      "source": "registry",
+      "dependencies": {
+        "com.cysharp.unitask": "2.3.1",
+        "team.nex.platform-utils": "1.1.0-beta.3"
+      },
+      "url": "https://nex-verdaccio-uejdbriueq-uc.a.run.app"
+    },
+    "team.nex.cherry-app-support": {
+      "version": "1.3.1",
+      "depth": 2,
+      "source": "registry",
+      "dependencies": {
+        "com.cysharp.unitask": "2.3.1",
+        "team.nex.camera-guard": "1.0.11",
+        "team.nex.platform-utils": "1.3.1",
+        "team.nex.platform-utils.analytics-ext": "1.0.0"
       },
       "url": "https://nex-verdaccio-uejdbriueq-uc.a.run.app"
     },
@@ -385,34 +398,36 @@
       "url": "https://nex-verdaccio-uejdbriueq-uc.a.run.app"
     },
     "team.nex.mdk": {
-      "version": "0.5.0-alpha.33",
+      "version": "0.5.16",
       "depth": 1,
       "source": "registry",
       "dependencies": {
         "com.cysharp.unitask": "2.3.1",
+        "team.nex.cherry-app-support": "1.3.1",
+        "team.nex.nex-app-support": "1.3.1",
         "team.nex.tflite": "2.9.1-nex.6",
         "team.nex.tflite.common": "2.9.1-nex.6",
-        "team.nex.mdk.dcl": "0.5.0-alpha.33",
-        "team.nex.platform-utils": "1.0.4",
+        "team.nex.mdk.dcl": "0.5.16",
         "com.unity.textmeshpro": "3.0.6",
         "team.nex.barracuda": "3.0.0-nex.1",
-        "team.nex.nex-camera": "0.2.11",
+        "team.nex.nex-camera": "0.3.0",
         "com.textus-games.serialized-reference-ui": "1.0.0",
-        "com.dbrizov.naughtyattributes": "2.1.4"
+        "com.dbrizov.naughtyattributes": "2.1.4",
+        "net.tnrd.serializableinterface": "1.12.1"
       },
       "url": "https://nex-verdaccio-uejdbriueq-uc.a.run.app"
     },
     "team.nex.mdk.body": {
-      "version": "0.5.0-alpha.33",
+      "version": "0.5.16",
       "depth": 0,
       "source": "registry",
       "dependencies": {
-        "team.nex.mdk": "0.5.0-alpha.33"
+        "team.nex.mdk": "0.5.16"
       },
       "url": "https://nex-verdaccio-uejdbriueq-uc.a.run.app"
     },
     "team.nex.mdk.dcl": {
-      "version": "0.5.0-alpha.33",
+      "version": "0.5.16",
       "depth": 2,
       "source": "registry",
       "dependencies": {},
@@ -427,8 +442,19 @@
       },
       "url": "https://nex-verdaccio-uejdbriueq-uc.a.run.app"
     },
+    "team.nex.nex-app-support": {
+      "version": "1.3.1",
+      "depth": 2,
+      "source": "registry",
+      "dependencies": {
+        "com.cysharp.unitask": "2.3.1",
+        "team.nex.platform-utils": "1.3.1",
+        "team.nex.platform-utils.analytics-ext": "1.0.0"
+      },
+      "url": "https://nex-verdaccio-uejdbriueq-uc.a.run.app"
+    },
     "team.nex.nex-camera": {
-      "version": "0.2.11",
+      "version": "0.3.0",
       "depth": 2,
       "source": "registry",
       "dependencies": {},
@@ -508,8 +534,18 @@
       "url": "https://nex-verdaccio-uejdbriueq-uc.a.run.app"
     },
     "team.nex.platform-utils": {
-      "version": "1.0.4",
-      "depth": 2,
+      "version": "1.3.1",
+      "depth": 3,
+      "source": "registry",
+      "dependencies": {
+        "com.cysharp.unitask": "2.3.1",
+        "team.nex.mdk.dcl": "0.5.13"
+      },
+      "url": "https://nex-verdaccio-uejdbriueq-uc.a.run.app"
+    },
+    "team.nex.platform-utils.analytics-ext": {
+      "version": "1.0.0",
+      "depth": 3,
       "source": "registry",
       "dependencies": {},
       "url": "https://nex-verdaccio-uejdbriueq-uc.a.run.app"

@@ -2,14 +2,14 @@
   "dependencies": {
     "com.cysharp.unitask": {
       "version": "2.3.1",
-      "depth": 2,
+      "depth": 1,
       "source": "registry",
       "dependencies": {},
       "url": "https://package.openupm.com"
     },
     "com.dbrizov.naughtyattributes": {
       "version": "2.1.4",
-      "depth": 2,
+      "depth": 1,
       "source": "registry",
       "dependencies": {},
       "url": "https://package.openupm.com"
@@ -294,7 +294,7 @@
     },
     "com.unity.textmeshpro": {
       "version": "3.0.6",
-      "depth": 2,
+      "depth": 1,
       "source": "registry",
       "dependencies": {
         "com.unity.ugui": "1.0.0"
@@ -332,6 +332,17 @@
       },
       "url": "https://packages.unity.com"
     },
+    "team.nex.as-softmask": {
+      "version": "1.7.0-nex",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.textmeshpro": "3.0.6",
+        "com.unity.ugui": "1.0.0",
+        "com.unity.modules.ui": "1.0.0"
+      },
+      "url": "https://nex-verdaccio-uejdbriueq-uc.a.run.app"
+    },
     "team.nex.barracuda": {
       "version": "3.0.0-nex.1",
       "depth": 2,
@@ -341,6 +352,35 @@
         "com.unity.modules.jsonserialize": "1.0.0",
         "com.unity.modules.imageconversion": "1.0.0",
         "team.nex.protobuf": "3.19.1-nex.1"
+      },
+      "url": "https://nex-verdaccio-uejdbriueq-uc.a.run.app"
+    },
+    "team.nex.debug-settings": {
+      "version": "0.0.16",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.textmeshpro": "3.0.6",
+        "com.unity.ugui": "1.0.0",
+        "com.cysharp.unitask": "2.3.1"
+      },
+      "url": "https://nex-verdaccio-uejdbriueq-uc.a.run.app"
+    },
+    "team.nex.enum-dictionary": {
+      "version": "0.0.3",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://nex-verdaccio-uejdbriueq-uc.a.run.app"
+    },
+    "team.nex.keyboard-navigation": {
+      "version": "0.0.29",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.ugui": "1.0.0",
+        "com.dbrizov.naughtyattributes": "2.1.4",
+        "team.nex.rect-transform-extensions": "0.0.1"
       },
       "url": "https://nex-verdaccio-uejdbriueq-uc.a.run.app"
     },
@@ -378,11 +418,30 @@
       "dependencies": {},
       "url": "https://nex-verdaccio-uejdbriueq-uc.a.run.app"
     },
+    "team.nex.nbp-helper": {
+      "version": "0.0.13",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.cysharp.unitask": "2.3.1"
+      },
+      "url": "https://nex-verdaccio-uejdbriueq-uc.a.run.app"
+    },
     "team.nex.nex-camera": {
       "version": "0.2.11",
       "depth": 2,
       "source": "registry",
       "dependencies": {},
+      "url": "https://nex-verdaccio-uejdbriueq-uc.a.run.app"
+    },
+    "team.nex.npuikit": {
+      "version": "0.0.28",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.ugui": "1.0.0",
+        "team.nex.as-softmask": "1.7.0-nex"
+      },
       "url": "https://nex-verdaccio-uejdbriueq-uc.a.run.app"
     },
     "team.nex.opencv-for-unity": {
@@ -460,6 +519,15 @@
       "depth": 3,
       "source": "registry",
       "dependencies": {},
+      "url": "https://nex-verdaccio-uejdbriueq-uc.a.run.app"
+    },
+    "team.nex.rect-transform-extensions": {
+      "version": "0.0.1",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.ugui": "1.0.0"
+      },
       "url": "https://nex-verdaccio-uejdbriueq-uc.a.run.app"
     },
     "team.nex.tflite": {

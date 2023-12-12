@@ -19,8 +19,7 @@ namespace Nex
         public enum SingletonType
         {
             StartUp,
-            Stage0,
-            Stage1,
+            Common
         }
 
         static readonly Dictionary<SingletonType, AsyncOperationHandle<GameObject>> singletonDict = new();

@@ -1,16 +1,18 @@
 using System;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 
 namespace Nex
 {
-    public class ApplicationController : Singleton<ApplicationController>
+    public class ApplicationManager : Singleton<ApplicationManager>
     {
-        protected override ApplicationController GetThis()
+        [SerializeField] int targetFrameRate = 60;
+        public AssetReference mainSceneReference = null!;
+
+        protected override ApplicationManager GetThis()
         {
             return this;
         }
-
-        [SerializeField] int targetFrameRate = 60;
 
         protected override void Awake()
         {

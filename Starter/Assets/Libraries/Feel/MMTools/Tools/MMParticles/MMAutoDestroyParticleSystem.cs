@@ -3,29 +3,31 @@ using System.Collections;
 
 namespace MoreMountains.Tools
 {
-    /// <summary>
-    /// Add this class to a ParticleSystem so it auto destroys once it has stopped emitting.
-    /// Make sure your ParticleSystem isn't looping, otherwise this script will be useless
-    /// </summary>
-    [AddComponentMenu("More Mountains/Tools/Particles/MMAutoDestroyParticleSystem")]
-    public class MMAutoDestroyParticleSystem : MonoBehaviour 
+	/// <summary>
+	/// Add this class to a ParticleSystem so it auto destroys once it has stopped emitting.
+	/// Make sure your ParticleSystem isn't looping, otherwise this script will be useless
+	/// </summary>
+	[AddComponentMenu("More Mountains/Tools/Particles/MMAutoDestroyParticleSystem")]
+	public class MMAutoDestroyParticleSystem : MonoBehaviour 
 	{
 		/// True if the ParticleSystem should also destroy its parent
-		public bool DestroyParent=false;
+		public bool DestroyParent = false;
 
 		/// If for some reason your particles don't get destroyed automatically at the end of the emission, you can force a destroy after a delay. Leave it at zero otherwise.
-		public float DestroyDelay=0f;
+		public float DestroyDelay = 0f;
 		
 		protected ParticleSystem _particleSystem;
 		protected float _startTime;
+		protected bool _started = false;
 		
 		/// <summary>
 		/// Initialization, we get the ParticleSystem component
 		/// </summary>
 		protected virtual void Start()
 		{
+			_started = false;
 			_particleSystem = GetComponent<ParticleSystem>();
-			if (DestroyDelay!=0)
+			if (DestroyDelay != 0)
 			{
 				_startTime = Time.time;
 			}
@@ -36,13 +38,14 @@ namespace MoreMountains.Tools
 		/// </summary>
 		protected virtual void Update()
 		{	
-			if ( (DestroyDelay!=0) && (Time.time - _startTime > DestroyDelay) )
+			if ( (DestroyDelay != 0) && (Time.time - _startTime > DestroyDelay) )
 			{
 				DestroyParticleSystem();
 			}	
 
 			if (_particleSystem.isPlaying)
 			{
+				_started = true;
 				return;
 			}
 
@@ -54,6 +57,10 @@ namespace MoreMountains.Tools
 		/// </summary>
 		protected virtual void DestroyParticleSystem()
 		{
+			if (!_started)
+			{
+				return;
+			}
 			if (transform.parent!=null)
 			{
 				if(DestroyParent)

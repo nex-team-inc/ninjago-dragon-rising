@@ -5,14 +5,14 @@ using UnityEngine.UI;
 
 namespace MoreMountains.Tools
 {
-    /// <summary>
-    /// Add this class to a radial image and it'll allow you to control its fill amount
-    /// This is a legacy class, and it's recommended to use MMProgressBar instead, it'll provide the same functionality
-    /// (make sure you pick FillAmount as the FillMode)
-    /// and much more options, such as delayed bars, events, bump, and more!
-    /// </summary>
-    [AddComponentMenu("More Mountains/Tools/GUI/MMRadialProgressBar")]
-    public class MMRadialProgressBar : MonoBehaviour 
+	/// <summary>
+	/// Add this class to a radial image and it'll allow you to control its fill amount
+	/// This is a legacy class, and it's recommended to use MMProgressBar instead, it'll provide the same functionality
+	/// (make sure you pick FillAmount as the FillMode)
+	/// and much more options, such as delayed bars, events, bump, and more!
+	/// </summary>
+	[AddComponentMenu("More Mountains/Tools/GUI/MMRadialProgressBar")]
+	public class MMRadialProgressBar : MonoBehaviour 
 	{
 		/// the start fill amount value 
 		public float StartValue = 1f;
@@ -20,10 +20,10 @@ namespace MoreMountains.Tools
 		public float EndValue = 0f;
 		/// the distance to the start or end value at which the class should start lerping
 		public float Tolerance = 0.01f;
-        /// optional - the ID of the player associated to this bar
-        public string PlayerID;
+		/// optional - the ID of the player associated to this bar
+		public string PlayerID;
 
-        protected Image _radialImage;
+		protected Image _radialImage;
 		protected float _newPercent;
 
 		/// <summary>

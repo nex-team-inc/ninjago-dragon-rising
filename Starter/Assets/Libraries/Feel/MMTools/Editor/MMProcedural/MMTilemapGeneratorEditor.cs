@@ -5,36 +5,36 @@ using UnityEngine;
 
 namespace MoreMountains.Tools
 {
-    /// <summary>
-    /// Custom editor for the MMTilemapGenerator, handles generate button and reorderable layers
-    /// </summary>
-    [CustomEditor(typeof(MMTilemapGenerator), true)]
-    [CanEditMultipleObjects]
-    public class MMTilemapGeneratorEditor : Editor
-    {
+	/// <summary>
+	/// Custom editor for the MMTilemapGenerator, handles generate button and reorderable layers
+	/// </summary>
+	[CustomEditor(typeof(MMTilemapGenerator), true)]
+	[CanEditMultipleObjects]
+	public class MMTilemapGeneratorEditor : Editor
+	{
     
-        protected ReorderableList _list;
+		protected MMReorderableList _list;
 
-        protected virtual void OnEnable()
-        {
-            _list = new ReorderableList(serializedObject.FindProperty("Layers"));
-            _list.elementNameProperty = "Layer";
-            _list.elementDisplayType = ReorderableList.ElementDisplayType.Expandable;
-        }
+		protected virtual void OnEnable()
+		{
+			_list = new MMReorderableList(serializedObject.FindProperty("Layers"));
+			_list.elementNameProperty = "Layer";
+			_list.elementDisplayType = MMReorderableList.ElementDisplayType.Expandable;
+		}
         
-        public override void OnInspectorGUI()
-        {
-            serializedObject.Update();
+		public override void OnInspectorGUI()
+		{
+			serializedObject.Update();
             
-            DrawPropertiesExcluding(serializedObject,  "Layers");
-            EditorGUILayout.Space(10);
-            _list.DoLayoutList();
-            serializedObject.ApplyModifiedProperties();
+			DrawPropertiesExcluding(serializedObject,  "Layers");
+			EditorGUILayout.Space(10);
+			_list.DoLayoutList();
+			serializedObject.ApplyModifiedProperties();
             
-            if (GUILayout.Button("Generate"))
-            {
-                (target as MMTilemapGenerator).Generate();
-            }
-        }
-    }
+			if (GUILayout.Button("Generate"))
+			{
+				(target as MMTilemapGenerator).Generate();
+			}
+		}
+	}
 }

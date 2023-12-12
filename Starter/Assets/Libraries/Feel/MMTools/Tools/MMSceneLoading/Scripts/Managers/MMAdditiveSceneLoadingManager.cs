@@ -64,6 +64,11 @@ namespace MoreMountains.Tools
 		/// the chosen way to unload scenes (none, only the active scene, all loaded scenes)
 		[Tooltip("the chosen way to unload scenes (none, only the active scene, all loaded scenes)")]
 		public UnloadMethods UnloadMethod = UnloadMethods.AllScenes;
+		/// the name of the anti spill scene to use when loading additively.
+		/// If left empty, that scene will be automatically created, but you can specify any scene to use for that. Usually you'll want your own anti spill scene to be just an empty scene, but you can customize its lighting settings for example.
+		[Tooltip("the name of the anti spill scene to use when loading additively." +
+		         "If left empty, that scene will be automatically created, but you can specify any scene to use for that. Usually you'll want your own anti spill scene to be just an empty scene, but you can customize its lighting settings for example.")]
+		public string AntiSpillSceneName = "";
 	}
 	
 	/// <summary>
@@ -78,224 +83,224 @@ namespace MoreMountains.Tools
 		[Header("Audio Listener")] 
 		public AudioListener LoadingAudioListener;
 		
-        [Header("Settings")]
-        /// the ID on which to trigger a fade, has to match the ID on the fader in your scene
-        [Tooltip("the ID on which to trigger a fade, has to match the ID on the fader in your scene")]
-        public int FaderID = 500;
-        /// whether or not to output debug messages to the console
-        [Tooltip("whether or not to output debug messages to the console")]
-        public bool DebugMode = false;
+		[Header("Settings")]
+		/// the ID on which to trigger a fade, has to match the ID on the fader in your scene
+		[Tooltip("the ID on which to trigger a fade, has to match the ID on the fader in your scene")]
+		public int FaderID = 500;
+		/// whether or not to output debug messages to the console
+		[Tooltip("whether or not to output debug messages to the console")]
+		public bool DebugMode = false;
 
-        [Header("Progress Events")] 
-        /// an event used to update progress 
-        [Tooltip("an event used to update progress")]
-        public ProgressEvent SetRealtimeProgressValue;
-        /// an event used to update progress with interpolation
-        [Tooltip("an event used to update progress with interpolation")]
-        public ProgressEvent SetInterpolatedProgressValue;
+		[Header("Progress Events")] 
+		/// an event used to update progress 
+		[Tooltip("an event used to update progress")]
+		public ProgressEvent SetRealtimeProgressValue;
+		/// an event used to update progress with interpolation
+		[Tooltip("an event used to update progress with interpolation")]
+		public ProgressEvent SetInterpolatedProgressValue;
 
-        [Header("State Events")]
-        /// an event that will be invoked when the load starts
-        [Tooltip("an event that will be invoked when the load starts")]
-        public UnityEvent OnLoadStarted;
-        /// an event that will be invoked when the delay before the entry fade starts
-        [Tooltip("an event that will be invoked when the delay before the entry fade starts")]
-        public UnityEvent OnBeforeEntryFade;
-        /// an event that will be invoked when the entry fade starts
-        [Tooltip("an event that will be invoked when the entry fade starts")]
-        public UnityEvent OnEntryFade;
-        /// an event that will be invoked when the delay after the entry fade starts
-        [Tooltip("an event that will be invoked when the delay after the entry fade starts")]
-        public UnityEvent OnAfterEntryFade;
-        /// an event that will be invoked when the origin scene gets unloaded
-        [Tooltip("an event that will be invoked when the origin scene gets unloaded")]
-        public UnityEvent OnUnloadOriginScene;
-        /// an event that will be invoked when the destination scene starts loading
-        [Tooltip("an event that will be invoked when the destination scene starts loading")]
-        public UnityEvent OnLoadDestinationScene;
-        /// an event that will be invoked when the load of the destination scene is complete
-        [Tooltip("an event that will be invoked when the load of the destination scene is complete")]
-        public UnityEvent OnLoadProgressComplete;
-        /// an event that will be invoked when the interpolated load of the destination scene is complete
-        [Tooltip("an event that will be invoked when the interpolated load of the destination scene is complete")]
-        public UnityEvent OnInterpolatedLoadProgressComplete;
-        /// an event that will be invoked when the delay before the exit fade starts
-        [Tooltip("an event that will be invoked when the delay before the exit fade starts")]
-        public UnityEvent OnBeforeExitFade;
-        /// an event that will be invoked when the exit fade starts
-        [Tooltip("an event that will be invoked when the exit fade starts")]
-        public UnityEvent OnExitFade;
-        /// an event that will be invoked when the destination scene gets activated
-        [Tooltip("an event that will be invoked when the destination scene gets activated")]
-        public UnityEvent OnDestinationSceneActivation;
-        /// an event that will be invoked when the scene loader gets unloaded
-        [Tooltip("an event that will be invoked when the scene loader gets unloaded")]
-        public UnityEvent OnUnloadSceneLoader;
-        /// an event that will be invoked when the whole transition is complete
-        [Tooltip("an event that will be invoked when the whole transition is complete")]
-        public UnityEvent OnLoadTransitionComplete;
+		[Header("State Events")]
+		/// an event that will be invoked when the load starts
+		[Tooltip("an event that will be invoked when the load starts")]
+		public UnityEvent OnLoadStarted;
+		/// an event that will be invoked when the delay before the entry fade starts
+		[Tooltip("an event that will be invoked when the delay before the entry fade starts")]
+		public UnityEvent OnBeforeEntryFade;
+		/// an event that will be invoked when the entry fade starts
+		[Tooltip("an event that will be invoked when the entry fade starts")]
+		public UnityEvent OnEntryFade;
+		/// an event that will be invoked when the delay after the entry fade starts
+		[Tooltip("an event that will be invoked when the delay after the entry fade starts")]
+		public UnityEvent OnAfterEntryFade;
+		/// an event that will be invoked when the origin scene gets unloaded
+		[Tooltip("an event that will be invoked when the origin scene gets unloaded")]
+		public UnityEvent OnUnloadOriginScene;
+		/// an event that will be invoked when the destination scene starts loading
+		[Tooltip("an event that will be invoked when the destination scene starts loading")]
+		public UnityEvent OnLoadDestinationScene;
+		/// an event that will be invoked when the load of the destination scene is complete
+		[Tooltip("an event that will be invoked when the load of the destination scene is complete")]
+		public UnityEvent OnLoadProgressComplete;
+		/// an event that will be invoked when the interpolated load of the destination scene is complete
+		[Tooltip("an event that will be invoked when the interpolated load of the destination scene is complete")]
+		public UnityEvent OnInterpolatedLoadProgressComplete;
+		/// an event that will be invoked when the delay before the exit fade starts
+		[Tooltip("an event that will be invoked when the delay before the exit fade starts")]
+		public UnityEvent OnBeforeExitFade;
+		/// an event that will be invoked when the exit fade starts
+		[Tooltip("an event that will be invoked when the exit fade starts")]
+		public UnityEvent OnExitFade;
+		/// an event that will be invoked when the destination scene gets activated
+		[Tooltip("an event that will be invoked when the destination scene gets activated")]
+		public UnityEvent OnDestinationSceneActivation;
+		/// an event that will be invoked when the scene loader gets unloaded
+		[Tooltip("an event that will be invoked when the scene loader gets unloaded")]
+		public UnityEvent OnUnloadSceneLoader;
 
-        protected static bool _interpolateProgress;
-        protected static float _progressInterpolationSpeed;
-        protected static float _beforeEntryFadeDelay;
-        protected static MMTweenType _entryFadeTween;
-        protected static float _entryFadeDuration;
-        protected static float _afterEntryFadeDelay;
-        protected static float _beforeExitFadeDelay;
-        protected static MMTweenType _exitFadeTween;
-        protected static float _exitFadeDuration;
-        protected static FadeModes _fadeMode;
-        protected static string _sceneToLoadName = "";
-        protected static string _loadingScreenSceneName;
-        protected static List<string> _scenesInBuild;
-        protected static Scene[] _initialScenes;
-        protected float _loadProgress = 0f;
-        protected float _interpolatedLoadProgress;
-        protected static bool _loadingInProgress = false;
-        protected AsyncOperation _unloadOriginAsyncOperation;
-        protected AsyncOperation _loadDestinationAsyncOperation;
-        protected AsyncOperation _unloadLoadingAsyncOperation;
-        protected bool _setRealtimeProgressValueIsNull;
-        protected bool _setInterpolatedProgressValueIsNull;
-        protected const float _asyncProgressLimit = 0.9f;
-        protected MMSceneLoadingAntiSpill _antiSpill = new MMSceneLoadingAntiSpill();
+		protected static bool _interpolateProgress;
+		protected static float _progressInterpolationSpeed;
+		protected static float _beforeEntryFadeDelay;
+		protected static MMTweenType _entryFadeTween;
+		protected static float _entryFadeDuration;
+		protected static float _afterEntryFadeDelay;
+		protected static float _beforeExitFadeDelay;
+		protected static MMTweenType _exitFadeTween;
+		protected static float _exitFadeDuration;
+		protected static FadeModes _fadeMode;
+		protected static string _sceneToLoadName = "";
+		protected static string _loadingScreenSceneName;
+		protected static List<string> _scenesInBuild;
+		protected static Scene[] _initialScenes;
+		protected float _loadProgress = 0f;
+		protected float _interpolatedLoadProgress;
+		protected static bool _loadingInProgress = false;
+		protected AsyncOperation _unloadOriginAsyncOperation;
+		protected AsyncOperation _loadDestinationAsyncOperation;
+		protected AsyncOperation _unloadLoadingAsyncOperation;
+		protected bool _setRealtimeProgressValueIsNull;
+		protected bool _setInterpolatedProgressValueIsNull;
+		protected const float _asyncProgressLimit = 0.9f;
+		protected MMSceneLoadingAntiSpill _antiSpill = new MMSceneLoadingAntiSpill();
+		protected static string _antiSpillSceneName = "";
 
-        /// <summary>
-        /// Call this static method to load a scene from anywhere (packed settings signature)
-        /// </summary>
-        /// <param name="sceneToLoadName"></param>
-        /// <param name="settings"></param>
-        public static void LoadScene(string sceneToLoadName, MMAdditiveSceneLoadingManagerSettings settings)
-        {
-	        LoadScene(sceneToLoadName, settings.LoadingSceneName, settings.ThreadPriority, settings.SecureLoad, settings.InterpolateProgress,
-		        settings.BeforeEntryFadeDelay, settings.EntryFadeDuration, settings.AfterEntryFadeDelay, settings.BeforeExitFadeDelay,
-		        settings.ExitFadeDuration, settings.EntryFadeTween, settings.ExitFadeTween, settings.ProgressBarSpeed, settings.FadeMode, settings.UnloadMethod);
-        }
+		/// <summary>
+		/// Call this static method to load a scene from anywhere (packed settings signature)
+		/// </summary>
+		/// <param name="sceneToLoadName"></param>
+		/// <param name="settings"></param>
+		public static void LoadScene(string sceneToLoadName, MMAdditiveSceneLoadingManagerSettings settings)
+		{
+			LoadScene(sceneToLoadName, settings.LoadingSceneName, settings.ThreadPriority, settings.SecureLoad, settings.InterpolateProgress,
+				settings.BeforeEntryFadeDelay, settings.EntryFadeDuration, settings.AfterEntryFadeDelay, settings.BeforeExitFadeDelay,
+				settings.ExitFadeDuration, settings.EntryFadeTween, settings.ExitFadeTween, settings.ProgressBarSpeed, settings.FadeMode, settings.UnloadMethod, settings.AntiSpillSceneName);
+		}
         
-        /// <summary>
-        /// Call this static method to load a scene from anywhere
-        /// </summary>
-        /// <param name="sceneToLoadName">Level name.</param>
-        public static void LoadScene(string sceneToLoadName, string loadingSceneName = "MMAdditiveLoadingScreen", 
-                                        ThreadPriority threadPriority = ThreadPriority.High, bool secureLoad = true,
-                                        bool interpolateProgress = true,
-                                        float beforeEntryFadeDelay = 0f,
-                                        float entryFadeDuration = 0.25f,
-                                        float afterEntryFadeDelay = 0.1f,
-                                        float beforeExitFadeDelay = 0.25f,
-                                        float exitFadeDuration = 0.2f, 
-                                        MMTweenType entryFadeTween = null, MMTweenType exitFadeTween = null,
-                                        float progressBarSpeed = 5f, 
-                                        FadeModes fadeMode = FadeModes.FadeInThenOut,
-                                        MMAdditiveSceneLoadingManagerSettings.UnloadMethods unloadMethod = MMAdditiveSceneLoadingManagerSettings.UnloadMethods.AllScenes)
-        {
-	        if (_loadingInProgress)
-            {
-	            Debug.LogError("MMLoadingSceneManagerAdditive : a request to load a new scene was emitted while a scene load was already in progress");  
-                return;
-            }
+		/// <summary>
+		/// Call this static method to load a scene from anywhere
+		/// </summary>
+		/// <param name="sceneToLoadName">Level name.</param>
+		public static void LoadScene(string sceneToLoadName, string loadingSceneName = "MMAdditiveLoadingScreen", 
+			ThreadPriority threadPriority = ThreadPriority.High, bool secureLoad = true,
+			bool interpolateProgress = true,
+			float beforeEntryFadeDelay = 0f,
+			float entryFadeDuration = 0.25f,
+			float afterEntryFadeDelay = 0.1f,
+			float beforeExitFadeDelay = 0.25f,
+			float exitFadeDuration = 0.2f, 
+			MMTweenType entryFadeTween = null, MMTweenType exitFadeTween = null,
+			float progressBarSpeed = 5f, 
+			FadeModes fadeMode = FadeModes.FadeInThenOut,
+			MMAdditiveSceneLoadingManagerSettings.UnloadMethods unloadMethod = MMAdditiveSceneLoadingManagerSettings.UnloadMethods.AllScenes,
+			string antiSpillSceneName = "")
+		{
+			if (_loadingInProgress)
+			{
+				Debug.LogError("MMLoadingSceneManagerAdditive : a request to load a new scene was emitted while a scene load was already in progress");  
+				return;
+			}
 
-	        if (entryFadeTween == null)
-	        {
-		        entryFadeTween = new MMTweenType(MMTween.MMTweenCurve.EaseInOutCubic);
-	        }
+			if (entryFadeTween == null)
+			{
+				entryFadeTween = new MMTweenType(MMTween.MMTweenCurve.EaseInOutCubic);
+			}
 
-	        if (exitFadeTween == null)
-	        {
-		        exitFadeTween = new MMTweenType(MMTween.MMTweenCurve.EaseInOutCubic);
-	        }
+			if (exitFadeTween == null)
+			{
+				exitFadeTween = new MMTweenType(MMTween.MMTweenCurve.EaseInOutCubic);
+			}
 
-            if (secureLoad)
-            {
-	            _scenesInBuild = MMScene.GetScenesInBuild();
+			if (secureLoad)
+			{
+				_scenesInBuild = MMScene.GetScenesInBuild();
 	            
-	            if (!_scenesInBuild.Contains(sceneToLoadName))
-	            {
-		            Debug.LogError("MMLoadingSceneManagerAdditive : impossible to load the '"+sceneToLoadName+"' scene, " +
-		                           "there is no such scene in the project's build settings.");
-		            return;
-	            }
-	            if (!_scenesInBuild.Contains(loadingSceneName))
-	            {
-		            Debug.LogError("MMLoadingSceneManagerAdditive : impossible to load the '"+loadingSceneName+"' scene, " +
-		                           "there is no such scene in the project's build settings.");
-		            return;
-	            }
-            }
+				if (!_scenesInBuild.Contains(sceneToLoadName))
+				{
+					Debug.LogError("MMLoadingSceneManagerAdditive : impossible to load the '"+sceneToLoadName+"' scene, " +
+					               "there is no such scene in the project's build settings.");
+					return;
+				}
+				if (!_scenesInBuild.Contains(loadingSceneName))
+				{
+					Debug.LogError("MMLoadingSceneManagerAdditive : impossible to load the '"+loadingSceneName+"' scene, " +
+					               "there is no such scene in the project's build settings.");
+					return;
+				}
+			}
 
-            _loadingInProgress = true;
-            _initialScenes = GetScenesToUnload(unloadMethod);
+			_loadingInProgress = true;
+			_initialScenes = GetScenesToUnload(unloadMethod);
 
-            Application.backgroundLoadingPriority = threadPriority;
-            _sceneToLoadName = sceneToLoadName;					
+			Application.backgroundLoadingPriority = threadPriority;
+			_sceneToLoadName = sceneToLoadName;					
 			_loadingScreenSceneName = loadingSceneName;
 			_beforeEntryFadeDelay = beforeEntryFadeDelay;
 			_entryFadeDuration = entryFadeDuration;
-            _entryFadeTween = entryFadeTween;
-            _afterEntryFadeDelay = afterEntryFadeDelay;
-            _progressInterpolationSpeed = progressBarSpeed;
-            _beforeExitFadeDelay = beforeExitFadeDelay;
-            _exitFadeDuration = exitFadeDuration;
-            _exitFadeTween = exitFadeTween;
-            _fadeMode = fadeMode;
-            _interpolateProgress = interpolateProgress;
+			_entryFadeTween = entryFadeTween;
+			_afterEntryFadeDelay = afterEntryFadeDelay;
+			_progressInterpolationSpeed = progressBarSpeed;
+			_beforeExitFadeDelay = beforeExitFadeDelay;
+			_exitFadeDuration = exitFadeDuration;
+			_exitFadeTween = exitFadeTween;
+			_fadeMode = fadeMode;
+			_interpolateProgress = interpolateProgress;
+			_antiSpillSceneName = antiSpillSceneName;
 
-            SceneManager.LoadScene(_loadingScreenSceneName, LoadSceneMode.Additive);
+			SceneManager.LoadScene(_loadingScreenSceneName, LoadSceneMode.Additive);
 		}
         
-        private static Scene[] GetScenesToUnload(MMAdditiveSceneLoadingManagerSettings.UnloadMethods unloaded)
-        {
+		private static Scene[] GetScenesToUnload(MMAdditiveSceneLoadingManagerSettings.UnloadMethods unloaded)
+		{
 	        
-	        switch (unloaded) {
-		        case MMAdditiveSceneLoadingManagerSettings.UnloadMethods.None:
-			        _initialScenes = new Scene[0];
-			        break;
-		        case MMAdditiveSceneLoadingManagerSettings.UnloadMethods.ActiveScene:
-			        _initialScenes = new Scene[1] {SceneManager.GetActiveScene()};
-			        break;
-		        default:
-		        case MMAdditiveSceneLoadingManagerSettings.UnloadMethods.AllScenes:
-			        _initialScenes = MMScene.GetLoadedScenes();
-			        break;
-	        }
-	        return _initialScenes;
-        }
+			switch (unloaded) {
+				case MMAdditiveSceneLoadingManagerSettings.UnloadMethods.None:
+					_initialScenes = new Scene[0];
+					break;
+				case MMAdditiveSceneLoadingManagerSettings.UnloadMethods.ActiveScene:
+					_initialScenes = new Scene[1] {SceneManager.GetActiveScene()};
+					break;
+				default:
+				case MMAdditiveSceneLoadingManagerSettings.UnloadMethods.AllScenes:
+					_initialScenes = MMScene.GetLoadedScenes();
+					break;
+			}
+			return _initialScenes;
+		}
 
 
 		/// <summary>
-		/// On Start(), we start loading the new level asynchronously
+		/// Starts loading the new level asynchronously
 		/// </summary>
 		protected virtual void Awake()
-        {
-            Initialization();
-        }
+		{
+			Initialization();
+		}
 
-        /// <summary>
-        /// Initializes timescale, computes null checks, and starts the load sequence
-        /// </summary>
-        protected virtual void Initialization()
-        {
-	        MMLoadingSceneDebug("MMLoadingSceneManagerAdditive : Initialization");
+		/// <summary>
+		/// Initializes timescale, computes null checks, and starts the load sequence
+		/// </summary>
+		protected virtual void Initialization()
+		{
+			MMLoadingSceneDebug("MMLoadingSceneManagerAdditive : Initialization");
 
-	        if (DebugMode)
-	        {
-		        foreach (Scene scene in _initialScenes)
-		        {
-			        MMLoadingSceneDebug("MMLoadingSceneManagerAdditive : Initial scene : " + scene.name);
-		        }    
-	        }
+			if (DebugMode)
+			{
+				foreach (Scene scene in _initialScenes)
+				{
+					MMLoadingSceneDebug("MMLoadingSceneManagerAdditive : Initial scene : " + scene.name);
+				}    
+			}
 
-	        _setRealtimeProgressValueIsNull = SetRealtimeProgressValue == null;
-            _setInterpolatedProgressValueIsNull = SetInterpolatedProgressValue == null;
-            Time.timeScale = 1f;
+			_setRealtimeProgressValueIsNull = SetRealtimeProgressValue == null;
+			_setInterpolatedProgressValueIsNull = SetInterpolatedProgressValue == null;
+			Time.timeScale = 1f;
 
-            if ((_sceneToLoadName == "") || (_loadingScreenSceneName == ""))
-            {
-	            return;
-            }
+			if ((_sceneToLoadName == "") || (_loadingScreenSceneName == ""))
+			{
+				return;
+			}
             
-            StartCoroutine(LoadSequence());
-        }
+			StartCoroutine(LoadSequence());
+		}
 
 		/// <summary>
 		/// Every frame, we fill the bar smoothly according to loading progress
@@ -334,7 +339,7 @@ namespace MoreMountains.Tools
 		/// </summary>
 		protected virtual IEnumerator LoadSequence()
 		{
-			_antiSpill?.PrepareAntiFill(_sceneToLoadName);
+			_antiSpill?.PrepareAntiFill(_sceneToLoadName, _antiSpillSceneName);
 			InitiateLoad();
 			yield return ProcessDelayBeforeEntryFade();
 			yield return EntryFade();
@@ -342,10 +347,9 @@ namespace MoreMountains.Tools
 			yield return UnloadOriginScenes();
 			yield return LoadDestinationScene();
 			yield return ProcessDelayBeforeExitFade();
-            yield return DestinationSceneActivation();
+			yield return DestinationSceneActivation();
 			yield return ExitFade();
 			yield return UnloadSceneLoader();
-			LoadTransitionComplete();
 		}
 
 		/// <summary>
@@ -459,9 +463,9 @@ namespace MoreMountains.Tools
 			OnLoadDestinationScene?.Invoke();
 
 			_loadDestinationAsyncOperation = SceneManager.LoadSceneAsync(_sceneToLoadName, LoadSceneMode.Additive );
-            _loadDestinationAsyncOperation.completed += OnLoadOperationComplete;
+			_loadDestinationAsyncOperation.completed += OnLoadOperationComplete;
 
-            _loadDestinationAsyncOperation.allowSceneActivation = false;
+			_loadDestinationAsyncOperation.allowSceneActivation = false;
             
 			while (_loadDestinationAsyncOperation.progress < _asyncProgressLimit)
 			{
@@ -490,11 +494,11 @@ namespace MoreMountains.Tools
 			OnInterpolatedLoadProgressComplete?.Invoke();
 		}
 
-        /// <summary>
-        /// Waits for BeforeExitFadeDelay seconds
-        /// </summary>
-        /// <returns></returns>
-        protected virtual IEnumerator ProcessDelayBeforeExitFade()
+		/// <summary>
+		/// Waits for BeforeExitFadeDelay seconds
+		/// </summary>
+		/// <returns></returns>
+		protected virtual IEnumerator ProcessDelayBeforeExitFade()
 		{
 			if (_beforeExitFadeDelay > 0f)
 			{
@@ -535,34 +539,34 @@ namespace MoreMountains.Tools
 		/// Activates the destination scene
 		/// </summary>
 		protected virtual IEnumerator DestinationSceneActivation()
-        {
-            yield return MMCoroutine.WaitForFrames(1);
-            MMLoadingSceneDebug("MMLoadingSceneManagerAdditive : activating destination scene");
+		{
+			yield return MMCoroutine.WaitForFrames(1);
+			_loadDestinationAsyncOperation.allowSceneActivation = true;
+			while (_loadDestinationAsyncOperation.progress < 1.0f)
+			{
+				yield return null;
+			}
+			MMLoadingSceneDebug("MMLoadingSceneManagerAdditive : activating destination scene");
 			MMSceneLoadingManager.LoadingSceneEvent.Trigger(_sceneToLoadName, MMSceneLoadingManager.LoadingStatus.DestinationSceneActivation);
 			OnDestinationSceneActivation?.Invoke();
-            _loadDestinationAsyncOperation.allowSceneActivation = true;
-            while (_loadDestinationAsyncOperation.progress < 1.0f)
-            {
-                yield return null;
-            }
-        }
+		}
 
-        /// <summary>
-        /// A method triggered when the async operation completes
-        /// </summary>
-        /// <param name="obj"></param>
-        protected virtual void OnLoadOperationComplete(AsyncOperation obj)
-        {
-            SceneManager.SetActiveScene(SceneManager.GetSceneByName(_sceneToLoadName));
-            MMLoadingSceneDebug("MMLoadingSceneManagerAdditive : set active scene to " + _sceneToLoadName);
+		/// <summary>
+		/// A method triggered when the async operation completes
+		/// </summary>
+		/// <param name="obj"></param>
+		protected virtual void OnLoadOperationComplete(AsyncOperation obj)
+		{
+			SceneManager.SetActiveScene(SceneManager.GetSceneByName(_sceneToLoadName));
+			MMLoadingSceneDebug("MMLoadingSceneManagerAdditive : set active scene to " + _sceneToLoadName);
 
-        }
+		}
 
-        /// <summary>
-        /// Unloads the scene loader
-        /// </summary>
-        /// <returns></returns>
-        protected virtual IEnumerator UnloadSceneLoader()
+		/// <summary>
+		/// Unloads the scene loader
+		/// </summary>
+		/// <returns></returns>
+		protected virtual IEnumerator UnloadSceneLoader()
 		{
 			MMLoadingSceneDebug("MMLoadingSceneManagerAdditive : unloading scene loader");
 			MMSceneLoadingManager.LoadingSceneEvent.Trigger(_sceneToLoadName, MMSceneLoadingManager.LoadingStatus.UnloadSceneLoader);
@@ -573,19 +577,7 @@ namespace MoreMountains.Tools
 			while (_unloadLoadingAsyncOperation.progress < _asyncProgressLimit)
 			{
 				yield return null;
-			}	
-		}
-
-		/// <summary>
-		/// Completes the transition
-		/// </summary>
-		protected virtual void LoadTransitionComplete()
-		{
-			MMLoadingSceneDebug("MMLoadingSceneManagerAdditive : load transition complete");
-			MMSceneLoadingManager.LoadingSceneEvent.Trigger(_sceneToLoadName, MMSceneLoadingManager.LoadingStatus.LoadTransitionComplete);
-			OnLoadTransitionComplete?.Invoke();
-			
-			_loadingInProgress = false;
+			}
 		}
 
 		/// <summary>

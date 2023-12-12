@@ -7,7 +7,7 @@ using System.Reflection;
 namespace MoreMountains.Tools
 {
 	[CanEditMultipleObjects()]
-	[CustomEditor(typeof(MMRendererSortingLayer))]
+	[CustomEditor(typeof(MMRendererSortingLayer), true)]
 	public class MMRendererLayerEditor : Editor
 	{
 		int popupMenuIndex;
@@ -41,7 +41,7 @@ namespace MoreMountains.Tools
 			int newSortingLayerOrder = EditorGUILayout.IntField("Order in Layer", _renderer.sortingOrder);
 		
 			if (sortingLayerNames[popupMenuIndex] != _renderer.sortingLayerName 
-				|| newSortingLayerOrder != _renderer.sortingOrder) 
+			    || newSortingLayerOrder != _renderer.sortingOrder) 
 			{
 				Undo.RecordObject(_renderer, "Change Particle System Renderer Order"); 
 

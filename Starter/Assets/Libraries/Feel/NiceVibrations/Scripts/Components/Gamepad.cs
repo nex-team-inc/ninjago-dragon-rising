@@ -1,3 +1,5 @@
+// Copyright (c) Meta Platforms, Inc. and affiliates. 
+
 using System;
 using System.Diagnostics;
 using System.Timers;

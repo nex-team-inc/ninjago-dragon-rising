@@ -5,13 +5,13 @@ using System;
 
 namespace MoreMountains.Tools
 {
-    [AddComponentMenu("More Mountains/Tools/Object Bounds/MMObjectBounds")]
-    public class MMObjectBounds : MonoBehaviour
+	[AddComponentMenu("More Mountains/Tools/Object Bounds/MMObjectBounds")]
+	public class MMObjectBounds : MonoBehaviour
 	{
 		public enum WaysToDetermineBounds { Collider, Collider2D, Renderer, Undefined }
 
-        [Header("Bounds")]
-        public WaysToDetermineBounds BoundsBasedOn;  
+		[Header("Bounds")]
+		public WaysToDetermineBounds BoundsBasedOn;  
 
 
 		public Vector3 Size { get; set; }
@@ -22,7 +22,7 @@ namespace MoreMountains.Tools
 		protected virtual void Reset() 
 		{
 			DefineBoundsChoice();
-   		}
+		}
 
 		/// <summary>
 		/// Tries to determine automatically what the bounds should be based on.
@@ -30,8 +30,8 @@ namespace MoreMountains.Tools
 		/// If none of these is found, it'll be set as Undefined.
 		/// </summary>
 		protected virtual void DefineBoundsChoice()
-   		{
-   			BoundsBasedOn = WaysToDetermineBounds.Undefined;
+		{
+			BoundsBasedOn = WaysToDetermineBounds.Undefined;
 			if (GetComponent<Renderer>()!=null)
 			{
 				BoundsBasedOn = WaysToDetermineBounds.Renderer;
@@ -44,12 +44,12 @@ namespace MoreMountains.Tools
 			{
 				BoundsBasedOn = WaysToDetermineBounds.Collider2D;
 			}
-   		}
+		}
 
-   		/// <summary>
-   		/// Returns the bounds of the object, based on what has been defined
-   		/// </summary>
-   		public virtual Bounds GetBounds()
+		/// <summary>
+		/// Returns the bounds of the object, based on what has been defined
+		/// </summary>
+		public virtual Bounds GetBounds()
 		{
 			if (BoundsBasedOn==WaysToDetermineBounds.Renderer)
 			{
@@ -79,7 +79,7 @@ namespace MoreMountains.Tools
 			}
 
 			return new Bounds(Vector3.zero,Vector3.zero);
-   		}
+		}
 
 
 

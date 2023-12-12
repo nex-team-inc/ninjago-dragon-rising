@@ -28,9 +28,9 @@ namespace MoreMountains.Feedbacks
 		/// <summary>
 		/// When the objects get enabled (usually after having been pooled from an ObjectPooler, we initiate its death countdown.
 		/// </summary>
-	    protected virtual void OnEnable()
+		protected virtual void OnEnable()
 		{
-			if (LifeTime>0)
+			if (LifeTime > 0)
 			{
 				Invoke("Destroy", LifeTime);	
 			}
@@ -39,7 +39,7 @@ namespace MoreMountains.Feedbacks
 		/// <summary>
 		/// When the object gets disabled (maybe it got out of bounds), we cancel its programmed death
 		/// </summary>
-	    protected virtual void OnDisable()
+		protected virtual void OnDisable()
 		{
 			CancelInvoke();
 		}

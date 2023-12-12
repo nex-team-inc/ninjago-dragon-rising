@@ -17,7 +17,7 @@ namespace MoreMountains.Tools
 		static void DrawGameObjectName(MMSceneViewIcon sceneViewIcon, GizmoType gizmoType)
 		{   
 			GUIStyle style = new GUIStyle();
-	        style.normal.textColor = Color.blue;	 
+			style.normal.textColor = Color.blue;	 
 			Handles.Label(sceneViewIcon.transform.position, sceneViewIcon.gameObject.name,style);
 		}
 

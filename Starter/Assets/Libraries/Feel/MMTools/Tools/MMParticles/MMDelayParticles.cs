@@ -5,11 +5,11 @@ using UnityEngine;
 namespace MoreMountains.Tools
 {
 	[ExecuteAlways]
-    /// <summary>
-    /// MM delay particles.
-    /// </summary>
-    [AddComponentMenu("More Mountains/Tools/Particles/MMDelayParticles")]
-    public class MMDelayParticles : MonoBehaviour 
+	/// <summary>
+	/// MM delay particles.
+	/// </summary>
+	[AddComponentMenu("More Mountains/Tools/Particles/MMDelayParticles")]
+	public class MMDelayParticles : MonoBehaviour 
 	{
 		[Header("Delay")]
 		/// the duration of the delay, in seconds
@@ -36,14 +36,14 @@ namespace MoreMountains.Tools
 		{
 			if (this.gameObject.GetComponent<ParticleSystem>() != null)
 			{
-                ParticleSystem.MainModule main = this.gameObject.GetComponent<ParticleSystem>().main;
+				ParticleSystem.MainModule main = this.gameObject.GetComponent<ParticleSystem>().main;
 				main.startDelay = main.startDelay.constant + Delay;
 			}
 
 			particleSystems = GetComponentsInChildren<ParticleSystem>();
 			foreach (ParticleSystem system in particleSystems)
 			{
-                ParticleSystem.MainModule main = system.main;
+				ParticleSystem.MainModule main = system.main;
 				main.startDelay = main.startDelay.constant + Delay;
 			}
 

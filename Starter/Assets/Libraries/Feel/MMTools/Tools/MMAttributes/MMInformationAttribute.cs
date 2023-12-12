@@ -14,7 +14,7 @@ namespace MoreMountains.Tools
 		public enum InformationType { Error, Info, None, Warning }
 
 		#if UNITY_EDITOR
-	    public string Message;
+		public string Message;
 		public MessageType Type;
 		public bool MessageAfterProperty;
 

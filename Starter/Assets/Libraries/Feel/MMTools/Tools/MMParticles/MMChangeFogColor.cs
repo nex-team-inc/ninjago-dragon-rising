@@ -4,12 +4,12 @@ using System.Collections;
 namespace MoreMountains.Tools
 {
 	[ExecuteAlways]
-    /// <summary>
-    /// Adds this class to a UnityStandardAssets.ImageEffects.GlobalFog to change its color
-    /// Why this is not native, I don't know.
-    /// </summary>
-    [AddComponentMenu("More Mountains/Tools/Particles/MMChangeFogColor")]
-    public class MMChangeFogColor : MonoBehaviour 
+	/// <summary>
+	/// Adds this class to a UnityStandardAssets.ImageEffects.GlobalFog to change its color
+	/// Why this is not native, I don't know.
+	/// </summary>
+	[AddComponentMenu("More Mountains/Tools/Particles/MMChangeFogColor")]
+	public class MMChangeFogColor : MonoBehaviour 
 	{
 		/// Adds this class to a UnityStandardAssets.ImageEffects.GlobalFog to change its color
 		[MMInformation("Adds this class to a UnityStandardAssets.ImageEffects.GlobalFog to change its color", MMInformationAttribute.InformationType.Info,false)]
@@ -21,7 +21,7 @@ namespace MoreMountains.Tools
 		protected virtual void SetupFogColor () 
 		{
 			RenderSettings.fogColor = FogColor;
-	        RenderSettings.fog = true;
+			RenderSettings.fog = true;
 		}
 
 		/// <summary>

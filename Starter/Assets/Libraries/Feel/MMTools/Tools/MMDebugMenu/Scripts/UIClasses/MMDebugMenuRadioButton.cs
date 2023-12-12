@@ -34,11 +34,11 @@ namespace MoreMountains.Tools
 		{
 			_group = new List<MMDebugMenuRadioButton> ();
 
-            MMDebugMenuRadioButton[] radioButtons = FindObjectsOfType(typeof(MMDebugMenuRadioButton)) as MMDebugMenuRadioButton[];
+			MMDebugMenuRadioButton[] radioButtons = FindObjectsOfType(typeof(MMDebugMenuRadioButton)) as MMDebugMenuRadioButton[];
 			foreach (MMDebugMenuRadioButton radioButton in radioButtons) 
 			{
 				if ((radioButton.RadioButtonGroupName == RadioButtonGroupName)
-					&& (radioButton != this))
+				    && (radioButton != this))
 				{
 					_group.Add (radioButton);
 				}

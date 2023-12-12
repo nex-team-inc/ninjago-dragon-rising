@@ -20,25 +20,25 @@ namespace MoreMountains.Tools
 			LoadProgressComplete, InterpolatedLoadProgressComplete, BeforeExitFade, ExitFade, DestinationSceneActivation, UnloadSceneLoader, LoadTransitionComplete
 		}
 
-        public struct LoadingSceneEvent
-        {
-            public LoadingStatus Status;
-            public string SceneName;
-            public LoadingSceneEvent(string sceneName, LoadingStatus status)
-            {
-                Status = status;
-                SceneName = sceneName;
-            }
-            static LoadingSceneEvent e;
-            public static void Trigger(string sceneName, LoadingStatus status)
-            {
-                e.Status = status;
-                e.SceneName = sceneName;
-                MMEventManager.TriggerEvent(e);
-            }
-        }
+		public struct LoadingSceneEvent
+		{
+			public LoadingStatus Status;
+			public string SceneName;
+			public LoadingSceneEvent(string sceneName, LoadingStatus status)
+			{
+				Status = status;
+				SceneName = sceneName;
+			}
+			static LoadingSceneEvent e;
+			public static void Trigger(string sceneName, LoadingStatus status)
+			{
+				e.Status = status;
+				e.SceneName = sceneName;
+				MMEventManager.TriggerEvent(e);
+			}
+		}
 
-        [Header("Binding")]
+		[Header("Binding")]
 		/// The name of the scene to load while the actual target scene is loading (usually a loading screen)
 		public static string LoadingScreenSceneName="LoadingScreen";
 
@@ -67,21 +67,21 @@ namespace MoreMountains.Tools
 		protected float _fadeDuration = 0.5f;
 		protected float _fillTarget=0f;
 		protected string _loadingTextValue;
-        protected Image _progressBarImage;
+		protected Image _progressBarImage;
 
-        protected static MMTweenType _tween;
+		protected static MMTweenType _tween;
 
 		/// <summary>
 		/// Call this static method to load a scene from anywhere
 		/// </summary>
 		/// <param name="sceneToLoad">Level name.</param>
 		public static void LoadScene(string sceneToLoad)
-        {
-            _sceneToLoad = sceneToLoad;					
+		{
+			_sceneToLoad = sceneToLoad;					
 			Application.backgroundLoadingPriority = ThreadPriority.High;
 			if (LoadingScreenSceneName!=null)
 			{
-                LoadingSceneEvent.Trigger(sceneToLoad, LoadingStatus.LoadStarted);
+				LoadingSceneEvent.Trigger(sceneToLoad, LoadingStatus.LoadStarted);
 				SceneManager.LoadScene(LoadingScreenSceneName);
 			}
 		}
@@ -91,8 +91,8 @@ namespace MoreMountains.Tools
 		/// </summary>
 		/// <param name="sceneToLoad">Level name.</param>
 		public static void LoadScene(string sceneToLoad, string loadingSceneName)
-        {
-            _sceneToLoad = sceneToLoad;					
+		{
+			_sceneToLoad = sceneToLoad;					
 			Application.backgroundLoadingPriority = ThreadPriority.High;
 			SceneManager.LoadScene(loadingSceneName);
 		}
@@ -101,11 +101,11 @@ namespace MoreMountains.Tools
 		/// On Start(), we start loading the new level asynchronously
 		/// </summary>
 		protected virtual void Start()
-        {
-            _tween = new MMTweenType(MMTween.MMTweenCurve.EaseOutCubic);
-            _progressBarImage = LoadingProgressBar.GetComponent<Image>();
+		{
+			_tween = new MMTweenType(MMTween.MMTweenCurve.EaseOutCubic);
+			_progressBarImage = LoadingProgressBar.GetComponent<Image>();
             
-            _loadingTextValue =LoadingText.text;
+			_loadingTextValue =LoadingText.text;
 			if (!string.IsNullOrEmpty(_sceneToLoad))
 			{
 				StartCoroutine(LoadAsynchronously());
@@ -117,8 +117,8 @@ namespace MoreMountains.Tools
 		/// </summary>
 		protected virtual void Update()
 		{
-            Time.timeScale = 1f;
-            _progressBarImage.fillAmount = MMMaths.Approach(_progressBarImage.fillAmount,_fillTarget,Time.deltaTime*ProgressBarSpeed);
+			Time.timeScale = 1f;
+			_progressBarImage.fillAmount = MMMaths.Approach(_progressBarImage.fillAmount,_fillTarget,Time.deltaTime*ProgressBarSpeed);
 		}
 
 		/// <summary>
@@ -129,9 +129,9 @@ namespace MoreMountains.Tools
 			// we setup our various visual elements
 			LoadingSetup();
 
-            // we fade from black
-            MMFadeOutEvent.Trigger(StartFadeDuration, _tween);
-            yield return new WaitForSeconds(StartFadeDuration);
+			// we fade from black
+			MMFadeOutEvent.Trigger(StartFadeDuration, _tween);
+			yield return new WaitForSeconds(StartFadeDuration);
             
 			// we start loading the scene
 			_asyncOperation = SceneManager.LoadSceneAsync(_sceneToLoad,LoadSceneMode.Single );
@@ -156,14 +156,14 @@ namespace MoreMountains.Tools
 			LoadingComplete();
 			yield return new WaitForSeconds(LoadCompleteDelay);
 
-            // we fade to black
-            MMFadeInEvent.Trigger(ExitFadeDuration, _tween);
-            yield return new WaitForSeconds(ExitFadeDuration);
+			// we fade to black
+			MMFadeInEvent.Trigger(ExitFadeDuration, _tween);
+			yield return new WaitForSeconds(ExitFadeDuration);
 
-            // we switch to the new scene
-            _asyncOperation.allowSceneActivation = true;
-            LoadingSceneEvent.Trigger(_sceneToLoad, LoadingStatus.LoadTransitionComplete);
-        }
+			// we switch to the new scene
+			_asyncOperation.allowSceneActivation = true;
+			LoadingSceneEvent.Trigger(_sceneToLoad, LoadingStatus.LoadTransitionComplete);
+		}
 
 		/// <summary>
 		/// Sets up all visual elements, fades from black at the start
@@ -171,7 +171,7 @@ namespace MoreMountains.Tools
 		protected virtual void LoadingSetup() 
 		{
 			LoadingCompleteAnimation.alpha=0;
-            _progressBarImage.fillAmount = 0f;
+			_progressBarImage.fillAmount = 0f;
 			LoadingText.text = _loadingTextValue;
 		}
 
@@ -180,8 +180,8 @@ namespace MoreMountains.Tools
 		/// </summary>
 		protected virtual void LoadingComplete() 
 		{
-            LoadingSceneEvent.Trigger(_sceneToLoad, LoadingStatus.InterpolatedLoadProgressComplete);
-            LoadingCompleteAnimation.gameObject.SetActive(true);
+			LoadingSceneEvent.Trigger(_sceneToLoad, LoadingStatus.InterpolatedLoadProgressComplete);
+			LoadingCompleteAnimation.gameObject.SetActive(true);
 			StartCoroutine(MMFade.FadeCanvasGroup(LoadingProgressBar,0.1f,0f));
 			StartCoroutine(MMFade.FadeCanvasGroup(LoadingAnimation,0.1f,0f));
 			StartCoroutine(MMFade.FadeCanvasGroup(LoadingCompleteAnimation,0.1f,1f));

@@ -7,7 +7,7 @@ namespace MoreMountains.Tools
 	/// This class acts as an interface to allow the demo levels to work whether the environment (colliders, rigidbodies) are set as 2D or 3D.
 	/// If you already know for sure that you're going for a 2D or 3D game, I suggest you replace the use of this class with the appropriate classes.
 	/// </summary>
-    [AddComponentMenu("More Mountains/Tools/Rigidbody Interface/MMRigidbodyInterface")]
+	[AddComponentMenu("More Mountains/Tools/Rigidbody Interface/MMRigidbodyInterface")]
 	public class MMRigidbodyInterface : MonoBehaviour 
 	{	
 		/// <summary>
@@ -15,21 +15,21 @@ namespace MoreMountains.Tools
 		/// </summary>
 		/// <value>The position.</value>
 		public Vector3 position
-	    {
-	        get
-	        {
-	            if (_rigidbody2D != null)
-	            {
-	                return _rigidbody2D.position;
-	            }
-	            if (_rigidbody != null)
-	            {
-	                return _rigidbody.position;
-	            }
-	            return Vector3.zero;
-	        }
-	        set { }
-	    }
+		{
+			get
+			{
+				if (_rigidbody2D != null)
+				{
+					return _rigidbody2D.position;
+				}
+				if (_rigidbody != null)
+				{
+					return _rigidbody.position;
+				}
+				return Vector3.zero;
+			}
+			set { }
+		}
 
 		/// <summary>
 		/// Only use if you absolutely need to target the rigidbody2D specifically
@@ -194,21 +194,21 @@ namespace MoreMountains.Tools
 
 
 
-	    /// <summary>
-	    /// Move the rigidbody to the position vector specified
-	    /// </summary>
-	    /// <param name="newPosition"></param>
-	    public virtual void MovePosition(Vector3 newPosition)
-	    {
-	        if (_mode == "2D")
-	        {
-	            _rigidbody2D.MovePosition(newPosition);
-	        }
-	        if (_mode == "3D")
-	        {
-	            _rigidbody.MovePosition(newPosition);
-	        }
-	    }
+		/// <summary>
+		/// Move the rigidbody to the position vector specified
+		/// </summary>
+		/// <param name="newPosition"></param>
+		public virtual void MovePosition(Vector3 newPosition)
+		{
+			if (_mode == "2D")
+			{
+				_rigidbody2D.MovePosition(newPosition);
+			}
+			if (_mode == "3D")
+			{
+				_rigidbody.MovePosition(newPosition);
+			}
+		}
 
 		/// <summary>
 		/// Resets the angular velocity.
@@ -282,7 +282,7 @@ namespace MoreMountains.Tools
 		public bool Is3D 
 		{ 
 			get
-	        {
+			{
 				if (_mode=="3D") 
 				{ 
 					return true; 
@@ -301,7 +301,7 @@ namespace MoreMountains.Tools
 		public bool Is2D 
 		{ 
 			get
-	        {
+			{
 				if (_mode=="2D") 
 				{ 
 					return true; 

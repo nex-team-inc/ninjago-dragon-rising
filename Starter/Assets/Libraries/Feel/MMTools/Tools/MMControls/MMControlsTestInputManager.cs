@@ -16,10 +16,11 @@ namespace MoreMountains.Tools
 		}
 
 		public virtual void LeftJoystickMovement(Vector2 movement) { MMDebug.DebugOnScreen("left joystick",movement); }
-        public virtual void RightJoystickMovement(Vector2 movement) { MMDebug.DebugOnScreen("right joystick", movement); }
-        public virtual void RepositionableJoystickMovement(Vector2 movement) { MMDebug.DebugOnScreen("Repositionable joystick", movement); }
+		public virtual void RightJoystickMovement(Vector2 movement) { MMDebug.DebugOnScreen("right joystick", movement); }
+		public virtual void RepositionableJoystickMovement(Vector2 movement) { MMDebug.DebugOnScreen("Repositionable joystick", movement); }
+		public virtual void FollowerJoystickMovement(Vector2 movement) { MMDebug.DebugOnScreen("Follower joystick", movement); }
 
-        public virtual void APressed() { MMDebug.DebugOnScreen("Button A Pressed"); }
+		public virtual void APressed() { MMDebug.DebugOnScreen("Button A Pressed"); }
 		public virtual void BPressed() { MMDebug.DebugOnScreen("Button B Pressed"); }
 		public virtual void XPressed() { MMDebug.DebugOnScreen("Button X Pressed"); }
 		public virtual void YPressed() { MMDebug.DebugOnScreen("Button Y Pressed"); }
@@ -49,22 +50,26 @@ namespace MoreMountains.Tools
 		public virtual void UpReleased()	{ Debug.LogFormat("Button Up Released"); }
 		public virtual void DownReleased()	{ Debug.LogFormat("Button Down Released"); }
 		public virtual void RightReleased()	{ Debug.LogFormat("Button Right Released"); }
+		
+		public virtual void StickDragged() { Debug.LogFormat("On drag"); }
+		public virtual void StickPointerUp() { Debug.LogFormat("On pointer up"); }
+		public virtual void StickPointerDown() { Debug.LogFormat("On pointer down"); }
 
-        public virtual void OnMMEvent(MMSwipeEvent swipeEvent)
-        {
-            Debug.LogFormat("Swipe at a "+ swipeEvent.SwipeAngle+"° angle, and a length of "+ swipeEvent.SwipeLength+" length. Cardinal direction : "+ swipeEvent.SwipeDirection);
-            Debug.LogFormat("Swipe origin : " + swipeEvent.SwipeOrigin+ ", swipe end : " + swipeEvent.SwipeDestination);
-            Debug.LogFormat("Swipe duration : "+swipeEvent.SwipeDuration);
-        }
+		public virtual void OnMMEvent(MMSwipeEvent swipeEvent)
+		{
+			Debug.LogFormat("Swipe at a "+ swipeEvent.SwipeAngle+"° angle, and a length of "+ swipeEvent.SwipeLength+" length. Cardinal direction : "+ swipeEvent.SwipeDirection);
+			Debug.LogFormat("Swipe origin : " + swipeEvent.SwipeOrigin+ ", swipe end : " + swipeEvent.SwipeDestination);
+			Debug.LogFormat("Swipe duration : "+swipeEvent.SwipeDuration);
+		}
 
-        protected virtual void OnEnable()
-        {
-            this.MMEventStartListening<MMSwipeEvent>();
-        }
+		protected virtual void OnEnable()
+		{
+			this.MMEventStartListening<MMSwipeEvent>();
+		}
 
-        protected virtual void OnDisable()
-        {
-            this.MMEventStopListening<MMSwipeEvent>();
-        }
-    }
+		protected virtual void OnDisable()
+		{
+			this.MMEventStopListening<MMSwipeEvent>();
+		}
+	}
 }

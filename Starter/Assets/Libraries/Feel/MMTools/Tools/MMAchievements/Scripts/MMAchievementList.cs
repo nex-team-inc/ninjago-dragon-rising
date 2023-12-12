@@ -25,5 +25,10 @@ namespace MoreMountains.Tools
 			Debug.LogFormat ("Reset Achievements");
 			MMAchievementManager.ResetAchievements (AchievementsListID);
 		}
+
+		private MMReferenceHolder<MMAchievementList> _instances;
+		protected virtual void OnEnable() { _instances.Reference(this); }
+		protected virtual void OnDisable() { _instances.Dispose(); }
+		public static MMAchievementList Any => MMReferenceHolder<MMAchievementList>.Any;
 	}
 }

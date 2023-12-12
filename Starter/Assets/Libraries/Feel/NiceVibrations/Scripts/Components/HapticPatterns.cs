@@ -1,3 +1,5 @@
+// Copyright (c) Meta Platforms, Inc. and affiliates. 
+
 using System;
 using UnityEngine;
 using System.Globalization;
@@ -10,6 +12,10 @@ namespace Lofelt.NiceVibrations
     ///
     /// Each of the methods here load and play a simple haptic clip or a
     /// haptic pattern, depending on the device capabilities.
+    ///
+    /// None of the methods here are thread-safe and should only be called from
+    /// the main (Unity) thread. Calling these methods from a secondary thread can
+    /// cause undefined behaviour and memory leaks.
     ///
     /// After playback has finished, the loaded clips in this class will remain
     /// loaded in HapticController.
@@ -105,8 +111,8 @@ namespace Lofelt.NiceVibrations
                 for (int i = 0; i < time.Length; i++)
                 {
                     float clampedAmplitude = Mathf.Clamp(amplitude[i], 0.0f, 1.0f);
-                    amplitudeEnvelope += "{ \"time\":" + time[i] + "," +
-                                            "\"amplitude\":" + clampedAmplitude + "}";
+                    amplitudeEnvelope += "{ \"time\":" + time[i].ToString(numberFormat) + "," +
+                                           "\"amplitude\":" + clampedAmplitude.ToString(numberFormat) + "}";
 
                     // Don't add a comma to the JSON data if we're at the end of the envelope
                     if (i + 1 < time.Length)
@@ -124,7 +130,7 @@ namespace Lofelt.NiceVibrations
         // A Preset has four different representations, as there are four different playback methods.
         // Each representation is created at construction time, so that playing a
         // Preset has no further conversion cost at playback time.
-        struct Preset
+        internal struct Preset
         {
             // For playback on iOS, using system haptics
             public PresetType type;
@@ -168,74 +174,47 @@ namespace Lofelt.NiceVibrations
         /// <summary>
         /// Predefined Preset that represents a "Selection" haptic preset
         /// </summary>
-        static Preset Selection =
-            new Preset(PresetType.Selection,
-                       new float[] { 0.0f, 0.04f },
-                       new float[] { 0.471f, 0.471f });
+        internal static Preset Selection;
 
         /// <summary>
         /// Predefined Preset that represents a "Light" haptic preset
         /// </summary>
-        static Preset Light =
-            new Preset(PresetType.LightImpact,
-                       new float[] { 0.000f, 0.040f },
-                       new float[] { 0.156f, 0.156f });
+        internal static Preset Light;
 
         /// <summary>
         /// Predefined Preset that represents a "Medium" haptic preset
         /// </summary>
-        static Preset Medium =
-            new Preset(PresetType.MediumImpact,
-                       new float[] { 0.000f, 0.080f },
-                       new float[] { 0.471f, 0.471f });
+        internal static Preset Medium;
 
         /// <summary>
         /// Predefined Preset that represents a "Heavy" haptic preset
         /// </summary>
-        static Preset Heavy =
-            new Preset(PresetType.HeavyImpact,
-                       new float[] { 0.0f, 0.16f },
-                       new float[] { 1.0f, 1.00f });
+        internal static Preset Heavy;
 
         /// <summary>
         /// Predefined Preset that represents a "Rigid" haptic preset
         /// </summary>
-        static Preset Rigid =
-            new Preset(PresetType.RigidImpact,
-                       new float[] { 0.0f, 0.04f },
-                       new float[] { 1.0f, 1.00f });
+        internal static Preset Rigid;
 
         /// <summary>
         /// Predefined Preset that represents a "Soft" haptic preset
         /// </summary>
-        static Preset Soft =
-            new Preset(PresetType.SoftImpact,
-                       new float[] { 0.000f, 0.160f },
-                       new float[] { 0.156f, 0.156f });
+        internal static Preset Soft;
 
         /// <summary>
         /// Predefined Preset that represents a "Success" haptic preset
         /// </summary>
-        static Preset Success =
-            new Preset(PresetType.Success,
-                       new float[] { 0.0f, 0.040f, 0.080f, 0.240f },
-                       new float[] { 0.0f, 0.157f, 0.000f, 1.000f });
+        internal static Preset Success;
 
         /// <summary>
         /// Predefined Preset that represents a "Failure" haptic preset
         /// </summary>
-        static Preset Failure =
-            new Preset(PresetType.Failure,
-                       new float[] { 0.0f, 0.080f, 0.120f, 0.200f, 0.240f, 0.400f, 0.440f, 0.480f },
-                       new float[] { 0.0f, 0.470f, 0.000f, 0.470f, 0.000f, 1.000f, 0.000f, 0.157f });
+        internal static Preset Failure;
 
         /// <summary>
         /// Predefined Preset that represents a "Warning" haptic preset
         /// </summary>
-        static Preset Warning =
-            new Preset(PresetType.Warning,
-                       new float[] { 0.0f, 0.120f, 0.240f, 0.280f },
-                       new float[] { 0.0f, 1.000f, 0.000f, 0.470f });
+        internal static Preset Warning;
 
         static HapticPatterns()
         {
@@ -244,6 +223,37 @@ namespace Lofelt.NiceVibrations
 
             numberFormat = new NumberFormatInfo();
             numberFormat.NumberDecimalSeparator = ".";
+
+            // Initialize presets after setting the number format, so that the correct decimal
+            // separator is used when building the JSON representation.
+
+            Selection = new Preset(PresetType.Selection, new float[] { 0.0f, 0.04f },
+                                                         new float[] { 0.471f, 0.471f });
+
+            Light = new Preset(PresetType.LightImpact, new float[] { 0.000f, 0.040f },
+                                                       new float[] { 0.156f, 0.156f });
+
+            Medium = new Preset(PresetType.MediumImpact, new float[] { 0.000f, 0.080f },
+                                                         new float[] { 0.471f, 0.471f });
+
+            Heavy = new Preset(PresetType.HeavyImpact, new float[] { 0.0f, 0.16f },
+                                                       new float[] { 1.0f, 1.00f });
+
+            Rigid = new Preset(PresetType.RigidImpact, new float[] { 0.0f, 0.04f },
+                                                       new float[] { 1.0f, 1.00f });
+
+            Soft = new Preset(PresetType.SoftImpact, new float[] { 0.000f, 0.160f },
+                                                     new float[] { 0.156f, 0.156f });
+
+            Success = new Preset(PresetType.Success, new float[] { 0.0f, 0.040f, 0.080f, 0.240f },
+                                                     new float[] { 0.0f, 0.157f, 0.000f, 1.000f });
+
+            Failure = new Preset(PresetType.Failure,
+                                 new float[] { 0.0f, 0.080f, 0.120f, 0.200f, 0.240f, 0.400f, 0.440f, 0.480f },
+                                 new float[] { 0.0f, 0.470f, 0.000f, 0.470f, 0.000f, 1.000f, 0.000f, 0.157f });
+
+            Warning = new Preset(PresetType.Warning, new float[] { 0.0f, 0.120f, 0.240f, 0.280f },
+                                                     new float[] { 0.0f, 1.000f, 0.000f, 0.470f });
         }
 
         /// <summary>

@@ -16,10 +16,10 @@ namespace MoreMountains.Tools
 	{
 		// determines the space after the help box, the space before the text box, and the width of the help box icon
 		const int spaceBeforeTheTextBox = 5;
-	    const int spaceAfterTheTextBox = 10;
+		const int spaceAfterTheTextBox = 10;
 		const int iconWidth = 55;
 
-        MMInformationAttribute informationAttribute { get { return ((MMInformationAttribute)attribute); } }
+		MMInformationAttribute informationAttribute { get { return ((MMInformationAttribute)attribute); } }
 
         
 		#if  UNITY_EDITOR
@@ -61,17 +61,17 @@ namespace MoreMountains.Tools
 			{
 				EditorGUI.PropertyField(rect, prop, label, true);	  
 			}
-	    }
+		}
 		#endif
 
-	    /// <summary>
-	    /// Returns the complete height of the whole block (property + help text)
-	    /// </summary>
-	    /// <returns>The block height.</returns>
-	    /// <param name="property">Property.</param>
-	    /// <param name="label">Label.</param>
-	    public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
-	    {
+		/// <summary>
+		/// Returns the complete height of the whole block (property + help text)
+		/// </summary>
+		/// <returns>The block height.</returns>
+		/// <param name="property">Property.</param>
+		/// <param name="label">Label.</param>
+		public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+		{
 			if (HelpEnabled())
 			{
 				return EditorGUI.GetPropertyHeight(property) + DetermineTextboxHeight(informationAttribute.Message) + spaceAfterTheTextBox + spaceBeforeTheTextBox;
@@ -80,14 +80,14 @@ namespace MoreMountains.Tools
 			{
 				return EditorGUI.GetPropertyHeight(property);
 			}
-	    }
+		}
 
-	    /// <summary>
-	    /// Checks the editor prefs to see if help is enabled or not
-	    /// </summary>
-	    /// <returns><c>true</c>, if enabled was helped, <c>false</c> otherwise.</returns>
-	    protected virtual bool HelpEnabled()
-	    {
+		/// <summary>
+		/// Checks the editor prefs to see if help is enabled or not
+		/// </summary>
+		/// <returns><c>true</c>, if enabled was helped, <c>false</c> otherwise.</returns>
+		protected virtual bool HelpEnabled()
+		{
 			bool helpEnabled = false;
 			if (EditorPrefs.HasKey("MMShowHelpInInspectors"))
 			{
@@ -97,21 +97,21 @@ namespace MoreMountains.Tools
 				}
 			}
 			return helpEnabled;
-	    }
+		}
 
-	    /// <summary>
-	    /// Determines the height of the textbox.
-	    /// </summary>
-	    /// <returns>The textbox height.</returns>
-	    /// <param name="message">Message.</param>
-	    protected virtual float DetermineTextboxHeight(string message)
-	    {
+		/// <summary>
+		/// Determines the height of the textbox.
+		/// </summary>
+		/// <returns>The textbox height.</returns>
+		/// <param name="message">Message.</param>
+		protected virtual float DetermineTextboxHeight(string message)
+		{
 			GUIStyle style = new GUIStyle(EditorStyles.helpBox);
-	    	style.richText=true;
+			style.richText=true;
 
 			float newHeight = style.CalcHeight(new GUIContent(message),EditorGUIUtility.currentViewWidth - iconWidth);
-	    	return newHeight;
-	    }
+			return newHeight;
+		}
 	}
 }
 

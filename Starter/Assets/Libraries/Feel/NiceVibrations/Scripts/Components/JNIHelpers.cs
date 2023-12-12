@@ -1,3 +1,5 @@
+// Copyright (c) Meta Platforms, Inc. and affiliates. 
+
 #if (UNITY_ANDROID && !UNITY_EDITOR)
 
 using System;

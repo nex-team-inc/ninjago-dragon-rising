@@ -34,17 +34,25 @@ namespace MoreMountains.Tools
 			}
 		}
 
-	    /// <summary>
-	    /// On awake, we initialize our instance. Make sure to call base.Awake() in override if you need awake.
-	    /// </summary>
-	    protected virtual void Awake ()
+		/// <summary>
+		/// On awake, we initialize our instance. Make sure to call base.Awake() in override if you need awake.
+		/// </summary>
+		protected virtual void Awake ()
+		{
+			InitializeSingleton();		
+		}
+	    
+		/// <summary>
+		/// Initializes the singleton.
+		/// </summary>
+		protected virtual void InitializeSingleton()
 		{
 			if (!Application.isPlaying)
 			{
 				return;
 			}
 
-			_instance = this as T;			
+			_instance = this as T;
 		}
 	}
 }

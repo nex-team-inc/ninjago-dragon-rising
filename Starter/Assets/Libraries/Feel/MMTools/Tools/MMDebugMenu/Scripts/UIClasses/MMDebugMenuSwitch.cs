@@ -16,39 +16,39 @@ namespace MoreMountains.Tools
 		[Header("Switch")]
 		/// a SpriteReplace to represent the switch knob
 		public MMDebugMenuSpriteReplace SwitchKnob;
-        /// the possible states of the switch   
-        [MMReadOnly]
-        public bool SwitchState;
+		/// the possible states of the switch   
+		[MMReadOnly]
+		public bool SwitchState;
 		/// the state the switch should start in
 		public bool InitialState = false;
 
 		[Header("Binding")]
 		/// the methods to call when the switch is turned on
 		public UnityEvent OnSwitchOn;
-        /// the methods to call when the switch is turned off
-        public UnityEvent OnSwitchOff;
-        /// the methods to call when the switch is turned off
-        public UnityEvent<bool> OnSwitchToggle;
+		/// the methods to call when the switch is turned off
+		public UnityEvent OnSwitchOff;
+		/// the methods to call when the switch is turned off
+		public UnityEvent<bool> OnSwitchToggle;
 
-        /// <summary>
-        /// On init, we set our current switch state
-        /// </summary>
-        protected override void Initialization()
+		/// <summary>
+		/// On init, we set our current switch state
+		/// </summary>
+		protected override void Initialization()
 		{
 			base.Initialization ();
 			SwitchState = InitialState;
 			InitializeState ();
 
-            SwitchKnob.Initialization();
-            if (InitialState)
-            {
-                SwitchKnob.SwitchToOnSprite();
-            }
-            else
-            {
-                SwitchKnob.SwitchToOffSprite();
-            }
-        }
+			SwitchKnob.Initialization();
+			if (InitialState)
+			{
+				SwitchKnob.SwitchToOnSprite();
+			}
+			else
+			{
+				SwitchKnob.SwitchToOffSprite();
+			}
+		}
 
 		public virtual void InitializeState()
 		{
@@ -62,33 +62,33 @@ namespace MoreMountains.Tools
 			}*/
 		}
 
-        public virtual void SetTrue()
-        {
-            SwitchState = true;
-            if (_animator != null)
-            {
-                _animator.SetTrigger("Right");
-            }
-            SwitchKnob.SwitchToOnSprite();
-            if (OnSwitchOn != null)
-            {
-                OnSwitchOn.Invoke();
-            }
-        }
+		public virtual void SetTrue()
+		{
+			SwitchState = true;
+			if (_animator != null)
+			{
+				_animator.SetTrigger("Right");
+			}
+			SwitchKnob.SwitchToOnSprite();
+			if (OnSwitchOn != null)
+			{
+				OnSwitchOn.Invoke();
+			}
+		}
 
-        public virtual void SetFalse()
-        {
-            SwitchState = false;
-            if (_animator != null)
-            {
-                _animator.SetTrigger("Left");
-            }
-            SwitchKnob.SwitchToOffSprite();
-            if (OnSwitchOff != null)
-            {
-                OnSwitchOff.Invoke();
-            }
-        }
+		public virtual void SetFalse()
+		{
+			SwitchState = false;
+			if (_animator != null)
+			{
+				_animator.SetTrigger("Left");
+			}
+			SwitchKnob.SwitchToOffSprite();
+			if (OnSwitchOff != null)
+			{
+				OnSwitchOff.Invoke();
+			}
+		}
 
 		/// <summary>
 		/// Use this method to go from one state to the other
@@ -97,13 +97,13 @@ namespace MoreMountains.Tools
 		{
 			if (SwitchState == false)
 			{
-                SetTrue();
+				SetTrue();
 			}
 			else
 			{
-                SetFalse();	
+				SetFalse();	
 			}
-            OnSwitchToggle?.Invoke(SwitchState);
+			OnSwitchToggle?.Invoke(SwitchState);
 		}		
 	}
 }

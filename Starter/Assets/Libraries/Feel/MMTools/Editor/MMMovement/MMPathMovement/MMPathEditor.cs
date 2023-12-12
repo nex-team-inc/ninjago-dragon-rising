@@ -25,9 +25,9 @@ namespace MoreMountains.Tools
 		/// OnSceneGUI, draws repositionable handles at every point in the path, for easier setup
 		/// </summary>
 		protected virtual void OnSceneGUI()
-	    {
+		{
 			Handles.color=Color.green;
-            MMPath t = (target as MMPath);
+			MMPath t = (target as MMPath);
 
 			if (t.GetOriginalTransformPositionStatus() == false)
 			{
@@ -36,27 +36,27 @@ namespace MoreMountains.Tools
 
 			for (int i=0;i<t.PathElements.Count;i++)
 			{
-	       		EditorGUI.BeginChangeCheck();
+				EditorGUI.BeginChangeCheck();
 
 				Vector3 oldPoint = t.GetOriginalTransformPosition()+t.PathElements[i].PathElementPosition;
 				GUIStyle style = new GUIStyle();
 
 				// draws the path item number
-		        style.normal.textColor = Color.yellow;	 
+				style.normal.textColor = Color.yellow;	 
 				Handles.Label(t.GetOriginalTransformPosition()+t.PathElements[i].PathElementPosition+(Vector3.down*0.4f)+(Vector3.right*0.4f), ""+i,style);
 
 				// draws a movable handle
-				var fmh_49_57_638379123316969840 = Quaternion.identity; Vector3 newPoint = Handles.FreeMoveHandle(oldPoint,.5f,new Vector3(.25f,.25f,.25f),Handles.CircleHandleCap);
+				var fmh_49_57_638379784042074180 = Quaternion.identity; Vector3 newPoint = Handles.FreeMoveHandle(oldPoint,.5f,new Vector3(.25f,.25f,.25f),Handles.CircleHandleCap);
 				newPoint = ApplyAxisLock(oldPoint, newPoint);
 				
 				// records changes
 				if (EditorGUI.EndChangeCheck())
-		        {
-		            Undo.RecordObject(target, "Free Move Handle");
+				{
+					Undo.RecordObject(target, "Free Move Handle");
 					t.PathElements[i].PathElementPosition = newPoint - t.GetOriginalTransformPosition();
-		        }
+				}
 			}	        
-	    }
+		}
 
 		/// <summary>
 		/// Locks handles movement on x, y, or z axis

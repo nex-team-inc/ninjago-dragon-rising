@@ -31,6 +31,6 @@ namespace MoreMountains.Tools
 				EditorGUILayout.HelpBox("You've defined this object as having Collider2D defined bounds, but no Collider2D is attached to the object. Add a Collider2D, or switch to renderer based bounds. The bounds are the dimensions that will be used when spawning your object and to determine when it should be recycled.",MessageType.Warning);
 			}
 			    
-	    }
+		}
 	}
 }

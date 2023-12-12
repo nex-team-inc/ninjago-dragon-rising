@@ -30,10 +30,10 @@ namespace MoreMountains.Tools
 		protected virtual void OnGUI()
 		{
 			// we define the style to use and the font size
-	        GUIStyle style = GUI.skin.GetStyle ("label");
+			GUIStyle style = GUI.skin.GetStyle ("label");
 			style.fontSize = _fontSize;
 
-	        // we determine our box dimension based on the number of lines and the length of the longest line
+			// we determine our box dimension based on the number of lines and the length of the longest line
 			int boxHeight = _numberOfMessages*_characterHeight;
 			int boxWidth = _largestMessageLength * _characterWidth;
 
@@ -41,7 +41,7 @@ namespace MoreMountains.Tools
 			GUI.Box (new Rect (_marginLeft,_marginTop,boxWidth+_padding*2,boxHeight+_padding*2), "");
 			GUI.Label(new Rect(_marginLeft+_padding, _marginTop+_padding, boxWidth, boxHeight), _messageStack);
 
-	        // we set our flag to true, which will trigger the reset of the stack next time it's accessed
+			// we set our flag to true, which will trigger the reset of the stack next time it's accessed
 			_messageStackHasBeenDisplayed=true;
 		}
 
@@ -56,11 +56,11 @@ namespace MoreMountains.Tools
 			_characterWidth = (int)Mathf.Round(0.6f * fontSize + 0.49f);
 		}
 
-        /// <summary>
-        /// Sets the screen offset, from the top left corner
-        /// </summary>
-        /// <param name="top"></param>
-        /// <param name="left"></param>
+		/// <summary>
+		/// Sets the screen offset, from the top left corner
+		/// </summary>
+		/// <param name="top"></param>
+		/// <param name="left"></param>
 		public virtual void SetScreenOffset(int top = 10, int left = 10)
 		{
 			_marginTop = top;

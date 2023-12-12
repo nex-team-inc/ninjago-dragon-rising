@@ -4,12 +4,12 @@ using System.Collections;
 
 namespace MoreMountains.Tools
 {
-    /// <summary>
-    /// Add this class to a gameObject with a Text component and it'll feed it the number of FPS in real time.
-    /// </summary>
+	/// <summary>
+	/// Add this class to a gameObject with a Text component and it'll feed it the number of FPS in real time.
+	/// </summary>
 	[RequireComponent(typeof(Text))]
-    [AddComponentMenu("More Mountains/Tools/Performance/MMFPSCounter")]
-    public class MMFPSCounter : MonoBehaviour
+	[AddComponentMenu("More Mountains/Tools/Performance/MMFPSCounter")]
+	public class MMFPSCounter : MonoBehaviour
 	{
 		public enum Modes { Instant, MovingAverage, InstantAndMovingAverage }
 		
@@ -66,12 +66,12 @@ namespace MoreMountains.Tools
 		protected virtual void Start()
 		{
 			if(GetComponent<Text>()==null)
-		    {
-		        Debug.LogWarning ("FPSCounter requires a GUIText component.");
-		        return;
+			{
+				Debug.LogWarning ("FPSCounter requires a GUIText component.");
+				return;
 			}
 			_text = GetComponent<Text>();
-		    _timeLeft = UpdateInterval;
+			_timeLeft = UpdateInterval;
 		}
 
 		/// <summary>
@@ -84,32 +84,32 @@ namespace MoreMountains.Tools
 			_framesAccumulated = _framesAccumulated + Time.timeScale/Time.deltaTime;
 			_timeLeft = _timeLeft - Time.deltaTime;
 
-		    if( _timeLeft <= 0.0 )
-		    {
+			if( _timeLeft <= 0.0 )
+			{
 				_currentFPS = (int)Mathf.Clamp (_framesAccumulated / _framesDrawnInTheInterval, 0, 300);
-		        _framesDrawnInTheInterval = 0;
+				_framesDrawnInTheInterval = 0;
 				_framesAccumulated = 0f;
-		        _timeLeft = UpdateInterval;
-		        _totalFrames++;
-		        _average += (_currentFPS - _average) / _totalFrames;
+				_timeLeft = UpdateInterval;
+				_totalFrames++;
+				_average += (_currentFPS - _average) / _totalFrames;
 		        
-		        if (_currentFPS >=0 && _currentFPS <= 300)
-		        {
-			        switch (Mode)
-			        {
-				        case Modes.Instant:
-					        _text.text = _stringsFrom00To300[_currentFPS];
-					        break;
-				        case Modes.MovingAverage:
-					        _text.text = _stringsFrom00To300[_average];
-					        break;
-				        case Modes.InstantAndMovingAverage:
+				if (_currentFPS >=0 && _currentFPS <= 300)
+				{
+					switch (Mode)
+					{
+						case Modes.Instant:
+							_text.text = _stringsFrom00To300[_currentFPS];
+							break;
+						case Modes.MovingAverage:
+							_text.text = _stringsFrom00To300[_average];
+							break;
+						case Modes.InstantAndMovingAverage:
 							_text.text = _stringsFrom00To300[_currentFPS] + " / " + _stringsFrom00To300[_average]; 
-					        break;
-			        }
+							break;
+					}
 			        	
-		        }
-		    }
+				}
+			}
 		}
 	}
 }

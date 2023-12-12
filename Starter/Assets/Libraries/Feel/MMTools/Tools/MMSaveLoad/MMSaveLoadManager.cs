@@ -3,35 +3,35 @@ using System.Collections;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 #if UNITY_EDITOR
-	using UnityEditor;
+using UnityEditor;
 #endif
 
 namespace MoreMountains.Tools
 {
-    /// <summary>
-    /// Allows the save and load of objects in a specific folder and file.
-    /// 
-    /// How to use (at a minimum) :
-    /// 
-    /// Save : MMSaveLoadManager.Save(TestObject, FileName+SaveFileExtension, FolderName);
-    /// 
-    /// Load : TestObject = (YourObjectClass)MMSaveLoadManager.Load(typeof(YourObjectClass), FileName + SaveFileExtension, FolderName);
-    /// 
-    /// Delete save : MMSaveLoadManager.DeleteSave(FileName+SaveFileExtension, FolderName);
-    /// 
-    /// Delete save folder : MMSaveLoadManager.DeleteSaveFolder(FolderName);
-    /// 
-    /// You can also specify what IMMSaveLoadManagerMethod the system should use. By default it's binary but you can also pick binary encrypted, json, or json encrypted
-    /// You'll find examples of how to set each of these in the MMSaveLoadTester class
-    /// 
-    /// </summary>
-    public static class MMSaveLoadManager
-    {
-        /// the method to use when saving and loading files (has to be the same at both times of course)
-        public static IMMSaveLoadManagerMethod saveLoadMethod = new MMSaveLoadManagerMethodBinary();
-        /// the default top level folder the system will use to save the file
-        private const string _baseFolderName = "/MMData/";
-        /// the name of the save folder if none is provided
+	/// <summary>
+	/// Allows the save and load of objects in a specific folder and file.
+	/// 
+	/// How to use (at a minimum) :
+	/// 
+	/// Save : MMSaveLoadManager.Save(TestObject, FileName+SaveFileExtension, FolderName);
+	/// 
+	/// Load : TestObject = (YourObjectClass)MMSaveLoadManager.Load(typeof(YourObjectClass), FileName + SaveFileExtension, FolderName);
+	/// 
+	/// Delete save : MMSaveLoadManager.DeleteSave(FileName+SaveFileExtension, FolderName);
+	/// 
+	/// Delete save folder : MMSaveLoadManager.DeleteSaveFolder(FolderName);
+	/// 
+	/// You can also specify what IMMSaveLoadManagerMethod the system should use. By default it's binary but you can also pick binary encrypted, json, or json encrypted
+	/// You'll find examples of how to set each of these in the MMSaveLoadTester class
+	/// 
+	/// </summary>
+	public static class MMSaveLoadManager
+	{
+		/// the method to use when saving and loading files (has to be the same at both times of course)
+		public static IMMSaveLoadManagerMethod SaveLoadMethod = new MMSaveLoadManagerMethodBinary();
+		/// the default top level folder the system will use to save the file
+		private const string _baseFolderName = "/MMData/";
+		/// the name of the save folder if none is provided
 		private const string _defaultFolderName = "MMSaveLoadManager";
 
 		/// <summary>
@@ -52,7 +52,7 @@ namespace MoreMountains.Tools
 				savePath = Application.persistentDataPath + _baseFolderName;
 			}
 			#if UNITY_EDITOR
-			    savePath = Application.dataPath + _baseFolderName;
+			savePath = Application.dataPath + _baseFolderName;
 			#endif
 
 			savePath = savePath + folderName + "/";
@@ -84,13 +84,13 @@ namespace MoreMountains.Tools
 			{
 				Directory.CreateDirectory(savePath);
 			}
-            // we serialize and write our object into a file on disk
+			// we serialize and write our object into a file on disk
 
-            FileStream saveFile = File.Create(savePath + saveFileName);
+			FileStream saveFile = File.Create(savePath + saveFileName);
 
-            saveLoadMethod.Save(saveObject, saveFile);
-            saveFile.Close();
-        }
+			SaveLoadMethod.Save(saveObject, saveFile);
+			saveFile.Close();
+		}
 
 		/// <summary>
 		/// Load the specified file based on a file name into a specified folder
@@ -110,11 +110,11 @@ namespace MoreMountains.Tools
 				return null;
 			}
 
-            FileStream saveFile = File.Open(saveFileName, FileMode.Open, FileAccess.Read, FileShare.Read);
-            returnObject = saveLoadMethod.Load(objectType, saveFile);
-            saveFile.Close();
+			FileStream saveFile = File.Open(saveFileName, FileMode.Open, FileAccess.Read, FileShare.Read);
+			returnObject = SaveLoadMethod.Load(objectType, saveFile);
+			saveFile.Close();
 
-            return returnObject;
+			return returnObject;
 		}
 
 		/// <summary>
@@ -126,46 +126,74 @@ namespace MoreMountains.Tools
 		{
 			string savePath = DetermineSavePath(folderName);
 			string saveFileName = DetermineSaveFileName(fileName);
-            if (File.Exists(savePath + saveFileName))
-            {
-                File.Delete(savePath + saveFileName);
-            }			
+			if (File.Exists(savePath + saveFileName))
+			{
+				File.Delete(savePath + saveFileName);
+			}	
+			if (File.Exists(savePath + saveFileName + ".meta"))
+			{
+				File.Delete(savePath + saveFileName + ".meta");
+			}			
 		}
 
-        /// <summary>
-        /// Deletes the whole save folder
-        /// </summary>
-        /// <param name="folderName"></param>
+		/// <summary>
+		/// Deletes the whole save folder
+		/// </summary>
+		/// <param name="folderName"></param>
 		public static void DeleteSaveFolder(string folderName = _defaultFolderName)
 		{
-            string savePath = DetermineSavePath(folderName);
-            if (Directory.Exists(savePath))
-            {
-                DeleteDirectory(savePath);
-            }
-        }
+			string savePath = DetermineSavePath(folderName);
+			if (Directory.Exists(savePath))
+			{
+				DeleteDirectory(savePath);
+			}
+		}
+		
+		/// <summary>
+		/// Deletes all save files saved by this MMSaveLoadManager
+		/// </summary>
+		public static void DeleteAllSaveFiles()
+		{
+			string savePath = DetermineSavePath("");
 
-        /// <summary>
-        /// Deletes the specified directory
-        /// </summary>
-        /// <param name="target_dir"></param>
-        public static void DeleteDirectory(string target_dir)
-        {
-            string[] files = Directory.GetFiles(target_dir);
-            string[] dirs = Directory.GetDirectories(target_dir);
+			savePath = savePath.Substring(0, savePath.Length - 1);
+			if (savePath.EndsWith("/"))
+			{
+				savePath = savePath.Substring(0, savePath.Length - 1);
+			}
 
-            foreach (string file in files)
-            {
-                File.SetAttributes(file, FileAttributes.Normal);
-                File.Delete(file);
-            }
+			if (Directory.Exists(savePath))
+			{
+				DeleteDirectory(savePath);
+			}
+		}
 
-            foreach (string dir in dirs)
-            {
-                DeleteDirectory(dir);
-            }
+		/// <summary>
+		/// Deletes the specified directory
+		/// </summary>
+		/// <param name="target_dir"></param>
+		public static void DeleteDirectory(string target_dir)
+		{
+			string[] files = Directory.GetFiles(target_dir);
+			string[] dirs = Directory.GetDirectories(target_dir);
 
-            Directory.Delete(target_dir, false);
-        }
-    }
+			foreach (string file in files)
+			{
+				File.SetAttributes(file, FileAttributes.Normal);
+				File.Delete(file);
+			}
+
+			foreach (string dir in dirs)
+			{
+				DeleteDirectory(dir);
+			}
+
+			Directory.Delete(target_dir, false);
+
+			if (File.Exists(target_dir + ".meta"))
+			{
+				File.Delete(target_dir + ".meta");
+			}
+		}
+	}
 }

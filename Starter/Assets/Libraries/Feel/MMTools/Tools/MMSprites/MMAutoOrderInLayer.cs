@@ -4,11 +4,11 @@ using System.Collections;
 namespace MoreMountains.Tools
 {
 	[RequireComponent(typeof(SpriteRenderer))]
-    /// <summary>
-    /// Add this component to an object to have it pick a new order in layer on start, useful to have unique sorting layer numbers
-    /// </summary>
-    [AddComponentMenu("More Mountains/Tools/Sprites/MMAutoOrderInLayer")]
-    public class MMAutoOrderInLayer : MonoBehaviour 
+	/// <summary>
+	/// Add this component to an object to have it pick a new order in layer on start, useful to have unique sorting layer numbers
+	/// </summary>
+	[AddComponentMenu("More Mountains/Tools/Sprites/MMAutoOrderInLayer")]
+	public class MMAutoOrderInLayer : MonoBehaviour 
 	{
 		static int CurrentMaxCharacterOrderInLayer = 0;
 
@@ -70,21 +70,21 @@ namespace MoreMountains.Tools
 				Component[] spriteRenderers = GetComponentsInParent( typeof(SpriteRenderer) );
 
 				// we look for all sprite renderers in parent objects
-		        if( spriteRenderers != null )
-		        {
+				if( spriteRenderers != null )
+				{
 					foreach( SpriteRenderer spriteRenderer in spriteRenderers )
-		            {
-		            	// if we find a parent with a sprite renderer, on the same sorting layer and with a higher sorting value than previously found
+					{
+						// if we find a parent with a sprite renderer, on the same sorting layer and with a higher sorting value than previously found
 						if ( (spriteRenderer.sortingLayerID == _spriteRenderer.sortingLayerID)
-							&& (spriteRenderer.sortingOrder > maxLayerOrder))
+						     && (spriteRenderer.sortingOrder > maxLayerOrder))
 						{							
 							// we store the new value
 							maxLayerOrder = spriteRenderer.sortingOrder;							
 						}
-		            }	
-		            // we set our new value to the highest value found, plus our increment
-		            newOrder = maxLayerOrder + ParentIncrement;                
-		        }
+					}	
+					// we set our new value to the highest value found, plus our increment
+					newOrder = maxLayerOrder + ParentIncrement;                
+				}
 			}
 			else
 			{
@@ -102,15 +102,15 @@ namespace MoreMountains.Tools
 			{
 				Component[] childrenSpriteRenderers = GetComponentsInChildren( typeof(SpriteRenderer) );
 				if( childrenSpriteRenderers != null )
-		        {
+				{
 					foreach( SpriteRenderer childSpriteRenderer in childrenSpriteRenderers )
-		            {
+					{
 						if (childSpriteRenderer.sortingLayerID == _spriteRenderer.sortingLayerID)
 						{
 							childSpriteRenderer.sortingOrder = newOrder + ChildrenIncrement;
 						}
-		            }	              
-		        }
+					}	              
+				}
 			}
 		}
 	}

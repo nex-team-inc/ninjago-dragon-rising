@@ -1,67 +1,94 @@
-﻿using UnityEngine;
-using System.Collections;
+﻿#if UNITY_EDITOR
+using UnityEditor;
+#endif
+using UnityEngine;
 
 namespace MoreMountains.Tools
 {
 	[RequireComponent(typeof(Camera))]
-    /// <summary>
-    /// Forces an aspect ratio on a camera
-    /// </summary>
-    [AddComponentMenu("More Mountains/Tools/Camera/MMCameraAspectRatio")]
-    public class MMCameraAspectRatio : MonoBehaviour 
+	/// <summary>
+	/// Forces an aspect ratio on a camera
+	/// </summary>
+	[AddComponentMenu("More Mountains/Tools/Camera/MMCameraAspectRatio")]
+	public class MMCameraAspectRatio : MonoBehaviour 
 	{
-		/// the desired aspect ratio
-		public Vector2 AspectRatio = Vector2.zero;
+		public enum Modes { Fixed, ScreenRatio }
 
-		protected Camera _camera;
+		[Header("Camera")]
+		/// the camera to change the aspect ratio on
+		[Tooltip("the camera to change the aspect ratio on")]
+		public Camera TargetCamera;
+		/// the mode of choice, fixed will force a specified ratio, while ScreenRatio will adapt the camera's aspect to the current screen ratio
+		[Tooltip("the mode of choice, fixed will force a specified ratio, while ScreenRatio will adapt the camera's aspect to the current screen ratio")]
+		public Modes Mode = Modes.Fixed;
+		/// in fixed mode, the ratio to apply to the camera
+		[Tooltip("in fixed mode, the ratio to apply to the camera")]
+		[MMEnumCondition("Mode", (int)Modes.Fixed)]
+		public Vector2 FixedAspectRatio = Vector2.zero;
+
+		[Header("Automation")]
+		/// whether or not to apply the ratio automatically on Start
+		[Tooltip("whether or not to apply the ratio automatically on Start")]
+		public bool ApplyAspectRatioOnStart = true;
+		/// whether or not to apply the ratio automatically on enable
+		[Tooltip("whether or not to apply the ratio automatically on enable")]
+		public bool ApplyAspectRatioOnEnable = false;
+
+		[Header("Debug")] 
+		[MMInspectorButton("ApplyAspectRatio")]
+		public bool ApplyAspectRatioButton;
+		
+		protected float _defaultAspect = 16f / 9f;
 
 		/// <summary>
-		/// On Start, we run the Initialization method
+		/// On enable we apply our aspect ratio if needed
 		/// </summary>
-		protected virtual void Start () 
+		protected virtual void OnEnable()
 		{
-			Initialization ();
+			if (ApplyAspectRatioOnEnable) { ApplyAspectRatio(); }
 		}
 
 		/// <summary>
-		/// Checks the presence of a camera component, and applies the aspect ratio to it
+		/// On start we apply our aspect ratio if needed
 		/// </summary>
-		protected virtual void Initialization()
+		protected virtual void Start()
 		{
-			if (AspectRatio == Vector2.zero)
+			if (ApplyAspectRatioOnStart) { ApplyAspectRatio(); }
+		}
+
+		/// <summary>
+		/// Applies the specified aspect ratio
+		/// </summary>
+		public virtual void ApplyAspectRatio()
+		{
+			if (TargetCamera == null)
 			{
 				return;
 			}
 
-			_camera = this.gameObject.GetComponent<Camera> ();
-			if (_camera == null)
+			float newAspectRatio = _defaultAspect;
+			float ratioX = 1f;
+			float ratioY = 1f;
+			switch (Mode)
 			{
-				return;
+				case Modes.Fixed:
+					ratioX = FixedAspectRatio.x;
+					ratioY = FixedAspectRatio.y;
+					break;
+				case Modes.ScreenRatio:
+					#if UNITY_EDITOR
+					string[] res = UnityStats.screenRes.Split('x');
+					ratioX = int.Parse(res[0]);
+					ratioY = int.Parse(res[1]);
+					#else
+						ratioX = Screen.width;
+						ratioY = Screen.height;
+					#endif
+					
+					break;
 			}
-
-			float newAspectRatio = AspectRatio.x / AspectRatio.y;
-			float currentWindowAspectRatio = (float)Screen.width / (float)Screen.height;
-			float newScaleHeight = currentWindowAspectRatio / newAspectRatio;
-
-			if (newScaleHeight >= 1.0f)
-			{  
-				float scalewidth = 1.0f / newScaleHeight;
-				Rect rectangle = _camera.rect;
-				rectangle.width = scalewidth;
-				rectangle.height = 1.0f;
-				rectangle.x = (1.0f - scalewidth) / 2.0f;
-				rectangle.y = 0;
-				_camera.rect = rectangle;
-			}
-			else 
-			{
-				Rect rectangle = _camera.rect;
-				rectangle.width = 1.0f;
-				rectangle.height = newScaleHeight;
-				rectangle.x = 0;
-				rectangle.y = (1.0f - newScaleHeight) / 2.0f;
-				_camera.rect = rectangle;
-			}
+			newAspectRatio = ratioY != 0f ? ratioX / ratioY : _defaultAspect;
+			TargetCamera.aspect = newAspectRatio;
 		}
 		
 	}

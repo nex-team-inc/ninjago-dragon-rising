@@ -8,35 +8,35 @@ namespace MoreMountains.Tools
 	/// </summary>
 	public class MMBoundsExtensions : MonoBehaviour 
 	{
-        /// <summary>
-        /// Returns a random point within the bounds set as parameter
-        /// </summary>
-        /// <param name="bounds"></param>
-        /// <returns></returns>
-        public static Vector3 MMRandomPointInBounds(Bounds bounds)
-        {
-            return new Vector3(
-                Random.Range(bounds.min.x, bounds.max.x),
-                Random.Range(bounds.min.y, bounds.max.y),
-                Random.Range(bounds.min.z, bounds.max.z)
-            );
-        }
+		/// <summary>
+		/// Returns a random point within the bounds set as parameter
+		/// </summary>
+		/// <param name="bounds"></param>
+		/// <returns></returns>
+		public static Vector3 MMRandomPointInBounds(Bounds bounds)
+		{
+			return new Vector3(
+				Random.Range(bounds.min.x, bounds.max.x),
+				Random.Range(bounds.min.y, bounds.max.y),
+				Random.Range(bounds.min.z, bounds.max.z)
+			);
+		}
 
-        /// <summary>
-        /// Gets collider bounds for an object (from Collider2D)
-        /// </summary>
-        /// <param name="theObject"></param>
-        /// <returns></returns>
+		/// <summary>
+		/// Gets collider bounds for an object (from Collider2D)
+		/// </summary>
+		/// <param name="theObject"></param>
+		/// <returns></returns>
 		public static Bounds GetColliderBounds(GameObject theObject)
-	    {
-	    	Bounds returnBounds;
+		{
+			Bounds returnBounds;
 
 			// if the object has a collider at root level, we base our calculations on that
 			if (theObject.GetComponent<Collider>()!=null)
-	    	{
+			{
 				returnBounds = theObject.GetComponent<Collider>().bounds;
 				return returnBounds;
-	    	}
+			}
 
 			// if the object has a collider2D at root level, we base our calculations on that
 			if (theObject.GetComponent<Collider2D>()!=null) 
@@ -75,21 +75,21 @@ namespace MoreMountains.Tools
 			return returnBounds;
 		}
 
-        /// <summary>
-        /// Gets bounds of a renderer
-        /// </summary>
-        /// <param name="theObject"></param>
-        /// <returns></returns>
+		/// <summary>
+		/// Gets bounds of a renderer
+		/// </summary>
+		/// <param name="theObject"></param>
+		/// <returns></returns>
 		public static Bounds GetRendererBounds(GameObject theObject)
-	    {
-	    	Bounds returnBounds;
+		{
+			Bounds returnBounds;
 
 			// if the object has a renderer at root level, we base our calculations on that
 			if (theObject.GetComponent<Renderer>()!=null)
-	    	{
+			{
 				returnBounds = theObject.GetComponent<Renderer>().bounds;
 				return returnBounds;
-	    	}
+			}
 
 			// if the object contains at least one renderer we'll add all its children's renderer bounds
 			if (theObject.GetComponentInChildren<Renderer>()!=null)

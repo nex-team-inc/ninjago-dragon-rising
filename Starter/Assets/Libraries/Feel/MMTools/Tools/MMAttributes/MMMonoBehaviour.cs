@@ -4,8 +4,8 @@ using UnityEngine;
 
 namespace MoreMountains.Tools
 {
-    public class MMMonoBehaviour : MonoBehaviour
-    {
+	public class MMMonoBehaviour : MonoBehaviour
+	{
 
-    }
+	}
 }

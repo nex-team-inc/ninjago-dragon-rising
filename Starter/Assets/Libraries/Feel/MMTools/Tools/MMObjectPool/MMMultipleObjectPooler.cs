@@ -24,11 +24,11 @@ namespace MoreMountains.Tools
 	/// </summary>
 	public enum MMPoolingMethods { OriginalOrder, OriginalOrderSequential, RandomBetweenObjects, RandomPoolSizeBased }
 
-    /// <summary>
-    /// This class allows you to have a pool of various objects to pool from.
-    /// </summary>
-    [AddComponentMenu("More Mountains/Tools/Object Pool/MMMultipleObjectPooler")]
-    public class MMMultipleObjectPooler : MMObjectPooler
+	/// <summary>
+	/// This class allows you to have a pool of various objects to pool from.
+	/// </summary>
+	[AddComponentMenu("More Mountains/Tools/Object Pool/MMMultipleObjectPooler")]
+	public class MMMultipleObjectPooler : MMObjectPooler
 	{
 		/// the list of objects to pool
 		public List<MMMultipleObjectPoolerObject> Pool;
@@ -41,6 +41,9 @@ namespace MoreMountains.Tools
 		/// a unique name that should match on all MMMultipleObjectPoolers you want to use together
 		[MMCondition("MutualizeWaitingPools", true)]
 		public string MutualizedPoolName = "";
+		
+		public List<MMMultipleObjectPooler> Owner { get; set; }
+		private void OnDestroy() { Owner?.Remove(this); }
 		
 		/// the actual object pool
 		protected GameObject _lastPooledObject;
@@ -68,16 +71,16 @@ namespace MoreMountains.Tools
 		/// </summary>
 		public override void FillObjectPool()
 		{
-            if ((Pool == null) || (Pool.Count == 0))
-            {
-                return;
-            }
+			if ((Pool == null) || (Pool.Count == 0))
+			{
+				return;
+			}
 
-            // we create a waiting pool, if one already exists, no need to fill anything
-            if (!CreateWaitingPool())
-            {
-	            return;
-            }
+			// we create a waiting pool, if one already exists, no need to fill anything
+			if (!CreateWaitingPool())
+			{
+				return;
+			}
             
 			// if there's only one item in the Pool, we force CanPoolSameObjectTwice to true
 			if (Pool.Count <= 1)
@@ -151,14 +154,21 @@ namespace MoreMountains.Tools
 		/// <param name="typeOfObject">The type of object to add to the pool.</param>
 		protected virtual GameObject AddOneObjectToThePool(GameObject typeOfObject)
 		{
+			if (typeOfObject == null)
+			{
+				return null;
+			}
+
+			bool initialStatus = typeOfObject.activeSelf;
+			typeOfObject.SetActive(false);
 			GameObject newGameObject = (GameObject)Instantiate(typeOfObject);
+			typeOfObject.SetActive(initialStatus);
 			SceneManager.MoveGameObjectToScene(newGameObject, this.gameObject.scene);
-			newGameObject.gameObject.SetActive(false);
 			if (NestWaitingPool)
 			{
 				newGameObject.transform.SetParent(_waitingPool.transform);	
 			}
-			newGameObject.name=typeOfObject.name;
+			newGameObject.name = typeOfObject.name;
 			_objectPool.PooledGameObjects.Add(newGameObject);
 			return newGameObject;
 		}
@@ -207,11 +217,6 @@ namespace MoreMountains.Tools
 		{
 			int newIndex;
 			// if we've reached the end of our list, we start again from the beginning
-			if (_currentIndexCounter >= Pool[_currentIndex].PoolSize)
-			{
-				_currentIndexCounter = 0;
-				_currentIndex++;
-			}
 			if (_currentIndex >= Pool.Count)
 			{
 				ResetCurrentIndex ();
@@ -228,14 +233,14 @@ namespace MoreMountains.Tools
 				GameObject findObject = FindInactiveObject(_objectPool.PooledGameObjects[_currentIndex].gameObject.name,_objectPool.PooledGameObjects);
 				if (findObject != null)
 				{
-					_currentIndexCounter++;
+					_currentIndex++;
 					return findObject;
 				}
 
 				// if its pool can expand, we create a new one
 				if (searchedObject.PoolCanExpand)
 				{
-					_currentIndexCounter++;
+					_currentIndex++;
 					return AddOneObjectToThePool(searchedObject.GameObjectToPool);	
 				}
 				else
@@ -248,10 +253,12 @@ namespace MoreMountains.Tools
 			{
 				// if the object is inactive, we return it
 				newIndex = _currentIndex;
-				_currentIndexCounter++;
+				_currentIndex++;
 				return _objectPool.PooledGameObjects[newIndex]; 
 			}
 		}
+
+		protected int _currentCount = 0;
 
 		/// <summary>
 		/// Tries to find a gameobject in the pool according to the order the list has been setup in (one of each, no matter how big their respective pool sizes)
@@ -259,47 +266,60 @@ namespace MoreMountains.Tools
 		/// <returns>The pooled game object original order.</returns>
 		protected virtual GameObject GetPooledGameObjectOriginalOrderSequential()
 		{
-			int newIndex;
-			
 			// if we've reached the end of our list, we start again from the beginning
 			if (_currentIndex >= Pool.Count)
 			{
+				_currentCount = 0;
 				ResetCurrentIndex ();
 			}
 
 			MMMultipleObjectPoolerObject searchedObject = GetPoolObject(Pool[_currentIndex].GameObjectToPool);
 
 			if (_currentIndex >= _objectPool.PooledGameObjects.Count) { return null; }
-			if (!searchedObject.Enabled) { _currentIndex++; return null; }
+			if (!searchedObject.Enabled) { _currentIndex++; _currentCount = 0; return null; }
+
 
 			// if the object is already active, we need to find another one
 			if (_objectPool.PooledGameObjects[_currentIndex].gameObject.activeInHierarchy)
 			{
-				GameObject findObject = FindInactiveObject(_objectPool.PooledGameObjects[_currentIndex].gameObject.name,_objectPool.PooledGameObjects);
+				GameObject findObject = FindInactiveObject(Pool[_currentIndex].GameObjectToPool.name, _objectPool.PooledGameObjects);
 				if (findObject != null)
 				{
-					_currentIndex++;
+					_currentCount++;
+					OrderSequentialResetCounter(searchedObject);
 					return findObject;
 				}
 
 				// if its pool can expand, we create a new one
 				if (searchedObject.PoolCanExpand)
 				{
-					_currentIndex++;
+					_currentCount++;
+					OrderSequentialResetCounter(searchedObject);
 					return AddOneObjectToThePool(searchedObject.GameObjectToPool);	
 				}
 				else
 				{
 					// if it can't expand we return nothing
+					_currentIndex++;
+					_currentCount = 0;
 					return null;					
 				}
 			}
 			else
 			{
 				// if the object is inactive, we return it
-				newIndex = _currentIndex;
+				_currentCount++;
+				OrderSequentialResetCounter(searchedObject);
+				return _objectPool.PooledGameObjects[_currentIndex]; 
+			}
+		}
+
+		protected virtual void OrderSequentialResetCounter(MMMultipleObjectPoolerObject searchedObject)
+		{
+			if (_currentCount >= searchedObject.PoolSize)
+			{
 				_currentIndex++;
-				return _objectPool.PooledGameObjects[newIndex]; 
+				_currentCount = 0;
 			}
 		}
 
@@ -328,8 +348,8 @@ namespace MoreMountains.Tools
 			// if we can't pool the same object twice, we'll loop for a while to try and get another one
 			overflowCounter = 0;
 			while (!CanPoolSameObjectTwice 
-				&& _objectPool.PooledGameObjects[randomIndex] == _lastPooledObject 
-				&& overflowCounter < _objectPool.PooledGameObjects.Count)
+			       && _objectPool.PooledGameObjects[randomIndex] == _lastPooledObject 
+			       && overflowCounter < _objectPool.PooledGameObjects.Count)
 			{
 				randomIndex = UnityEngine.Random.Range(0, _objectPool.PooledGameObjects.Count);
 				overflowCounter++;
@@ -395,8 +415,8 @@ namespace MoreMountains.Tools
 			// while we haven't found an object to return, and while we haven't gone through all the different object types, we keep going
 			overflowCounter=0;
 			while (!objectFound 
-				&& randomIndex != originalRandomIndex 
-				&& overflowCounter < _objectPool.PooledGameObjects.Count)
+			       && randomIndex != originalRandomIndex 
+			       && overflowCounter < _objectPool.PooledGameObjects.Count)
 			{
 				// if our index is at the end, we reset it
 				if (randomIndex >= Pool.Count)
@@ -432,12 +452,35 @@ namespace MoreMountains.Tools
 			return null;
 		}
 
+		protected string _tempSearchedName;
+		
+		/// <summary>
+		/// Gets an object of the type at the specified index in the Pool.
+		/// Note that the whole point of this multiple object pooler is to abstract the various pools and handle
+		/// the picking based on the selected mode. If you plan on just picking from different pools yourself,
+		/// consider simply having multiple single object poolers.
+		/// </summary>
+		/// <param name="index"></param>
+		public virtual GameObject GetPooledGamObjectAtIndex(int index)
+		{
+			if ((index < 0) || (index >= Pool.Count))
+			{
+				return null;
+			}
+
+			_tempSearchedName = Pool[index].GameObjectToPool.name;
+			return GetPooledGameObjectOfType(_tempSearchedName);
+		}
+
 		/// <summary>
 		/// Gets an object of the specified name from the pool
+		/// Note that the whole point of this multiple object pooler is to abstract the various pools and handle
+		/// the picking based on the selected mode. If you plan on just picking from different pools yourself,
+		/// consider simply having multiple single object poolers.
 		/// </summary>
 		/// <returns>The pooled game object of type.</returns>
 		/// <param name="type">Type.</param>
-		protected virtual GameObject GetPooledGameObjectOfType(string searchedName)
+		public virtual GameObject GetPooledGameObjectOfType(string searchedName)
 		{
 			GameObject newObject = FindInactiveObject(searchedName,_objectPool.PooledGameObjects);
 
@@ -457,11 +500,7 @@ namespace MoreMountains.Tools
 
 				if (GetPoolObject(FindObject(searchedName,_objectPool.PooledGameObjects)).PoolCanExpand)
 				{
-					// we create a new game object of that type, we add it to the pool for further use, and return it.
-					GameObject newGameObject = (GameObject)Instantiate(searchedObject);
-					SceneManager.MoveGameObjectToScene(newGameObject, this.gameObject.scene);
-					_objectPool.PooledGameObjects.Add(newGameObject);
-					return newGameObject;
+					return AddOneObjectToThePool(searchedObject);
 				}
 			}
 

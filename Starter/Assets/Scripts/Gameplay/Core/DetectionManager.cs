@@ -23,7 +23,7 @@ namespace Nex
 
         void Initialize()
         {
-            var numOfPlayers = 2; // Here is where we can config 1P / 2P game.
+            var numOfPlayers = 1; // Here is where we can config 1P / 2P game.
 
             ConfigMdk(numOfPlayers);
 

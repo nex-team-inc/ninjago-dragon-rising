@@ -25,9 +25,9 @@ You only need to:
   - Detection & setup system.
     
 - **ExampleGameScene**
-  - How to use OnePlayerManager prefab to start body detection.
-  - How to use PreviewFrame to display camera view.
-  - How to use SetupController to manage setup states.
+  - How to use PlayersManager to start body detection.
+  - How to use PreviewsManager to display camera view.
+  - How to use SetupStateManager to manage setup states.
   - How to use Singletons.
   
 # What's Next

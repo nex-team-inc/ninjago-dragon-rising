@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Nex
 {
-    public class OnePlayerManager : MonoBehaviour
+    public class OnePlayerController : MonoBehaviour
     {
         [SerializeField] OnePlayerDetectionEngine detectionEngine = null!;
 

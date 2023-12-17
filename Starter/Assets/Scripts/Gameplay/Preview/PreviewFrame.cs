@@ -11,7 +11,7 @@ namespace Nex
 {
     public class PreviewFrame : MonoBehaviour
     {
-        enum DisplayMode
+        public enum DisplayMode
         {
             Full = 0,
             LeftHalf = 1,
@@ -25,25 +25,23 @@ namespace Nex
         CvDetectionManager cvDetectionManager = null!;
         BodyPoseDetectionManager bodyPoseDetectionManager = null!;
 
-        int playerIndex;
-        int numOfPlayers;
         Rect viewportFullRect;
         bool isViewportLocked;
         bool isFirstFrameReceived;
+        DisplayMode displayMode;
 
         #region Public
 
         public void Initialize(
-            int aPlayerIndex,
-            int aNumOfPlayers,
+            DisplayMode aDisplayMode,
             CvDetectionManager aCvDetectionManager,
             BodyPoseDetectionManager aBodyPoseDetectionManager
             )
         {
+            displayMode = aDisplayMode;
+
             cvDetectionManager = aCvDetectionManager;
             bodyPoseDetectionManager = aBodyPoseDetectionManager;
-            playerIndex = aPlayerIndex;
-            numOfPlayers = aNumOfPlayers;
 
             cvDetectionManager.captureCameraFrame += CvDetectionManagerOnCaptureCameraFrame;
             viewportFullRect = new Rect(0, 0, 1, 1);
@@ -78,9 +76,6 @@ namespace Nex
             rawImage.rectTransform.localScale = GameObjectUtils.LocalScaleForMirror(rawImage.rectTransform.localScale, frameInformation.shouldMirror);
             rawImage.texture = frameInformation.texture;
             var isMirrored = frameInformation.shouldMirror;
-
-            var displayMode = numOfPlayers == 1 ? DisplayMode.Full :
-                playerIndex == 0 ? DisplayMode.LeftHalf : DisplayMode.RightHalf;
 
             if (!isViewportLocked)
             {
@@ -128,6 +123,7 @@ namespace Nex
                 DisplayMode.Full => viewportFullRect,
                 DisplayMode.LeftHalf => isMirrored ? rightHalfRatioRect : leftHalfRatioRect,
                 DisplayMode.RightHalf => isMirrored ? leftHalfRatioRect : rightHalfRatioRect,
+                // ReSharper disable once UnreachableSwitchArmDueToIntegerAnalysis
                 DisplayMode.CenterHalf => centerHalfRect,
                 _ => throw new ArgumentOutOfRangeException()
             };

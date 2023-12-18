@@ -81,7 +81,23 @@ namespace Nex
                 }
                 case SetupStateType.Playing:
                 {
-                    setupText = "Ready";
+                    var text = "Ready\n";
+                    text += setupSummary.CurrentSetupIssue switch
+                    {
+                        SetupIssueType.None => $"",
+                        SetupIssueType.NoPose => $"(No Player)",
+                        SetupIssueType.ChestTooHigh => $"(Step back)",
+                        SetupIssueType.ChestTooLow => $"(Low position)",
+                        SetupIssueType.ChestTooLeft => $"(Move to center)",
+                        SetupIssueType.ChestTooRight => $"(Move to center)",
+                        SetupIssueType.TooFar => $"(Move closer)",
+                        SetupIssueType.TooClose => $"(Step back)",
+                        SetupIssueType.TooFarInProcessFrame => $"(Move closer)",
+                        SetupIssueType.TooCloseInProcessFrame => $"(Step back)",
+                        SetupIssueType.NotAtCenter => $"(Move to center)",
+                        _ => throw new ArgumentOutOfRangeException()
+                    };
+                    setupText = text;
                     break;
                 }
                 default:

@@ -30,8 +30,8 @@ namespace Nex
                 return;
             }
 
-            IsRaisingLeftHand = IsRaisingHand(pose.LeftWrist(), pose.LeftShoulder());
-            IsRaisingRightHand = IsRaisingHand(pose.RightWrist(), pose.RightShoulder());
+            IsRaisingLeftHand = IsRaisingHand(pose.LeftWrist(), pose.LeftElbow(), pose.LeftShoulder());
+            IsRaisingRightHand = IsRaisingHand(pose.RightWrist(), pose.RightElbow(), pose.RightShoulder());
         }
 
         public bool Check(SetupCheckType checkType)
@@ -48,14 +48,25 @@ namespace Nex
 
         #region Helper
 
-        bool IsRaisingHand(PoseNode wrist, PoseNode shoulder)
+        bool IsRaisingHand(PoseNode wrist, PoseNode elbow, PoseNode shoulder)
         {
-            if (!wrist.isDetected || !shoulder.isDetected)
+
+            if (!shoulder.isDetected)
             {
                 return false;
             }
 
-            return wrist.y > shoulder.y;
+            if (elbow.isDetected && elbow.y > shoulder.y)
+            {
+                return true;
+            }
+
+            if (wrist.isDetected && wrist.y > shoulder.y)
+            {
+                return true;
+            }
+
+            return false;
         }
 
         #endregion

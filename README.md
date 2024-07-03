@@ -43,7 +43,8 @@ git clone git@github.com:nex-team-inc/starter.git YOUR_REPO/
 cd YOUR_REPO/
 git lfs fetch --all
 git remote set-url origin YOUR_REPO_URL # Get the repo url from the github repo page.
-git push
+git push  # Push all git commits and history.
+git lfs push origin --all  # Push all lfs objects as well.
 ```
   
 ## What's Next

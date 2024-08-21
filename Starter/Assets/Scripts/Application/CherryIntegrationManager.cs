@@ -19,6 +19,7 @@ namespace Nex
         {
             base.Awake();
             SetupPreferGameStoppedBindings();
+            SetupKeyboardNavigation();
         }
 
 #if UNITY_EDITOR
@@ -99,6 +100,16 @@ namespace Nex
         static readonly AsyncReactiveProperty<bool> keyboardControlDisabledProperty = new(false);
 
         public bool IsKeyboardControlDisabled() => keyboardControlDisabledProperty.Value;
+
+        void SetupKeyboardNavigation()
+        {
+            keyboardControlDisabledProperty.DistinctUntilChanged().SkipWhile(disabled => !disabled).Subscribe(
+                disabled =>
+                {
+                    if (disabled) ViewManager.SuspendKeyboardNavigation();
+                    else ViewManager.ResumeKeyboardNavigation();
+                }, destroyCancellationToken);
+        }
 
         #endregion
 

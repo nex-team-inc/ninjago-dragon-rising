@@ -3,7 +3,7 @@ using Cysharp.Threading.Tasks;
 using MoreMountains.Feedbacks;
 using UnityEngine;
 
-namespace Nex
+namespace Nex.Utils
 {
     // ReSharper disable once InconsistentNaming
     public static class MMFeedbacksExtension

@@ -253,17 +253,20 @@ namespace Nex
 
          void UpdateTrackingPosition()
          {
-             var playerPositions = new List<Vector2>();
+             // XXX: this is a hack. MDK doesn't have a API to set the player tracking position. So we need to hack it
+             // by setting the element in the list during runtime.
+             while(cvDetectionManager.playerPositions.Count < numOfPlayers)
+             {
+                 cvDetectionManager.playerPositions.Add(Vector2.zero);
+             }
+
              for (var playerIndex = 0; playerIndex < numOfPlayers; playerIndex++)
              {
                  var ratioInPlayerArea = PlayerPositionDefinition.GetXRatioForPlayer(playerIndex, numOfPlayers);
                  var playAreaInNormalizedSpace = GetPlayAreaInNormalizedSpace();
                  var ratioInRawFrame = playAreaInNormalizedSpace.x + playAreaInNormalizedSpace.width * ratioInPlayerArea;
-                 playerPositions.Add(new Vector2(ratioInRawFrame, 0.5f));
+                 cvDetectionManager.playerPositions[playerIndex] = new Vector2(ratioInRawFrame, 0.5f);
              }
-
-             // XXX: Change it to the real working MDK API. Now it's not working during runtime.
-             cvDetectionManager.playerPositions = playerPositions;
          }
 
          #endregion

@@ -94,8 +94,8 @@ namespace Nex
                 {
                     SetupIssueType.TooClose,
                     SetupIssueType.TooFar,
-                    SetupIssueType.TooCloseInProcessFrame,
-                    SetupIssueType.TooFarInProcessFrame,
+                    // SetupIssueType.TooCloseInProcessFrame,
+                    // SetupIssueType.TooFarInProcessFrame,
                     SetupIssueType.ChestTooHigh,
                     SetupIssueType.ChestTooLow,
                     SetupIssueType.ChestTooLeft,
@@ -227,7 +227,8 @@ namespace Nex
                 var safeAreaY2 = frameSize.y - ppi * chestToBottomMinInches;
 
                 var playAreaInNormalizedSpace = playAreaController.GetPlayAreaInNormalizedSpace();
-                var playerCenterX = frameSize.x * (playAreaInNormalizedSpace.x + playAreaInNormalizedSpace.width * (playerIndex + 0.5f) / poseDetection.NumOfPlayers());
+                var xRatio = PlayerPositionDefinition.GetXRatioForPlayer(playerIndex, poseDetection.NumOfPlayers());
+                var playerCenterX = frameSize.x * (playAreaInNormalizedSpace.x + playAreaInNormalizedSpace.width * xRatio);
 
                 var chestStrictLooseHalfMarginPixels = chestStrictLooseHalfMarginInches * ppi;
                 var safeMaxXDistance = ppi * chestXToCenterMaxInches;

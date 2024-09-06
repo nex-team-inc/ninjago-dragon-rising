@@ -1,4 +1,3 @@
-using System;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using Jazz;
@@ -11,14 +10,6 @@ namespace Nex
 {
     public class PreviewFrame : MonoBehaviour
     {
-        public enum DisplayMode
-        {
-            Full = 0,
-            LeftHalf = 1,
-            RightHalf = 2,
-            CenterHalf = 3
-        }
-
         [SerializeField] RawImage rawImage = null!;
         [SerializeField] CanvasGroup canvasGroup = null!;
 
@@ -26,25 +17,32 @@ namespace Nex
         BodyPoseDetectionManager bodyPoseDetectionManager = null!;
 
         Rect viewportFullRect;
+        Rect previewRectInNormalizedSpace;
+        Rect previewRectInWorldSpace;
+
         bool isViewportLocked;
         bool isFirstFrameReceived;
-        DisplayMode displayMode;
+        int playerIndex;
+        int numOfPlayers;
 
         #region Public
 
         public void Initialize(
-            DisplayMode aDisplayMode,
+            int aPlayerIndex,
+            int aNumOfPlayers,
             CvDetectionManager aCvDetectionManager,
             BodyPoseDetectionManager aBodyPoseDetectionManager
-            )
+        )
         {
-            displayMode = aDisplayMode;
+            playerIndex = aPlayerIndex;
+            numOfPlayers = aNumOfPlayers;
 
             cvDetectionManager = aCvDetectionManager;
             bodyPoseDetectionManager = aBodyPoseDetectionManager;
 
             cvDetectionManager.captureCameraFrame += CvDetectionManagerOnCaptureCameraFrame;
             viewportFullRect = new Rect(0, 0, 1, 1);
+            previewRectInNormalizedSpace = new Rect(0, 0, 1, 1);
 
             canvasGroup.alpha = 0;
         }
@@ -60,6 +58,16 @@ namespace Nex
             cvDetectionManager.dynamicDewarpConfig.continuousAutoTiltMode = autoTiltValue;
         }
 
+        public Rect PreviewRectInNormalizedSpace()
+        {
+            return previewRectInNormalizedSpace;
+        }
+
+        public Rect PreviewRectInWorldSpace()
+        {
+            return previewRectInWorldSpace;
+        }
+
         #endregion
 
         #region Event
@@ -73,7 +81,6 @@ namespace Nex
                 canvasGroup.DOFade(1f, 0.5f).WithCancellation(this.GetCancellationTokenOnDestroy());
             }
 
-            rawImage.rectTransform.localScale = GameObjectUtils.LocalScaleForMirror(rawImage.rectTransform.localScale, frameInformation.shouldMirror);
             rawImage.texture = frameInformation.texture;
             var isMirrored = frameInformation.shouldMirror;
 
@@ -99,34 +106,39 @@ namespace Nex
                 }
             }
 
-            var centerHalfRect = new Rect(
-                viewportFullRect.x + viewportFullRect.width * 0.25f,
-                viewportFullRect.y,
-                viewportFullRect.width * 0.5f,
-                viewportFullRect.height);
+            var playerCenterRatio = PlayerPositionDefinition.GetXRatioForPlayer(playerIndex, numOfPlayers);
+            var playerWidthRatio = PlayerPositionDefinition.PlayerPreviewWidthRatio(numOfPlayers);
 
-            var leftHalfRatioRect = new Rect(
-                viewportFullRect.x,
-                viewportFullRect.y,
-                viewportFullRect.width * 0.5f,
-                viewportFullRect.height);
+            previewRectInNormalizedSpace = PlayerRect(viewportFullRect, playerCenterRatio, playerWidthRatio);
 
-            var rightHalfRatioRect = new Rect(
-                viewportFullRect.x + viewportFullRect.width * 0.5f,
-                viewportFullRect.y,
-                viewportFullRect.width * 0.5f,
-                viewportFullRect.height);
+            var rectTransform = GetComponent<RectTransform>();
+            var corners = new Vector3[4];
+            rectTransform.GetWorldCorners(corners);
+            previewRectInWorldSpace = new Rect(corners[0], corners[2] - corners[0]);
 
-            rawImage.uvRect = displayMode switch
+            rawImage.uvRect = FlipRectIfNeeded(previewRectInNormalizedSpace, viewportFullRect.x + viewportFullRect.width * 0.5f, isMirrored);
+        }
+
+        Rect PlayerRect(Rect fullRect, float playerRatio, float playerWidthRatio)
+        {
+
+            return new Rect(
+                fullRect.x + fullRect.width * (playerRatio - playerWidthRatio * 0.5f),
+                fullRect.y,
+                fullRect.width * playerWidthRatio,
+                fullRect.height
+            );
+        }
+
+        static Rect FlipRectIfNeeded(Rect rect, float centerX, bool flip)
+        {
+            if (flip)
             {
-                // ReSharper disable once UnreachableSwitchArmDueToIntegerAnalysis
-                DisplayMode.Full => viewportFullRect,
-                DisplayMode.LeftHalf => isMirrored ? rightHalfRatioRect : leftHalfRatioRect,
-                DisplayMode.RightHalf => isMirrored ? leftHalfRatioRect : rightHalfRatioRect,
-                // ReSharper disable once UnreachableSwitchArmDueToIntegerAnalysis
-                DisplayMode.CenterHalf => centerHalfRect,
-                _ => throw new ArgumentOutOfRangeException()
-            };
+                rect.x = 2 * centerX - rect.x;
+                rect.width = -rect.width;
+            }
+
+            return rect;
         }
 
         #endregion

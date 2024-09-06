@@ -23,14 +23,11 @@ namespace Nex
             // This only works for showing preview for individual players.
             for (var playerIndex = 0; playerIndex < aNumOfPlayers; playerIndex++)
             {
-                var displayMode = aNumOfPlayers == 1 ? PreviewFrame.DisplayMode.Full :
-                    playerIndex == 0 ? PreviewFrame.DisplayMode.LeftHalf :
-                    PreviewFrame.DisplayMode.RightHalf;
                 var previewContainer = GetPreviewContainer(playerIndex, aNumOfPlayers);
                 previewContainer.SetActive(true);
 
                 var previewFrame = Instantiate(previewFramePrefab, previewContainer.transform);
-                previewFrame.Initialize(displayMode, aCvDetectionManager, aBodyPoseDetectionManager);
+                previewFrame.Initialize(playerIndex, aNumOfPlayers, aCvDetectionManager, aBodyPoseDetectionManager);
             }
         }
 

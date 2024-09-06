@@ -23,12 +23,6 @@ namespace Nex
         NotAtCenter,
     }
 
-    public enum SetupCenterStrategy
-    {
-        DisplayFrame = 0,
-        ProcessFrame = 1
-    }
-
     public struct SetupIssueInfo
     {
         // Using strict/loose threshold to avoid jumping warnings.
@@ -66,14 +60,11 @@ namespace Nex
         [SerializeField] public float processFrameHeightMinInches = 40;
         [SerializeField] public float processFrameHeightMaxInches = 90;
 
-        [SerializeField] public SetupCenterStrategy centerStrategy;
-
         float ppi;
         float distanceRatio;
         float distanceRatioInProcessFrame;
         SetupIssueType currentIssue;
 
-        bool initialized;
         bool hasEnoughData;
         float startDetectionTime;
 
@@ -83,6 +74,8 @@ namespace Nex
 
         List<SetupIssueType> issueTypesSortedByDisplayPriority;
 
+        PlayAreaController playAreaController = null!;
+
         public event UnityAction<SetupDetection> captureDetection;
 
         // MARK - Public
@@ -90,8 +83,11 @@ namespace Nex
         // MARK - Life Cycle
 
         public void Initialize(
+            PlayAreaController aPlayAreaController,
             List<SetupIssueType> aIssueTypesSortedByDisplayPriority = null)
         {
+            playAreaController = aPlayAreaController;
+
             if (aIssueTypesSortedByDisplayPriority == null)
             {
                 issueTypesSortedByDisplayPriority = new List<SetupIssueType>
@@ -110,16 +106,6 @@ namespace Nex
             }
 
             ResetAllStates();
-
-            initialized = true;
-        }
-
-        void Start()
-        {
-            if (!initialized)
-            {
-                Initialize();
-            }
 
             bodyDetector.captureBodyPoseDetection += BodyDetectorOnCapturePoseDetectionWithoutPostProcess;
         }
@@ -240,13 +226,8 @@ namespace Nex
                 var safeAreaY1 = ppi * chestToTopMinInches;
                 var safeAreaY2 = frameSize.y - ppi * chestToBottomMinInches;
 
-                var playerCenterX = centerStrategy switch
-                {
-                    SetupCenterStrategy.DisplayFrame => frameSize.x * (playerIndex + 0.5f) / poseDetection.NumOfPlayers(),
-                    SetupCenterStrategy.ProcessFrame => processFrameCrop.x +
-                                                        processFrameCrop.width * (playerIndex + 0.5f) / poseDetection.NumOfPlayers(),
-                    _ => throw new ArgumentOutOfRangeException()
-                } ;
+                var playAreaInNormalizedSpace = playAreaController.GetPlayAreaInNormalizedSpace();
+                var playerCenterX = frameSize.x * (playAreaInNormalizedSpace.x + playAreaInNormalizedSpace.width * (playerIndex + 0.5f) / poseDetection.NumOfPlayers());
 
                 var chestStrictLooseHalfMarginPixels = chestStrictLooseHalfMarginInches * ppi;
                 var safeMaxXDistance = ppi * chestXToCenterMaxInches;

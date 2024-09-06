@@ -13,23 +13,18 @@ namespace Nex
         [SerializeField] PreviewsManager previewsManager = null!;
         [SerializeField] SetupStateManager setupStateManager = null!;
         [SerializeField] SetupUI setupUI = null!;
+        [SerializeField] PlayAreaController playAreaController = null!;
 
         #region Life Cycle
 
-        void Awake()
+        public void Initialize(int numOfPlayers)
         {
-            Initialize();
-        }
-
-        void Initialize()
-        {
-            var numOfPlayers = 1; // Here is where we can config 1P / 2P game.
-
             ConfigMdk(numOfPlayers);
 
+            playAreaController.Initialize(numOfPlayers, new PlayAreaController.Config(), cvDetectionManager, bodyPoseDetectionManager);
             playersManager.Initialize(numOfPlayers, bodyPoseDetectionManager);
-            previewsManager.Initialize(numOfPlayers, cvDetectionManager, bodyPoseDetectionManager);
-            setupStateManager.Initialize(numOfPlayers, cvDetectionManager, bodyPoseDetectionManager);
+            previewsManager.Initialize(numOfPlayers, cvDetectionManager, bodyPoseDetectionManager, playAreaController);
+            setupStateManager.Initialize(numOfPlayers, cvDetectionManager, bodyPoseDetectionManager, playAreaController);
             setupUI.Initialize(numOfPlayers, setupStateManager);
 
             setupStateManager.SetTrackingEnabled(true);
@@ -38,7 +33,6 @@ namespace Nex
         void ConfigMdk(int numOfPlayers)
         {
             cvDetectionManager.numOfPlayers = numOfPlayers;
-            CvDetectionManager.gameViewportController.SetUseDetectionViewportForPlayerTracking(true);
         }
 
         #endregion

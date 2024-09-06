@@ -13,6 +13,7 @@ namespace Nex
 
         CvDetectionManager cvDetectionManager = null!;
         BodyPoseDetectionManager bodyPoseDetectionManager = null!;
+        PlayAreaController playAreaController = null!;
         readonly List<OnePlayerSetupStateTracker> playerTrackers = new();
         readonly List<PlayerSetupState> playerStates = new();
 
@@ -25,12 +26,14 @@ namespace Nex
         public void Initialize(
             int aNumOfPlayers,
             CvDetectionManager aCvDetectionManager,
-            BodyPoseDetectionManager aBodyPoseDetectionManager
+            BodyPoseDetectionManager aBodyPoseDetectionManager,
+            PlayAreaController aPlayAreaController
         )
         {
             numOfPlayers = aNumOfPlayers;
             cvDetectionManager = aCvDetectionManager;
             bodyPoseDetectionManager = aBodyPoseDetectionManager;
+            playAreaController = aPlayAreaController;
         }
 
         public void SetTrackingEnabled(bool shouldTrack)
@@ -76,7 +79,7 @@ namespace Nex
             for (var playerIndex = 0; playerIndex < numOfPlayers; playerIndex++)
             {
                 var tracker = Instantiate(onePlayerSetupStateTrackerPrefab, transform);
-                tracker.Initialize(playerIndex, bodyPoseDetectionManager);
+                tracker.Initialize(playerIndex, bodyPoseDetectionManager, playAreaController);
                 playerTrackers.Add(tracker);
 
                 playerStates.Add(new PlayerSetupState

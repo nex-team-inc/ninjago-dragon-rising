@@ -2,6 +2,7 @@
 
 using Jazz;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Nex
 {
@@ -17,7 +18,8 @@ namespace Nex
         public void Initialize(
             int aNumOfPlayers,
             CvDetectionManager aCvDetectionManager,
-            BodyPoseDetectionManager aBodyPoseDetectionManager
+            BodyPoseDetectionManager aBodyPoseDetectionManager,
+            PlayAreaController playAreaController
         )
         {
             // This only works for showing preview for individual players.
@@ -27,7 +29,7 @@ namespace Nex
                 previewContainer.SetActive(true);
 
                 var previewFrame = Instantiate(previewFramePrefab, previewContainer.transform);
-                previewFrame.Initialize(playerIndex, aNumOfPlayers, aCvDetectionManager, aBodyPoseDetectionManager);
+                previewFrame.Initialize(playerIndex, aNumOfPlayers, aCvDetectionManager, aBodyPoseDetectionManager, playAreaController);
             }
         }
 

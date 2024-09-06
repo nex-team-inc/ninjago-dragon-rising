@@ -8,7 +8,7 @@ using UnityEngine.UI;
 
 namespace Nex
 {
-    public class PreviewFrame : MonoBehaviour
+    public class PlayerFocusPreviewFrame : MonoBehaviour
     {
         [SerializeField] RawImage rawImage = null!;
         [SerializeField] CanvasGroup canvasGroup = null!;

@@ -129,7 +129,8 @@ namespace Nex
 
         public void Initialize(
             int aPlayerIndex,
-            BodyPoseDetectionManager aBodyPoseDetectionManager
+            BodyPoseDetectionManager aBodyPoseDetectionManager,
+            PlayAreaController playAreaController
         )
         {
             playerIndex = aPlayerIndex;
@@ -137,7 +138,7 @@ namespace Nex
             setupHistory = new History<SetupHistoryItem>(historyDurationInSeconds);
 
             setupDetector = Instantiate(setupDetectorPrefab, transform);
-            InitializeSetupDetector(setupDetector, aBodyPoseDetectionManager, playerIndex);
+            InitializeSetupDetector(setupDetector, aBodyPoseDetectionManager, playerIndex, playAreaController);
             setupDetector.captureDetection += SetupDetectorOnCaptureDetection;
             UpdateSetupDetectorConfigBasedOnState(curState);
 
@@ -157,6 +158,7 @@ namespace Nex
             SetupDetector setupDetector,
             BodyPoseDetectionManager bodyPoseDetectionManager,
             int playerIndex,
+            PlayAreaController playAreaController,
             float chestStrictLooseHalfMarginInches = 1,
             float chestToTopMinInches = 12,
             float chestToBottomMinInches = 18,
@@ -191,8 +193,7 @@ namespace Nex
             setupDetector.frameHeightMaxInches = frameHeightMaxInches;
             setupDetector.processFrameHeightMinInches = processFrameHeightMinInches;
             setupDetector.processFrameHeightMaxInches = processFrameHeightMaxInches;
-            setupDetector.centerStrategy = SetupCenterStrategy.ProcessFrame;
-            setupDetector.Initialize();
+            setupDetector.Initialize(playAreaController);
         }
 
         void UpdateSetupDetectorConfigBasedOnState(SetupStateType state)

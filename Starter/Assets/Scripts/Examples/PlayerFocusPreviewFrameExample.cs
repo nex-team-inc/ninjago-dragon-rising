@@ -1,4 +1,5 @@
 using Jazz;
+using Nex.SesameDance;
 using UnityEngine;
 
 namespace Nex
@@ -8,12 +9,16 @@ namespace Nex
         [SerializeField] PlayerFocusPreviewFrame previewFrame = null!;
         [SerializeField] BodyPoseDetectionManager bodyPoseDetectionManager = null!;
         [SerializeField] CvDetectionManager cvDetectionManager = null!;
+        [SerializeField] OnePlayerPreviewPoseEngine onePlayerPreviewPoseEngine = null!;
         [SerializeField] int numOfPlayers = 1;
 
         void Start()
         {
             cvDetectionManager.numOfPlayers = numOfPlayers;
             previewFrame.Initialize(0, numOfPlayers, cvDetectionManager, bodyPoseDetectionManager);
+            onePlayerPreviewPoseEngine.Initialize(0, numOfPlayers, bodyPoseDetectionManager, previewFrame);
+
+            onePlayerPreviewPoseEngine.gameObject.SetActive(true);
         }
     }
 }

@@ -1,9 +1,8 @@
-using Jazz;
 using UnityEngine;
 
 namespace Nex
 {
-    public class GameExample : MonoBehaviour
+    public class NonARGameExample : MonoBehaviour
     {
         [SerializeField] DetectionManager detectionManager = null!;
         [SerializeField] int numOfPlayers = 1;

@@ -2,13 +2,12 @@
 
 using Jazz;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace Nex
 {
     public class PreviewsManager : MonoBehaviour
     {
-        [SerializeField] PreviewFrame previewFramePrefab = null!;
+        [SerializeField] PlayerSetupPreviewFrame previewFramePrefab = null!;
         [SerializeField] GameObject fullFramePreviewContainer = null!;
         [SerializeField] GameObject p1PreviewContainer = null!;
         [SerializeField] GameObject p2PreviewContainer = null!;

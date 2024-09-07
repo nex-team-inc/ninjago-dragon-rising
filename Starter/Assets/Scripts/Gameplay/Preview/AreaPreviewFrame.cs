@@ -7,35 +7,24 @@ using UnityEngine;
 
 namespace Nex
 {
-    public class PreviewFrame : PreviewFrameBase
+    public class AreaPreviewFrame : PreviewFrameBase
     {
         CvDetectionManager cvDetectionManager = null!;
-        // ReSharper disable once NotAccessedField.Local
-        BodyPoseDetectionManager bodyPoseDetectionManager = null!;
         PlayAreaController playAreaController = null!;
 
         Rect playAreaRectInNormalizedSpace;
         Rect previewRectInNormalizedSpace;
 
         bool isFirstFrameReceived;
-        int playerIndex;
-        int numOfPlayers;
 
         #region Public
 
         public void Initialize(
-            int aPlayerIndex,
-            int aNumOfPlayers,
             CvDetectionManager aCvDetectionManager,
-            BodyPoseDetectionManager aBodyPoseDetectionManager,
             PlayAreaController aPlayAreaController
         )
         {
-            playerIndex = aPlayerIndex;
-            numOfPlayers = aNumOfPlayers;
-
             cvDetectionManager = aCvDetectionManager;
-            bodyPoseDetectionManager = aBodyPoseDetectionManager;
             playAreaController = aPlayAreaController;
 
             cvDetectionManager.captureCameraFrame += CvDetectionManagerOnCaptureCameraFrame;
@@ -82,21 +71,21 @@ namespace Nex
 
             playAreaRectInNormalizedSpace = playAreaController.GetPlayAreaInNormalizedSpace();
 
-            var playerCenterXRatio = PlayerPositionDefinition.GetXRatioForPlayer(playerIndex, numOfPlayers);
-            previewRectInNormalizedSpace = PlayerRect(playAreaRectInNormalizedSpace, playerCenterXRatio, previewWidthRatio);
+            previewRectInNormalizedSpace = CenterRect(playAreaRectInNormalizedSpace, previewWidthRatio);
 
             rawImage.uvRect = FlipRectIfNeeded(previewRectInNormalizedSpace, isMirrored);
         }
 
-        Rect PlayerRect(Rect fullRect, float playerXRatio, float previewWidthRatio)
+        Rect CenterRect(Rect fullRect, float previewWidthRatio)
         {
             return new Rect(
-                fullRect.x + fullRect.width * (playerXRatio - previewWidthRatio * 0.5f),
+                fullRect.x + fullRect.width * (0.5f - previewWidthRatio * 0.5f),
                 fullRect.y,
                 fullRect.width * previewWidthRatio,
                 fullRect.height
             );
         }
+
 
         #endregion
     }

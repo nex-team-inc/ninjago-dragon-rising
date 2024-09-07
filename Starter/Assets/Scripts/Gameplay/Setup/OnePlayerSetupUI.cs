@@ -48,7 +48,7 @@ namespace Nex
 
             var setupSummary = updatedItem.setupSummary;
             string setupText;
-            switch (setupSummary.SetupStateType)
+            switch (setupSummary.setupStateType)
             {
                 case SetupStateType.Preparing:
                 {
@@ -57,9 +57,9 @@ namespace Nex
                 }
                 case SetupStateType.WaitingForGoodPlayerPosition:
                 {
-                    setupText = setupSummary.CurrentSetupIssue switch
+                    setupText = setupSummary.currentSetupIssue switch
                     {
-                        SetupIssueType.None => $"Good Position: {setupSummary.GoodPositionProgress:P0}",
+                        SetupIssueType.None => $"Good Position: {setupSummary.goodPositionProgress:P0}",
                         SetupIssueType.NoPose => $"No Player",
                         SetupIssueType.ChestTooHigh => $"Step back",
                         SetupIssueType.ChestTooLow => $"Low position",
@@ -76,13 +76,13 @@ namespace Nex
                 }
                 case SetupStateType.WaitingForRaisingHand:
                 {
-                    setupText = $"Raise Hand: {setupSummary.RaiseHandProgress:P0}";
+                    setupText = $"Raise Hand: {setupSummary.raiseHandProgress:P0}";
                     break;
                 }
                 case SetupStateType.Playing:
                 {
                     var text = "Ready\n";
-                    text += setupSummary.CurrentSetupIssue switch
+                    text += setupSummary.currentSetupIssue switch
                     {
                         SetupIssueType.None => $"",
                         SetupIssueType.NoPose => $"(No Player)",

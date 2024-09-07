@@ -163,9 +163,9 @@ namespace Nex
 
         void TrackerOnUpdated(int playerIndex, SetupSummary summary)
         {
-            if (playerStates[playerIndex].setupStateType != summary.SetupStateType)
+            if (playerStates[playerIndex].setupStateType != summary.setupStateType)
             {
-                playerStates[playerIndex].setupStateType = summary.SetupStateType;
+                playerStates[playerIndex].setupStateType = summary.setupStateType;
 
                 HandlePlayerStatesChange();
             }

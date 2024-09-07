@@ -15,9 +15,9 @@ namespace Nex
 
     public struct SetupHistoryItem
     {
-        public SetupIssueType SetupIssue;
-        public bool IsRaisingLeftHand;
-        public bool IsRaisingRightHand;
+        public SetupIssueType setupIssue;
+        public bool isRaisingLeftHand;
+        public bool isRaisingRightHand;
 
         #region Public
 
@@ -25,21 +25,21 @@ namespace Nex
         {
             if (pose == null)
             {
-                IsRaisingLeftHand = false;
-                IsRaisingRightHand = false;
+                isRaisingLeftHand = false;
+                isRaisingRightHand = false;
                 return;
             }
 
-            IsRaisingLeftHand = IsRaisingHand(pose.LeftWrist(), pose.LeftElbow(), pose.LeftShoulder());
-            IsRaisingRightHand = IsRaisingHand(pose.RightWrist(), pose.RightElbow(), pose.RightShoulder());
+            isRaisingLeftHand = IsRaisingHand(pose.LeftWrist(), pose.LeftElbow(), pose.LeftShoulder());
+            isRaisingRightHand = IsRaisingHand(pose.RightWrist(), pose.RightElbow(), pose.RightShoulder());
         }
 
         public bool Check(SetupCheckType checkType)
         {
             return checkType switch
             {
-                SetupCheckType.GoodPosition => SetupIssue == SetupIssueType.None,
-                SetupCheckType.RaisingHand => IsRaisingLeftHand || IsRaisingRightHand,
+                SetupCheckType.GoodPosition => setupIssue == SetupIssueType.None,
+                SetupCheckType.RaisingHand => isRaisingLeftHand || isRaisingRightHand,
                 _ => throw new ArgumentOutOfRangeException(nameof(checkType), checkType, null)
             };
         }
@@ -82,20 +82,20 @@ namespace Nex
 
     public struct SetupSummary
     {
-        public SetupStateType SetupStateType;
-        public SetupIssueType CurrentSetupIssue;
-        public bool IsStateChanged;
+        public SetupStateType setupStateType;
+        public SetupIssueType currentSetupIssue;
+        public bool isStateChanged;
 
-        public float GoodPositionProgress;
-        public float RaiseHandProgress;
-        public float NoPlayerDuration;
+        public float goodPositionProgress;
+        public float raiseHandProgress;
+        public float noPlayerDuration;
 
         public static SetupSummary CreateDummy()
         {
             return new SetupSummary
             {
-                SetupStateType = SetupStateType.Preparing,
-                CurrentSetupIssue = SetupIssueType.None,
+                setupStateType = SetupStateType.Preparing,
+                currentSetupIssue = SetupIssueType.None,
             };
         }
     }
@@ -219,7 +219,7 @@ namespace Nex
 
             var setupState = new SetupHistoryItem
             {
-                SetupIssue = detection.currentIssue
+                setupIssue = detection.currentIssue
             };
 
             setupState.UpdateStateWithPose(lastPose);
@@ -229,7 +229,7 @@ namespace Nex
 
             var summary = new SetupSummary
             {
-                CurrentSetupIssue = detection.currentIssue
+                currentSetupIssue = detection.currentIssue
             };
 
             if (detection.hasEnoughData && detection.currentIssue != SetupIssueType.NoPose)
@@ -243,7 +243,7 @@ namespace Nex
                 {
                     if (detection.hasEnoughData)
                     {
-                        summary.IsStateChanged = true;
+                        summary.isStateChanged = true;
                         ChangeState(SetupStateType.WaitingForGoodPlayerPosition);
                     }
 
@@ -253,10 +253,10 @@ namespace Nex
                 {
                     // Check forward: good pose.
                     var goodPositionRatio = CheckRatio(SetupCheckType.GoodPosition, state0GoodPositionCheckDuration);
-                    summary.GoodPositionProgress = goodPositionRatio / state0GoodPositionRatioThreshold;
+                    summary.goodPositionProgress = goodPositionRatio / state0GoodPositionRatioThreshold;
                     if (goodPositionRatio > state0GoodPositionRatioThreshold)
                     {
-                        summary.IsStateChanged = true;
+                        summary.isStateChanged = true;
                         ChangeState(SetupStateType.WaitingForRaisingHand);
                     }
 
@@ -266,10 +266,10 @@ namespace Nex
                 {
                     // Check forward: raise hand.
                     var raiseHandRatio = CheckRatio(SetupCheckType.RaisingHand, state1RaiseHandCheckDuration, lastStateStartTime);
-                    summary.RaiseHandProgress = raiseHandRatio / state1RaiseHandRatioThreshold;
+                    summary.raiseHandProgress = raiseHandRatio / state1RaiseHandRatioThreshold;
                     if (raiseHandRatio > state1RaiseHandRatioThreshold)
                     {
-                        summary.IsStateChanged = true;
+                        summary.isStateChanged = true;
                         ChangeState(SetupStateType.Playing);
                     }
                     else
@@ -278,7 +278,7 @@ namespace Nex
                         var goodPositionRatio = CheckRatio(SetupCheckType.GoodPosition, 1);
                         if (goodPositionRatio < state1GoodPositionRatioThreshold)
                         {
-                            summary.IsStateChanged = true;
+                            summary.isStateChanged = true;
                             ChangeState(SetupStateType.WaitingForGoodPlayerPosition);
                         }
                     }
@@ -288,10 +288,10 @@ namespace Nex
                 case SetupStateType.Playing:
                     // Check backward: no pose.
                     var noPlayerDuration = Time.fixedTime - Math.Max(lastStateStartTime, lastPlayerIsSeenTimestamp);
-                    summary.NoPlayerDuration = noPlayerDuration;
+                    summary.noPlayerDuration = noPlayerDuration;
                     if (noPlayerDuration > state2NoPlayerDurationThreshold)
                     {
-                        summary.IsStateChanged = true;
+                        summary.isStateChanged = true;
                         ChangeState(SetupStateType.WaitingForGoodPlayerPosition);
                     }
                     break;
@@ -299,7 +299,7 @@ namespace Nex
                     throw new ArgumentOutOfRangeException();
             }
 
-            summary.SetupStateType = curState;
+            summary.setupStateType = curState;
             Updated?.Invoke(summary);
         }
 

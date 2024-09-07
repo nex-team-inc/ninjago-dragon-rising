@@ -132,6 +132,11 @@ namespace Nex
                  var marginTop = Math.Max(0, y1);
                  var marginBottom = Math.Max(0, h - y2);
 
+                 if (ShouldAnchorXAtCenter())
+                 {
+                     marginRight = marginLeft = Math.Min(marginRight, marginLeft);
+                 }
+
                  // Find the min margins (which defines the max bounding boxes)
                  // For understanding: if all margins are 0, it means we want to use the full frame as ROI.
                  minMarginLeft = Math.Min(minMarginLeft, marginLeft);
@@ -230,6 +235,11 @@ namespace Nex
 
              PlayAreaInAspectNormalizedSpace = ComputePlayArea();
              UpdateTrackingPosition();
+         }
+
+         bool ShouldAnchorXAtCenter()
+         {
+             return true;
          }
 
          void UpdateTrackingPosition()

@@ -1,7 +1,6 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 using Jazz;
 using UnityEngine;
 using Rect = UnityEngine.Rect;
@@ -10,9 +9,9 @@ namespace Nex
 {
      public class PlayAreaController : MonoBehaviour
      {
+         [Serializable]
          public class Config
          {
-             public PlayerTrackingStrategy playerTrackingStrategy = PlayerTrackingStrategy.TrackYAndScale;
              public float smoothTimeWindow = 1f;
              public float leftMarginInInches = 32;
              public float rightMarginInInches = 32;
@@ -22,19 +21,13 @@ namespace Nex
              public float aspectRatio = 16f / 9f;
          }
 
-         public enum PlayerTrackingStrategy
-         {
-             TrackYAndScale,
-             TrackXYAndScale
-         }
-
          // Controllers
+         [SerializeField] Config config = null!;
          CvDetectionManager cvDetectionManager = null!;
          BodyPoseDetectionManager bodyPoseDetectionManager = null!;
 
          // Configs
          int numOfPlayers;
-         Config config = null!;
 
          // States
          readonly Vector2 poseSpaceSize = DetectionUtils.AspectNormalizedFrameSize;
@@ -49,13 +42,11 @@ namespace Nex
 
          public void Initialize(
              int aNumOfPlayers,
-             Config aConfig,
              CvDetectionManager aCvDetectionManager,
              BodyPoseDetectionManager aBodyPoseDetectionManager
              )
          {
              numOfPlayers = aNumOfPlayers;
-             config = aConfig;
              cvDetectionManager = aCvDetectionManager;
              bodyPoseDetectionManager = aBodyPoseDetectionManager;
              minMarginLeftHistory = new FloatHistory(config.smoothTimeWindow);
@@ -140,11 +131,6 @@ namespace Nex
                  var marginRight = Math.Max(0, w - x2);
                  var marginTop = Math.Max(0, y1);
                  var marginBottom = Math.Max(0, h - y2);
-
-                 if (ShouldAnchorXAtCenter())
-                 {
-                     marginRight = marginLeft = Math.Min(marginRight, marginLeft);
-                 }
 
                  // Find the min margins (which defines the max bounding boxes)
                  // For understanding: if all margins are 0, it means we want to use the full frame as ROI.
@@ -234,11 +220,6 @@ namespace Nex
                  idealCropWidth,
                  idealCropHeight
              );
-         }
-
-         bool ShouldAnchorXAtCenter()
-         {
-             return config.playerTrackingStrategy == PlayerTrackingStrategy.TrackYAndScale;
          }
 
          void HandleNewDetection(BodyPoseDetectionResult result)

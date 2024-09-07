@@ -21,7 +21,7 @@ namespace Nex
         {
             ConfigMdk(numOfPlayers);
 
-            playAreaController.Initialize(numOfPlayers, new PlayAreaController.Config(), cvDetectionManager, bodyPoseDetectionManager);
+            playAreaController.Initialize(numOfPlayers, cvDetectionManager, bodyPoseDetectionManager);
             playersManager.Initialize(numOfPlayers, bodyPoseDetectionManager);
             previewsManager.Initialize(numOfPlayers, cvDetectionManager, bodyPoseDetectionManager, playAreaController);
             setupStateManager.Initialize(numOfPlayers, cvDetectionManager, bodyPoseDetectionManager, playAreaController);

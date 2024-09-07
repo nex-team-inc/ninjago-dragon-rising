@@ -38,7 +38,6 @@ namespace Nex
         readonly Dictionary<Transform, float> lastDetectionTimeByTarget = new();
         BodyPoseDetectionManager bodyPoseDetectionManager = null!;
         int playerIndex;
-        readonly Vector2 normalizedFrameSize = new(16f / 9f, 1f);
         bool isSmoothHelperInitialized;
         readonly FloatHistory ppiHistory = new(3);
 
@@ -226,8 +225,9 @@ namespace Nex
 
         Vector3 DetectionSpaceToReferenceSpace(Vector2 vec)
         {
-            var xRate = (vec.x - normalizedFrameSize.x * 0.5f) / normalizedFrameSize.x;
-            var yRate = (vec.y - normalizedFrameSize.y * 0.5f) / normalizedFrameSize.y;
+            var aspectNormalizedFrameSize = DetectionUtils.AspectNormalizedFrameSize;
+            var xRate = (vec.x - aspectNormalizedFrameSize.x * 0.5f) / aspectNormalizedFrameSize.x;
+            var yRate = (vec.y - aspectNormalizedFrameSize.y * 0.5f) / aspectNormalizedFrameSize.y;
             var newX = xRate * referenceTransform.rect.width + referenceTransform.localPosition.x;
             var newY = yRate * referenceTransform.rect.height + referenceTransform.localPosition.y;
             return new Vector3(newX, newY, 0f) + referenceTransform.localPosition;

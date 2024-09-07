@@ -1,29 +1,61 @@
+using System;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using Jazz;
 using UnityEngine;
-using UnityEngine.UI;
 
 #nullable enable
 
 namespace Nex
 {
-    public class PlayerFocusPreviewFrame : MonoBehaviour
+    public class PlayerFocusPreviewFrame : PreviewFrameBase
     {
-        [SerializeField] RawImage rawImage = null!;
-        [SerializeField] CanvasGroup canvasGroup = null!;
+        [Serializable]
+        public struct Margins
+        {
+            public float top;
+            public float bottom;
+            public float left;
+            public float right;
+
+            public Margins(float top, float bottom, float left, float right)
+            {
+                this.top = top;
+                this.bottom = bottom;
+                this.left = left;
+                this.right = right;
+            }
+        }
+
+        [SerializeField] Margins marginsInInches = new(24, 34, 32, 32);
+        [SerializeField] float oneEuroFilterMinCutoff = 1;
+        [SerializeField] float oneEuroFilterBeta = 2;
+
+        [Header("X Logic")]
+        [SerializeField] bool followX = true;
+
+        [Header("Y Logic")]
+        [SerializeField] bool followY = true;
+        [SerializeField] bool useStableChestY = true;
+        [SerializeField] float yChangeSigmaInInches = 1;
 
         CvDetectionManager cvDetectionManager = null!;
         BodyPoseDetectionManager bodyPoseDetectionManager = null!;
-        PlayAreaController playAreaController = null!;
 
-        Rect viewportFullRect;
         Rect previewRectInNormalizedSpace;
-        Rect previewRectInWorldSpace;
 
         bool isFirstFrameReceived;
         int playerIndex;
+
+        // ReSharper disable once NotAccessedField.Local
         int numOfPlayers;
+
+        readonly FloatHistory ppiHistory = new(2);
+
+        // Chest Smoothing
+        ComposedFilter2D<OneEuroFilter> chestFilter = null!;
+        readonly WeightedFloatHistory chestYHistory = new(2);
+        float lastRawChestY;
 
         #region Public
 
@@ -31,8 +63,7 @@ namespace Nex
             int aPlayerIndex,
             int aNumOfPlayers,
             CvDetectionManager aCvDetectionManager,
-            BodyPoseDetectionManager aBodyPoseDetectionManager,
-            PlayAreaController aPlayAreaController
+            BodyPoseDetectionManager aBodyPoseDetectionManager
         )
         {
             playerIndex = aPlayerIndex;
@@ -40,23 +71,33 @@ namespace Nex
 
             cvDetectionManager = aCvDetectionManager;
             bodyPoseDetectionManager = aBodyPoseDetectionManager;
-            playAreaController = aPlayAreaController;
 
             cvDetectionManager.captureCameraFrame += CvDetectionManagerOnCaptureCameraFrame;
-            viewportFullRect = new Rect(0, 0, 1, 1);
+            bodyPoseDetectionManager.captureAspectNormalizedDetection += BodyPoseDetectionManagerOnCaptureAspectNormalizedDetection;
             previewRectInNormalizedSpace = new Rect(0, 0, 1, 1);
 
             canvasGroup.alpha = 0;
+
+            // ReSharper disable once RedundantArgumentDefaultValue
+            chestFilter = new ComposedFilter2D<OneEuroFilter>(
+                new OneEuroFilter(oneEuroFilterMinCutoff, oneEuroFilterBeta),
+                new OneEuroFilter(oneEuroFilterMinCutoff, oneEuroFilterBeta)
+                );
         }
 
-        public Rect PreviewRectInNormalizedSpace()
+        public override Rect PreviewRectInNormalizedSpace()
         {
             return previewRectInNormalizedSpace;
         }
 
-        public Rect PreviewRectInWorldSpace()
+        #endregion
+
+        #region Life Cycle
+
+        void OnDestroy()
         {
-            return previewRectInWorldSpace;
+            cvDetectionManager.captureCameraFrame -= CvDetectionManagerOnCaptureCameraFrame;
+            bodyPoseDetectionManager.captureAspectNormalizedDetection -= BodyPoseDetectionManagerOnCaptureAspectNormalizedDetection;
         }
 
         #endregion
@@ -75,41 +116,124 @@ namespace Nex
             rawImage.texture = frameInformation.texture;
             var isMirrored = frameInformation.shouldMirror;
 
-            viewportFullRect = playAreaController.GetPlayAreaInNormalizedSpace();
+            UpdatePreviewRectInWorldSpaceInfoIfNeeded();
 
-            var playerCenterRatio = PlayerPositionDefinition.GetXRatioForPlayer(playerIndex, numOfPlayers);
-            var playerWidthRatio = PlayerPositionDefinition.PlayerPreviewWidthRatio(numOfPlayers);
-
-            previewRectInNormalizedSpace = PlayerRect(viewportFullRect, playerCenterRatio, playerWidthRatio);
-
-            var rectTransform = GetComponent<RectTransform>();
-            var corners = new Vector3[4];
-            rectTransform.GetWorldCorners(corners);
-            previewRectInWorldSpace = new Rect(corners[0], corners[2] - corners[0]);
-
-            rawImage.uvRect = FlipRectIfNeeded(previewRectInNormalizedSpace, viewportFullRect.x + viewportFullRect.width * 0.5f, isMirrored);
+            rawImage.uvRect = FlipRectIfNeeded(previewRectInNormalizedSpace, isMirrored);
         }
 
-        Rect PlayerRect(Rect fullRect, float playerRatio, float playerWidthRatio)
-        {
+        #endregion
 
-            return new Rect(
-                fullRect.x + fullRect.width * (playerRatio - playerWidthRatio * 0.5f),
-                fullRect.y,
-                fullRect.width * playerWidthRatio,
-                fullRect.height
-            );
-        }
+        #region Player Chasing
 
-        static Rect FlipRectIfNeeded(Rect rect, float centerX, bool flip)
+        void BodyPoseDetectionManagerOnCaptureAspectNormalizedDetection(BodyPoseDetectionResult bodyPoseDetectionResult)
         {
-            if (flip)
+            var poseDetection = bodyPoseDetectionResult.original;
+            var playerPose = poseDetection.GetPlayerPose(playerIndex);
+            var pose = playerPose?.bodyPose;
+            if (pose == null)
             {
-                rect.x = 2 * centerX - rect.x;
-                rect.width = -rect.width;
+                return;
             }
 
-            return rect;
+            ppiHistory.Add(pose.pixelsPerInch, Time.fixedTime);
+            ppiHistory.UpdateCurrentFrameTime(Time.fixedTime);
+            var ppi = ppiHistory.Average();
+
+            UpdatePreviewRectInWorldSpaceInfoIfNeeded();
+
+            var fullFrameRect = DetectionUtils.AspectNormalizedFrameRect;
+            var chest = pose.Chest().ToVector2();
+
+            chest = GetSmoothedChest(chest, ppi);
+
+            var centerX = chest.x + ppi * 0.5f * (marginsInInches.right - marginsInInches.left);
+            var centerY = chest.y + ppi * 0.5f * (marginsInInches.top - marginsInInches.bottom);
+
+            if (!followX)
+            {
+                centerX = fullFrameRect.width * 0.5f;
+            }
+
+            if (!followY)
+            {
+                centerY = fullFrameRect.height * 0.5f;
+            }
+
+            var rectWidth = ppi * (marginsInInches.right + marginsInInches.left);
+            var rectHeight = ppi * (marginsInInches.top + marginsInInches.bottom);
+
+            rectWidth = Math.Max(rectWidth, rectHeight * previewRectInWorldSpaceAspectRatio);
+            rectHeight = Math.Max(rectHeight, rectWidth / previewRectInWorldSpaceAspectRatio);
+
+            // Scale them to smaller than fullFrameRect, proportionally.
+            var scaleRatio = Math.Min(1, Math.Min(fullFrameRect.width / rectWidth, fullFrameRect.height / rectHeight));
+            rectWidth *= scaleRatio;
+            rectHeight *= scaleRatio;
+
+            // Shift center point in order to make the rect inside the fullFrameRect.
+            var leftOffset = centerX - rectWidth * 0.5f;
+            if (leftOffset < 0)
+            {
+                centerX += -leftOffset; // Move right
+            }
+
+            var rightOffset = fullFrameRect.width - (centerX + rectWidth * 0.5f);
+            if (rightOffset < 0)
+            {
+                centerX += rightOffset; // Move left
+            }
+
+            var bottomOffset = centerY - rectHeight * 0.5f;
+            if (bottomOffset < 0)
+            {
+                centerY += -bottomOffset; // Move up
+            }
+
+            var topOffset = fullFrameRect.height - (centerY + rectHeight * 0.5f);
+            if (topOffset < 0)
+            {
+                centerY += topOffset; // Move down
+            }
+
+            var playerPreviewRect = new Rect(
+                centerX - rectWidth * 0.5f,
+                centerY - rectHeight * 0.5f,
+                rectWidth,
+                rectHeight
+            );
+
+            previewRectInNormalizedSpace = new Rect
+            {
+                x = playerPreviewRect.x / fullFrameRect.width,
+                y = playerPreviewRect.y / fullFrameRect.height,
+                width = playerPreviewRect.width / fullFrameRect.width,
+                height = playerPreviewRect.height / fullFrameRect.height
+            };
+        }
+
+        #endregion
+
+        #region Smooth Chest
+
+        Vector2 GetSmoothedChest(Vector2 rawChest, float ppi)
+        {
+            var ret = chestFilter.Filter(rawChest.x, rawChest.y);
+
+            if (useStableChestY)
+            {
+                // Use weighted average to reduce the influence of a jumping Y value.
+                var deltaY = rawChest.y - lastRawChestY;
+                lastRawChestY = rawChest.y;
+
+                var weight = (float)BasicUtils.Gaussian(Math.Abs(deltaY), yChangeSigmaInInches * ppi);
+
+                chestYHistory.Add(rawChest.y, weight, Time.fixedTime);
+                chestYHistory.UpdateCurrentFrameTime(Time.fixedTime);
+
+                ret.y = chestYHistory.WeightedAverage();
+            }
+
+            return ret;
         }
 
         #endregion

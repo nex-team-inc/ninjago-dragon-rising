@@ -37,7 +37,7 @@ namespace Nex
          Config config = null!;
 
          // States
-         readonly Vector2 poseSpaceSize = new(16f / 9f, 1f);
+         readonly Vector2 poseSpaceSize = DetectionUtils.AspectNormalizedFrameSize;
          FloatHistory minMarginLeftHistory = null!;
          FloatHistory minMarginRightHistory = null!;
          FloatHistory minMarginTopHistory = null!;

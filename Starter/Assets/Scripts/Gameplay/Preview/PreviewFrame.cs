@@ -2,24 +2,20 @@ using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using Jazz;
 using UnityEngine;
-using UnityEngine.UI;
 
 #nullable enable
 
 namespace Nex
 {
-    public class PreviewFrame : MonoBehaviour
+    public class PreviewFrame : PreviewFrameBase
     {
-        [SerializeField] RawImage rawImage = null!;
-        [SerializeField] CanvasGroup canvasGroup = null!;
-
         CvDetectionManager cvDetectionManager = null!;
+        // ReSharper disable once NotAccessedField.Local
         BodyPoseDetectionManager bodyPoseDetectionManager = null!;
         PlayAreaController playAreaController = null!;
 
-        Rect viewportFullRect;
+        Rect playAreaRectInNormalizedSpace;
         Rect previewRectInNormalizedSpace;
-        Rect previewRectInWorldSpace;
 
         bool isFirstFrameReceived;
         int playerIndex;
@@ -43,20 +39,24 @@ namespace Nex
             playAreaController = aPlayAreaController;
 
             cvDetectionManager.captureCameraFrame += CvDetectionManagerOnCaptureCameraFrame;
-            viewportFullRect = new Rect(0, 0, 1, 1);
+            playAreaRectInNormalizedSpace = new Rect(0, 0, 1, 1);
             previewRectInNormalizedSpace = new Rect(0, 0, 1, 1);
 
             canvasGroup.alpha = 0;
         }
 
-        public Rect PreviewRectInNormalizedSpace()
+        public override Rect PreviewRectInNormalizedSpace()
         {
             return previewRectInNormalizedSpace;
         }
 
-        public Rect PreviewRectInWorldSpace()
+        #endregion
+
+        #region Life Cycle
+
+        void OnDestroy()
         {
-            return previewRectInWorldSpace;
+            cvDetectionManager.captureCameraFrame -= CvDetectionManagerOnCaptureCameraFrame;
         }
 
         #endregion
@@ -75,41 +75,27 @@ namespace Nex
             rawImage.texture = frameInformation.texture;
             var isMirrored = frameInformation.shouldMirror;
 
-            viewportFullRect = playAreaController.GetPlayAreaInNormalizedSpace();
+            UpdatePreviewRectInWorldSpaceInfoIfNeeded();
 
-            var playerCenterRatio = PlayerPositionDefinition.GetXRatioForPlayer(playerIndex, numOfPlayers);
-            var playerWidthRatio = PlayerPositionDefinition.PlayerPreviewWidthRatio(numOfPlayers);
+            var rawFrameAspectRatio = frameInformation.texture.width / (float)frameInformation.texture.height;
+            var previewWidthRatio = previewRectInWorldSpaceAspectRatio / rawFrameAspectRatio; // If preview is 16/9 (and raw is 16/9), then widthRatio = 1.
 
-            previewRectInNormalizedSpace = PlayerRect(viewportFullRect, playerCenterRatio, playerWidthRatio);
+            playAreaRectInNormalizedSpace = playAreaController.GetPlayAreaInNormalizedSpace();
 
-            var rectTransform = GetComponent<RectTransform>();
-            var corners = new Vector3[4];
-            rectTransform.GetWorldCorners(corners);
-            previewRectInWorldSpace = new Rect(corners[0], corners[2] - corners[0]);
+            var playerCenterXRatio = PlayerPositionDefinition.GetXRatioForPlayer(playerIndex, numOfPlayers);
+            previewRectInNormalizedSpace = PlayerRect(playAreaRectInNormalizedSpace, playerCenterXRatio, previewWidthRatio);
 
-            rawImage.uvRect = FlipRectIfNeeded(previewRectInNormalizedSpace, viewportFullRect.x + viewportFullRect.width * 0.5f, isMirrored);
+            rawImage.uvRect = FlipRectIfNeeded(previewRectInNormalizedSpace, isMirrored);
         }
 
-        Rect PlayerRect(Rect fullRect, float playerRatio, float playerWidthRatio)
+        Rect PlayerRect(Rect fullRect, float playerXRatio, float previewWidthRatio)
         {
-
             return new Rect(
-                fullRect.x + fullRect.width * (playerRatio - playerWidthRatio * 0.5f),
+                fullRect.x + fullRect.width * (playerXRatio - previewWidthRatio * 0.5f),
                 fullRect.y,
-                fullRect.width * playerWidthRatio,
+                fullRect.width * previewWidthRatio,
                 fullRect.height
             );
-        }
-
-        static Rect FlipRectIfNeeded(Rect rect, float centerX, bool flip)
-        {
-            if (flip)
-            {
-                rect.x = 2 * centerX - rect.x;
-                rect.width = -rect.width;
-            }
-
-            return rect;
         }
 
         #endregion

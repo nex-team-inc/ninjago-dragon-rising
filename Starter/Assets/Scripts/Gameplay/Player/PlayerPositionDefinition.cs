@@ -20,15 +20,5 @@ namespace Nex
                 _ => throw new ArgumentOutOfRangeException(nameof(numOfPlayers), numOfPlayers, null)
             };
         }
-
-        public static float PlayerPreviewWidthRatio(int numOfPlayers)
-        {
-            return numOfPlayers switch
-            {
-                1 => 1f,
-                2 => 0.5f,
-                _ => throw new ArgumentOutOfRangeException(nameof(numOfPlayers), numOfPlayers, null)
-            };
-        }
     }
 }

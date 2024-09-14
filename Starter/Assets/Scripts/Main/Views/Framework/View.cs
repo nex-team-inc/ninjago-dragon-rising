@@ -28,23 +28,6 @@ namespace Nex
 
             // Main UI
             WelcomeScreen,
-            MainLanding,
-            SettingsLanding,
-            Settings,
-            Credits,
-            CharacterSelection,
-            Gallery,
-
-            // Dialog
-            Dialog,
-
-            // Game UI
-            GameUI,       // The actual UI for each game.
-            GameDriver,   // For rendering the game contents.
-            GameSetup,    // Initial setup.
-            GamePause,    // For rendering the pause menu.
-            GameSummary,  // For rendering the summary after the game.
-            Unlocked,     // When the user has unlocked something.
 
             // Debug Specific.
             DebugSettings,

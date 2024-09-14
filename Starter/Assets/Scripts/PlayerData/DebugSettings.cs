@@ -8,6 +8,8 @@ namespace Nex
 {
     public class DebugSettings
     {
+        public bool exampleDebugFlag = false;
+
         [DebugOrder(1)]
         [SaveBeforeInvoking]
         public void ReloadMainScene()

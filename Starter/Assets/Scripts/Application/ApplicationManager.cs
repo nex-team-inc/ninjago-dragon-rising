@@ -9,6 +9,8 @@ namespace Nex
         [SerializeField] int targetFrameRate = 60;
         public AssetReference mainSceneReference = null!;
 
+        public bool FirstAppStart { get; set; } = true;
+
         protected override ApplicationManager GetThis()
         {
             return this;

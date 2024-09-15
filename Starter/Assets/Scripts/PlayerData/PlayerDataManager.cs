@@ -74,7 +74,7 @@ namespace Nex
 
         public PlayerPreference PlayerPreference { get; private set; }
 
-        void ResetPlayerPreference()
+        public void ResetPlayerPreference()
         {
             PlayerPreference = new PlayerPreference();
 #if !DISABLE_PERSISTENCE

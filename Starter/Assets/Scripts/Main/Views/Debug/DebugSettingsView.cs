@@ -7,15 +7,15 @@ namespace Nex
     {
         public override ViewIdentifier Identifier => ViewIdentifier.DebugSettings;
         public override TopLevelControlPanel.ControlConfig Controls => TopLevelControlPanel.ControlConfig.Back;
-
-        public override bool RequiresAdditionalBackgroundBlur => true;
+        public override string AnalyticsScreenName => "debug-settings";
 
         [SerializeField] DebugSettingsPanel debugSettingsPanel;
 
         const int minVisibilityLevel = 0;
 
-        void Start()
+        protected override void Awake()
         {
+            base.Awake();
             var playerDataManager = PlayerDataManager.Instance;
             var debugSettings = playerDataManager.DebugSettings;
 
@@ -30,16 +30,6 @@ namespace Nex
             debugSettingsPanel.PopulateRows(debugSettings,
                 // ReSharper disable once RedundantArgumentDefaultValue
                 minVisibilityLevel);
-        }
-
-        void Update()
-        {
-            if (!IsActive) return;
-
-            if (Input.GetKeyDown(KeyCode.Escape))
-            {
-                OnBackButton();
-            }
         }
     }
 }

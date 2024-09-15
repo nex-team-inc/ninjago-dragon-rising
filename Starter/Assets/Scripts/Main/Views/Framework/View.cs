@@ -38,6 +38,8 @@ namespace Nex
         /// </summary>
         public abstract ViewIdentifier Identifier { get; }
 
+        public virtual string AnalyticsScreenName => "";
+
         protected virtual void Awake()
         {
         }

@@ -7,6 +7,8 @@ namespace Nex
         public override ViewIdentifier Identifier => ViewIdentifier.WelcomeScreen;
         public override TopLevelControlPanel.ControlConfig Controls => TopLevelControlPanel.ControlConfig.Exit;
 
+        public override string AnalyticsScreenName => "title";
+
         #endregion
     }
 }

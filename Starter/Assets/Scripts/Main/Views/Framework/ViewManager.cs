@@ -4,6 +4,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using Nex.KeyboardNavigation;
 using UnityEngine;
+using UnityEngine.Events;
 
 #nullable enable
 
@@ -41,6 +42,10 @@ namespace Nex
 
         const float blurDuration = 0.5f;
 
+        public event UnityAction? PauseViewHomeClicked;
+        public event UnityAction? PauseViewResumeClicked;
+        public event UnityAction? Paused;
+
         void Awake()
         {
             cancellationTokenSource = new CancellationTokenSource();
@@ -56,6 +61,13 @@ namespace Nex
 
             // We will now initialize the view stack so that it is always non-empty.
             viewStack.Push(new ViewConfig(emptyRootView, 0));
+
+            #if ENABLE_DEBUG_SETTINGS || DEVELOPMENT_BUILD || UNITY_EDITOR
+            if (gameObject.TryGetComponent<SecretCodeSequenceDetector>(out var detector))
+            {
+                detector.AddListener(0, OpenDebugSettings);
+            }
+            #endif
         }
 
         void OnDestroy()
@@ -311,6 +323,12 @@ namespace Nex
                 activeKeyResponder = keyResponder;
             }
 
+            var screenName = view.AnalyticsScreenName;
+            if (!string.IsNullOrEmpty(screenName))
+            {
+                AnalyticsManager.Instance.TrackScreen(screenName);
+            }
+
             view.ViewDidBecomeTopView(afterPush);
         }
 
@@ -379,8 +397,7 @@ namespace Nex
             {
                 // Centralized handling for settings / debug settings.
                 case TopLevelControlPanel.ButtonKind.DebugSettings:
-                    SfxManager.Instance.PlaySoundEffect(SfxManager.SoundEffect.GenericEnter);
-                    PushViewPrefab(debugSettingsPrefab).Forget();
+                    OpenDebugSettings();
                     break;
 
                 // Special handling for back.
@@ -403,6 +420,12 @@ namespace Nex
                 default:
                     throw new ArgumentOutOfRangeException(nameof(buttonKind), buttonKind, null);
             }
+        }
+
+        void OpenDebugSettings()
+        {
+            SfxManager.Instance.PlaySoundEffect(SfxManager.SoundEffect.GenericEnter);
+            PushViewPrefab(debugSettingsPrefab).Forget();
         }
 
         #endregion
@@ -501,6 +524,25 @@ namespace Nex
         internal KeyResponder? GetTopLevelControlKeyResponder(TopLevelControlPanel.ControlConfig control)
         {
             return controlPanel.GetActiveKeyResponder(control);
+        }
+
+        #endregion
+
+        #region Pause
+
+        public void AnnouncePauseViewHomeClicked()
+        {
+            PauseViewHomeClicked?.Invoke();
+        }
+
+        public void AnnouncePauseViewResumeClicked()
+        {
+            PauseViewResumeClicked?.Invoke();
+        }
+
+        public void AnnouncePaused()
+        {
+            Paused?.Invoke();
         }
 
         #endregion

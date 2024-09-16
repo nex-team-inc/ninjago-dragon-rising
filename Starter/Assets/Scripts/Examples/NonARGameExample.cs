@@ -1,3 +1,4 @@
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 namespace Nex
@@ -9,7 +10,13 @@ namespace Nex
 
         void Start()
         {
+            StartAsync().Forget();
+        }
+
+        async UniTask StartAsync()
+        {
             detectionManager.Initialize(numOfPlayers);
+            await ScreenBlockerManager.Instance.Hide();
         }
     }
 }

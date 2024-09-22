@@ -30,6 +30,7 @@ namespace Nex
          int numOfPlayers;
 
          // States
+         bool locked;
          readonly Vector2 poseSpaceSize = DetectionUtils.AspectNormalizedFrameSize;
          FloatHistory minMarginLeftHistory = null!;
          FloatHistory minMarginRightHistory = null!;
@@ -54,6 +55,11 @@ namespace Nex
              minMarginTopHistory = new FloatHistory(config.smoothTimeWindow);
              minMarginBottomHistory = new FloatHistory(config.smoothTimeWindow);
              bodyPoseDetectionManager.captureAspectNormalizedDetection += HandleNewDetection;
+         }
+
+         public void SetPlayAreaLocked(bool value)
+         {
+             locked = value;
          }
 
          public Rect GetPlayAreaInNormalizedSpace()
@@ -233,8 +239,11 @@ namespace Nex
 
              UpdateTargetMarginHistory(poseDetection);
 
-             PlayAreaInAspectNormalizedSpace = ComputePlayArea();
-             UpdateTrackingPosition();
+             if (!locked)
+             {
+                 PlayAreaInAspectNormalizedSpace = ComputePlayArea();
+                 UpdateTrackingPosition();
+             }
          }
 
          bool ShouldAnchorXAtCenter()

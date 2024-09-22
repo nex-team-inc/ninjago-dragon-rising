@@ -107,7 +107,7 @@ namespace Nex
             var isAllInPlaying = playingStateCount == 2;
 
             // This should be changed according to the game's need.
-            DvpLocked = isAnyInPlaying;
+            playAreaController.SetPlayAreaLocked(isAllInPlaying);
             DewarpLocked = isAnyInPlaying;
             TrackingConsistencyEnabled = isAllInPlaying;
         }
@@ -142,19 +142,6 @@ namespace Nex
                     bodyPoseDetectionManager.trackingConfig.enableConsistency = value;
 
                     Debug.Log($"Tracking consistency changed: {value}");
-                }
-            }
-        }
-
-        bool DvpLocked
-        {
-            get => !bodyPoseDetectionManager.detectionViewportControllerConfig.useDetectionViewport;
-            set
-            {
-                if (DvpLocked != value)
-                {
-                    Debug.Log($"DvpLocked change: {(value ? "Locked" : "Unlocked")}");
-                    bodyPoseDetectionManager.detectionViewportControllerConfig.useDetectionViewport = !value;
                 }
             }
         }

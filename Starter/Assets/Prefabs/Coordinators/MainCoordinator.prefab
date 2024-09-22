@@ -372,7 +372,8 @@ MonoBehaviour:
   m_RequiresDepthTextureOption: 2
   m_RequiresOpaqueTextureOption: 2
   m_CameraType: 0
-  m_Cameras: []
+  m_Cameras:
+  - {fileID: 730613263656376650}
   m_RendererIndex: -1
   m_VolumeLayerMask:
     serializedVersion: 2
@@ -408,6 +409,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 5853258956851349557}
     m_Modifications:
+    - target: {fileID: 4841370797339404904, guid: d3706cd13fda2410c9e47728d96b4299, type: 3}
+      propertyPath: baseCameras.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4841370797339404904, guid: d3706cd13fda2410c9e47728d96b4299, type: 3}
+      propertyPath: baseCameras.Array.data[0]
+      value: 
+      objectReference: {fileID: 1437521082914208740}
     - target: {fileID: 4911139897360445046, guid: d3706cd13fda2410c9e47728d96b4299, type: 3}
       propertyPath: m_Name
       value: MainViewManager

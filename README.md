@@ -48,7 +48,7 @@ git lfs push origin --all  # Push all lfs objects as well.
 ```
   
 ## What's Next
-
+- To make sure NBP works, Derek would need Admin role to the repo. Forked repo doesn't inherit Collaborators and Teams settings unfortunately.
 - Any file in this project is editable. You can customize it to your game logic.
 
 ## Others

@@ -18,8 +18,8 @@ namespace Nex
         ChestTooRight,
         TooFar,
         TooClose,
-        TooFarInProcessFrame,
-        TooCloseInProcessFrame,
+        TooFarInPlayArea,
+        TooCloseInPlayArea,
         NotAtCenter,
     }
 
@@ -37,36 +37,62 @@ namespace Nex
         public SetupIssueType currentIssue;
     }
 
+    [Serializable]
+    public struct SetupConfig
+    {
+        public float chestStrictLooseHalfMarginInches;
+        public float chestToTopMinInches;
+        public float chestToBottomMinInches;
+        public float chestToLeftMinInches;
+        public float chestToRightMinInches;
+        public float chestXToCenterMaxInches;
+        public float issueEvaluationTimeWindow;
+        public float issueMinRequiredDataTime;
+        public float issueEntryStateRatio;
+        public float issueCancelStateRatio;
+        public float distanceRatioStrictLooseHalfMarginForDistanceIssue;
+        public float frameHeightMinInches;
+        public float frameHeightMaxInches;
+        public float playAreaHeightMinInches;
+        public float playAreaHeightMaxInches;
+    }
+
     public class SetupDetector : MonoBehaviour
     {
         [SerializeField] public BodyPoseDetectionManager bodyDetector;
         [SerializeField] public int playerIndex;
 
-        [SerializeField] public float chestStrictLooseHalfMarginInches = 1;
-        [SerializeField] public float chestToTopMinInches = 12;
-        [SerializeField] public float chestToBottomMinInches = 18;
-        [SerializeField] public float chestToLeftMinInches = 12;
-        [SerializeField] public float chestToRightMinInches = 12;
-        [SerializeField] public float chestXToCenterMaxInches = 1000;
-
-        [SerializeField] public float issueEvaluationTimeWindow = 1f;
-        [SerializeField] public float issueMinRequiredDataTime = 0.2f;
-        [SerializeField] public float issueEntryStateRatio = 0.8f;
-        [SerializeField] public float issueCancelStateRatio = 0.4f;
-
-        [SerializeField] public float distanceRatioStrictLooseHalfMarginForDistanceIssue = 0.03f;
-        [SerializeField] public float frameHeightMinInches = 40;
-        [SerializeField] public float frameHeightMaxInches = 90;
-        [SerializeField] public float processFrameHeightMinInches = 40;
-        [SerializeField] public float processFrameHeightMaxInches = 90;
-
         float ppi;
         float distanceRatio;
-        float distanceRatioInProcessFrame;
+        float distanceRatioInPlayArea;
         SetupIssueType currentIssue;
 
         bool hasEnoughData;
         float startDetectionTime;
+
+        #region SetupConfig
+
+        [SerializeField] SetupConfig setupConfig;
+        float ChestStrictLooseHalfMarginInches => setupConfig.chestStrictLooseHalfMarginInches;
+        float ChestToTopMinInches => setupConfig.chestToTopMinInches;
+        float ChestToBottomMinInches => setupConfig.chestToBottomMinInches;
+        float ChestToLeftMinInches => setupConfig.chestToLeftMinInches;
+        float ChestToRightMinInches => setupConfig.chestToRightMinInches;
+        float ChestXToCenterMaxInches => setupConfig.chestXToCenterMaxInches;
+        float IssueEvaluationTimeWindow => setupConfig.issueEvaluationTimeWindow;
+        float IssueMinRequiredDataTime => setupConfig.issueMinRequiredDataTime;
+        float IssueEntryStateRatio => setupConfig.issueEntryStateRatio;
+        float IssueCancelStateRatio => setupConfig.issueCancelStateRatio;
+
+        float DistanceRatioStrictLooseHalfMarginForDistanceIssue =>
+            setupConfig.distanceRatioStrictLooseHalfMarginForDistanceIssue;
+
+        float FrameHeightMinInches => setupConfig.frameHeightMinInches;
+        float FrameHeightMaxInches => setupConfig.frameHeightMaxInches;
+        float PlayAreaHeightMinInches => setupConfig.playAreaHeightMinInches;
+        float PlayAreaHeightMaxInches => setupConfig.playAreaHeightMaxInches;
+
+        #endregion
 
         readonly Dictionary<SetupIssueType, bool> isIssueActivatedByType = new Dictionary<SetupIssueType, bool>();
         readonly Dictionary<SetupIssueType, SetupIssueInfo> issueInfoByType = new Dictionary<SetupIssueType, SetupIssueInfo>();
@@ -88,22 +114,19 @@ namespace Nex
         {
             playAreaController = aPlayAreaController;
 
-            if (aIssueTypesSortedByDisplayPriority == null)
+            issueTypesSortedByDisplayPriority = aIssueTypesSortedByDisplayPriority ?? new List<SetupIssueType>
             {
-                issueTypesSortedByDisplayPriority = new List<SetupIssueType>
-                {
-                    SetupIssueType.TooClose,
-                    SetupIssueType.TooFar,
-                    // SetupIssueType.TooCloseInProcessFrame,
-                    // SetupIssueType.TooFarInProcessFrame,
-                    SetupIssueType.ChestTooHigh,
-                    SetupIssueType.ChestTooLow,
-                    SetupIssueType.ChestTooLeft,
-                    SetupIssueType.ChestTooRight,
-                    SetupIssueType.NoPose,
-                    SetupIssueType.NotAtCenter,
-                };
-            }
+                SetupIssueType.TooClose,
+                SetupIssueType.TooFar,
+                SetupIssueType.TooCloseInPlayArea,
+                SetupIssueType.TooFarInPlayArea,
+                SetupIssueType.ChestTooHigh,
+                SetupIssueType.ChestTooLow,
+                SetupIssueType.ChestTooLeft,
+                SetupIssueType.ChestTooRight,
+                SetupIssueType.NoPose,
+                SetupIssueType.NotAtCenter,
+            };
 
             ResetAllStates();
 
@@ -144,7 +167,7 @@ namespace Nex
             {
                 isIssueActivatedByType[type] = false;
                 issueInfoByType[type] = new SetupIssueInfo();
-                issueInfoHistoryByType[type] = new History<SetupIssueInfo>(issueEvaluationTimeWindow);
+                issueInfoHistoryByType[type] = new History<SetupIssueInfo>(IssueEvaluationTimeWindow);
             }
 
             startDetectionTime = -1;
@@ -157,7 +180,7 @@ namespace Nex
 
             var time = Time.fixedTime;
             startDetectionTime = startDetectionTime < 0 ? time : startDetectionTime; // Only set it once when it's negative.
-            hasEnoughData = time - startDetectionTime > issueEvaluationTimeWindow;
+            hasEnoughData = time - startDetectionTime > IssueEvaluationTimeWindow;
 
             var pose = playerPose?.bodyPose;
 
@@ -169,8 +192,8 @@ namespace Nex
             var chestTooRightInfo = new SetupIssueInfo();
             var noPoseInfo = new SetupIssueInfo();
             var notAtCenterInfo = new SetupIssueInfo();
-            var tooCloseInProcessFrameInfo = new SetupIssueInfo();
-            var tooFarInProcessFrameInfo = new SetupIssueInfo();
+            var tooCloseInPlayAreaInfo = new SetupIssueInfo();
+            var tooFarInPlayAreaInfo = new SetupIssueInfo();
 
             noPoseInfo.hasData = true;
 
@@ -185,53 +208,55 @@ namespace Nex
 
                 var chestPt = pose.Chest().ToVector2();
                 var frameSize = poseDetection.frameSize;
-                var processFrameCrop = poseDetection.GetProcessFrameTransformInfo().processFrameCrop;
 
                 // Distance in Raw Frame
                 var frameHeightInInches = frameSize.y / ppi;
 
-                distanceRatio = (frameHeightInInches - frameHeightMinInches) /
-                                (frameHeightMaxInches - frameHeightMinInches);
+                distanceRatio = (frameHeightInInches - FrameHeightMinInches) /
+                                (FrameHeightMaxInches - FrameHeightMinInches);
 
                 tooCloseInfo.hasData = true;
                 tooCloseInfo.hasIssueUnderLooseCondition =
-                    distanceRatio < distanceRatioStrictLooseHalfMarginForDistanceIssue;
+                    distanceRatio < DistanceRatioStrictLooseHalfMarginForDistanceIssue;
                 tooCloseInfo.hasIssueUnderStrictCondition =
-                    distanceRatio < -distanceRatioStrictLooseHalfMarginForDistanceIssue;
+                    distanceRatio < -DistanceRatioStrictLooseHalfMarginForDistanceIssue;
                 tooFarInfo.hasData = true;
                 tooFarInfo.hasIssueUnderLooseCondition =
-                    distanceRatio > 1 - distanceRatioStrictLooseHalfMarginForDistanceIssue;
+                    distanceRatio > 1 - DistanceRatioStrictLooseHalfMarginForDistanceIssue;
                 tooFarInfo.hasIssueUnderStrictCondition =
-                    distanceRatio > 1 + distanceRatioStrictLooseHalfMarginForDistanceIssue;
+                    distanceRatio > 1 + DistanceRatioStrictLooseHalfMarginForDistanceIssue;
 
-                // Distance in Process Frame
-                var processFrameHeightInInches = processFrameCrop.height / ppi;
-
-                distanceRatioInProcessFrame = (processFrameHeightInInches - processFrameHeightMinInches) /
-                                              (processFrameHeightMaxInches - processFrameHeightMinInches);
-
-                tooCloseInProcessFrameInfo.hasData = true;
-                tooCloseInProcessFrameInfo.hasIssueUnderLooseCondition =
-                    distanceRatioInProcessFrame < distanceRatioStrictLooseHalfMarginForDistanceIssue;
-                tooCloseInProcessFrameInfo.hasIssueUnderStrictCondition =
-                    distanceRatioInProcessFrame < -distanceRatioStrictLooseHalfMarginForDistanceIssue;
-                tooFarInProcessFrameInfo.hasData = true;
-                tooFarInProcessFrameInfo.hasIssueUnderLooseCondition =
-                    distanceRatioInProcessFrame > 1 - distanceRatioStrictLooseHalfMarginForDistanceIssue;
-                tooFarInProcessFrameInfo.hasIssueUnderStrictCondition =
-                    distanceRatioInProcessFrame > 1 + distanceRatioStrictLooseHalfMarginForDistanceIssue;
-
-                var safeAreaX1 = ppi * chestToLeftMinInches;
-                var safeAreaX2 = frameSize.x - ppi * chestToRightMinInches;
-                var safeAreaY1 = ppi * chestToTopMinInches;
-                var safeAreaY2 = frameSize.y - ppi * chestToBottomMinInches;
-
+                // Play Area
                 var playAreaInNormalizedSpace = playAreaController.GetPlayAreaInNormalizedSpace();
+
+                // Distance in Play Area
+                var playAreaHeightInRawFrameSpace = playAreaInNormalizedSpace.height * frameSize.y;
+                var playAreaHeightInInches = playAreaHeightInRawFrameSpace / ppi;
+
+                distanceRatioInPlayArea = (playAreaHeightInInches - PlayAreaHeightMinInches) /
+                                              (PlayAreaHeightMaxInches - PlayAreaHeightMinInches);
+
+                tooCloseInPlayAreaInfo.hasData = true;
+                tooCloseInPlayAreaInfo.hasIssueUnderLooseCondition =
+                    distanceRatioInPlayArea < DistanceRatioStrictLooseHalfMarginForDistanceIssue;
+                tooCloseInPlayAreaInfo.hasIssueUnderStrictCondition =
+                    distanceRatioInPlayArea < -DistanceRatioStrictLooseHalfMarginForDistanceIssue;
+                tooFarInPlayAreaInfo.hasData = true;
+                tooFarInPlayAreaInfo.hasIssueUnderLooseCondition =
+                    distanceRatioInPlayArea > 1 - DistanceRatioStrictLooseHalfMarginForDistanceIssue;
+                tooFarInPlayAreaInfo.hasIssueUnderStrictCondition =
+                    distanceRatioInPlayArea > 1 + DistanceRatioStrictLooseHalfMarginForDistanceIssue;
+
+                var safeAreaX1 = ppi * ChestToLeftMinInches;
+                var safeAreaX2 = frameSize.x - ppi * ChestToRightMinInches;
+                var safeAreaY1 = ppi * ChestToTopMinInches;
+                var safeAreaY2 = frameSize.y - ppi * ChestToBottomMinInches;
+
                 var xRatio = PlayerPositionDefinition.GetXRatioForPlayer(playerIndex, poseDetection.NumOfPlayers());
                 var playerCenterX = frameSize.x * (playAreaInNormalizedSpace.x + playAreaInNormalizedSpace.width * xRatio);
 
-                var chestStrictLooseHalfMarginPixels = chestStrictLooseHalfMarginInches * ppi;
-                var safeMaxXDistance = ppi * chestXToCenterMaxInches;
+                var chestStrictLooseHalfMarginPixels = ChestStrictLooseHalfMarginInches * ppi;
+                var safeMaxXDistance = ppi * ChestXToCenterMaxInches;
                 var toCenterXDistance = Math.Abs(chestPt.x - playerCenterX);
 
                 chestTooHighInfo.hasData = true;
@@ -269,8 +294,8 @@ namespace Nex
             issueInfoByType[SetupIssueType.ChestTooRight] = chestTooRightInfo;
             issueInfoByType[SetupIssueType.NoPose] = noPoseInfo;
             issueInfoByType[SetupIssueType.NotAtCenter] = notAtCenterInfo;
-            issueInfoByType[SetupIssueType.TooCloseInProcessFrame] = tooCloseInProcessFrameInfo;
-            issueInfoByType[SetupIssueType.TooFarInProcessFrame] = tooFarInProcessFrameInfo;
+            issueInfoByType[SetupIssueType.TooCloseInPlayArea] = tooCloseInPlayAreaInfo;
+            issueInfoByType[SetupIssueType.TooFarInPlayArea] = tooFarInPlayAreaInfo;
 
             // Update history
             foreach (var type in issueTypesSortedByDisplayPriority)
@@ -323,9 +348,9 @@ namespace Nex
                     }
                 }
 
-                if (allTimeSum >= issueMinRequiredDataTime)
+                if (allTimeSum >= IssueMinRequiredDataTime)
                 {
-                    var changeStateRatio = isIssueActivated ? issueCancelStateRatio : issueEntryStateRatio;
+                    var changeStateRatio = isIssueActivated ? IssueCancelStateRatio : IssueEntryStateRatio;
                     if (oppositeStateTimeSum > allTimeSum * changeStateRatio)
                     {
                         isIssueActivatedByType[type] = !isIssueActivated;

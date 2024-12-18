@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Jazz;
 using UnityEngine;
 using UnityEngine.Events;
@@ -30,8 +31,8 @@ namespace Nex
                 return;
             }
 
-            isRaisingLeftHand = IsRaisingHand(pose.LeftWrist(), pose.LeftElbow(), pose.LeftShoulder());
-            isRaisingRightHand = IsRaisingHand(pose.RightWrist(), pose.RightElbow(), pose.RightShoulder());
+            isRaisingLeftHand = IsRaisingHand(pose.LeftWrist(), pose.LeftShoulder());
+            isRaisingRightHand = IsRaisingHand(pose.RightWrist(), pose.RightShoulder());
         }
 
         public bool Check(SetupCheckType checkType)
@@ -48,25 +49,14 @@ namespace Nex
 
         #region Helper
 
-        bool IsRaisingHand(PoseNode wrist, PoseNode elbow, PoseNode shoulder)
+        bool IsRaisingHand(PoseNode wrist, PoseNode shoulder)
         {
-
-            if (!shoulder.isDetected)
+            if (!wrist.isDetected || !shoulder.isDetected)
             {
                 return false;
             }
 
-            if (elbow.isDetected && elbow.y > shoulder.y)
-            {
-                return true;
-            }
-
-            if (wrist.isDetected && wrist.y > shoulder.y)
-            {
-                return true;
-            }
-
-            return false;
+            return wrist.y > shoulder.y;
         }
 
         #endregion
@@ -77,7 +67,8 @@ namespace Nex
         Preparing = 0,
         WaitingForGoodPlayerPosition = 1,
         WaitingForRaisingHand = 2,
-        Playing = 3
+        Playing = 3,
+        PlayingButNoPose = 4
     }
 
     public struct SetupSummary
@@ -102,12 +93,12 @@ namespace Nex
 
     public class OnePlayerSetupStateTracker : MonoBehaviour
     {
-        const float state0GoodPositionRatioThreshold = 0.9f;
-        const float state0GoodPositionCheckDuration = 0.3f;
+        const float state0GoodPositionRatioThresholdStrict = 0.7f;
+        const float state0GoodPositionRatioThresholdLoose = 0.5f;
+        const float state0GoodPositionCheckDuration = 1.5f;
         const float state1RaiseHandRatioThreshold = 0.7f;
-        const float state1RaiseHandCheckDuration = 1.5f;
-        const float state1GoodPositionRatioThreshold = 0.3f;
-        const float state2NoPlayerDurationThreshold = 10;
+        const float state1RaiseHandCheckDuration = 1f;
+        const float state2NoPlayerDurationThreshold = 2;
         const float historyDurationInSeconds = 4f;
 
         [SerializeField] SetupDetector setupDetectorPrefab = null!;
@@ -116,6 +107,7 @@ namespace Nex
         History<SetupHistoryItem> setupHistory = null!;
 
         SetupStateType curState = SetupStateType.Preparing;
+        bool allowPassingRaisingHandState;
 
         int playerIndex;
         BodyPose? lastPose;
@@ -140,7 +132,6 @@ namespace Nex
             setupDetector = Instantiate(setupDetectorPrefab, transform);
             InitializeSetupDetector(setupDetector, aBodyPoseDetectionManager, playerIndex, playAreaController);
             setupDetector.captureDetection += SetupDetectorOnCaptureDetection;
-            UpdateSetupDetectorConfigBasedOnState(curState);
 
             aBodyPoseDetectionManager.processed.captureAspectNormalizedDetection += ProcessedOnCaptureAspectNormalizedDetection;
         }
@@ -148,6 +139,11 @@ namespace Nex
         public void SetIsTracking(bool value)
         {
             isTracking = value;
+        }
+
+        public void SetAllowPassingRaisingHandState(bool value)
+        {
+            allowPassingRaisingHandState = value;
         }
 
         #endregion
@@ -158,56 +154,26 @@ namespace Nex
             SetupDetector setupDetector,
             BodyPoseDetectionManager bodyPoseDetectionManager,
             int playerIndex,
-            PlayAreaController playAreaController,
-            float chestStrictLooseHalfMarginInches = 1,
-            float chestToTopMinInches = 12,
-            float chestToBottomMinInches = 18,
-            float chestToLeftMinInches = 12,
-            float chestToRightMinInches = 12,
-            float chestXToCenterMaxInches = 10,
-            float issueEvaluationTimeWindow = 0.5f,
-            float issueMinRequiredDataTime = 0.2f,
-            float issueEntryStateRatio = 0.8f,
-            float issueCancelStateRatio = 0.4f,
-            float distanceRatioStrictLooseHalfMarginForDistanceIssue = 0.03f,
-            float frameHeightMinInches = 40,
-            float frameHeightMaxInches = 240,
-            float processFrameHeightMinInches = 40,
-            float processFrameHeightMaxInches = 100
+            PlayAreaController playAreaController
         )
         {
             setupDetector.bodyDetector = bodyPoseDetectionManager;
             setupDetector.playerIndex = playerIndex;
-            setupDetector.chestStrictLooseHalfMarginInches = chestStrictLooseHalfMarginInches;
-            setupDetector.chestToTopMinInches = chestToTopMinInches;
-            setupDetector.chestToBottomMinInches = chestToBottomMinInches;
-            setupDetector.chestToLeftMinInches = chestToLeftMinInches;
-            setupDetector.chestToRightMinInches = chestToRightMinInches;
-            setupDetector.chestXToCenterMaxInches = chestXToCenterMaxInches;
-            setupDetector.issueEvaluationTimeWindow = issueEvaluationTimeWindow;
-            setupDetector.issueMinRequiredDataTime = issueMinRequiredDataTime;
-            setupDetector.issueEntryStateRatio = issueEntryStateRatio;
-            setupDetector.issueCancelStateRatio = issueCancelStateRatio;
-            setupDetector.distanceRatioStrictLooseHalfMarginForDistanceIssue = distanceRatioStrictLooseHalfMarginForDistanceIssue;
-            setupDetector.frameHeightMinInches = frameHeightMinInches;
-            setupDetector.frameHeightMaxInches = frameHeightMaxInches;
-            setupDetector.processFrameHeightMinInches = processFrameHeightMinInches;
-            setupDetector.processFrameHeightMaxInches = processFrameHeightMaxInches;
-            setupDetector.Initialize(playAreaController);
-        }
-
-        void UpdateSetupDetectorConfigBasedOnState(SetupStateType state)
-        {
-            const int chestXToCenterMaxInchesForStrictCase = 10;
-            const int chestXToCenterMaxInchesForLooseCase = 34;
-            setupDetector.chestXToCenterMaxInches = state switch
-            {
-                SetupStateType.Preparing => chestXToCenterMaxInchesForStrictCase,
-                SetupStateType.WaitingForGoodPlayerPosition => chestXToCenterMaxInchesForStrictCase,
-                SetupStateType.WaitingForRaisingHand => chestXToCenterMaxInchesForStrictCase,
-                SetupStateType.Playing => chestXToCenterMaxInchesForLooseCase,
-                _ => throw new ArgumentOutOfRangeException()
-            };
+            setupDetector.Initialize(
+                playAreaController,
+                new List<SetupIssueType>
+                {
+                    // NOTE: if we will notify users to move closer or step back
+                    // we should enable the below warnings.
+                    SetupIssueType.NotAtCenter,
+                    SetupIssueType.TooClose,
+                    SetupIssueType.TooFar,
+                    SetupIssueType.TooCloseInPlayArea,
+                    SetupIssueType.TooFarInPlayArea,
+                    SetupIssueType.ChestTooHigh,
+                    SetupIssueType.ChestTooLow,
+                    SetupIssueType.NoPose,
+                });
         }
 
         void SetupDetectorOnCaptureDetection(SetupDetection detection)
@@ -253,8 +219,8 @@ namespace Nex
                 {
                     // Check forward: good pose.
                     var goodPositionRatio = CheckRatio(SetupCheckType.GoodPosition, state0GoodPositionCheckDuration);
-                    summary.goodPositionProgress = goodPositionRatio / state0GoodPositionRatioThreshold;
-                    if (goodPositionRatio > state0GoodPositionRatioThreshold)
+                    summary.goodPositionProgress = goodPositionRatio / state0GoodPositionRatioThresholdStrict;
+                    if (goodPositionRatio > state0GoodPositionRatioThresholdStrict)
                     {
                         summary.isStateChanged = true;
                         ChangeState(SetupStateType.WaitingForRaisingHand);
@@ -267,7 +233,7 @@ namespace Nex
                     // Check forward: raise hand.
                     var raiseHandRatio = CheckRatio(SetupCheckType.RaisingHand, state1RaiseHandCheckDuration, lastStateStartTime);
                     summary.raiseHandProgress = raiseHandRatio / state1RaiseHandRatioThreshold;
-                    if (raiseHandRatio > state1RaiseHandRatioThreshold)
+                    if (raiseHandRatio > state1RaiseHandRatioThreshold && allowPassingRaisingHandState)
                     {
                         summary.isStateChanged = true;
                         ChangeState(SetupStateType.Playing);
@@ -275,8 +241,8 @@ namespace Nex
                     else
                     {
                         // Check backward: bad pose.
-                        var goodPositionRatio = CheckRatio(SetupCheckType.GoodPosition, 1);
-                        if (goodPositionRatio < state1GoodPositionRatioThreshold)
+                        var goodPositionRatio = CheckRatio(SetupCheckType.GoodPosition, state0GoodPositionCheckDuration);
+                        if (goodPositionRatio < state0GoodPositionRatioThresholdLoose)
                         {
                             summary.isStateChanged = true;
                             ChangeState(SetupStateType.WaitingForGoodPlayerPosition);
@@ -286,15 +252,30 @@ namespace Nex
                     break;
                 }
                 case SetupStateType.Playing:
+                {
                     // Check backward: no pose.
                     var noPlayerDuration = Time.fixedTime - Math.Max(lastStateStartTime, lastPlayerIsSeenTimestamp);
                     summary.noPlayerDuration = noPlayerDuration;
                     if (noPlayerDuration > state2NoPlayerDurationThreshold)
                     {
                         summary.isStateChanged = true;
-                        ChangeState(SetupStateType.WaitingForGoodPlayerPosition);
+                        ChangeState(SetupStateType.PlayingButNoPose);
+                    }
+
+                    break;
+                }
+                case SetupStateType.PlayingButNoPose:
+                {
+                    // Check whether to get back to playing
+                    var goodPositionRatio = CheckRatio(SetupCheckType.GoodPosition, state0GoodPositionCheckDuration);
+                    summary.goodPositionProgress = goodPositionRatio / state0GoodPositionRatioThresholdStrict;
+                    if (goodPositionRatio > state0GoodPositionRatioThresholdStrict)
+                    {
+                        summary.isStateChanged = true;
+                        ChangeState(SetupStateType.Playing);
                     }
                     break;
+                }
                 default:
                     throw new ArgumentOutOfRangeException();
             }
@@ -360,8 +341,6 @@ namespace Nex
 
             curState = stateType;
             lastStateStartTime = Time.fixedTime;
-
-            UpdateSetupDetectorConfigBasedOnState(curState);
         }
 
         #endregion

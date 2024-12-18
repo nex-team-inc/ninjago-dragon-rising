@@ -67,8 +67,8 @@ namespace Nex
                         SetupIssueType.ChestTooRight => $"Move to center",
                         SetupIssueType.TooFar => $"Move closer",
                         SetupIssueType.TooClose => $"Step back",
-                        SetupIssueType.TooFarInProcessFrame => $"Move closer",
-                        SetupIssueType.TooCloseInProcessFrame => $"Step back",
+                        SetupIssueType.TooFarInPlayArea => $"Move closer",
+                        SetupIssueType.TooCloseInPlayArea => $"Step back",
                         SetupIssueType.NotAtCenter => $"Move to center",
                         _ => throw new ArgumentOutOfRangeException()
                     };
@@ -92,8 +92,8 @@ namespace Nex
                         SetupIssueType.ChestTooRight => $"(Move to center)",
                         SetupIssueType.TooFar => $"(Move closer)",
                         SetupIssueType.TooClose => $"(Step back)",
-                        SetupIssueType.TooFarInProcessFrame => $"(Move closer)",
-                        SetupIssueType.TooCloseInProcessFrame => $"(Step back)",
+                        SetupIssueType.TooFarInPlayArea => $"(Move closer)",
+                        SetupIssueType.TooCloseInPlayArea => $"(Step back)",
                         SetupIssueType.NotAtCenter => $"(Move to center)",
                         _ => throw new ArgumentOutOfRangeException()
                     };

@@ -46,19 +46,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   bodyDetector: {fileID: 0}
   playerIndex: 0
-  chestStrictLooseHalfMarginInches: 1
-  chestToTopMinInches: 12
-  chestToBottomMinInches: 18
-  chestToLeftMinInches: 12
-  chestToRightMinInches: 12
-  chestXToCenterMaxInches: 1000
-  issueEvaluationTimeWindow: 1
-  issueMinRequiredDataTime: 0.2
-  issueEntryStateRatio: 0.8
-  issueCancelStateRatio: 0.4
-  distanceRatioStrictLooseHalfMarginForDistanceIssue: 0.03
-  frameHeightMinInches: 40
-  frameHeightMaxInches: 90
-  processFrameHeightMinInches: 40
-  processFrameHeightMaxInches: 90
-  centerStrategy: 0
+  setupConfig:
+    chestStrictLooseHalfMarginInches: 1
+    chestToTopMinInches: 12
+    chestToBottomMinInches: 18
+    chestToLeftMinInches: 12
+    chestToRightMinInches: 12
+    chestXToCenterMaxInches: 16
+    issueEvaluationTimeWindow: 0.5
+    issueMinRequiredDataTime: 0.2
+    issueEntryStateRatio: 0.8
+    issueCancelStateRatio: 0.4
+    distanceRatioStrictLooseHalfMarginForDistanceIssue: 0.03
+    frameHeightMinInches: 40
+    frameHeightMaxInches: 280
+    playAreaHeightMinInches: 40
+    playAreaHeightMaxInches: 150

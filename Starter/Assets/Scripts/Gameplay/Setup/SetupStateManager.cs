@@ -34,6 +34,7 @@ namespace Nex
             cvDetectionManager = aCvDetectionManager;
             bodyPoseDetectionManager = aBodyPoseDetectionManager;
             playAreaController = aPlayAreaController;
+            ResetSetupStates();
         }
 
         public void SetTrackingEnabled(bool shouldTrack)
@@ -72,6 +73,7 @@ namespace Nex
                 Destroy(tracker.gameObject);
             }
             playerTrackers.Clear();
+            playerStates.Clear();
         }
 
         void CreateTrackers()
@@ -104,7 +106,7 @@ namespace Nex
             var playingStateCount = playerStates.ReadyPlayerCount();
 
             var isAnyInPlaying = playingStateCount >= 1;
-            var isAllInPlaying = playingStateCount == 2;
+            var isAllInPlaying = playingStateCount == playerStates.Count;
 
             // This should be changed according to the game's need.
             playAreaController.SetPlayAreaLocked(isAllInPlaying);

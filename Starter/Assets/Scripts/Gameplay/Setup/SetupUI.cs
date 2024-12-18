@@ -16,13 +16,15 @@ namespace Nex
         public void Initialize(
             int aNumOfPlayers,
             SetupStateManager setupStateManager
-            )
+        )
         {
             for (var playerIndex = 0; playerIndex < aNumOfPlayers; playerIndex++)
             {
                 var container = aNumOfPlayers == 1
                     ? fullFrameSetupUIContainer
-                    : playerIndex == 0 ? p1SetupUIContainer : p2SetupUIContainer;
+                    : playerIndex == 0
+                        ? p1SetupUIContainer
+                        : p2SetupUIContainer;
 
                 var setupUI = Instantiate(onePlayerSetupUIPrefab, container.transform);
                 setupUI.Initialize(playerIndex, setupStateManager);

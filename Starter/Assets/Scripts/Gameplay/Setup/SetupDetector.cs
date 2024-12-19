@@ -37,26 +37,6 @@ namespace Nex
         public SetupIssueType currentIssue;
     }
 
-    [Serializable]
-    public struct SetupConfig
-    {
-        public float chestStrictLooseHalfMarginInches;
-        public float chestToTopMinInches;
-        public float chestToBottomMinInches;
-        public float chestToLeftMinInches;
-        public float chestToRightMinInches;
-        public float chestXToCenterMaxInches;
-        public float issueEvaluationTimeWindow;
-        public float issueMinRequiredDataTime;
-        public float issueEntryStateRatio;
-        public float issueCancelStateRatio;
-        public float distanceRatioStrictLooseHalfMarginForDistanceIssue;
-        public float frameHeightMinInches;
-        public float frameHeightMaxInches;
-        public float playAreaHeightMinInches;
-        public float playAreaHeightMaxInches;
-    }
-
     public class SetupDetector : MonoBehaviour
     {
         [SerializeField] public BodyPoseDetectionManager bodyDetector;
@@ -70,27 +50,42 @@ namespace Nex
         bool hasEnoughData;
         float startDetectionTime;
 
-        #region SetupConfig
+        #region SetupDetectorWarningConfig
 
-        [SerializeField] SetupConfig setupConfig;
-        float ChestStrictLooseHalfMarginInches => setupConfig.chestStrictLooseHalfMarginInches;
-        float ChestToTopMinInches => setupConfig.chestToTopMinInches;
-        float ChestToBottomMinInches => setupConfig.chestToBottomMinInches;
-        float ChestToLeftMinInches => setupConfig.chestToLeftMinInches;
-        float ChestToRightMinInches => setupConfig.chestToRightMinInches;
-        float ChestXToCenterMaxInches => setupConfig.chestXToCenterMaxInches;
-        float IssueEvaluationTimeWindow => setupConfig.issueEvaluationTimeWindow;
-        float IssueMinRequiredDataTime => setupConfig.issueMinRequiredDataTime;
-        float IssueEntryStateRatio => setupConfig.issueEntryStateRatio;
-        float IssueCancelStateRatio => setupConfig.issueCancelStateRatio;
+        [SerializeField] SetupDetectorWarningConfig setupDetectorWarningConfig;
+        [SerializeField] SetupDetectorMode setupDetectorMode;
+
+        readonly Dictionary<SetupDetectorMode, WarningConfig> cachedWarningConfig = new();
+        WarningConfig CurrentConfig
+        {
+            get
+            {
+                if (!cachedWarningConfig.ContainsKey(setupDetectorMode))
+                {
+                    cachedWarningConfig[setupDetectorMode] = setupDetectorWarningConfig.GetWarningConfig(setupDetectorMode);
+                }
+                return cachedWarningConfig[setupDetectorMode];
+            }
+        }
+
+        float ChestStrictLooseHalfMarginInches => CurrentConfig.chestStrictLooseHalfMarginInches;
+        float ChestToTopMinInches => CurrentConfig.chestToTopMinInches;
+        float ChestToBottomMinInches => CurrentConfig.chestToBottomMinInches;
+        float ChestToLeftMinInches => CurrentConfig.chestToLeftMinInches;
+        float ChestToRightMinInches => CurrentConfig.chestToRightMinInches;
+        float ChestXToCenterMaxInches => CurrentConfig.chestXToCenterMaxInches;
+        float IssueEvaluationTimeWindow => CurrentConfig.issueEvaluationTimeWindow;
+        float IssueMinRequiredDataTime => CurrentConfig.issueMinRequiredDataTime;
+        float IssueEntryStateRatio => CurrentConfig.issueEntryStateRatio;
+        float IssueCancelStateRatio => CurrentConfig.issueCancelStateRatio;
 
         float DistanceRatioStrictLooseHalfMarginForDistanceIssue =>
-            setupConfig.distanceRatioStrictLooseHalfMarginForDistanceIssue;
+            CurrentConfig.distanceRatioStrictLooseHalfMarginForDistanceIssue;
 
-        float FrameHeightMinInches => setupConfig.frameHeightMinInches;
-        float FrameHeightMaxInches => setupConfig.frameHeightMaxInches;
-        float PlayAreaHeightMinInches => setupConfig.playAreaHeightMinInches;
-        float PlayAreaHeightMaxInches => setupConfig.playAreaHeightMaxInches;
+        float FrameHeightMinInches => CurrentConfig.frameHeightMinInches;
+        float FrameHeightMaxInches => CurrentConfig.frameHeightMaxInches;
+        float PlayAreaHeightMinInches => CurrentConfig.playAreaHeightMinInches;
+        float PlayAreaHeightMaxInches => CurrentConfig.playAreaHeightMaxInches;
 
         #endregion
 
@@ -148,6 +143,11 @@ namespace Nex
         }
 
         // MARK - Helper
+
+        public void SetDetectorMode(SetupDetectorMode mode)
+        {
+            setupDetectorMode = mode;
+        }
 
         void AnnounceDetection()
         {

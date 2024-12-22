@@ -57,6 +57,11 @@ namespace Nex
             }
         }
 
+        void LateUpdate()
+        {
+            currentlyStartedClips.Clear();
+        }
+
         public void PlaySoundEffect(SoundEffect effect, AudioSource? customAudioSource = null)
         {
             if (effect == SoundEffect.None) return; // Don't play anything for None.

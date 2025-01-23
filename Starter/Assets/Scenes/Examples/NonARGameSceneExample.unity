@@ -167,7 +167,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   detectionManager: {fileID: 5095724874168411153}
-  numOfPlayers: 2
+  playersManager: {fileID: 639025207}
+  numOfPlayers: 1
 --- !u!1 &296365939
 GameObject:
   m_ObjectHideFlags: 0
@@ -365,6 +366,17 @@ MonoBehaviour:
     m_MipBias: 0
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
+--- !u!114 &639025207 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8478388752899534010, guid: 0274e3b471944447fae96700c83d2581, type: 3}
+  m_PrefabInstance: {fileID: 5095724874168411152}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7741fa43cd64644a1929b90543714f49, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1291505164
 GameObject:
   m_ObjectHideFlags: 0

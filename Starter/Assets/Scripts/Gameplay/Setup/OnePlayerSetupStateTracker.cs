@@ -232,7 +232,7 @@ namespace Nex
                 {
                     // Check forward: raise hand.
                     var raiseHandRatio = CheckRatio(SetupCheckType.RaisingHand, state1RaiseHandCheckDuration, lastStateStartTime);
-                    summary.raiseHandProgress = raiseHandRatio / state1RaiseHandRatioThreshold;
+                    summary.raiseHandProgress = Mathf.Min(raiseHandRatio / state1RaiseHandRatioThreshold, 1f);
                     if (raiseHandRatio > state1RaiseHandRatioThreshold && allowPassingRaisingHandState)
                     {
                         summary.isStateChanged = true;

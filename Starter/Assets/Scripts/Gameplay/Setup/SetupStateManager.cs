@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Linq;
+using Cysharp.Threading.Tasks;
 using Jazz;
 using UnityEngine;
 using UnityEngine.Events;
@@ -11,11 +13,13 @@ namespace Nex
     {
         [SerializeField] OnePlayerSetupStateTracker onePlayerSetupStateTrackerPrefab = null!;
 
-        CvDetectionManager cvDetectionManager = null!;
         BodyPoseDetectionManager bodyPoseDetectionManager = null!;
         PlayAreaController playAreaController = null!;
         readonly List<OnePlayerSetupStateTracker> playerTrackers = new();
         readonly List<PlayerSetupState> playerStates = new();
+
+        public bool AllPlayersAreInGoodPosition =>
+            playerStates.All(x => x.setupStateType > SetupStateType.WaitingForGoodPlayerPosition);
 
         public event UnityAction<(int playerIndex, SetupSummary setupSummary)>? PlayerTrackerUpdated;
 
@@ -25,16 +29,15 @@ namespace Nex
 
         public void Initialize(
             int aNumOfPlayers,
-            CvDetectionManager aCvDetectionManager,
             BodyPoseDetectionManager aBodyPoseDetectionManager,
             PlayAreaController aPlayAreaController
         )
         {
             numOfPlayers = aNumOfPlayers;
-            cvDetectionManager = aCvDetectionManager;
             bodyPoseDetectionManager = aBodyPoseDetectionManager;
             playAreaController = aPlayAreaController;
-            ResetSetupStates();
+
+            SetAllowPassingRaisingHandState(false);
         }
 
         public void SetTrackingEnabled(bool shouldTrack)
@@ -57,23 +60,41 @@ namespace Nex
             CreateTrackers();
         }
 
+        public void SetAllowPassingRaisingHandState(bool value)
+        {
+            foreach (var tracker in playerTrackers)
+            {
+                tracker.SetAllowPassingRaisingHandState(value);
+            }
+        }
+
+        #endregion
+
+        #region Life Cycle
+
+        void Update()
+        {
+            if (Input.GetKeyDown(KeyCode.S))
+            {
+                SetAllowPassingRaisingHandState(true);
+                ResolveGoodPlayerPosition();
+                ResolveRaiseHand();
+            }
+        }
+
         #endregion
 
         #region Trackers
 
         void ClearTrackers()
         {
-            for (var playerIndex = 0; playerIndex < playerTrackers.Count; playerIndex++)
+            foreach (var tracker in playerTrackers)
             {
-                var tracker = playerTrackers[playerIndex];
                 tracker.SetIsTracking(false);
-
-                // Send out a dummy update so that the outside can update UI and cursor visibility accordingly.
-                TrackerOnUpdated(playerIndex, SetupSummary.CreateDummy());
                 Destroy(tracker.gameObject);
             }
+
             playerTrackers.Clear();
-            playerStates.Clear();
         }
 
         void CreateTrackers()
@@ -96,70 +117,82 @@ namespace Nex
             }
         }
 
-        void HandlePlayerStatesChange()
-        {
-            ReconfigureDetection();
-        }
-
-        void ReconfigureDetection()
-        {
-            var playingStateCount = playerStates.ReadyPlayerCount();
-
-            var isAnyInPlaying = playingStateCount >= 1;
-            var isAllInPlaying = playingStateCount == playerStates.Count;
-
-            // This should be changed according to the game's need.
-            playAreaController.SetPlayAreaLocked(isAllInPlaying);
-            DewarpLocked = isAnyInPlaying;
-            TrackingConsistencyEnabled = isAllInPlaying;
-        }
-
-        #region Configs
-
-        bool DewarpLocked
-        {
-            get => CvDetectionManager.dewarpController.continuousAutoTiltMode == ContinuousAutoTiltMode.Off;
-            set
-            {
-                if (DewarpLocked != value)
-                {
-                    var autoTiltValue = value
-                        ? ContinuousAutoTiltMode.Off
-                        : ContinuousAutoTiltMode.Recovery;
-                    CvDetectionManager.dewarpController.continuousAutoTiltMode = autoTiltValue;
-                    cvDetectionManager.dynamicDewarpConfig.continuousAutoTiltMode = autoTiltValue;
-
-                    Debug.Log($"Dewarp changed: {(value ? "Locked" : "Unlocked")}");
-                }
-            }
-        }
-
-        bool TrackingConsistencyEnabled
-        {
-            get => bodyPoseDetectionManager.trackingConfig.enableConsistency;
-            set
-            {
-                if (TrackingConsistencyEnabled != value)
-                {
-                    bodyPoseDetectionManager.trackingConfig.enableConsistency = value;
-
-                    Debug.Log($"Tracking consistency changed: {value}");
-                }
-            }
-        }
-
-        #endregion
-
         void TrackerOnUpdated(int playerIndex, SetupSummary summary)
         {
             if (playerStates[playerIndex].setupStateType != summary.setupStateType)
             {
                 playerStates[playerIndex].setupStateType = summary.setupStateType;
-
                 HandlePlayerStatesChange();
             }
 
             PlayerTrackerUpdated?.Invoke((playerIndex, summary));
+        }
+
+        void HandlePlayerStatesChange()
+        {
+            AnnounceGoodPlayerPositionIfNeeded();
+            AnnounceRaiseHandIfNeeded();
+        }
+
+        #endregion
+
+        #region UniTask API
+
+        UniTaskCompletionSource? goodPlayerPositionSource;
+        UniTaskCompletionSource? raiseHandSource;
+
+        public UniTask WaitForGoodPlayerPosition()
+        {
+            goodPlayerPositionSource ??= new UniTaskCompletionSource();
+            var task = goodPlayerPositionSource.Task;
+
+            AnnounceGoodPlayerPositionIfNeeded();
+
+            return task;
+        }
+
+        void AnnounceGoodPlayerPositionIfNeeded()
+        {
+            if (AllPlayersAreInGoodPosition)
+            {
+                ResolveGoodPlayerPosition();
+            }
+        }
+
+        void ResolveGoodPlayerPosition()
+        {
+            if (goodPlayerPositionSource != null)
+            {
+                goodPlayerPositionSource.TrySetResult();
+                goodPlayerPositionSource = null;
+            }
+        }
+
+        public UniTask WaitForRaiseHand()
+        {
+            raiseHandSource ??= new UniTaskCompletionSource();
+            var task = raiseHandSource.Task;
+
+            AnnounceRaiseHandIfNeeded();
+
+            return task;
+        }
+
+        void AnnounceRaiseHandIfNeeded()
+        {
+            if (playerStates.All(x => x.setupStateType > SetupStateType.WaitingForRaisingHand))
+            {
+                ResolveRaiseHand();
+            }
+        }
+
+        void ResolveRaiseHand()
+        {
+            if (raiseHandSource != null)
+            {
+                raiseHandSource.TrySetResult();
+                raiseHandSource = null;
+            }
         }
 
         #endregion

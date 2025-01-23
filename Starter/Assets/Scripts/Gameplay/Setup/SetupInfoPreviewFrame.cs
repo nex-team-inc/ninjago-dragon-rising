@@ -1,0 +1,24 @@
+using Jazz;
+using UnityEngine;
+
+namespace Nex
+{
+    public class SetupInfoPreviewFrame : MonoBehaviour
+    {
+        [SerializeField] PlayerSetupPreviewFrame previewFrame = null!;
+        [SerializeField] SetupWarningMessage warningMessage = null!;
+
+        public void Initialize(
+            int playerIndex,
+            int numOfPlayers,
+            CvDetectionManager cvDetectionManager,
+            BodyPoseDetectionManager bodyPoseDetectionManager,
+            PlayAreaController playAreaController,
+            SetupStateManager setupStateManager
+        )
+        {
+            previewFrame.Initialize(playerIndex, numOfPlayers, cvDetectionManager, bodyPoseDetectionManager, playAreaController);
+            warningMessage.Initialize(playerIndex, setupStateManager);
+        }
+    }
+}

@@ -1,5 +1,7 @@
 #nullable enable
 
+using Cysharp.Threading.Tasks;
+using DG.Tweening;
 using Nex.Util;
 using UnityEngine;
 
@@ -27,5 +29,19 @@ namespace Nex
         {
             audioSource.Stop();
         }
+
+        #region Fading In/Out
+
+        public async UniTask FadeIn(float duration = 0.5f)
+        {
+            await audioSource.DOFade(1, duration).WithCancellation(this.GetCancellationTokenOnDestroy());
+        }
+
+        public async UniTask FadeOut(float duration = 0.5f)
+        {
+            await audioSource.DOFade(0, duration).WithCancellation(this.GetCancellationTokenOnDestroy());
+        }
+
+        #endregion
     }
 }

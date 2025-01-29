@@ -5,7 +5,7 @@ using UnityEngine.Events;
 
 #nullable enable
 
-namespace Nex.SesameDance
+namespace Nex
 {
     public class OnePlayerPreviewPoseEngine : MonoBehaviour
     {

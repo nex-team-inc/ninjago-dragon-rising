@@ -37,7 +37,7 @@ namespace Nex
          FloatHistory minMarginTopHistory = null!;
          FloatHistory minMarginBottomHistory = null!;
 
-         public Rect PlayAreaInAspectNormalizedSpace { get; private set; }
+         public Rect PlayAreaInAspectNormalizedSpace { get; private set; } = new(0, 0, 1, 1);
 
          #region Public
 

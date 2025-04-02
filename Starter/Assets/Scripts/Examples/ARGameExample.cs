@@ -14,6 +14,11 @@ namespace Nex
 
         void Start()
         {
+            if (Application.isEditor)
+            {
+                Application.runInBackground = true;
+            }
+
             cvDetectionManager.numOfPlayers = numOfPlayers;
             playAreaController.Initialize(numOfPlayers, cvDetectionManager, bodyPoseDetectionManager);
             previewFrame.Initialize(cvDetectionManager, playAreaController);

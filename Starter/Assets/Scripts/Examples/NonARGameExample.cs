@@ -11,6 +11,11 @@ namespace Nex
 
         void Start()
         {
+            if (Application.isEditor)
+            {
+                Application.runInBackground = true;
+            }
+
             StartAsync().Forget();
         }
 

@@ -2,12 +2,13 @@
 
 using System;
 using Jazz;
+using NaughtyAttributes;
 using UnityEngine;
 using Rect = UnityEngine.Rect;
 
 namespace Nex
 {
-     public class PlayAreaController : MonoBehaviour
+     public class PlayAreaController : BasePlayAreaController
      {
          [Serializable]
          public class Config
@@ -18,38 +19,34 @@ namespace Nex
              public float topMarginInInches = 24;
              public float bottomMarginInInches = 34;
              public float minPlayAreaToRawFrameRatio = 0.3f;
+             public float maxPlayAreaToRawFrameRatio = 1f;
+             public float deadZone;
              public float aspectRatio = 16f / 9f;
          }
 
          // Controllers
          [SerializeField] Config config = null!;
-         CvDetectionManager cvDetectionManager = null!;
-         BodyPoseDetectionManager bodyPoseDetectionManager = null!;
-
-         // Configs
-         int numOfPlayers;
 
          // States
-         bool locked;
          readonly Vector2 poseSpaceSize = DetectionUtils.AspectNormalizedFrameSize;
          FloatHistory minMarginLeftHistory = null!;
          FloatHistory minMarginRightHistory = null!;
          FloatHistory minMarginTopHistory = null!;
          FloatHistory minMarginBottomHistory = null!;
 
-         public Rect PlayAreaInAspectNormalizedSpace { get; private set; } = new(0, 0, 1, 1);
+         [ShowNativeProperty] Rect PlayAreaInAspectNormalizedSpace { get; set; } = new(0, 0, 1, 1);
+
+         [ShowNativeProperty] int totalStableFrameCount { get; set; }
 
          #region Public
 
-         public void Initialize(
+         public override void Initialize(
              int aNumOfPlayers,
              CvDetectionManager aCvDetectionManager,
              BodyPoseDetectionManager aBodyPoseDetectionManager
              )
          {
-             numOfPlayers = aNumOfPlayers;
-             cvDetectionManager = aCvDetectionManager;
-             bodyPoseDetectionManager = aBodyPoseDetectionManager;
+             base.Initialize(aNumOfPlayers, aCvDetectionManager, aBodyPoseDetectionManager);
              minMarginLeftHistory = new FloatHistory(config.smoothTimeWindow);
              minMarginRightHistory = new FloatHistory(config.smoothTimeWindow);
              minMarginTopHistory = new FloatHistory(config.smoothTimeWindow);
@@ -57,12 +54,7 @@ namespace Nex
              bodyPoseDetectionManager.captureAspectNormalizedDetection += HandleNewDetection;
          }
 
-         public void SetPlayAreaLocked(bool value)
-         {
-             locked = value;
-         }
-
-         public Rect GetPlayAreaInNormalizedSpace()
+         public override Rect GetPlayAreaInNormalizedSpace()
          {
              return new Rect(
                  PlayAreaInAspectNormalizedSpace.x / poseSpaceSize.x,
@@ -72,9 +64,25 @@ namespace Nex
              );
          }
 
+         public override Rect GetPlayAreaInAspectNormalizedSpace()
+         {
+             return PlayAreaInAspectNormalizedSpace;
+         }
+
+         public Rect GetPlayAreaInFrameSpace()
+         {
+             var rawFrameSize = cvDetectionManager.GetFrameProvider().GetRawFrameSize();
+             var aspectNormalizedFactor = (float)(rawFrameSize.height > rawFrameSize.width ? rawFrameSize.width : rawFrameSize.height);
+             return new Rect(
+                 (PlayAreaInAspectNormalizedSpace.x + 0.5f) * aspectNormalizedFactor,
+                 (PlayAreaInAspectNormalizedSpace.y + 0.5f) * aspectNormalizedFactor,
+                 PlayAreaInAspectNormalizedSpace.width * aspectNormalizedFactor,
+                 PlayAreaInAspectNormalizedSpace.height * aspectNormalizedFactor);
+         }
+
          void OnDestroy()
          {
-             bodyPoseDetectionManager.captureAspectNormalizedDetection -= HandleNewDetection;
+             if (bodyPoseDetectionManager) bodyPoseDetectionManager.captureAspectNormalizedDetection -= HandleNewDetection;
          }
 
          #endregion
@@ -190,8 +198,8 @@ namespace Nex
              var centerX = (finalMinMarginLeft + w - finalMinMarginRight) / 2;
              var centerY = (finalMinMarginTop + h - finalMinMarginBottom) / 2;
 
-             idealCropHeight = Math.Max(idealCropHeight, (h * config.minPlayAreaToRawFrameRatio));
-             idealCropWidth = Math.Max(idealCropWidth, (w * config.minPlayAreaToRawFrameRatio));
+             idealCropHeight = Math.Clamp(idealCropHeight, (h * config.minPlayAreaToRawFrameRatio), (h * config.maxPlayAreaToRawFrameRatio));
+             idealCropWidth = Math.Clamp(idealCropWidth, (w * config.minPlayAreaToRawFrameRatio), (w * config.maxPlayAreaToRawFrameRatio));
 
              idealCropHeight = Math.Max(idealCropHeight, (idealCropWidth / expectedRatio));
              idealCropWidth = Math.Max(idealCropWidth, (idealCropHeight * expectedRatio));
@@ -241,8 +249,21 @@ namespace Nex
 
              if (!locked)
              {
-                 PlayAreaInAspectNormalizedSpace = ComputePlayArea();
-                 UpdateTrackingPosition();
+                 var newPlayArea = ComputePlayArea();
+
+                 // Update final rect only if the differences are significant.
+                 if (Math.Abs(newPlayArea.x - PlayAreaInAspectNormalizedSpace.x) > config.deadZone ||
+                     Math.Abs(newPlayArea.y - PlayAreaInAspectNormalizedSpace.y) > config.deadZone ||
+                     Math.Abs(newPlayArea.width - PlayAreaInAspectNormalizedSpace.width) > config.deadZone ||
+                     Math.Abs(newPlayArea.height - PlayAreaInAspectNormalizedSpace.height) > config.deadZone)
+                 {
+                     PlayAreaInAspectNormalizedSpace = newPlayArea;
+                     UpdateTrackingPosition();
+                 }
+                 else
+                 {
+                     totalStableFrameCount++;
+                 }
              }
          }
 
@@ -251,22 +272,19 @@ namespace Nex
              return true;
          }
 
-         void UpdateTrackingPosition()
+         public override void ForceSetPlayArea(Rect rect)
          {
-             // XXX: this is a hack. MDK doesn't have a API to set the player tracking position. So we need to hack it
-             // by setting the element in the list during runtime.
-             while(cvDetectionManager.playerPositions.Count < numOfPlayers)
-             {
-                 cvDetectionManager.playerPositions.Add(Vector2.zero);
-             }
+             PlayAreaInAspectNormalizedSpace = rect;
+             UpdateTrackingPosition();
+         }
 
-             for (var playerIndex = 0; playerIndex < numOfPlayers; playerIndex++)
-             {
-                 var ratioInPlayerArea = PlayerPositionDefinition.GetXRatioForPlayer(playerIndex, numOfPlayers);
-                 var playAreaInNormalizedSpace = GetPlayAreaInNormalizedSpace();
-                 var ratioInRawFrame = playAreaInNormalizedSpace.x + playAreaInNormalizedSpace.width * ratioInPlayerArea;
-                 cvDetectionManager.playerPositions[playerIndex] = new Vector2(ratioInRawFrame, 0.5f);
-             }
+         public override void RefreshPlayArea()
+         {
+             if (locked) return;
+
+             var newPlayArea = ComputePlayArea();
+             PlayAreaInAspectNormalizedSpace = newPlayArea;
+             UpdateTrackingPosition();
          }
 
          #endregion

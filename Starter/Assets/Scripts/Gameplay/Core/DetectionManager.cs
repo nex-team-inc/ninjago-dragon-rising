@@ -13,7 +13,7 @@ namespace Nex
         [SerializeField] BodyPoseDetectionManager bodyPoseDetectionManager = null!;
         [SerializeField] PreviewsManager previewsManager = null!;
         [SerializeField] SetupStateManager setupStateManager = null!;
-        [SerializeField] PlayAreaController playAreaController = null!;
+        [SerializeField] BasePlayAreaController playAreaController = null!;
 
         int numOfPlayers;
 

@@ -6,7 +6,7 @@ namespace Nex
     public class ARGameExample : MonoBehaviour
     {
         [SerializeField] AreaPreviewFrame previewFrame = null!;
-        [SerializeField] PlayAreaController playAreaController = null!;
+        [SerializeField] BasePlayAreaController playAreaController = null!;
         [SerializeField] BodyPoseDetectionManager bodyPoseDetectionManager = null!;
         [SerializeField] CvDetectionManager cvDetectionManager = null!;
         [SerializeField] OnePlayerPreviewPoseEngine onePlayerPreviewPoseEnginePrefab = null!;

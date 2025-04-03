@@ -14,7 +14,7 @@ namespace Nex
         [SerializeField] OnePlayerSetupStateTracker onePlayerSetupStateTrackerPrefab = null!;
 
         BodyPoseDetectionManager bodyPoseDetectionManager = null!;
-        PlayAreaController playAreaController = null!;
+        BasePlayAreaController playAreaController = null!;
         readonly List<OnePlayerSetupStateTracker> playerTrackers = new();
         readonly List<PlayerSetupState> playerStates = new();
 
@@ -30,7 +30,7 @@ namespace Nex
         public void Initialize(
             int aNumOfPlayers,
             BodyPoseDetectionManager aBodyPoseDetectionManager,
-            PlayAreaController aPlayAreaController
+            BasePlayAreaController aPlayAreaController
         )
         {
             numOfPlayers = aNumOfPlayers;

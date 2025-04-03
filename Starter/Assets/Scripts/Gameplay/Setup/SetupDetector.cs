@@ -95,7 +95,7 @@ namespace Nex
 
         List<SetupIssueType> issueTypesSortedByDisplayPriority;
 
-        PlayAreaController playAreaController = null!;
+        BasePlayAreaController playAreaController = null!;
 
         public event UnityAction<SetupDetection> captureDetection;
 
@@ -104,7 +104,7 @@ namespace Nex
         // MARK - Life Cycle
 
         public void Initialize(
-            PlayAreaController aPlayAreaController,
+            BasePlayAreaController aPlayAreaController,
             List<SetupIssueType> aIssueTypesSortedByDisplayPriority = null)
         {
             playAreaController = aPlayAreaController;

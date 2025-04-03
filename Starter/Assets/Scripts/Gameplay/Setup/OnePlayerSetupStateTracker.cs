@@ -122,7 +122,7 @@ namespace Nex
         public void Initialize(
             int aPlayerIndex,
             BodyPoseDetectionManager aBodyPoseDetectionManager,
-            PlayAreaController playAreaController
+            BasePlayAreaController playAreaController
         )
         {
             playerIndex = aPlayerIndex;
@@ -154,7 +154,7 @@ namespace Nex
             SetupDetector setupDetector,
             BodyPoseDetectionManager bodyPoseDetectionManager,
             int playerIndex,
-            PlayAreaController playAreaController
+            BasePlayAreaController playAreaController
         )
         {
             setupDetector.bodyDetector = bodyPoseDetectionManager;

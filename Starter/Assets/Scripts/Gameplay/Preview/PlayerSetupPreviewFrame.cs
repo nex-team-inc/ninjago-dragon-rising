@@ -12,7 +12,7 @@ namespace Nex
         CvDetectionManager cvDetectionManager = null!;
         // ReSharper disable once NotAccessedField.Local
         BodyPoseDetectionManager bodyPoseDetectionManager = null!;
-        PlayAreaController playAreaController = null!;
+        BasePlayAreaController playAreaController = null!;
 
         Rect playAreaRectInNormalizedSpace;
         Rect previewRectInNormalizedSpace;
@@ -28,7 +28,7 @@ namespace Nex
             int aNumOfPlayers,
             CvDetectionManager aCvDetectionManager,
             BodyPoseDetectionManager aBodyPoseDetectionManager,
-            PlayAreaController aPlayAreaController
+            BasePlayAreaController aPlayAreaController
         )
         {
             playerIndex = aPlayerIndex;

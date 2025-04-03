@@ -13,7 +13,7 @@ namespace Nex
             int numOfPlayers,
             CvDetectionManager cvDetectionManager,
             BodyPoseDetectionManager bodyPoseDetectionManager,
-            PlayAreaController playAreaController,
+            BasePlayAreaController playAreaController,
             SetupStateManager setupStateManager
         )
         {

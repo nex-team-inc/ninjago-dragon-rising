@@ -1,6 +1,7 @@
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using Jazz;
+using NaughtyAttributes;
 using UnityEngine;
 
 #nullable enable
@@ -9,19 +10,25 @@ namespace Nex
 {
     public class AreaPreviewFrame : PreviewFrameBase
     {
+        [SerializeField] bool enableSmoothing;
+        // 0 = No Update, 1 = No Smoothing
+        [ShowIf("enableSmoothing"), Range(0, 1), SerializeField] float smoothFactor = 1f;
+        [ShowIf("enableSmoothing"), SerializeField] float enableSmoothingAfterPeriod = 1f;
+
         CvDetectionManager cvDetectionManager = null!;
-        PlayAreaController playAreaController = null!;
+        BasePlayAreaController playAreaController = null!;
 
         Rect playAreaRectInNormalizedSpace;
         Rect previewRectInNormalizedSpace;
 
         bool isFirstFrameReceived;
+        float startTime;
 
         #region Public
 
-        public void Initialize(
+        public virtual void Initialize(
             CvDetectionManager aCvDetectionManager,
-            PlayAreaController aPlayAreaController
+            BasePlayAreaController aPlayAreaController
         )
         {
             cvDetectionManager = aCvDetectionManager;
@@ -32,6 +39,8 @@ namespace Nex
             previewRectInNormalizedSpace = new Rect(0, 0, 1, 1);
 
             canvasGroup.alpha = 0;
+
+            startTime = Time.timeSinceLevelLoad;
         }
 
         public override Rect PreviewRectInNormalizedSpace()
@@ -43,7 +52,7 @@ namespace Nex
 
         #region Life Cycle
 
-        void OnDestroy()
+        protected virtual void OnDestroy()
         {
             cvDetectionManager.captureCameraFrame -= CvDetectionManagerOnCaptureCameraFrame;
         }
@@ -61,7 +70,12 @@ namespace Nex
                 canvasGroup.DOFade(1f, 0.5f).WithCancellation(this.GetCancellationTokenOnDestroy());
             }
 
-            rawImage.texture = frameInformation.texture;
+            if (rawImage == null)
+            {
+                return;
+            }
+
+            SetTexture(frameInformation.texture);
             var isMirrored = frameInformation.shouldMirror;
 
             UpdatePreviewRectInWorldSpaceInfoIfNeeded();
@@ -73,7 +87,30 @@ namespace Nex
 
             previewRectInNormalizedSpace = CenterRect(playAreaRectInNormalizedSpace, previewWidthRatio);
 
-            rawImage.uvRect = FlipRectIfNeeded(previewRectInNormalizedSpace, isMirrored);
+            var newRect = FlipRectIfNeeded(previewRectInNormalizedSpace, isMirrored);
+
+            if (enableSmoothing && Time.timeSinceLevelLoad - startTime > enableSmoothingAfterPeriod)
+            {
+                var smoothedNewRect = new Rect(
+                    Mathf.Lerp(rawImage.uvRect.x, newRect.x, smoothFactor),
+                    Mathf.Lerp(rawImage.uvRect.y, newRect.y, smoothFactor),
+                    Mathf.Lerp(rawImage.uvRect.width, newRect.width, smoothFactor),
+                    Mathf.Lerp(rawImage.uvRect.height, newRect.height, smoothFactor)
+                );
+                rawImage.uvRect = smoothedNewRect;
+            }
+            else
+            {
+                rawImage.uvRect = newRect;
+            }
+        }
+
+        public virtual void SetTexture(Texture texture)
+        {
+            if (rawImage != null && isFirstFrameReceived)
+            {
+                rawImage.texture = texture;
+            }
         }
 
         Rect CenterRect(Rect fullRect, float previewWidthRatio)

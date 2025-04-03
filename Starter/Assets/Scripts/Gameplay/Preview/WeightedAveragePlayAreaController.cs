@@ -15,9 +15,9 @@ namespace Nex
         [Serializable]
         public class Config
         {
-            public float smoothTimeWindow = 10f;
-            public float topMarginInInches = 24;
-            public float bottomMarginInInches = 34;
+            public float smoothTimeWindow = 1f;
+            public float topMarginInInches = 20;
+            public float bottomMarginInInches = 24;
             public float minPlayAreaToRawFrameRatio = 0.3f;
             public float maxPlayAreaToRawFrameRatio = 1f;
 
@@ -28,9 +28,9 @@ namespace Nex
             public float refreshInterval = 5f;
 
             // Copy from PlayerTrackingUtils
-            public float refInches = 36;
+            public float refInches = 44;
 
-            public float deadZone;
+            public float deadZone = 0.1f;
             public float aspectRatio = 16f / 9f;
 
             public float minValidPoseScaleAverage = 0.1f;

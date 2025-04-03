@@ -12,7 +12,7 @@ namespace Nex
     {
         [SerializeField] bool enableSmoothing;
         // 0 = No Update, 1 = No Smoothing
-        [ShowIf("enableSmoothing"), Range(0, 1), SerializeField] float smoothFactor = 1f;
+        [ShowIf("enableSmoothing"), Range(0, 1), SerializeField] float smoothFactor = 0.1f;
         [ShowIf("enableSmoothing"), SerializeField] float enableSmoothingAfterPeriod = 1f;
 
         CvDetectionManager cvDetectionManager = null!;

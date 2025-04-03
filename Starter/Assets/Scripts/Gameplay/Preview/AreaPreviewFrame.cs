@@ -26,7 +26,7 @@ namespace Nex
 
         #region Public
 
-        public virtual void Initialize(
+        public void Initialize(
             CvDetectionManager aCvDetectionManager,
             BasePlayAreaController aPlayAreaController
         )
@@ -52,7 +52,7 @@ namespace Nex
 
         #region Life Cycle
 
-        protected virtual void OnDestroy()
+        protected void OnDestroy()
         {
             cvDetectionManager.captureCameraFrame -= CvDetectionManagerOnCaptureCameraFrame;
         }
@@ -105,7 +105,7 @@ namespace Nex
             }
         }
 
-        public virtual void SetTexture(Texture texture)
+        void SetTexture(Texture texture)
         {
             if (rawImage != null && isFirstFrameReceived)
             {

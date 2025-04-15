@@ -7,6 +7,7 @@ The starter project with motion control.
 You can easily use this project to start your own project.
 You only need to:
 
+- Run `make`
 - Change the root folder name
 - Change the unity folder name
 - Change the `Product Name` in Unity project settings (Player Tab).

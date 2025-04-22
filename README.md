@@ -79,6 +79,34 @@ git lfs push origin --all  # Push all lfs objects as well.
   - It can be done using a Horizontal Layout Group (with "Control Child Size" option) and a Content Size Fitter on the background component.
   - For examples, check out the play button in the prefab `Assets/Prefabs/Views/WelcomeScreenView.prefab`.
 
+## Setup Remote Config
+
+1. On [Unity Cloud](https://cloud.unity.com/home/), click your profile icon on top right, make sure you are using the "Nex Team Inc." Organization, not "Nex Build Pipeline".
+
+1. Create a project under the "Nex Team Inc." Organization.
+
+1. Go to Projects -> Environments. There should be a "production" environment created by default. Also create a "staing" environment.
+
+1. Go to Products -> Remote Config. Add any remote configs as needed.
+
+1. On Unity, select Edit -> Project Settings -> Services. Select the new project created -> Link Unity project to cloud project.
+    1. Also do File -> Save project. Commit the changes in `ProjectSettings/ProjectSettings.asset`.
+
+1. On `Assets/Prefabs/Singletons/CommonSingletons.prefab`, drag and drop the prefab `Assets/Prefabs/Singletons/RemoteConfigManager.prefab` to enable Remote Config.
+
+### Usage
+
+1. On `Assets/Scripts/RemoteConfig/RemoteConfig.cs`, define the fields of the remote config.
+
+    1. If the field is not a primitive type (e.g. a List), also handle the de-serialization.
+
+    1. (Optional) Set the default values under the `RemoteConfigManager` prefab.
+
+1. On Unity Cloud -> Products -> Remote Config, add the key with the same name with the desired value. Click "Publish" for the Remote Config to take effect.
+
+1. Run the game on Editor. Verify the remote config is sucessfully fetched by tracing the log `RemoteConfigManager: Got from ...`
+
+---
 
 ## What's Next
 - To make sure NBP works, Derek would need Admin role to the repo. Forked repo doesn't inherit Collaborators and Teams settings unfortunately.

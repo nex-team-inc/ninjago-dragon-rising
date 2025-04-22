@@ -87,9 +87,9 @@ git lfs push origin --all  # Push all lfs objects as well.
 
 1. Go to Projects -> Environments. There should be a "production" environment created by default. Also create a "staing" environment.
 
-1. Go to Products -> Remote Config. Add any remote configs as needed.
-
-1. On Unity, select Edit -> Project Settings -> Services. Select the new project created -> Link Unity project to cloud project.
+1. On Unity, select Edit -> Project Settings -> Services.
+    1. Click "Unlink project".
+    1. Select the new project created -> Link Unity project to cloud project.
     1. Also do File -> Save project. Commit the changes in `ProjectSettings/ProjectSettings.asset`.
 
 1. On `Assets/Prefabs/Singletons/CommonSingletons.prefab`, drag and drop the prefab `Assets/Prefabs/Singletons/RemoteConfigManager.prefab` to enable Remote Config.

@@ -4,9 +4,9 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
-namespace Nex.Localization.Demo
+namespace Nex.Localization.Examples
 {
-    public class SmartStringDemo : MonoBehaviour
+    public class LuckyNumberSmartStringExample : MonoBehaviour
     {
         [SerializeField] NexLocalizedString targetText = null!;
 

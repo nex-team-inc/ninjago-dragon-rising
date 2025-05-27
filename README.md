@@ -2,14 +2,30 @@
 
 The starter project with motion control.
 
-## Change Project Name
+## How to fork this repository
 
-You can easily use this project to start your own project.
-You only need to:
+First you need to create a new repo on github. Suppose your repo is called YOUR_REPO, execute the following commands.
 
+`Step 1 - Clone`
+```bash
+git clone git@github.com:nex-team-inc/starter.git YOUR_REPO/
+cd YOUR_REPO/
+git lfs fetch --all
+```
+
+`Step 2 - Change Project Name`
+```
 - Change the root folder name
 - Change the unity folder name
 - Change the `Product Name` in Unity project settings (Player Tab).
+```
+
+`Step 3 - Push to your repo`
+```bash
+git remote set-url origin YOUR_REPO_URL # Get the repo url from the github repo page.
+git push  # Push all git commits and history.
+git lfs push origin --all  # Push all lfs objects as well.
+```
 
 ## What's Included
 
@@ -33,19 +49,6 @@ You only need to:
   - How to use PreviewsManager to display camera view.
   - How to use SetupStateManager to manage setup states.
   - How to use Singletons.
-
-## How to fork this repository
-
-First you need to create a new repo on github. Suppose your repo is called YOUR_REPO, execute the following commands.
-
-```bash
-git clone git@github.com:nex-team-inc/starter.git YOUR_REPO/
-cd YOUR_REPO/
-git lfs fetch --all
-git remote set-url origin YOUR_REPO_URL # Get the repo url from the github repo page.
-git push  # Push all git commits and history.
-git lfs push origin --all  # Push all lfs objects as well.
-```
 
 ## Setup Localization
 

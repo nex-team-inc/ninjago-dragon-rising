@@ -86,5 +86,11 @@ namespace Nex
 
             singletonDict.Clear();
         }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void Cleanup()
+        {
+            singletonDict.Clear();
+        }
     }
 }

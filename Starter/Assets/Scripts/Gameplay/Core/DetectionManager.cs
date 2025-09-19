@@ -55,7 +55,7 @@ namespace Nex
 
         bool DewarpLocked
         {
-            get => cvDetectionManager.dynamicDewarpConfig.continuousAutoTiltMode == ContinuousAutoTiltMode.Off;
+            get => CvDetectionManager.dewarpAutoTiltController.continuousAutoTiltMode == ContinuousAutoTiltMode.Off;
             set
             {
                 if (DewarpLocked != value)
@@ -63,7 +63,7 @@ namespace Nex
                     var autoTiltValue = value
                         ? ContinuousAutoTiltMode.Off
                         : ContinuousAutoTiltMode.Recovery;
-                    cvDetectionManager.dynamicDewarpConfig.continuousAutoTiltMode = autoTiltValue;
+                    CvDetectionManager.dewarpAutoTiltController.continuousAutoTiltMode = autoTiltValue;
 
                     Debug.Log($"Dewarp changed: {(value ? "Locked" : "Unlocked")}");
                 }

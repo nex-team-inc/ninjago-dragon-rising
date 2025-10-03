@@ -12,8 +12,7 @@ using Unity.Services.Core.Environments;
 using Unity.Services.RemoteConfig;
 using UnityEngine;
 
-// ReSharper disable MemberCanBePrivate.Global
-namespace Nex.ImageFilter
+namespace Nex
 {
     public class RemoteConfigManager : Singleton<RemoteConfigManager>
     {

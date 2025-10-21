@@ -2,6 +2,7 @@
 
 using Cysharp.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Nex
 {
@@ -51,14 +52,20 @@ namespace Nex
         {
             var welcomeScreenView = Instantiate(welcomeScreenViewPrefab);
             welcomeScreenView.Initialize();
-            welcomeScreenView.OnStartARGameExampleButton += WelcomeScreenOnStartARGameExampleButton;
+            welcomeScreenView.OnStartARGameButton += WelcomeScreenOnStartARGameButton;
+            welcomeScreenView.OnStartNonARGameButton += WelcomeScreenOnStartNonARGameButton;
             welcomeScreenView.OnExitButton += WelcomeScreenOnExitButton;
             return welcomeScreenView;
         }
 
-        void WelcomeScreenOnStartARGameExampleButton()
+        void WelcomeScreenOnStartARGameButton()
         {
-            Debug.Log("WelcomeScreenOnStartButton");
+            SceneManager.LoadScene(GameConfigsManager.Instance.ARGameScene);
+        }
+
+        void WelcomeScreenOnStartNonARGameButton()
+        {
+            SceneManager.LoadScene(GameConfigsManager.Instance.NonARGameScene);
         }
 
         void WelcomeScreenOnExitButton()

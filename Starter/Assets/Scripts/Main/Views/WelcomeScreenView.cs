@@ -1,6 +1,8 @@
 #nullable enable
 
 using System;
+using Nex.Localization;
+using Nex.Util;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -13,6 +15,8 @@ namespace Nex
         [SerializeField] Button startARGameButton = null!;
         [SerializeField] Button startNonARGameButton = null!;
         [SerializeField] Button exitButton = null!;
+
+        [SerializeField] NexLocalizedString versionLabel = null!;
         public event Action? OnStartARGameButton;
         public event Action? OnStartNonARGameButton;
         public event Action? OnExitButton;
@@ -35,6 +39,9 @@ namespace Nex
             startARGameButton.onClick.AddListener(HandleStartARGameButton);
             startNonARGameButton.onClick.AddListener(HandleStartNonARGameButton);
             exitButton.onClick.AddListener(HandleExitButton);
+
+            versionLabel.StringReference.GetLocalizedString();
+            versionLabel.SetSmartStringArgument("0", AppInfo.Instance.VersionDisplayString);
         }
 
         #endregion

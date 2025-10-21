@@ -50,7 +50,24 @@ namespace Nex
         WelcomeScreenView CreateWelcomeScreenView()
         {
             var welcomeScreenView = Instantiate(welcomeScreenViewPrefab);
+            welcomeScreenView.Initialize();
+            welcomeScreenView.OnStartButton += WelcomeScreenOnStartButton;
+            welcomeScreenView.OnExitButton += WelcomeScreenOnExitButton;
             return welcomeScreenView;
+        }
+
+        void WelcomeScreenOnStartButton()
+        {
+            Debug.Log("WelcomeScreenOnStartButton");
+        }
+
+        void WelcomeScreenOnExitButton()
+        {
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+#else
+            Nex.Platform.DeviceActionDelegate.Instance.ExitGame();
+#endif
         }
 
         #endregion

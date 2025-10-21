@@ -220,7 +220,7 @@ MonoBehaviour:
   imageFillTweets: []
   canvasGroupTweets: []
   transformScaleTweets: []
-  backButtonResponder: {fileID: 855763642785207795}
+  backButtonResponder: {fileID: 8760463548973014279}
   initialGraphNode: {fileID: 5422016002967963469}
   resetOnActivate: 0
   resetOnFocus: 0
@@ -678,6 +678,9 @@ MonoBehaviour:
   toBackgroundAnimator: {fileID: 6356237380886920952}
   keyResponder: {fileID: 746594409760113640}
   disableCanvasOnBackground: 0
+  startButton: {fileID: 6299852765217096164}
+  exitButton: {fileID: 30231449664909116}
+  shouldGreetPlayer: 1
 --- !u!1 &3249998648667258211
 GameObject:
   m_ObjectHideFlags: 0
@@ -1079,7 +1082,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   crossFadeDuration: 0.25
-  graphicTweets: []
+  graphicTweets:
+  - graphic: {fileID: 5009448902443347147}
+    gainFocusColor: {r: 1, g: 1, b: 1, a: 1}
+    loseFocusColor: {r: 0.8, g: 0.8, b: 0.8, a: 1}
   imageFillTweets: []
   canvasGroupTweets: []
   transformScaleTweets: []
@@ -1559,10 +1565,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6093618259178286332}
-  - component: {fileID: 2470294725034182198}
-  - component: {fileID: 855763642785207795}
+  - component: {fileID: 30231449664909116}
+  - component: {fileID: 8760463548973014279}
   m_Layer: 5
-  m_Name: ExitKeyResponder
+  m_Name: ExitButtonResponder
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1587,7 +1593,7 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &2470294725034182198
+--- !u!114 &30231449664909116
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1596,16 +1602,42 @@ MonoBehaviour:
   m_GameObject: {fileID: 7261543717823641785}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0293c827bb114199a9f43e31428738da, type: 3}
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: 
-  keyResponder: {fileID: 855763642785207795}
-  upNeighbour: {fileID: 0}
-  downNeighbour: {fileID: 0}
-  leftNeighbour: {fileID: 0}
-  rightNeighbour: {fileID: 0}
-  fallbackNode: {fileID: 0}
---- !u!114 &855763642785207795
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
+  m_Navigation:
+    m_Mode: 3
+    m_WrapAround: 0
+    m_SelectOnUp: {fileID: 0}
+    m_SelectOnDown: {fileID: 0}
+    m_SelectOnLeft: {fileID: 0}
+    m_SelectOnRight: {fileID: 0}
+  m_Transition: 0
+  m_Colors:
+    m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
+    m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
+    m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
+    m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+    m_ColorMultiplier: 1
+    m_FadeDuration: 0.1
+  m_SpriteState:
+    m_HighlightedSprite: {fileID: 0}
+    m_PressedSprite: {fileID: 0}
+    m_SelectedSprite: {fileID: 0}
+    m_DisabledSprite: {fileID: 0}
+  m_AnimationTriggers:
+    m_NormalTrigger: Normal
+    m_HighlightedTrigger: Highlighted
+    m_PressedTrigger: Pressed
+    m_SelectedTrigger: Selected
+    m_DisabledTrigger: Disabled
+  m_Interactable: 1
+  m_TargetGraphic: {fileID: 0}
+  m_OnClick:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!114 &8760463548973014279
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1614,15 +1646,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 7261543717823641785}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c85cbdccfb274379a7920f9ec9dcff27, type: 3}
+  m_Script: {fileID: 11500000, guid: 7bf0622d7a0c4775b9c63dd5bce49f0d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier: team.nex.keyboard-navigation::Nex.KeyboardNavigation.ButtonKeyResponder
   crossFadeDuration: 0.25
   graphicTweets: []
   imageFillTweets: []
   canvasGroupTweets: []
   transformScaleTweets: []
-  control: 2
+  button: {fileID: 30231449664909116}
 --- !u!1 &7821843280631281910
 GameObject:
   m_ObjectHideFlags: 0

@@ -1,5 +1,6 @@
 using Cysharp.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Nex
 {
@@ -28,6 +29,14 @@ namespace Nex
 
             await RunSetup();
             await RunGame();
+        }
+
+        void Update()
+        {
+            if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                SceneManager.LoadScene(GameConfigsManager.Instance.MainScene);
+            }
         }
 
         #region Setup

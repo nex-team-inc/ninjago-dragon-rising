@@ -1,5 +1,6 @@
 using Jazz;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Nex
 {
@@ -27,6 +28,14 @@ namespace Nex
             {
                 var onePlayerPreviewPoseEngine = Instantiate(onePlayerPreviewPoseEnginePrefab, transform);
                 onePlayerPreviewPoseEngine.Initialize(playerIndex, numOfPlayers, bodyPoseDetectionManager, previewFrame);
+            }
+        }
+
+        void Update()
+        {
+            if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                SceneManager.LoadScene(GameConfigsManager.Instance.MainScene);
             }
         }
     }

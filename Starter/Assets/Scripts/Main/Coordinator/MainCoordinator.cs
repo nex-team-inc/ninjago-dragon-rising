@@ -51,12 +51,12 @@ namespace Nex
         {
             var welcomeScreenView = Instantiate(welcomeScreenViewPrefab);
             welcomeScreenView.Initialize();
-            welcomeScreenView.OnStartButton += WelcomeScreenOnStartButton;
+            welcomeScreenView.OnStartArGameExampleButton += WelcomeScreenOnStartArGameExampleButton;
             welcomeScreenView.OnExitButton += WelcomeScreenOnExitButton;
             return welcomeScreenView;
         }
 
-        void WelcomeScreenOnStartButton()
+        void WelcomeScreenOnStartArGameExampleButton()
         {
             Debug.Log("WelcomeScreenOnStartButton");
         }

@@ -10,11 +10,11 @@ namespace Nex
     {
         #region Variables
 
-        [SerializeField] Button startButton = null!;
+        [SerializeField] Button startArGameExampleButton = null!;
+        [SerializeField] Button startNonArGameExampleButton = null!;
         [SerializeField] Button exitButton = null!;
-
-        public bool shouldGreetPlayer = true;
-        public event Action? OnStartButton;
+        public event Action? OnStartArGameExampleButton;
+        public event Action? OnStartNonArGameExampleButton;
         public event Action? OnExitButton;
 
         #endregion
@@ -32,7 +32,8 @@ namespace Nex
 
         public void Initialize()
         {
-            startButton.onClick.AddListener(HandleStartButton);
+            startArGameExampleButton.onClick.AddListener(HandleStartArGameExampleButton);
+            startNonArGameExampleButton.onClick.AddListener(HandleStartNonArGameExampleButton);
             exitButton.onClick.AddListener(HandleExitButton);
         }
 
@@ -40,10 +41,16 @@ namespace Nex
 
         #region Unity Events
 
-        void HandleStartButton()
+        void HandleStartArGameExampleButton()
         {
             if (!IsActive) return;
-            OnStartButton?.Invoke();
+            OnStartArGameExampleButton?.Invoke();
+        }
+
+        void HandleStartNonArGameExampleButton()
+        {
+            if (!IsActive) return;
+            OnStartNonArGameExampleButton?.Invoke();
         }
 
         void HandleExitButton()

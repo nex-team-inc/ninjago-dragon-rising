@@ -28,7 +28,7 @@ namespace Nex
             await ScreenBlockerManager.Instance.Hide();
 
             await RunSetup();
-            await RunGame();
+            RunGame();
         }
 
         void Update()
@@ -60,7 +60,7 @@ namespace Nex
 
         #region Game
 
-        async UniTask RunGame()
+        void RunGame()
         {
             detectionManager.ConfigForGameplay();
             playersManager.gameObject.SetActive(true);

@@ -10,8 +10,11 @@ namespace Nex
         [SerializeField] BasePlayAreaController playAreaController = null!;
         [SerializeField] BodyPoseDetectionManager bodyPoseDetectionManager = null!;
         [SerializeField] CvDetectionManager cvDetectionManager = null!;
-        [SerializeField] OnePlayerPreviewPoseEngine onePlayerPreviewPoseEnginePrefab = null!;
         [SerializeField] int numOfPlayers = 1;
+
+        [SerializeField] GameObject playersContainer = null!;
+        [SerializeField] OnePlayerPreviewPoseEngine onePlayerPreviewPoseEnginePrefab = null!;
+        [SerializeField] ExampleARPlayer playerPrefab = null!;
 
         void Start()
         {
@@ -26,8 +29,11 @@ namespace Nex
 
             for (var playerIndex = 0; playerIndex < numOfPlayers; playerIndex++)
             {
-                var onePlayerPreviewPoseEngine = Instantiate(onePlayerPreviewPoseEnginePrefab, transform);
+                var onePlayerPreviewPoseEngine = Instantiate(onePlayerPreviewPoseEnginePrefab, playersContainer.transform);
                 onePlayerPreviewPoseEngine.Initialize(playerIndex, bodyPoseDetectionManager, previewFrame);
+
+                var player = Instantiate(playerPrefab, playersContainer.transform);
+                player.Initialize(playerIndex, onePlayerPreviewPoseEngine);
             }
         }
 

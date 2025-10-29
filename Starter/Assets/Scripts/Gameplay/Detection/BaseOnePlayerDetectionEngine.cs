@@ -42,8 +42,8 @@ namespace Nex
             PoseNodeIndex.RightHip,
             PoseNodeIndex.LeftKnee,
             PoseNodeIndex.RightKnee,
-            // PoseNodeIndex.LeftEye,
-            // PoseNodeIndex.RightEye,
+            PoseNodeIndex.LeftEye,
+            PoseNodeIndex.RightEye,
             // PoseNodeIndex.LeftEar,
             // PoseNodeIndex.RightEar,
             PoseNodeIndex.HipCenter,
@@ -121,7 +121,7 @@ namespace Nex
         public void Initialize(
             int aPlayerIndex,
             BodyPoseDetectionManager aBodyPoseDetectionManager,
-            bool aEnableOriginalNodes = false,
+            bool aEnableOriginalNodes = true,
             bool aEnableSmoothedNodes = true
         )
         {

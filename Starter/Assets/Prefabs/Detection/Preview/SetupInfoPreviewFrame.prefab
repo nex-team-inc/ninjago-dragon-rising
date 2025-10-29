@@ -32,6 +32,7 @@ RectTransform:
   - {fileID: 1262227548672882507}
   - {fileID: 5613719969780262027}
   - {fileID: 2804116084905037518}
+  - {fileID: 1007299330830674336}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -53,6 +54,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   previewFrame: {fileID: 25616006583677822}
   warningMessage: {fileID: 6446403060933942334}
+  playerIndicatorsManager: {fileID: 827780784312851447}
 --- !u!1 &5208650032245010558
 GameObject:
   m_ObjectHideFlags: 0
@@ -150,6 +152,52 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!1 &6995810753325942072
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1007299330830674336}
+  - component: {fileID: 827780784312851447}
+  m_Layer: 0
+  m_Name: PlayerIndicatorsManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1007299330830674336
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6995810753325942072}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1730937548384225139}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &827780784312851447
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6995810753325942072}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 70286ecafee24a229a6d3e3877e35c84, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Nex.PlayerIndicatorsManager
+  playerIndicatorPrefab: {fileID: 8854378122873636614, guid: 5e8ae3fc54c5e45b3be22d1de2421981, type: 3}
+  playerIndicatorSizeRatioToPreviewHeight: 0.1
 --- !u!1001 &2486481849342115820
 PrefabInstance:
   m_ObjectHideFlags: 0

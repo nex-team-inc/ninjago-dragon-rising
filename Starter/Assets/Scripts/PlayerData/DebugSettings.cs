@@ -6,7 +6,7 @@ namespace Nex
 {
     public class DebugSettings
     {
-        public bool exampleDebugFlag = false;
+        public bool enableDebugPrinter = false;
 
         public void MuteMusic()
         {

@@ -8,7 +8,8 @@ namespace Nex
     {
         [SerializeField] DetectionManager detectionManager = null!;
         [SerializeField] PreviewsManager previewsManager = null!;
-        [SerializeField] PlayersManager playersManager = null!;
+        [SerializeField] OnePlayerDetectionEngine detectionEnginePrefab = null!;
+        [SerializeField] GameObject playersContainer = null!;
         [SerializeField] int numOfPlayers = 1;
 
         void Start()
@@ -25,8 +26,14 @@ namespace Nex
         {
             detectionManager.Initialize(numOfPlayers);
             previewsManager.Initialize(numOfPlayers, detectionManager.CvDetectionManager, detectionManager.BodyPoseDetectionManager, detectionManager.PlayAreaController, detectionManager.SetupStateManager);
-            playersManager.Initialize(numOfPlayers, detectionManager.BodyPoseDetectionManager);
-            playersManager.gameObject.SetActive(false);
+
+            playersContainer.SetActive(false);
+            for (var playerIndex = 0; playerIndex < numOfPlayers; playerIndex++)
+            {
+                var detectionEngine = Instantiate(detectionEnginePrefab, playersContainer.transform);
+                detectionEngine.Initialize(playerIndex, detectionManager.BodyPoseDetectionManager);
+            }
+
             await ScreenBlockerManager.Instance.Hide();
 
             await RunSetup();
@@ -65,7 +72,7 @@ namespace Nex
         void RunGame()
         {
             detectionManager.ConfigForGameplay();
-            playersManager.gameObject.SetActive(true);
+            playersContainer.SetActive(true);
         }
 
         #endregion

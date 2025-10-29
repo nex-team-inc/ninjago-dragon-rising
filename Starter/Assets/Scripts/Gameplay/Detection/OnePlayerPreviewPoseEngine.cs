@@ -54,6 +54,11 @@ namespace Nex
             return RawPpi / previewRectHeightInAspectNormalizedSpace * previewRectInWorldSpace.height;
         }
 
+        protected override BodyPose? CloneAndProcessPoseIfNeeded(BodyPose? pose)
+        {
+            return pose;
+        }
+
         #endregion
     }
 }

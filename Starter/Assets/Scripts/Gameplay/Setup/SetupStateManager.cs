@@ -1,17 +1,17 @@
+#nullable enable
+
 using System.Collections.Generic;
-using System.Linq;
 using Cysharp.Threading.Tasks;
 using Jazz;
 using UnityEngine;
 using UnityEngine.Events;
-
-#nullable enable
 
 namespace Nex
 {
     public class SetupStateManager : MonoBehaviour
     {
         [SerializeField] OnePlayerSetupStateTracker onePlayerSetupStateTrackerPrefab = null!;
+        [SerializeField] SetupDetectorWarningConfig setupDetectorWarningConfig = null!;
 
         BodyPoseDetectionManager bodyPoseDetectionManager = null!;
         BasePlayAreaController playAreaController = null!;
@@ -102,7 +102,7 @@ namespace Nex
             for (var playerIndex = 0; playerIndex < numOfPlayers; playerIndex++)
             {
                 var tracker = Instantiate(onePlayerSetupStateTrackerPrefab, transform);
-                tracker.Initialize(playerIndex, bodyPoseDetectionManager, playAreaController);
+                tracker.Initialize(playerIndex, bodyPoseDetectionManager, playAreaController, setupDetectorWarningConfig);
                 playerTrackers.Add(tracker);
 
                 playerStates.Add(new PlayerSetupState
@@ -192,6 +192,18 @@ namespace Nex
             {
                 raiseHandSource.TrySetResult();
                 raiseHandSource = null;
+            }
+        }
+
+        #endregion
+
+        #region Setup Detector Mode
+
+        public void SetSetupDetectorMode(SetupDetectorMode mode)
+        {
+            foreach (var tracker in playerTrackers)
+            {
+                tracker.SetSetupDetectorMode(mode);
             }
         }
 

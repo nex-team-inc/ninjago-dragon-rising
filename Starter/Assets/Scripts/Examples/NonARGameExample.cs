@@ -7,6 +7,7 @@ namespace Nex
     public class NonARGameExample : MonoBehaviour
     {
         [SerializeField] DetectionManager detectionManager = null!;
+        [SerializeField] PreviewsManager previewsManager = null!;
         [SerializeField] PlayersManager playersManager = null!;
         [SerializeField] int numOfPlayers = 1;
 
@@ -23,6 +24,7 @@ namespace Nex
         async UniTask StartAsync()
         {
             detectionManager.Initialize(numOfPlayers);
+            previewsManager.Initialize(numOfPlayers, detectionManager.CvDetectionManager, detectionManager.BodyPoseDetectionManager, detectionManager.PlayAreaController, detectionManager.SetupStateManager);
             playersManager.Initialize(numOfPlayers, detectionManager.BodyPoseDetectionManager);
             playersManager.gameObject.SetActive(false);
             await ScreenBlockerManager.Instance.Hide();
@@ -44,16 +46,16 @@ namespace Nex
         async UniTask RunSetup()
         {
             detectionManager.ConfigForSetup();
-            await detectionManager.PreviewsManager.MoveIn(true);
+            await previewsManager.MoveIn(true);
 
-            detectionManager.PreviewsManager.SetPromptText("Move into the frame");
+            previewsManager.SetPromptText("Move into the frame");
             await detectionManager.SetupStateManager.WaitForGoodPlayerPosition();
 
-            detectionManager.PreviewsManager.SetPromptText("Raise your hand to start");
+            previewsManager.SetPromptText("Raise your hand to start");
             detectionManager.SetupStateManager.SetAllowPassingRaisingHandState(true);
             await detectionManager.SetupStateManager.WaitForRaiseHand();
 
-            await detectionManager.PreviewsManager.MoveOut(true);
+            await previewsManager.MoveOut(true);
         }
 
         #endregion

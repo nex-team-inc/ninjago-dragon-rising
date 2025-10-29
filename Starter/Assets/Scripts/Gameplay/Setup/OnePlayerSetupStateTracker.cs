@@ -122,7 +122,8 @@ namespace Nex
         public void Initialize(
             int aPlayerIndex,
             BodyPoseDetectionManager aBodyPoseDetectionManager,
-            BasePlayAreaController playAreaController
+            BasePlayAreaController playAreaController,
+            SetupDetectorWarningConfig aSetupDetectorWarningConfig
         )
         {
             playerIndex = aPlayerIndex;
@@ -130,7 +131,7 @@ namespace Nex
             setupHistory = new History<SetupHistoryItem>(historyDurationInSeconds);
 
             setupDetector = Instantiate(setupDetectorPrefab, transform);
-            InitializeSetupDetector(setupDetector, aBodyPoseDetectionManager, playerIndex, playAreaController);
+            InitializeSetupDetector(setupDetector, aBodyPoseDetectionManager, playerIndex, playAreaController, aSetupDetectorWarningConfig);
             setupDetector.captureDetection += SetupDetectorOnCaptureDetection;
 
             aBodyPoseDetectionManager.processed.captureAspectNormalizedDetection += ProcessedOnCaptureAspectNormalizedDetection;
@@ -154,13 +155,15 @@ namespace Nex
             SetupDetector setupDetector,
             BodyPoseDetectionManager bodyPoseDetectionManager,
             int playerIndex,
-            BasePlayAreaController playAreaController
+            BasePlayAreaController playAreaController,
+            SetupDetectorWarningConfig aSetupDetectorWarningConfig
         )
         {
-            setupDetector.bodyDetector = bodyPoseDetectionManager;
-            setupDetector.playerIndex = playerIndex;
             setupDetector.Initialize(
+                playerIndex,
+                bodyPoseDetectionManager,
                 playAreaController,
+                aSetupDetectorWarningConfig,
                 new List<SetupIssueType>
                 {
                     // NOTE: if we will notify users to move closer or step back
@@ -341,6 +344,15 @@ namespace Nex
 
             curState = stateType;
             lastStateStartTime = Time.fixedTime;
+        }
+
+        #endregion
+
+        #region Setup Detector Mode
+
+        public void SetSetupDetectorMode(SetupDetectorMode mode)
+        {
+            setupDetector.SetDetectorMode(mode);
         }
 
         #endregion

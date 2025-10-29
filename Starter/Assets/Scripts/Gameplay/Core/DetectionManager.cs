@@ -11,7 +11,6 @@ namespace Nex
     {
         [SerializeField] CvDetectionManager cvDetectionManager = null!;
         [SerializeField] BodyPoseDetectionManager bodyPoseDetectionManager = null!;
-        [SerializeField] PreviewsManager previewsManager = null!;
         [SerializeField] SetupStateManager setupStateManager = null!;
         [SerializeField] BasePlayAreaController playAreaController = null!;
 
@@ -20,7 +19,7 @@ namespace Nex
         public CvDetectionManager CvDetectionManager => cvDetectionManager;
         public BodyPoseDetectionManager BodyPoseDetectionManager => bodyPoseDetectionManager;
         public SetupStateManager SetupStateManager => setupStateManager;
-        public PreviewsManager PreviewsManager => previewsManager;
+        public BasePlayAreaController PlayAreaController => playAreaController;
 
         #region Life Cycle
 
@@ -30,7 +29,6 @@ namespace Nex
             ConfigMdk();
 
             playAreaController.Initialize(numOfPlayers, cvDetectionManager, bodyPoseDetectionManager);
-            previewsManager.Initialize(numOfPlayers, cvDetectionManager, bodyPoseDetectionManager, playAreaController, setupStateManager);
             setupStateManager.Initialize(numOfPlayers, bodyPoseDetectionManager, playAreaController);
         }
 
@@ -40,13 +38,15 @@ namespace Nex
             DewarpLocked = false;
             TrackingConsistencyEnabled = false;
             setupStateManager.SetTrackingEnabled(true);
+            setupStateManager.SetSetupDetectorMode(SetupDetectorMode.Base);
         }
 
-        public void ConfigForGameplay()
+        public void ConfigForGameplay(bool shouldLockPlayerAreaAndDewarp = true)
         {
-            playAreaController.SetPlayAreaLocked(true);
-            DewarpLocked = true;
+            playAreaController.SetPlayAreaLocked(shouldLockPlayerAreaAndDewarp);
+            DewarpLocked = shouldLockPlayerAreaAndDewarp;
             TrackingConsistencyEnabled = true;
+            setupStateManager.SetSetupDetectorMode(SetupDetectorMode.Gameplay);
         }
 
         #endregion
@@ -123,14 +123,22 @@ namespace Nex
 
         #region Pause Detection
 
+        public void StopDetection()
+        {
+            bodyPoseDetectionManager.shouldDetect = false;
+            cvDetectionManager.StopRunning();
+        }
+
         public void PauseDetection()
         {
             bodyPoseDetectionManager.shouldDetect = false;
+            cvDetectionManager.GetFrameProvider().TurnOffPreviewTexture();
         }
 
         public void UnPauseDetection()
         {
             bodyPoseDetectionManager.shouldDetect = true;
+            cvDetectionManager.GetFrameProvider().TurnOnPreviewTexture();
         }
 
         #endregion

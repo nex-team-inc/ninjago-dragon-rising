@@ -39,8 +39,8 @@ namespace Nex
 
     public class SetupDetector : MonoBehaviour
     {
-        [SerializeField] public BodyPoseDetectionManager bodyDetector;
-        [SerializeField] public int playerIndex;
+        BodyPoseDetectionManager bodyDetector;
+        int playerIndex;
 
         float ppi;
         float distanceRatio;
@@ -52,8 +52,8 @@ namespace Nex
 
         #region SetupDetectorWarningConfig
 
-        [SerializeField] SetupDetectorWarningConfig setupDetectorWarningConfig;
-        [SerializeField] SetupDetectorMode setupDetectorMode;
+        SetupDetectorMode setupDetectorMode;
+        SetupDetectorWarningConfig setupDetectorWarningConfig;
 
         readonly Dictionary<SetupDetectorMode, WarningConfig> cachedWarningConfig = new();
         WarningConfig CurrentConfig
@@ -104,10 +104,17 @@ namespace Nex
         // MARK - Life Cycle
 
         public void Initialize(
+            int aPlayerIndex,
+            BodyPoseDetectionManager aBodyDetector,
             BasePlayAreaController aPlayAreaController,
+            SetupDetectorWarningConfig aSetupDetectorWarningConfig,
             List<SetupIssueType> aIssueTypesSortedByDisplayPriority = null)
         {
+            playerIndex = aPlayerIndex;
+            bodyDetector = aBodyDetector;
+
             playAreaController = aPlayAreaController;
+            setupDetectorWarningConfig = aSetupDetectorWarningConfig;
 
             issueTypesSortedByDisplayPriority = aIssueTypesSortedByDisplayPriority ?? new List<SetupIssueType>
             {
@@ -156,6 +163,8 @@ namespace Nex
                 hasEnoughData = hasEnoughData,
                 currentIssue = currentIssue
             };
+
+            // DebugPrinter.Instance.Print($"Setup[{playerIndex}] issue", currentIssue.ToString());
 
             captureDetection?.Invoke(detection);
         }

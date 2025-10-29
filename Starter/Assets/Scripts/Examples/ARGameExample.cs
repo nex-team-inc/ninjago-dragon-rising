@@ -6,12 +6,17 @@ namespace Nex
 {
     public class ARGameExample : MonoBehaviour
     {
+        [Header("Preview")]
         [SerializeField] AreaPreviewFrame previewFrame = null!;
+        [SerializeField] PlayerIndicatorsManager playerIndicatorsManager = null!;
+
+        [Header("Detection")]
         [SerializeField] BasePlayAreaController playAreaController = null!;
         [SerializeField] BodyPoseDetectionManager bodyPoseDetectionManager = null!;
         [SerializeField] CvDetectionManager cvDetectionManager = null!;
         [SerializeField] int numOfPlayers = 1;
 
+        [Header("Player")]
         [SerializeField] GameObject playersContainer = null!;
         [SerializeField] OnePlayerPreviewPoseEngine onePlayerPreviewPoseEnginePrefab = null!;
         [SerializeField] ExampleARPlayer playerPrefab = null!;
@@ -26,6 +31,7 @@ namespace Nex
             cvDetectionManager.numOfPlayers = numOfPlayers;
             playAreaController.Initialize(numOfPlayers, cvDetectionManager, bodyPoseDetectionManager);
             previewFrame.Initialize(cvDetectionManager, playAreaController);
+            playerIndicatorsManager.Initialize(numOfPlayers, previewFrame, bodyPoseDetectionManager);
 
             for (var playerIndex = 0; playerIndex < numOfPlayers; playerIndex++)
             {

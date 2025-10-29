@@ -19,6 +19,12 @@ namespace Nex
             textByKey[key] = message;
         }
 
+        // Suggested by Wangshu
+        public void Print (string key, object obj)
+        {
+            textByKey[key] = obj.ToString();
+        }
+
         void OnGUI()
         {
             if (PlayerDataManager.Instance == null ||

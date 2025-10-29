@@ -27,7 +27,7 @@ namespace Nex
             for (var playerIndex = 0; playerIndex < numOfPlayers; playerIndex++)
             {
                 var onePlayerPreviewPoseEngine = Instantiate(onePlayerPreviewPoseEnginePrefab, transform);
-                onePlayerPreviewPoseEngine.Initialize(playerIndex, numOfPlayers, bodyPoseDetectionManager, previewFrame);
+                onePlayerPreviewPoseEngine.Initialize(playerIndex, bodyPoseDetectionManager, previewFrame);
             }
         }
 

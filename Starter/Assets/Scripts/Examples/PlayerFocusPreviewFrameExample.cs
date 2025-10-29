@@ -15,7 +15,7 @@ namespace Nex
         {
             cvDetectionManager.numOfPlayers = numOfPlayers;
             previewFrame.Initialize(0, numOfPlayers, cvDetectionManager, bodyPoseDetectionManager);
-            onePlayerPreviewPoseEngine.Initialize(0, numOfPlayers, bodyPoseDetectionManager, previewFrame);
+            onePlayerPreviewPoseEngine.Initialize(0, bodyPoseDetectionManager, previewFrame);
 
             onePlayerPreviewPoseEngine.gameObject.SetActive(true);
         }

@@ -1,3 +1,5 @@
+#nullable enable
+
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -10,9 +12,18 @@ namespace Nex
 
         protected Rect previewRectInWorldSpace;
         protected float previewRectInWorldSpaceAspectRatio;
-        bool isPreviewRectInWorldSpaceInfoValid;
+        public bool isPreviewRectInWorldSpaceInfoValid { get; protected set; }
 
         public abstract Rect PreviewRectInNormalizedSpace();
+
+        public Rect PreviewRectInAspectNormalizedSpace()
+        {
+            var rect = PreviewRectInNormalizedSpace();
+            var aspectNormalizedFrameSize = DetectionUtils.AspectNormalizedFrameSize;
+            rect.x *= aspectNormalizedFrameSize.x;
+            rect.width *= aspectNormalizedFrameSize.x;
+            return rect;
+        }
 
         public Rect PreviewRectInWorldSpace()
         {

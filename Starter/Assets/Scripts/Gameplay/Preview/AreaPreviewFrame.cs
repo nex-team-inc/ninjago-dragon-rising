@@ -52,7 +52,7 @@ namespace Nex
 
         #region Life Cycle
 
-        protected void OnDestroy()
+        void OnDestroy()
         {
             cvDetectionManager.captureCameraFrame -= CvDetectionManagerOnCaptureCameraFrame;
         }

@@ -118,7 +118,7 @@ namespace Nex
 
         #region Initialization
 
-        public void Initialize(
+        protected void Initialize(
             int aPlayerIndex,
             BodyPoseDetectionManager aBodyPoseDetectionManager,
             bool aEnableOriginalNodes = true,

@@ -12,6 +12,20 @@ namespace Nex
         [Header("Reference Frame")]
         [SerializeField] RectTransform referenceTransform = null!;
 
+        #region Initialization
+
+        public new void Initialize(
+            int aPlayerIndex,
+            BodyPoseDetectionManager aBodyPoseDetectionManager,
+            bool aEnableOriginalNodes = true,
+            bool aEnableSmoothedNodes = true
+        )
+        {
+            base.Initialize(aPlayerIndex, aBodyPoseDetectionManager, aEnableOriginalNodes, aEnableSmoothedNodes);
+        }
+
+        #endregion
+
         #region Transform
 
         protected override Vector3 AspectNormalSpaceToWorldSpace(Vector2 vec)

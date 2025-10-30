@@ -14,10 +14,12 @@ namespace Nex
         public void Initialize(
             int aPlayerIndex,
             BodyPoseDetectionManager aBodyPoseDetectionManager,
-            PreviewFrameBase aPreviewFrame
+            PreviewFrameBase aPreviewFrame,
+            bool aEnableOriginalNodes = true,
+            bool aEnableSmoothedNodes = true
         )
         {
-            base.Initialize(aPlayerIndex, aBodyPoseDetectionManager);
+            base.Initialize(aPlayerIndex, aBodyPoseDetectionManager, aEnableOriginalNodes, aEnableSmoothedNodes);
 
             previewFrame = aPreviewFrame;
         }

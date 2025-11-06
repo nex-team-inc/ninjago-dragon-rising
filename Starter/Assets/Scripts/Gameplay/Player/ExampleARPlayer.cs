@@ -11,6 +11,7 @@ namespace Nex
         [SerializeField] int baseSortingOrder = 20;
         [SerializeField] SortingGroup rootSortingGroup = null!;
         [SerializeField] List<PlayerAttachment> playerAttachmentPrefabs = null!;
+        [SerializeField] PlayerStyleController playerStyleController = null!;
 
         int playerIndex;
         OnePlayerPreviewPoseEngine playerPreviewPoseEngine = null!;
@@ -29,6 +30,8 @@ namespace Nex
             {
                 InitializeAttachment(prefab, rootSortingGroup.transform);
             }
+
+            playerStyleController.Initialize(aPlayerIndex, playerPreviewPoseEngine);
         }
 
         #endregion

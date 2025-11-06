@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 1162887349857314079}
   - component: {fileID: 8549857196492050213}
   - component: {fileID: 4480696900147026512}
+  - component: {fileID: 6454308294379121900}
   m_Layer: 0
   m_Name: ExampleARPlayer
   m_TagString: Untagged
@@ -51,6 +52,7 @@ MonoBehaviour:
   - {fileID: 2361828889801908024, guid: 20ee54214bcdb40af99335ce259327b3, type: 3}
   - {fileID: 2361828889801908024, guid: 279af36aee5d547bca13e3359bfd52a9, type: 3}
   - {fileID: 2361828889801908024, guid: 92af9fc4ad71a45b09b8790bf0dccda8, type: 3}
+  playerStyleController: {fileID: 6454308294379121900}
 --- !u!210 &4480696900147026512
 SortingGroup:
   m_ObjectHideFlags: 0
@@ -63,3 +65,15 @@ SortingGroup:
   m_SortingLayer: 0
   m_SortingOrder: 10
   m_SortAtRoot: 0
+--- !u!114 &6454308294379121900
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9111979054783876510}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 69828e486afa04435bfa34e08354e754, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Nex.PlayerStyleController

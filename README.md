@@ -4,7 +4,13 @@ The starter project with motion control.
 
 ## How to fork this repository
 
-First you need to create a new repo on github. Suppose your repo is called YOUR_REPO, execute the following commands.
+#### Preparations
+1. Create a new repo on github under nex-team-inc, access set to private.
+2. You'll need your repo's name YOUR_REPO, and your repo's url YOUR_REPO_URL (can get from the github repo page).
+3. Open terminal, navigate to a location where you want your repo folder be created.
+
+#### Commands
+Execute the following commands:
 
 `Step 1 - Clone`
 ```bash

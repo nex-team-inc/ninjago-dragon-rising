@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 8453110802161294909}
   - component: {fileID: 9181117975485602964}
   - component: {fileID: 4566585477187125803}
+  - component: {fileID: 4825196922197114957}
   m_Layer: 0
   m_Name: ExampleNonARPlayer
   m_TagString: Untagged
@@ -52,7 +53,9 @@ MonoBehaviour:
   - {fileID: 2361828889801908024, guid: 20ee54214bcdb40af99335ce259327b3, type: 3}
   - {fileID: 2361828889801908024, guid: 279af36aee5d547bca13e3359bfd52a9, type: 3}
   - {fileID: 2361828889801908024, guid: 92af9fc4ad71a45b09b8790bf0dccda8, type: 3}
+  - {fileID: 2361828889801908024, guid: 87c71ff27e0e04f60a14c39953632fa0, type: 3}
   playerStyleController: {fileID: 4566585477187125803}
+  playerPreviewSpritesController: {fileID: 4825196922197114957}
 --- !u!210 &9181117975485602964
 SortingGroup:
   m_ObjectHideFlags: 0
@@ -77,3 +80,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 69828e486afa04435bfa34e08354e754, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Nex.PlayerStyleController
+--- !u!114 &4825196922197114957
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 817452168601849823}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6775e125805d43eca9b14741a5a3d20c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Nex.PlayerPreviewSpritesController

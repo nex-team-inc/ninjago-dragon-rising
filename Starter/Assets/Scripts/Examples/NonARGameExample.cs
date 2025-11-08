@@ -41,7 +41,7 @@ namespace Nex
                 detectionEngine.Initialize(playerIndex, detectionManager.BodyPoseDetectionManager);
 
                 var player = Instantiate(playerPrefab, playersContainer.transform);
-                player.Initialize(playerIndex, detectionEngine);
+                player.Initialize(playerIndex, detectionEngine, detectionManager.CvDetectionManager, detectionManager.BodyPoseDetectionManager);
             }
 
             await ScreenBlockerManager.Instance.Hide();

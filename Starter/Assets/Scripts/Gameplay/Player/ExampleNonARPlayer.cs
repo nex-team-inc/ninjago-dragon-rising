@@ -1,6 +1,7 @@
 #nullable enable
 
 using System.Collections.Generic;
+using Jazz;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -12,6 +13,7 @@ namespace Nex
         [SerializeField] SortingGroup rootSortingGroup = null!;
         [SerializeField] List<PlayerAttachment> playerAttachmentPrefabs = null!;
         [SerializeField] PlayerStyleController playerStyleController = null!;
+        [SerializeField] PlayerPreviewSpritesController playerPreviewSpritesController = null!;
 
         int playerIndex;
         OnePlayerDetectionEngine playerDetectionEngine = null!;
@@ -20,7 +22,9 @@ namespace Nex
 
         public void Initialize(
             int aPlayerIndex,
-            OnePlayerDetectionEngine aPlayerDetectionEngine)
+            OnePlayerDetectionEngine aPlayerDetectionEngine,
+            CvDetectionManager aCvDetectionManager,
+            BodyPoseDetectionManager aBodyPoseDetectionManager)
         {
             playerIndex = aPlayerIndex;
             playerDetectionEngine = aPlayerDetectionEngine;
@@ -32,6 +36,7 @@ namespace Nex
             }
 
             playerStyleController.Initialize(aPlayerIndex);
+            playerPreviewSpritesController.Initialize(playerIndex, aCvDetectionManager, aBodyPoseDetectionManager);
         }
 
         #endregion

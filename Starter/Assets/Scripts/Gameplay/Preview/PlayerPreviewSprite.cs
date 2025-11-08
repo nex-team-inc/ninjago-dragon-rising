@@ -74,6 +74,8 @@ namespace Nex
                 new OneEuroFilter(oneEuroFilterMinCutoff, oneEuroFilterBeta),
                 new OneEuroFilter(oneEuroFilterMinCutoff, oneEuroFilterBeta)
             );
+
+            spriteRenderer.sprite = null;
         }
 
         void UpdateSprite(Texture sourceTexture)

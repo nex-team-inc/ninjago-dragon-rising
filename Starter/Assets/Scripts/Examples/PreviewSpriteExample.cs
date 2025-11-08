@@ -28,6 +28,7 @@ namespace Nex
                     0,
                     0
                 );
+                playerPreviewSprite.transform.localScale = new Vector3(3, 3, 1);
             }
         }
     }

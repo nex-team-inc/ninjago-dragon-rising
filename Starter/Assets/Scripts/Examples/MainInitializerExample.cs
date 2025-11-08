@@ -14,6 +14,7 @@ namespace Nex
     {
         readonly bool alwaysSkipSplash = PlatformUtils.IsEditor;
 
+        [SerializeField] bool debugShowSplash;
         [SerializeField] AssetReferenceGameObject nexSplashScreenReference = null!;
         [SerializeField] AssetReferenceGameObject mainCoordinatorReference = null!;
 
@@ -34,7 +35,7 @@ namespace Nex
             if (ApplicationManager.Instance.FirstAppStart)
             {
                 ApplicationManager.Instance.FirstAppStart = false;
-                if (alwaysSkipSplash)
+                if (!debugShowSplash && alwaysSkipSplash)
                 {
                     StartWithoutSplash().Forget();
                 }

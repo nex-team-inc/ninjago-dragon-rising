@@ -1073,11 +1073,38 @@ MonoBehaviour:
   crossFadeDuration: 0.25
   graphicTweets:
   - graphic: {fileID: 5009448902443347147}
-    gainFocusColor: {r: 1, g: 1, b: 1, a: 1}
-    loseFocusColor: {r: 0.627451, g: 0.627451, b: 0.627451, a: 1}
+    gainFocusColor: {r: 1, g: 0.99546504, b: 0.19339621, a: 1}
+    loseFocusColor: {r: 1, g: 1, b: 1, a: 1}
   imageFillTweets: []
   canvasGroupTweets: []
-  transformScaleTweets: []
+  transformScaleTweets:
+  - transform: {fileID: 3949829742261680725}
+    gainFocusScale: {x: 1.2, y: 1.2, z: 1.2}
+    loseFocusScale: {x: 1, y: 1, z: 1}
+    animationCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 0
   button: {fileID: 6299852765217096164}
 --- !u!114 &8577236137007479501
 MonoBehaviour:
@@ -1205,7 +1232,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Play(AR)
+  m_text: Play (AR)
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: fa2d1e53a2fa84d43946188ab0e7e939, type: 2}
   m_sharedMaterial: {fileID: -3042817275034742632, guid: fa2d1e53a2fa84d43946188ab0e7e939, type: 2}
@@ -1707,11 +1734,38 @@ MonoBehaviour:
   crossFadeDuration: 0.25
   graphicTweets:
   - graphic: {fileID: 6613050239442169397}
-    gainFocusColor: {r: 1, g: 1, b: 1, a: 1}
-    loseFocusColor: {r: 0.627451, g: 0.627451, b: 0.627451, a: 1}
+    gainFocusColor: {r: 1, g: 0.99546504, b: 0.19339621, a: 1}
+    loseFocusColor: {r: 1, g: 1, b: 1, a: 1}
   imageFillTweets: []
   canvasGroupTweets: []
-  transformScaleTweets: []
+  transformScaleTweets:
+  - transform: {fileID: 7842062259473698308}
+    gainFocusScale: {x: 1.2, y: 1.2, z: 1.2}
+    loseFocusScale: {x: 1, y: 1, z: 1}
+    animationCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 0
   button: {fileID: 3735713341952219572}
 --- !u!114 &7775050352382153128
 MonoBehaviour:
@@ -1938,7 +1992,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Play(Non AR)
+  m_text: Play (Non AR)
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: fa2d1e53a2fa84d43946188ab0e7e939, type: 2}
   m_sharedMaterial: {fileID: -3042817275034742632, guid: fa2d1e53a2fa84d43946188ab0e7e939, type: 2}

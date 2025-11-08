@@ -114,11 +114,10 @@ namespace Nex
             }
 
             rawImage.texture = frameInformation.texture;
-            var isMirrored = frameInformation.shouldMirror;
 
             UpdatePreviewRectInWorldSpaceInfoIfNeeded();
 
-            rawImage.uvRect = FlipRectIfNeeded(previewRectInNormalizedSpace, isMirrored);
+            rawImage.uvRect = previewRectInNormalizedSpace;
         }
 
         #endregion

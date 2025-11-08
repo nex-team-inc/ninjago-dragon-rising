@@ -28,10 +28,5 @@ namespace Nex.Utils
             var height = frameRect.height / frameSize.y;
             return new Rect(x, y, width, height);
         }
-
-        public static Rect MirrorNormalizedRect(Rect rect)
-        {
-            return new Rect(1 - rect.x - rect.width, rect.y, rect.width, rect.height);
-        }
     }
 }

@@ -41,16 +41,5 @@ namespace Nex
                 isPreviewRectInWorldSpaceInfoValid = true;
             }
         }
-
-        protected static Rect FlipRectIfNeeded(Rect rect, bool flip)
-        {
-            if (flip)
-            {
-                rect.x = 1 - rect.x;
-                rect.width = -rect.width;
-            }
-
-            return rect;
-        }
     }
 }

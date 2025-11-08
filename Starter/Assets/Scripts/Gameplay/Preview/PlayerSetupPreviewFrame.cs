@@ -73,7 +73,6 @@ namespace Nex
             }
 
             rawImage.texture = frameInformation.texture;
-            var isMirrored = frameInformation.shouldMirror;
 
             UpdatePreviewRectInWorldSpaceInfoIfNeeded();
 
@@ -85,7 +84,7 @@ namespace Nex
             var playerCenterXRatio = PlayerPositionDefinition.GetXRatioForPlayer(playerIndex, numOfPlayers);
             previewRectInNormalizedSpace = PlayerRect(playAreaRectInNormalizedSpace, playerCenterXRatio, previewWidthRatio);
 
-            rawImage.uvRect = FlipRectIfNeeded(previewRectInNormalizedSpace, isMirrored);
+            rawImage.uvRect = previewRectInNormalizedSpace;
         }
 
         Rect PlayerRect(Rect fullRect, float playerXRatio, float previewWidthRatio)

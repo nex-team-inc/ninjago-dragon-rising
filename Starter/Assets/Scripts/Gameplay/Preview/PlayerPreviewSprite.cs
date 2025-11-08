@@ -78,53 +78,33 @@ namespace Nex
             spriteRenderer.sprite = null;
         }
 
-        void UpdateSprite(Texture sourceTexture)
+        void UpdateSprite(Texture2D texture)
         {
             if (previewRectInNormalizedSpace == Rect.zero)
             {
                 return;
             }
 
-            if (sourceTexture is Texture2D texture2D)
+            // Clean up old sprite
+            if (baseSprite != null)
             {
-                // Clean up old sprite
-                if (baseSprite != null)
-                {
-                    Destroy(baseSprite);
-                }
-
-                // Create new sprite directly from the source texture
-                var rect = ComputeTextureRect(texture2D, previewRectInNormalizedSpace);
-                baseSprite = Sprite.Create(
-                    texture2D,
-                    rect,
-                    new Vector2(0.5f, 0.5f),
-                    rect.height
-                );
-                spriteRenderer.sprite = baseSprite;
+                Destroy(baseSprite);
             }
-            else
-            {
-                Debug.LogError("sourceTexture is not Texture2D");
-            }
-        }
 
-        Rect ComputeTextureRect(Texture2D texture2D, Rect normalizedRect)
-        {
-            var x = normalizedRect.x * texture2D.width;
-            var y = normalizedRect.y * texture2D.height;
-
-            return new Rect(
-                x,
-                y,
-                Mathf.Min(normalizedRect.width * texture2D.width, texture2D.width - x),
-                Mathf.Min(normalizedRect.height * texture2D.height, texture2D.height - y)
+            // Create new sprite directly from the source texture
+            var rect = TextureUtils.ComputeTextureRect(texture, previewRectInNormalizedSpace);
+            baseSprite = Sprite.Create(
+                texture,
+                rect,
+                new Vector2(0.5f, 0.5f),
+                rect.height
             );
+            spriteRenderer.sprite = baseSprite;
         }
 
         void CvDetectionManagerOnCaptureCameraFrame(FrameInformation frameInformation)
         {
-            UpdateSprite(frameInformation.texture);
+            UpdateSprite((Texture2D)frameInformation.texture);
         }
 
         void BodyPoseDetectionManagerOnCaptureAspectNormalizedDetection(BodyPoseDetectionResult bodyPoseDetectionResult)

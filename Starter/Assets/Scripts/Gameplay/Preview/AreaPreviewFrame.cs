@@ -76,7 +76,7 @@ namespace Nex
             }
 
             SetTexture(frameInformation.texture);
-            var isMirrored = frameInformation.shouldMirror;
+
 
             UpdatePreviewRectInWorldSpaceInfoIfNeeded();
 
@@ -87,21 +87,21 @@ namespace Nex
 
             previewRectInNormalizedSpace = CenterRect(playAreaRectInNormalizedSpace, previewWidthRatio);
 
-            var newRect = FlipRectIfNeeded(previewRectInNormalizedSpace, isMirrored);
+            var rect = previewRectInNormalizedSpace;
 
             if (enableSmoothing && Time.timeSinceLevelLoad - startTime > enableSmoothingAfterPeriod)
             {
                 var smoothedNewRect = new Rect(
-                    Mathf.Lerp(rawImage.uvRect.x, newRect.x, smoothFactor),
-                    Mathf.Lerp(rawImage.uvRect.y, newRect.y, smoothFactor),
-                    Mathf.Lerp(rawImage.uvRect.width, newRect.width, smoothFactor),
-                    Mathf.Lerp(rawImage.uvRect.height, newRect.height, smoothFactor)
+                    Mathf.Lerp(rawImage.uvRect.x, rect.x, smoothFactor),
+                    Mathf.Lerp(rawImage.uvRect.y, rect.y, smoothFactor),
+                    Mathf.Lerp(rawImage.uvRect.width, rect.width, smoothFactor),
+                    Mathf.Lerp(rawImage.uvRect.height, rect.height, smoothFactor)
                 );
                 rawImage.uvRect = smoothedNewRect;
             }
             else
             {
-                rawImage.uvRect = newRect;
+                rawImage.uvRect = rect;
             }
         }
 

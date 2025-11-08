@@ -19,6 +19,9 @@ namespace Nex
         [SerializeField] OnePlayerDetectionEngine detectionEnginePrefab = null!;
         [SerializeField] ExampleNonARPlayer playerPrefab = null!;
 
+        [Header("Player Photo")]
+        [SerializeField] PlayerPhotoManager playerPhotoManager = null!;
+
         void Start()
         {
             if (Application.isEditor)
@@ -33,6 +36,7 @@ namespace Nex
         {
             detectionManager.Initialize(numOfPlayers);
             previewsManager.Initialize(numOfPlayers, detectionManager.CvDetectionManager, detectionManager.BodyPoseDetectionManager, detectionManager.PlayAreaController, detectionManager.SetupStateManager);
+            playerPhotoManager.Initialize(numOfPlayers, detectionManager.CvDetectionManager, detectionManager.BodyPoseDetectionManager);
 
             playersContainer.SetActive(false);
             for (var playerIndex = 0; playerIndex < numOfPlayers; playerIndex++)
@@ -41,12 +45,19 @@ namespace Nex
                 detectionEngine.Initialize(playerIndex, detectionManager.BodyPoseDetectionManager);
 
                 var player = Instantiate(playerPrefab, playersContainer.transform);
-                player.Initialize(playerIndex, detectionEngine, detectionManager.CvDetectionManager, detectionManager.BodyPoseDetectionManager);
+                player.Initialize(playerIndex, detectionEngine, playerPhotoManager);
             }
 
             await ScreenBlockerManager.Instance.Hide();
 
             await RunSetup();
+
+            // Assume a photo is taken after setup
+            for (var i = 0; i < numOfPlayers; i++)
+            {
+                playerPhotoManager.TakePhoto(i);
+            }
+
             RunGame();
         }
 

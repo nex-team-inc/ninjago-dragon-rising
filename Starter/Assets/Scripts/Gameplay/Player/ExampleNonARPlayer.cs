@@ -13,7 +13,7 @@ namespace Nex
         [SerializeField] SortingGroup rootSortingGroup = null!;
         [SerializeField] List<PlayerAttachment> playerAttachmentPrefabs = null!;
         [SerializeField] PlayerStyleController playerStyleController = null!;
-        [SerializeField] PlayerPreviewSpritesController playerPreviewSpritesController = null!;
+        [SerializeField] PlayerPhotoSpritesManager playerPhotoSpritesManager = null!;
 
         int playerIndex;
         OnePlayerDetectionEngine playerDetectionEngine = null!;
@@ -23,8 +23,7 @@ namespace Nex
         public void Initialize(
             int aPlayerIndex,
             OnePlayerDetectionEngine aPlayerDetectionEngine,
-            CvDetectionManager aCvDetectionManager,
-            BodyPoseDetectionManager aBodyPoseDetectionManager)
+            PlayerPhotoManager aPlayerPhotoManager)
         {
             playerIndex = aPlayerIndex;
             playerDetectionEngine = aPlayerDetectionEngine;
@@ -36,7 +35,7 @@ namespace Nex
             }
 
             playerStyleController.Initialize(aPlayerIndex);
-            playerPreviewSpritesController.Initialize(playerIndex, aCvDetectionManager, aBodyPoseDetectionManager);
+            playerPhotoSpritesManager.Initialize(playerIndex, aPlayerPhotoManager);
         }
 
         #endregion

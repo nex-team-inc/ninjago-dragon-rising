@@ -38,8 +38,6 @@ namespace Nex
         {
             // Don't render it during runtime. It's only for editor.
             ruler.enabled = false;
-
-            Initialize(null);
         }
 
         public void Initialize(

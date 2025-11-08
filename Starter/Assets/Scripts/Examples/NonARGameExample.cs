@@ -6,11 +6,18 @@ namespace Nex
 {
     public class NonARGameExample : MonoBehaviour
     {
-        [SerializeField] DetectionManager detectionManager = null!;
+        [Header("Preview")]
         [SerializeField] PreviewsManager previewsManager = null!;
-        [SerializeField] OnePlayerDetectionEngine detectionEnginePrefab = null!;
-        [SerializeField] GameObject playersContainer = null!;
+
+        [Header("Detection & Setup")]
+        [SerializeField] DetectionManager detectionManager = null!;
         [SerializeField] int numOfPlayers = 1;
+
+
+        [Header("Player")]
+        [SerializeField] GameObject playersContainer = null!;
+        [SerializeField] OnePlayerDetectionEngine detectionEnginePrefab = null!;
+        [SerializeField] ExampleNonARPlayer playerPrefab = null!;
 
         void Start()
         {
@@ -32,6 +39,9 @@ namespace Nex
             {
                 var detectionEngine = Instantiate(detectionEnginePrefab, playersContainer.transform);
                 detectionEngine.Initialize(playerIndex, detectionManager.BodyPoseDetectionManager);
+
+                var player = Instantiate(playerPrefab, playersContainer.transform);
+                player.Initialize(playerIndex, detectionEngine);
             }
 
             await ScreenBlockerManager.Instance.Hide();
@@ -61,7 +71,6 @@ namespace Nex
             previewsManager.SetPromptText("Raise your hand to start");
             detectionManager.SetupStateManager.SetAllowPassingRaisingHandState(true);
             await detectionManager.SetupStateManager.WaitForRaiseHand();
-
             await previewsManager.MoveOut(true);
         }
 

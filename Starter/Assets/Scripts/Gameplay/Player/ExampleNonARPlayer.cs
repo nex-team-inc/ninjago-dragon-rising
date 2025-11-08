@@ -6,7 +6,7 @@ using UnityEngine.Rendering;
 
 namespace Nex
 {
-    public class ExampleARPlayer : MonoBehaviour
+    public class ExampleNonARPlayer : MonoBehaviour
     {
         [SerializeField] int baseSortingOrder = 20;
         [SerializeField] SortingGroup rootSortingGroup = null!;
@@ -14,16 +14,16 @@ namespace Nex
         [SerializeField] PlayerStyleController playerStyleController = null!;
 
         int playerIndex;
-        OnePlayerPreviewPoseEngine playerPreviewPoseEngine = null!;
+        OnePlayerDetectionEngine playerDetectionEngine = null!;
 
         #region Initialization
 
         public void Initialize(
             int aPlayerIndex,
-            OnePlayerPreviewPoseEngine aPlayerPreviewPoseEngine)
+            OnePlayerDetectionEngine aPlayerDetectionEngine)
         {
             playerIndex = aPlayerIndex;
-            playerPreviewPoseEngine = aPlayerPreviewPoseEngine;
+            playerDetectionEngine = aPlayerDetectionEngine;
 
             rootSortingGroup.sortingOrder = baseSortingOrder + playerIndex;
             foreach (var prefab in playerAttachmentPrefabs)
@@ -43,7 +43,7 @@ namespace Nex
             Transform parent)
         {
             var attachment = Instantiate(attachmentPrefab, parent.transform);
-            attachment.Initialize(playerPreviewPoseEngine);
+            attachment.Initialize(playerDetectionEngine);
         }
 
         #endregion

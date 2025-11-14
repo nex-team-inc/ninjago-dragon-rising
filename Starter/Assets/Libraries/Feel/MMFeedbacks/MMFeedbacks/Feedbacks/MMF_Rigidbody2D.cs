@@ -1,14 +1,17 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Scripting.APIUpdating;
 
 namespace MoreMountains.Feedbacks
 {
+	#if MM_PHYSICS2D
 	/// <summary>
 	/// this feedback will let you apply forces and torques (relative or not) to a Rigidbody
 	/// </summary>
 	[AddComponentMenu("")]
 	[FeedbackHelp("This feedback will let you apply forces and torques (relative or not) to a Rigidbody.")]
+	[MovedFrom(false, null, "MoreMountains.Feedbacks")]
 	[FeedbackPath("GameObject/Rigidbody2D")]
 	public class MMF_Rigidbody2D : MMF_Feedback
 	{
@@ -22,6 +25,7 @@ namespace MoreMountains.Feedbacks
 		public override string RequiresSetupText { get { return "This feedback requires that a TargetRigidbody2D be set to be able to work properly. You can set one below."; } }
 		#endif
 		public override bool HasAutomatedTargetAcquisition => true;
+		
 		protected override void AutomateTargetAcquisition() => TargetRigidbody2D = FindAutomatedTarget<Rigidbody2D>();
 
 		public enum Modes { AddForce, AddRelativeForce, AddTorque}
@@ -55,6 +59,9 @@ namespace MoreMountains.Feedbacks
 		/// the force mode to apply
 		[Tooltip("the force mode to apply")]
 		public ForceMode2D AppliedForceMode = ForceMode2D.Impulse;
+		/// if this is true, the velocity of the rigidbody will be reset before applying the new force
+		[Tooltip("if this is true, the velocity of the rigidbody will be reset before applying the new force")]
+		public bool ResetVelocityOnPlay = false;
 
 		protected Vector2 _force;
 		protected float _torque;
@@ -85,6 +92,11 @@ namespace MoreMountains.Feedbacks
 		/// <param name="feedbacksIntensity"></param>
 		protected virtual void ApplyForce(Rigidbody2D rb, float feedbacksIntensity)
 		{
+			if(ResetVelocityOnPlay)
+			{
+				rb.linearVelocity = Vector2.zero;
+			}
+			
 			switch (Mode)
 			{
 				case Modes.AddForce:
@@ -107,4 +119,5 @@ namespace MoreMountains.Feedbacks
 			}
 		}
 	}
+	#endif
 }

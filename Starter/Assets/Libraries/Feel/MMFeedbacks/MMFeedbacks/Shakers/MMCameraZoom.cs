@@ -10,7 +10,7 @@ namespace MoreMountains.FeedbacksForThirdParty
 	/// This class will allow you to trigger zooms on your camera by sending MMCameraZoomEvents from any other class
 	/// </summary>
 	[RequireComponent(typeof(Camera))]
-	[AddComponentMenu("More Mountains/Feedbacks/Shakers/Camera/MMCameraZoom")]
+	[AddComponentMenu("More Mountains/Feedbacks/Shakers/Camera/MM Camera Zoom")]
 	public class MMCameraZoom : MonoBehaviour
 	{
 		[Header("Channel")]
@@ -57,7 +57,7 @@ namespace MoreMountains.FeedbacksForThirdParty
 		public virtual float GetTime() { return (TimescaleMode == TimescaleModes.Scaled) ? Time.time : Time.unscaledTime; }
 		public virtual float GetDeltaTime() { return (TimescaleMode == TimescaleModes.Scaled) ? Time.deltaTime : Time.unscaledDeltaTime; }
 
-		public TimescaleModes TimescaleMode { get; set; }
+		public virtual TimescaleModes TimescaleMode { get; set; }
         
 		protected Camera _camera;
 		protected float _initialFieldOfView;

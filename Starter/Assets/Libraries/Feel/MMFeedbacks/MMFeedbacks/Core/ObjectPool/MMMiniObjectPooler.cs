@@ -1,13 +1,12 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-#pragma warning disable CS0618
 
 namespace MoreMountains.Feedbacks
 {
 	public class MMMiniObjectPooler : MonoBehaviour
 	{
-		/// the game object we'll instantiate
+		/// the game object we'll instantiate 
 		public GameObject GameObjectToPool;
 		/// the number of objects we'll add to the pool
 		public int PoolSize = 20;
@@ -17,12 +16,12 @@ namespace MoreMountains.Feedbacks
 		public bool MutualizeWaitingPools = false;
 		/// if this is true, all waiting and active objects will be regrouped under an empty game object. Otherwise they'll just be at top level in the hierarchy
 		public bool NestWaitingPool = true;
-
+        
 		/// this object is just used to group the pooled objects
 		protected GameObject _waitingPool = null;
 		protected MMMiniObjectPool _objectPool;
 		protected const int _initialPoolsListCapacity = 5;
-
+        
 		static List<MMMiniObjectPool> _pools = new List<MMMiniObjectPool>(_initialPoolsListCapacity);
 
 		/// <summary>
@@ -33,7 +32,7 @@ namespace MoreMountains.Feedbacks
 		{
 			if (_pools == null)
 			{
-				_pools = new List<MMMiniObjectPool>(_initialPoolsListCapacity);
+				_pools = new List<MMMiniObjectPool>(_initialPoolsListCapacity);    
 			}
 			if (!_pools.Contains(pool))
 			{
@@ -57,18 +56,18 @@ namespace MoreMountains.Feedbacks
 		{
 			FillObjectPool();
 		}
-
+        
 		/// <summary>
-		/// On Destroy we remove ourselves from the list of poolers
+		/// On Destroy we remove ourselves from the list of poolers 
 		/// </summary>
 		private void OnDestroy()
 		{
 			if (_objectPool != null)
 			{
-				RemovePool(_objectPool);
+				RemovePool(_objectPool);    
 			}
 		}
-
+        
 		/// <summary>
 		/// Looks for an existing pooler for the same object, returns it if found, returns null otherwise
 		/// </summary>
@@ -78,12 +77,12 @@ namespace MoreMountains.Feedbacks
 		{
 			if (_pools == null)
 			{
-				_pools = new List<MMMiniObjectPool>(_initialPoolsListCapacity);
+				_pools = new List<MMMiniObjectPool>(_initialPoolsListCapacity);    
 			}
-
+            
 			if (_pools.Count == 0)
 			{
-				var pools = FindObjectsOfType<MMMiniObjectPool>();
+				var pools = FindObjectsByType<MMMiniObjectPool>(FindObjectsSortMode.None);
 				if (pools.Length > 0)
 				{
 					_pools.AddRange(pools);
@@ -114,7 +113,7 @@ namespace MoreMountains.Feedbacks
 			else
 			{
 				MMMiniObjectPool waitingPool = ExistingPool(DetermineObjectPoolName(GameObjectToPool));
-
+                
 				if (waitingPool != null)
 				{
 					_waitingPool = waitingPool.gameObject;
@@ -124,6 +123,7 @@ namespace MoreMountains.Feedbacks
 				{
 					GameObject newPool = new GameObject();
 					newPool.name = DetermineObjectPoolName(GameObjectToPool);
+					SceneManager.MoveGameObjectToScene(newPool, this.gameObject.scene);
 					_objectPool = newPool.AddComponent<MMMiniObjectPool>();
 					_objectPool.PooledGameObjects = new List<GameObject>();
 					AddPool(_objectPool);
@@ -181,7 +181,7 @@ namespace MoreMountains.Feedbacks
 					return _objectPool.PooledGameObjects[i];
 				}
 			}
-			// if we haven't found an inactive object (the pool is empty), and if we can extend it, we add one new object to the pool, and return it
+			// if we haven't found an inactive object (the pool is empty), and if we can extend it, we add one new object to the pool, and return it		
 			if (PoolCanExpand)
 			{
 				return AddOneObjectToThePool();
@@ -201,8 +201,10 @@ namespace MoreMountains.Feedbacks
 				Debug.LogWarning("The " + gameObject.name + " ObjectPooler doesn't have any GameObjectToPool defined.", gameObject);
 				return null;
 			}
+			bool objectWasActive = GameObjectToPool.gameObject.activeSelf;
 			GameObjectToPool.gameObject.SetActive(false);
 			GameObject newGameObject = (GameObject)Instantiate(GameObjectToPool);
+			GameObjectToPool.gameObject.SetActive(objectWasActive);
 			SceneManager.MoveGameObjectToScene(newGameObject, this.gameObject.scene);
 			if (NestWaitingPool)
 			{

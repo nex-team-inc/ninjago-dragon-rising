@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Scripting.APIUpdating;
 
 namespace MoreMountains.Feedbacks
 {
@@ -9,6 +10,7 @@ namespace MoreMountains.Feedbacks
 	/// </summary>
 	[AddComponentMenu("")]
 	[FeedbackHelp("This feedback will allow you to send to an animator (bound in its inspector) a bool, int, float or trigger parameter, allowing you to trigger an animation, with or without randomness.")]
+	[MovedFrom(false, null, "MoreMountains.Feedbacks")]
 	[FeedbackPath("Animation/Animation Parameter")]
 	public class MMF_Animation : MMF_Feedback 
 	{
@@ -146,12 +148,29 @@ namespace MoreMountains.Feedbacks
 		[MMFEnumCondition("FloatValueMode", (int)ValueModes.Incremental)]
 		public float FloatIncrement = 1;
 
+		[MMFInspectorGroup("Layer Weights", true, 22)]
+		/// whether or not to set layer weights on the specified layer when playing this feedback
+		[Tooltip("whether or not to set layer weights on the specified layer when playing this feedback")]
+		public bool SetLayerWeight = false;
+		/// the index of the layer to target when changing layer weights
+		[Tooltip("the index of the layer to target when changing layer weights")]
+		[MMFCondition("SetLayerWeight", true)]
+		public int TargetLayerIndex = 1;
+		/// the name of the Animator layer you want the layer weight change to occur on. This is optional. If left empty, the layer ID above will be used, if not empty, the Layer id specified above will be ignored.
+		[Tooltip("the name of the Animator layer you want the layer weight change to occur on. This is optional. If left empty, the layer ID above will be used, if not empty, the Layer id specified above will be ignored.")]
+		public string LayerName = "";
+		/// the new weight to set on the target animator layer
+		[Tooltip("the new weight to set on the target animator layer")]
+		[MMFCondition("SetLayerWeight", true)]
+		public float NewWeight = 0.5f;
+
 		protected int _triggerParameter;
 		protected int _boolParameter;
 		protected int _intParameter;
 		protected int _floatParameter;
 		protected List<int> _randomTriggerParameters;
 		protected List<int> _randomBoolParameters;
+		protected int _layerID;
 
 		/// <summary>
 		/// Custom Init
@@ -160,12 +179,23 @@ namespace MoreMountains.Feedbacks
 		protected override void CustomInitialization(MMF_Player owner)
 		{
 			base.CustomInitialization(owner);
+			
 			_triggerParameter = Animator.StringToHash(TriggerParameterName);
 			_boolParameter = Animator.StringToHash(BoolParameterName);
 			_intParameter = Animator.StringToHash(IntParameterName);
 			_floatParameter = Animator.StringToHash(FloatParameterName);
+			
+			if (RandomTriggerParameterNames == null)
+			{
+				RandomTriggerParameterNames = new List<string>();
+			}
+			if (RandomBoolParameterNames == null)
+			{
+				RandomBoolParameterNames = new List<string>();
+			}
 
 			_randomTriggerParameters = new List<int>();
+			
 			foreach (string name in RandomTriggerParameterNames)
 			{
 				_randomTriggerParameters.Add(Animator.StringToHash(name));
@@ -175,6 +205,12 @@ namespace MoreMountains.Feedbacks
 			foreach (string name in RandomBoolParameterNames)
 			{
 				_randomBoolParameters.Add(Animator.StringToHash(name));
+			}
+			
+			_layerID = TargetLayerIndex;
+			if ((LayerName != "") && (BoundAnimator != null))
+			{
+				_layerID = BoundAnimator.GetLayerIndex(LayerName);
 			}
 		}
 
@@ -192,7 +228,7 @@ namespace MoreMountains.Feedbacks
 
 			if (BoundAnimator == null)
 			{
-				Debug.LogWarning("No animator was set for " + Owner.name);
+				Debug.LogWarning("[Animation Feedback] The animation feedback on "+Owner.name+" doesn't have a BoundAnimator, it won't work. You need to specify one in its inspector.");
 				return;
 			}
 
@@ -278,6 +314,11 @@ namespace MoreMountains.Feedbacks
 					float randomValue = Random.Range(FloatValueMin, FloatValueMax) * intensityMultiplier;
 					targetAnimator.SetFloat(_floatParameter, randomValue);
 					break;
+			}
+
+			if (SetLayerWeight)
+			{
+				targetAnimator.SetLayerWeight(_layerID, NewWeight);
 			}
 		}
         

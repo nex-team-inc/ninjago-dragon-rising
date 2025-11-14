@@ -58,11 +58,12 @@ namespace MoreMountains.Feedbacks
 		public virtual float GetDeltaTime() { return (TimescaleMode == TimescaleModes.Scaled) ? Time.deltaTime : Time.unscaledDeltaTime; }
 		public virtual MMChannelData ChannelData => new MMChannelData(ChannelMode, Channel, MMChannelDefinition);
         
-		public bool ListeningToEvents => _listeningToEvents;
+		public virtual bool ListeningToEvents => _listeningToEvents;
 
 		[HideInInspector]
 		internal bool _listeningToEvents = false;
 		protected float _shakeStartedTimestamp = -Single.MaxValue;
+		protected float _shakeStartedTimestampUnscaled = -Single.MaxValue;
 		protected float _remappedTimeSinceStart;
 		protected bool _resetShakerValuesAfterShake;
 		protected bool _resetTargetValuesAfterShake;
@@ -105,7 +106,7 @@ namespace MoreMountains.Feedbacks
 		{
 			_journey = ForwardDirection ? 0f : ShakeDuration;
 
-			if (GetTime() - _shakeStartedTimestamp < CooldownBetweenShakes)
+			if (InCooldown)
 			{
 				return;
 			}
@@ -117,10 +118,25 @@ namespace MoreMountains.Feedbacks
 			else
 			{
 				this.enabled = true;
-				_shakeStartedTimestamp = GetTime();
+				SetShakeStartedTimestamp();
 				Shaking = true;
 				GrabInitialValues();
 				ShakeStarts();
+			}
+		}
+
+		/// <summary>
+		/// Logs the start timestamp for this shaker
+		/// </summary>
+		protected virtual void SetShakeStartedTimestamp()
+		{
+			if (TimescaleMode == TimescaleModes.Scaled)
+			{
+				_shakeStartedTimestamp = GetTime();	
+			}
+			else
+			{
+				_shakeStartedTimestampUnscaled = GetTime();
 			}
 		}
 
@@ -203,6 +219,12 @@ namespace MoreMountains.Feedbacks
 			return newValue;
 		}
 
+		protected virtual Color ShakeGradient(Gradient gradient)
+		{
+			float remappedTime = MMFeedbacksHelpers.Remap(_journey, 0f, ShakeDuration, 0f, 1f);
+			return gradient.Evaluate(remappedTime);
+		}
+
 		/// <summary>
 		/// Resets the values on the target
 		/// </summary>
@@ -270,7 +292,7 @@ namespace MoreMountains.Feedbacks
 		/// </summary>
 		public virtual void Play()
 		{
-			if (GetTime() - _shakeStartedTimestamp < CooldownBetweenShakes)
+			if (InCooldown)
 			{
 				return;
 			}
@@ -328,6 +350,20 @@ namespace MoreMountains.Feedbacks
 				}
 
 				return true;
+			}
+		}
+		
+		/// <summary>
+		/// Returns true if this shaker is currently in cooldown, false otherwise
+		/// </summary>
+		public virtual bool InCooldown
+		{
+			get
+			{
+				float startedTimeStamp = TimescaleMode == TimescaleModes.Scaled ? _shakeStartedTimestamp : _shakeStartedTimestampUnscaled;
+
+				float test = GetTime() - startedTimeStamp;
+				return (GetTime() - startedTimeStamp < CooldownBetweenShakes);	
 			}
 		}
 		

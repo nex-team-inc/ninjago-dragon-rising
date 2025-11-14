@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Assertions;
 using Random = UnityEngine.Random;
+using UnityEngine.Scripting.APIUpdating;
 
 namespace MoreMountains.Feedbacks
 {
@@ -12,22 +13,24 @@ namespace MoreMountains.Feedbacks
 	/// </summary>
 	[AddComponentMenu("")]
 	[FeedbackHelp("This feedback will simply play the specified ParticleSystem (from your scene) when played.")]
+	[MovedFrom(false, null, "MoreMountains.Feedbacks")]
 	[FeedbackPath("Particles/Particles Play")]
 	public class MMF_Particles : MMF_Feedback
 	{
 		/// a static bool used to disable all feedbacks of this type at once
 		public static bool FeedbackTypeAuthorized = true;
-		/// sets the inspector color for this feedback
-		#if UNITY_EDITOR
 		public override float FeedbackDuration { get { return ApplyTimeMultiplier(DeclaredDuration); } set { DeclaredDuration = value;  } }
+		public override bool HasAutomatedTargetAcquisition => true;
+		protected override void AutomateTargetAcquisition() => BoundParticleSystem = FindAutomatedTarget<ParticleSystem>();
+		
+		#if UNITY_EDITOR
+		/// sets the inspector color for this feedback
 		public override Color FeedbackColor { get { return MMFeedbacksInspectorColors.ParticlesColor; } }
 		public override bool EvaluateRequiresSetup() { return (BoundParticleSystem == null); }
 		public override string RequiredTargetText { get { return BoundParticleSystem != null ? BoundParticleSystem.name : "";  } }
 		public override string RequiresSetupText { get { return "This feedback requires that a BoundParticleSystem be set to be able to work properly. You can set one below."; } }
 		#endif
-		public override bool HasAutomatedTargetAcquisition => true;
-		protected override void AutomateTargetAcquisition() => BoundParticleSystem = FindAutomatedTarget<ParticleSystem>();
-        
+		
 		public enum Modes { Play, Stop, Pause, Emit }
 
 		[MMFInspectorGroup("Bound Particles", true, 41, true)]
@@ -53,6 +56,13 @@ namespace MoreMountains.Feedbacks
 		/// if this is true, the particle system will be stopped on initialization
 		[Tooltip("if this is true, the particle system will be stopped on initialization")]
 		public bool StopSystemOnInit = true;
+		/// if this is true, the particle system will be stopped on reset
+		[Tooltip("if this is true, the particle system will be stopped on reset")]
+		public bool StopSystemOnReset = true;
+		/// if this is true, the particle system will be stopped on feedback stop
+		[Tooltip("if this is true, the particle system will be stopped on feedback stop")]
+		public bool StopSystemOnStopFeedback = true;
+
 		/// the duration for the player to consider. This won't impact your particle system, but is a way to communicate to the MMF Player the duration of this feedback. Usually you'll want it to match your actual particle system, and setting it can be useful to have this feedback work with holding pauses.
 		[Tooltip("the duration for the player to consider. This won't impact your particle system, but is a way to communicate to the MMF Player the duration of this feedback. Usually you'll want it to match your actual particle system, and setting it can be useful to have this feedback work with holding pauses.")]
 		public float DeclaredDuration = 0f;
@@ -75,6 +85,10 @@ namespace MoreMountains.Feedbacks
 		protected override void CustomInitialization(MMF_Player owner)
 		{
 			base.CustomInitialization(owner);
+			if (RandomParticleSystems == null)
+			{
+				RandomParticleSystems = new List<ParticleSystem>();
+			}
 			if (StopSystemOnInit)
 			{
 				StopParticles();
@@ -106,7 +120,11 @@ namespace MoreMountains.Feedbacks
 			{
 				return;
 			}
-			StopParticles();
+
+			if (StopSystemOnStopFeedback)
+			{
+				StopParticles();
+			}
 		}
 
 		/// <summary>
@@ -121,7 +139,10 @@ namespace MoreMountains.Feedbacks
 				return;
 			}
 
-			StopParticles();
+			if (StopSystemOnReset)
+			{
+				StopParticles();
+			}
 		}
 
 		/// <summary>

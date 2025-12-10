@@ -24,8 +24,12 @@ namespace Nex
             Screen.sleepTimeout = SleepTimeout.SystemSetting;
 
             // Set rendering FPS
-            var currentFrameRate = (int)(Screen.currentResolution.refreshRateRatio.value + 0.5);  // Round to int.
+            var currentFrameRate = (int)(Screen.currentResolution.refreshRateRatio.value + 0.5); // Round to int.
             Application.targetFrameRate = Math.Min(targetFrameRate, currentFrameRate);
+
+            // Disable showing Development Console on screen
+            Debug.developerConsoleEnabled = false;
+            Debug.developerConsoleVisible = false;
         }
     }
 }

@@ -22,7 +22,7 @@ namespace Nex.KeyboardNavigation
             }
         }
 
-        public override bool Activate(IKeyboardNavigationContext context, bool isFocused)
+        public override bool Activate(IKeyboardNavigationContext? context, bool isFocused)
         {
             if (!(context is ViewManagerKeyboardNavigationContext viewManagerContext)) return false;
             var controlResponder = viewManagerContext.GetTopLevelControlKeyResponder(control);
@@ -32,27 +32,31 @@ namespace Nex.KeyboardNavigation
             return delegateResponder.Activate(context, isFocused);
         }
 
-        public override void Deactivate(IKeyboardNavigationContext context)
+        public override void Deactivate(IKeyboardNavigationContext? context)
         {
             if (delegateResponder == null) return;
             delegateResponder.Deactivate(context);
             delegateResponder = null!;
         }
 
-        public override void HandleEnter()
+        public override bool HandleEnter()
         {
             if (delegateResponder != null)
             {
                 delegateResponder.HandleEnter();
+                return true;
             }
+            return false;
         }
 
-        public override void HandleBack()
+        public override bool HandleBack()
         {
             if (delegateResponder != null)
             {
                 delegateResponder.HandleBack();
+                return true;
             }
+            return false;
         }
 
         public override NavigationResult HandleNavigation(NavigationKey key)
@@ -60,9 +64,10 @@ namespace Nex.KeyboardNavigation
             return delegateResponder == null ? new NavigationResult(key) : delegateResponder.HandleNavigation(key);
         }
 
-        public override RectTransform GainFocus(NavigationKey? key)
+        protected override RectTransform? OnFocusRequested(NavigationKey key = NavigationKey.None)
         {
-            return delegateResponder == null ? RectTransform : delegateResponder.GainFocus(key);
+            var rt = base.OnFocusRequested(key);
+            return delegateResponder == null ? rt : delegateResponder.GainFocus(key);
         }
 
         public override void LoseFocus()

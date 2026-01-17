@@ -330,6 +330,13 @@ namespace Nex
             return null;
         }
 
+        public Transform GetNodeByPoseNodeIndex(PoseNodeIndex poseNodeIndex, bool smoothed)
+        {
+            return smoothed
+                ? smoothedNodeByType.GetValueOrDefault(poseNodeIndex)
+                : originalNodeByType.GetValueOrDefault(poseNodeIndex);
+        }
+
         #endregion
     }
 }

@@ -14,10 +14,10 @@ namespace Nex.Utils
             return c + t * (d - c);
         }
 
-        public static float RemapAndClamp(float x, float a, float b, float c, float d, float lowerMargin, float upperMargin)
+        public static float RemapAndClamp(float x, float a, float b, float c, float d)
         {
             float result = Remap(x, a, b, c, d);
-            return Mathf.Clamp(result, Mathf.Min(c, d) + lowerMargin, Mathf.Max(c, d) - upperMargin);
+            return Mathf.Clamp(result, Mathf.Min(c, d), Mathf.Max(c, d));
         }
     }
 }

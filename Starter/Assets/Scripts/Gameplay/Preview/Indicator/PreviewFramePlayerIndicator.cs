@@ -99,8 +99,8 @@ namespace Nex
             var bottomMargin = 0;
 
             var nodePositionInPreviewFrameRect = new Vector2(
-                RemapUtils.RemapAndClamp(nodePosition.x, playAreaRect.x, playAreaRect.x + playAreaRect.width, -previewRectTransformSize.x / 2, previewRectTransformSize.x / 2, leftRightMargin, leftRightMargin),
-                RemapUtils.RemapAndClamp(nodePosition.y, playAreaRect.y, playAreaRect.y + playAreaRect.height, -previewRectTransformSize.y / 2, previewRectTransformSize.y / 2, bottomMargin, topMargin)
+                RemapUtils.RemapAndClamp(nodePosition.x, playAreaRect.x, playAreaRect.x + playAreaRect.width, -previewRectTransformSize.x / 2 + leftRightMargin, previewRectTransformSize.x / 2 - leftRightMargin),
+                RemapUtils.RemapAndClamp(nodePosition.y, playAreaRect.y, playAreaRect.y + playAreaRect.height, -previewRectTransformSize.y / 2 + bottomMargin, previewRectTransformSize.y / 2 - topMargin)
             );
 
             indicator.anchoredPosition = nodePositionInPreviewFrameRect;

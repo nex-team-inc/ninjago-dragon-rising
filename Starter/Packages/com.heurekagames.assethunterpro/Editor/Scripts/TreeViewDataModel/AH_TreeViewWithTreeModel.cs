@@ -6,6 +6,8 @@ using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 using UnityEngine.Assertions;
 
+#pragma warning disable 0618
+
 namespace HeurekaGames.AssetHunterPRO.BaseTreeviewImpl.AssetTreeView
 {
     class AH_TreeViewWithTreeModel : TreeViewWithTreeModel<AH_TreeviewElement>
@@ -597,3 +599,5 @@ namespace HeurekaGames.AssetHunterPRO.BaseTreeviewImpl.AssetTreeView
         }
     }
 }
+
+#pragma warning restore 0618

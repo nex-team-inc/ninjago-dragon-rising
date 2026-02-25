@@ -7,6 +7,8 @@ using HeurekaGames.AssetHunterPRO.BaseTreeviewImpl.DependencyGraph;
 using UnityEditorInternal;
 using HeurekaGames.Utils;
 
+#pragma warning disable 0618
+
 namespace HeurekaGames.AssetHunterPRO
 {
     public class AH_DependencyGraphWindow : EditorWindow
@@ -397,6 +399,8 @@ namespace HeurekaGames.AssetHunterPRO
                 initialized = false;
             }
         }
+
+    #pragma warning restore 0618
 
         Rect searchBar
         {

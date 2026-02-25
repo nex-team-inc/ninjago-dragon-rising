@@ -30,7 +30,7 @@ namespace HeurekaGames.Utils
             return type.AssemblyQualifiedName;
         }
 
-        [SerializeField]
+        [Serializable]
         public class StringList
         {
             public List<string> Items = new List<string>();

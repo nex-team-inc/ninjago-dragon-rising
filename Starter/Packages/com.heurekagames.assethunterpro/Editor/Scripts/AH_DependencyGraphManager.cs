@@ -6,6 +6,8 @@ using UnityEditor;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 
+#pragma warning disable 0618
+
 namespace HeurekaGames.AssetHunterPRO.BaseTreeviewImpl.DependencyGraph
 {
     [Serializable]
@@ -390,3 +392,5 @@ namespace HeurekaGames.AssetHunterPRO.BaseTreeviewImpl.DependencyGraph
         }
     }
 }
+
+#pragma warning restore 0618

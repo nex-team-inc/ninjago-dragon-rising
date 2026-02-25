@@ -6,6 +6,8 @@ using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 using UnityEngine.Assertions;
 
+#pragma warning disable 0618
+
 namespace HeurekaGames.AssetHunterPRO.BaseTreeviewImpl.DependencyGraph
 {
     internal class AH_DepGraphTreeviewWithModel : TreeViewWithTreeModel<AH_DepGraphElement>
@@ -304,3 +306,5 @@ namespace HeurekaGames.AssetHunterPRO.BaseTreeviewImpl.DependencyGraph
         }
     }
 }
+
+#pragma warning restore 0618

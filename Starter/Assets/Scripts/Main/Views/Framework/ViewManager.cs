@@ -119,8 +119,9 @@ namespace Nex
         /// </summary>
         /// <param name="view">The new view to be pushed to the top.</param>
         /// <param name="animate">Whether we should animate the transition or not.</param>
+        /// <param name="skipScreenAnalytics">Skip analytics if you are just recreating views from history</param>
         /// <exception cref="InvalidOperationException">Thrown when there are other views pushing / popping at the same time.</exception>
-        public async UniTask PushView(View view, bool animate = true)
+        public async UniTask PushView(View view, bool animate = true, bool skipScreenAnalytics = false)
         {
             if (isInTransition) throw new InvalidOperationException("Cannot push / pop view while in transition.");
             view.Manager = this;
@@ -166,7 +167,7 @@ namespace Nex
             controlPanel.Interactable = true;
             if (transactionCount == 0)
             {
-                ActivateView(view, true);
+                ActivateView(view, true, skipScreenAnalytics);
             }
             else
             {
@@ -311,7 +312,7 @@ namespace Nex
             ActivateView(viewStack.Peek().view, lastViewChangeWasPush);
         }
 
-        void ActivateView(View view, bool afterPush)
+        void ActivateView(View view, bool afterPush, bool skipScreenAnalytics = false)
         {
             view.IsActive = true;
 
@@ -324,7 +325,7 @@ namespace Nex
             }
 
             var screenName = view.AnalyticsScreenName;
-            if (!string.IsNullOrEmpty(screenName))
+            if (!string.IsNullOrEmpty(screenName) && !skipScreenAnalytics)
             {
                 AnalyticsManager.Instance.TrackScreen(screenName);
             }

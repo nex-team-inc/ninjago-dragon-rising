@@ -1,6 +1,4 @@
-using mixpanel;
 using Nex.Platform;
-using Nex.Platform.AnalyticsExtension;
 using UnityEngine;
 
 #pragma warning disable CS8604
@@ -16,8 +14,7 @@ namespace Nex
             return this;
         }
 
-        // ReSharper disable once UnusedMember.Global
-        public void TrackEvent(string eventName, Value? props = default)
+        public void TrackEvent(string eventName, GameAnalyticsProperties? props = null)
         {
             GameAnalytics.Instance.Track(eventName, props);
         }

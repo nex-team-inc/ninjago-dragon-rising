@@ -9,7 +9,6 @@ namespace Nex
     public class PlayerPhotoManager : MonoBehaviour, IPreviewTextureHandler
     {
         int numOfPlayers;
-        CvDetectionManager cvDetectionManager = null!;
         readonly List<OnePlayerPhotoTracker> playerPhotoTrackers = new();
 
         #region Public
@@ -21,7 +20,6 @@ namespace Nex
 
         public void Initialize(
             int aNumOfPlayers,
-            CvDetectionManager aCvDetectionManager,
             BodyPoseDetectionManager bodyPoseDetectionManager
             )
         {
@@ -32,7 +30,6 @@ namespace Nex
                 playerPhotoTrackers.Add(new OnePlayerPhotoTracker(i, bodyPoseDetectionManager));
             }
 
-            cvDetectionManager = aCvDetectionManager;
             CvDetectionManager.previewController.AddPreviewTextureHandler(this);
         }
 

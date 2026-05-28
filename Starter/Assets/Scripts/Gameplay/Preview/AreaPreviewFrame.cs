@@ -15,7 +15,6 @@ namespace Nex
         [ShowIf("enableSmoothing"), Range(0, 1), SerializeField] float smoothFactor = 0.1f;
         [ShowIf("enableSmoothing"), SerializeField] float enableSmoothingAfterPeriod = 1f;
 
-        CvDetectionManager cvDetectionManager = null!;
         BasePlayAreaController playAreaController = null!;
 
         Rect playAreaRectInNormalizedSpace;
@@ -32,11 +31,9 @@ namespace Nex
         }
 
         public void Initialize(
-            CvDetectionManager aCvDetectionManager,
             BasePlayAreaController aPlayAreaController
         )
         {
-            cvDetectionManager = aCvDetectionManager;
             playAreaController = aPlayAreaController;
 
             CvDetectionManager.previewController.AddPreviewTextureHandler(this);

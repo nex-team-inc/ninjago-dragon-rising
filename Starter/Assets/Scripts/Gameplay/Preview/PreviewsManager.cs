@@ -23,7 +23,6 @@ namespace Nex
 
         public void Initialize(
             int aNumOfPlayers,
-            CvDetectionManager aCvDetectionManager,
             BodyPoseDetectionManager aBodyPoseDetectionManager,
             BasePlayAreaController playAreaController,
             SetupStateManager setupStateManager
@@ -33,7 +32,7 @@ namespace Nex
             for (var playerIndex = 0; playerIndex < aNumOfPlayers; playerIndex++)
             {
                 var previewFrame = Instantiate(setupInfoPreviewFramePrefab, previewsContainer.transform);
-                previewFrame.Initialize(playerIndex, aNumOfPlayers, aCvDetectionManager, aBodyPoseDetectionManager, playAreaController, setupStateManager);
+                previewFrame.Initialize(playerIndex, aNumOfPlayers, aBodyPoseDetectionManager, playAreaController, setupStateManager);
             }
 
             MoveOut(false).Forget();

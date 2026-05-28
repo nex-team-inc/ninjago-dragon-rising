@@ -9,7 +9,6 @@ namespace Nex
 {
     public class PlayerSetupPreviewFrame : PreviewFrameBase, IPreviewTextureHandler
     {
-        CvDetectionManager cvDetectionManager = null!;
         // ReSharper disable once NotAccessedField.Local
         BodyPoseDetectionManager bodyPoseDetectionManager = null!;
         BasePlayAreaController playAreaController = null!;
@@ -28,7 +27,6 @@ namespace Nex
         public void Initialize(
             int aPlayerIndex,
             int aNumOfPlayers,
-            CvDetectionManager aCvDetectionManager,
             BodyPoseDetectionManager aBodyPoseDetectionManager,
             BasePlayAreaController aPlayAreaController
         )
@@ -36,7 +34,6 @@ namespace Nex
             playerIndex = aPlayerIndex;
             numOfPlayers = aNumOfPlayers;
 
-            cvDetectionManager = aCvDetectionManager;
             bodyPoseDetectionManager = aBodyPoseDetectionManager;
             playAreaController = aPlayAreaController;
 

@@ -39,7 +39,6 @@ namespace Nex
         [SerializeField] bool useStableChestY = true;
         [SerializeField] float yChangeSigmaInInches = 1;
 
-        CvDetectionManager cvDetectionManager = null!;
         BodyPoseDetectionManager bodyPoseDetectionManager = null!;
 
         Rect previewRectInNormalizedSpace;
@@ -68,14 +67,12 @@ namespace Nex
         public void Initialize(
             int aPlayerIndex,
             int aNumOfPlayers,
-            CvDetectionManager aCvDetectionManager,
             BodyPoseDetectionManager aBodyPoseDetectionManager
         )
         {
             playerIndex = aPlayerIndex;
             numOfPlayers = aNumOfPlayers;
 
-            cvDetectionManager = aCvDetectionManager;
             bodyPoseDetectionManager = aBodyPoseDetectionManager;
 
             CvDetectionManager.previewController.AddPreviewTextureHandler(this);

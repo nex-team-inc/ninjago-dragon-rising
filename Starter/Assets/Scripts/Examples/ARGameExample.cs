@@ -30,7 +30,7 @@ namespace Nex
 
             cvDetectionManager.numOfPlayers = numOfPlayers;
             playAreaController.Initialize(numOfPlayers, cvDetectionManager, bodyPoseDetectionManager);
-            previewFrame.Initialize(cvDetectionManager, playAreaController);
+            previewFrame.Initialize(playAreaController);
             playerIndicatorsManager.Initialize(numOfPlayers, previewFrame, bodyPoseDetectionManager);
 
             for (var playerIndex = 0; playerIndex < numOfPlayers; playerIndex++)

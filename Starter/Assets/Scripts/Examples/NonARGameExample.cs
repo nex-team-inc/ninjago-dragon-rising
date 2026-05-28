@@ -35,8 +35,8 @@ namespace Nex
         async UniTask StartAsync()
         {
             detectionManager.Initialize(numOfPlayers);
-            previewsManager.Initialize(numOfPlayers, detectionManager.CvDetectionManager, detectionManager.BodyPoseDetectionManager, detectionManager.PlayAreaController, detectionManager.SetupStateManager);
-            playerPhotoManager.Initialize(numOfPlayers, detectionManager.CvDetectionManager, detectionManager.BodyPoseDetectionManager);
+            previewsManager.Initialize(numOfPlayers, detectionManager.BodyPoseDetectionManager, detectionManager.PlayAreaController, detectionManager.SetupStateManager);
+            playerPhotoManager.Initialize(numOfPlayers, detectionManager.BodyPoseDetectionManager);
 
             playersContainer.SetActive(false);
             for (var playerIndex = 0; playerIndex < numOfPlayers; playerIndex++)

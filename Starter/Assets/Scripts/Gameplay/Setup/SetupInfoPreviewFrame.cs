@@ -13,13 +13,12 @@ namespace Nex
         public void Initialize(
             int playerIndex,
             int numOfPlayers,
-            CvDetectionManager cvDetectionManager,
             BodyPoseDetectionManager bodyPoseDetectionManager,
             BasePlayAreaController playAreaController,
             SetupStateManager setupStateManager
         )
         {
-            previewFrame.Initialize(playerIndex, numOfPlayers, cvDetectionManager, bodyPoseDetectionManager, playAreaController);
+            previewFrame.Initialize(playerIndex, numOfPlayers, bodyPoseDetectionManager, playAreaController);
             warningMessage.Initialize(playerIndex, setupStateManager);
             playerIndicatorsManager.Initialize(numOfPlayers, new List<int> {playerIndex}, previewFrame, bodyPoseDetectionManager);
         }

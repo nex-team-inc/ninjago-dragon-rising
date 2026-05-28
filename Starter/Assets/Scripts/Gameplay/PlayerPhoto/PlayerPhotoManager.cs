@@ -6,17 +6,12 @@ using UnityEngine;
 
 namespace Nex
 {
-    public class PlayerPhotoManager : MonoBehaviour, IPreviewTextureHandler
+    public class PlayerPhotoManager : MonoBehaviour
     {
         int numOfPlayers;
         readonly List<OnePlayerPhotoTracker> playerPhotoTrackers = new();
 
         #region Public
-
-        public Rect GetPreviewRegion()
-        {
-            return new Rect();
-        }
 
         public void Initialize(
             int aNumOfPlayers,
@@ -27,21 +22,28 @@ namespace Nex
 
             for (var i = 0; i < numOfPlayers; i++)
             {
-                playerPhotoTrackers.Add(new OnePlayerPhotoTracker(i, bodyPoseDetectionManager));
+                var tracker = new GameObject();
+                tracker.transform.SetParent(transform);
+                var onePlayerPhotoTracker = tracker.AddComponent<OnePlayerPhotoTracker>();
+                onePlayerPhotoTracker.Initialize(i, bodyPoseDetectionManager);
+                playerPhotoTrackers.Add(onePlayerPhotoTracker);
             }
 
-            CvDetectionManager.previewController.AddPreviewTextureHandler(this);
+
+            foreach (var tracker in playerPhotoTrackers)
+            {
+                CvDetectionManager.previewController.AddPreviewTextureHandler(tracker);
+            }
         }
 
         void OnDestroy()
         {
             foreach (var tracker in playerPhotoTrackers)
             {
+                CvDetectionManager.previewController.RemovePreviewTextureHandler(tracker);
                 tracker.CleanUp();
             }
             playerPhotoTrackers.Clear();
-
-            CvDetectionManager.previewController.RemovePreviewTextureHandler(this);
         }
 
         public OnePlayerPhotoTracker GetTrackerByPlayerIndex(int playerIndex)
@@ -51,7 +53,7 @@ namespace Nex
 
         public void TakePhoto(int playerIndex)
         {
-            playerPhotoTrackers[playerIndex].TakePhoto();
+            playerPhotoTrackers[playerIndex].TakePhoto(0);
         }
 
         public void ClearPhoto(int playerIndex)

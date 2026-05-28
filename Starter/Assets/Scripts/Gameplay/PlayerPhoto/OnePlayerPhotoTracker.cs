@@ -1,6 +1,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using Jazz;
 using Nex.Utils;
 using UnityEngine;
@@ -8,33 +9,63 @@ using UnityEngine.Events;
 
 namespace Nex
 {
-    public class OnePlayerPhotoTracker
+    // OnePlayerPhotoTracker needs tp be a prefab because IPreviewTextureHandler needs to be a unity object as of MDK 3.1.0
+    public class OnePlayerPhotoTracker : MonoBehaviour, IPreviewTextureHandler
     {
-        const float zoomInFactor = 0.8f;
-        const float faceTopMarginInInches = 3.9f / zoomInFactor;
-        const float faceBottomMarginInInches = 3.5f / zoomInFactor;
-        const float faceLeftMarginInInches = 3.7f / zoomInFactor;
-        const float faceRightMarginInInches = 3.7f / zoomInFactor;
+        [Serializable]
+        public class TrackedBodyNode
+        {
+            public BodyPose.NodeIndex trackedNodeIndex;
+            public float zoomInFactor; // = 0.8f;
+            public float topMarginInInches; // = 3.9f;
+            public float bottomMarginInInches; // = 3.5f;
+            public float leftMarginInInches; // = 3.7f;
+            public float rightMarginInInches; // = 3.7f;
 
-        readonly int playerIndex;
+
+            public Rect curFaceCrop = new(0, 0, 0, 0);
+            public Rect nativeZoomFaceCrop = new(0, 0, 0, 0);
+            public readonly FloatHistory ppiHistory = new(3);
+        }
+
+        int playerIndex;
         readonly FloatHistory ppiHistory = new(3);
         readonly Vector2 normalizedFrameSize = new(16f / 9f, 1f);
+        readonly List<TrackedBodyNode> trackedBodyNodes = new()
+        {
+            new()
+            {
+                trackedNodeIndex = BodyPose.NodeIndex.Nose,
+                zoomInFactor = 0.8f,
+                topMarginInInches = 3.9f,
+                bottomMarginInInches = 3.5f,
+                leftMarginInInches = 3.7f,
+                rightMarginInInches = 3.7f,
+            }
+        };
+
         Texture2D? latestPhoto;
         Texture2D? previewImageTexture;
-        Rect curFaceCrop = new(0, 0, 0, 0 );
 
-        readonly BodyPoseDetectionManager bodyPoseDetectionManager;
+        BodyPoseDetectionManager bodyPoseDetectionManager;
 
         public event UnityAction<OnePlayerPhotoTracker>? PhotoUpdated;
 
-        public OnePlayerPhotoTracker(
-            int playerIndex,
-            BodyPoseDetectionManager bodyPoseDetectionManager)
+        public void Initialize(
+            int aPlayerIndex,
+            BodyPoseDetectionManager aBodyPoseDetectionManager)
         {
-            this.playerIndex = playerIndex;
-            this.bodyPoseDetectionManager = bodyPoseDetectionManager;
+            playerIndex = aPlayerIndex;
+            bodyPoseDetectionManager = aBodyPoseDetectionManager;
 
-            bodyPoseDetectionManager.processed.captureAspectNormalizedDetection += BodyPoseDetectionManagerOnCaptureAspectNormalizedDetection;
+            aBodyPoseDetectionManager.processed.captureAspectNormalizedDetection +=
+                BodyPoseDetectionManagerOnCaptureAspectNormalizedDetection;
+        }
+
+        public int AddTrackedBodyNode(TrackedBodyNode trackedBodyNode)
+        {
+            trackedBodyNodes.Add(trackedBodyNode);
+            return trackedBodyNodes.Count - 1;
         }
 
         public void CleanUp()
@@ -47,22 +78,24 @@ namespace Nex
             previewImageTexture = aPreviewImageTexture;
         }
 
-        public PlayerPhotoData GetPlayerPhotoData()
+        public PlayerPhotoData GetPlayerPhotoData(int trackedBodyNodeIndex)
         {
+            var trackedBodyNode = trackedBodyNodes[trackedBodyNodeIndex];
             return new PlayerPhotoData(
                 latestPhoto ? latestPhoto : previewImageTexture,
-                latestPhoto != null ? new Rect(0, 0, 1, 1) : curFaceCrop
+                latestPhoto != null ? new Rect(0, 0, 1, 1) : trackedBodyNode.curFaceCrop
             );
         }
 
-        public void TakePhoto()
+        public void TakePhoto(int trackedBodyNodeIndex)
         {
             if (previewImageTexture == null)
             {
                 return;
             }
 
-            var area = curFaceCrop;
+            var trackedBodyNode = trackedBodyNodes[trackedBodyNodeIndex];
+            var area = trackedBodyNode.curFaceCrop;
             var x = Mathf.RoundToInt(area.x * previewImageTexture.width);
             var y = Mathf.RoundToInt(area.y * previewImageTexture.height);
             var width = Mathf.RoundToInt(area.width * previewImageTexture.width);
@@ -88,6 +121,17 @@ namespace Nex
 
         void BodyPoseDetectionManagerOnCaptureAspectNormalizedDetection(BodyPoseDetectionResult detectionResult)
         {
+            foreach (var margins in trackedBodyNodes)
+            {
+                BodyPoseDetectionManagerOnCaptureAspectNormalizedDetection(detectionResult, margins);
+            }
+
+            PhotoUpdated?.Invoke(this);
+        }
+
+        void BodyPoseDetectionManagerOnCaptureAspectNormalizedDetection(BodyPoseDetectionResult detectionResult,
+            TrackedBodyNode trackedBodyNode)
+        {
             var detection = detectionResult.processed;
             var playerPose = detection.GetPlayerPose(playerIndex);
             var pose = playerPose?.bodyPose;
@@ -98,21 +142,38 @@ namespace Nex
                 ppiHistory.UpdateCurrentFrameTime(Time.fixedTime);
                 var ppi = ppiHistory.Average();
 
+                var node = pose.GetNode(trackedBodyNode.trackedNodeIndex);
+
                 if (pose.Nose().isDetected && ppi > 0)
                 {
-                    var nosePoint = pose.Nose().ToVector2();
+                    var nosePoint = node.ToVector2();
                     var curFaceCropInAspectNormFrameSpace = new Rect(
-                        nosePoint.x - faceLeftMarginInInches * ppi,
-                        nosePoint.y - faceBottomMarginInInches * ppi,
-                        (faceLeftMarginInInches + faceRightMarginInInches) * ppi,
-                        (faceBottomMarginInInches + faceTopMarginInInches) * ppi);
+                        nosePoint.x - trackedBodyNode.leftMarginInInches * ppi,
+                        nosePoint.y - trackedBodyNode.bottomMarginInInches * ppi,
+                        (trackedBodyNode.leftMarginInInches + trackedBodyNode.rightMarginInInches) * ppi,
+                        (trackedBodyNode.bottomMarginInInches + trackedBodyNode.topMarginInInches) * ppi);
 
-                    curFaceCrop = RectUtils.FromFrameSpaceToNormalizedSpace(curFaceCropInAspectNormFrameSpace, normalizedFrameSize);
-                    curFaceCrop = RectUtils.GetIntersection(curFaceCrop, new Rect(0, 0, 1, 1));
+                    trackedBodyNode.curFaceCrop =
+                        RectUtils.FromFrameSpaceToNormalizedSpace(curFaceCropInAspectNormFrameSpace,
+                            normalizedFrameSize);
+                    trackedBodyNode.curFaceCrop =
+                        RectUtils.GetIntersection(trackedBodyNode.curFaceCrop, new Rect(0, 0, 1, 1));
                 }
             }
 
             PhotoUpdated?.Invoke(this);
+        }
+
+        public Rect GetPreviewRegion()
+        {
+            return trackedBodyNodes[0].curFaceCrop;
+        }
+
+        public void OnTextureUpdated(Texture2D newTexture, Rect newUV)
+        {
+            SetPreviewImageTexture(newTexture);
+
+            trackedBodyNodes[0].nativeZoomFaceCrop = newUV;
         }
     }
 }

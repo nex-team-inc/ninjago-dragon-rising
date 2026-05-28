@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace Nex
 {
-    public class AreaPreviewFrame : PreviewFrameBase
+    public class AreaPreviewFrame : PreviewFrameBase, IPreviewTextureHandler
     {
         [SerializeField] bool enableSmoothing;
         // 0 = No Update, 1 = No Smoothing
@@ -26,6 +26,11 @@ namespace Nex
 
         #region Public
 
+        public Rect GetPreviewRegion()
+        {
+            return previewRectInNormalizedSpace;
+        }
+
         public void Initialize(
             CvDetectionManager aCvDetectionManager,
             BasePlayAreaController aPlayAreaController
@@ -34,7 +39,7 @@ namespace Nex
             cvDetectionManager = aCvDetectionManager;
             playAreaController = aPlayAreaController;
 
-            cvDetectionManager.captureCameraFrame += CvDetectionManagerOnCaptureCameraFrame;
+            CvDetectionManager.previewController.AddPreviewTextureHandler(this);
             playAreaRectInNormalizedSpace = new Rect(0, 0, 1, 1);
             previewRectInNormalizedSpace = new Rect(0, 0, 1, 1);
 
@@ -54,14 +59,14 @@ namespace Nex
 
         void OnDestroy()
         {
-            cvDetectionManager.captureCameraFrame -= CvDetectionManagerOnCaptureCameraFrame;
+            CvDetectionManager.previewController.RemovePreviewTextureHandler(this);
         }
 
         #endregion
 
         #region Event
 
-        void CvDetectionManagerOnCaptureCameraFrame(FrameInformation frameInformation)
+        public void OnTextureUpdated(Texture2D newTexture, Rect newUV)
         {
             if (!isFirstFrameReceived)
             {
@@ -75,12 +80,12 @@ namespace Nex
                 return;
             }
 
-            SetTexture(frameInformation.texture);
+            SetTexture(newTexture);
 
 
             UpdatePreviewRectInWorldSpaceInfoIfNeeded();
 
-            var rawFrameAspectRatio = frameInformation.texture.width / (float)frameInformation.texture.height;
+            var rawFrameAspectRatio = CvDetectionManager.previewController.PreviewWidth / (float)CvDetectionManager.previewController.PreviewHeight;
             var previewWidthRatio = previewRectInWorldSpaceAspectRatio / rawFrameAspectRatio; // If preview is 16/9 (and raw is 16/9), then widthRatio = 1.
 
             playAreaRectInNormalizedSpace = playAreaController.GetPlayAreaInNormalizedSpace();

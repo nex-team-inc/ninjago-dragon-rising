@@ -98,6 +98,9 @@ namespace Nex
 
             cvDetectionManager.numOfPlayers = numOfPlayers;
             cvDetectionManager.playerPositions = playerPositions;
+
+            // turn on native zoom before we start detection
+            GlobalOptions.shared.enableNativeZoom = true;
         }
 
         #endregion

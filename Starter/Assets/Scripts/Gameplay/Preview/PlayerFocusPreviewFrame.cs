@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace Nex
 {
-    public class PlayerFocusPreviewFrame : PreviewFrameBase
+    public class PlayerFocusPreviewFrame : PreviewFrameBase, IPreviewTextureHandler
     {
         [Serializable]
         public struct Margins
@@ -57,7 +57,13 @@ namespace Nex
         readonly WeightedFloatHistory chestYHistory = new(2);
         float lastRawChestY;
 
+
         #region Public
+
+        public Rect GetPreviewRegion()
+        {
+            return previewRectInNormalizedSpace;
+        }
 
         public void Initialize(
             int aPlayerIndex,
@@ -72,7 +78,7 @@ namespace Nex
             cvDetectionManager = aCvDetectionManager;
             bodyPoseDetectionManager = aBodyPoseDetectionManager;
 
-            cvDetectionManager.captureCameraFrame += CvDetectionManagerOnCaptureCameraFrame;
+            CvDetectionManager.previewController.AddPreviewTextureHandler(this);
             bodyPoseDetectionManager.captureAspectNormalizedDetection += BodyPoseDetectionManagerOnCaptureAspectNormalizedDetection;
             previewRectInNormalizedSpace = new Rect(0, 0, 1, 1);
 
@@ -96,7 +102,7 @@ namespace Nex
 
         void OnDestroy()
         {
-            cvDetectionManager.captureCameraFrame -= CvDetectionManagerOnCaptureCameraFrame;
+            CvDetectionManager.previewController.RemovePreviewTextureHandler(this);
             bodyPoseDetectionManager.captureAspectNormalizedDetection -= BodyPoseDetectionManagerOnCaptureAspectNormalizedDetection;
         }
 
@@ -104,7 +110,7 @@ namespace Nex
 
         #region Event
 
-        void CvDetectionManagerOnCaptureCameraFrame(FrameInformation frameInformation)
+        public void OnTextureUpdated(Texture2D newTexture, Rect newUV)
         {
             if (!isFirstFrameReceived)
             {
@@ -113,7 +119,7 @@ namespace Nex
                 canvasGroup.DOFade(1f, 0.5f).WithCancellation(this.GetCancellationTokenOnDestroy());
             }
 
-            rawImage.texture = frameInformation.texture;
+            rawImage.texture = newTexture;
 
             UpdatePreviewRectInWorldSpaceInfoIfNeeded();
 

@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace Nex
 {
-    public class PlayerSetupPreviewFrame : PreviewFrameBase
+    public class PlayerSetupPreviewFrame : PreviewFrameBase, IPreviewTextureHandler
     {
         CvDetectionManager cvDetectionManager = null!;
         // ReSharper disable once NotAccessedField.Local
@@ -16,6 +16,8 @@ namespace Nex
 
         Rect playAreaRectInNormalizedSpace;
         Rect previewRectInNormalizedSpace;
+
+        Rect previewFrameRect;
 
         bool isFirstFrameReceived;
         int playerIndex;
@@ -38,7 +40,7 @@ namespace Nex
             bodyPoseDetectionManager = aBodyPoseDetectionManager;
             playAreaController = aPlayAreaController;
 
-            cvDetectionManager.captureCameraFrame += CvDetectionManagerOnCaptureCameraFrame;
+            CvDetectionManager.previewController.AddPreviewTextureHandler(this);
             playAreaRectInNormalizedSpace = new Rect(0, 0, 1, 1);
             previewRectInNormalizedSpace = new Rect(0, 0, 1, 1);
 
@@ -50,20 +52,24 @@ namespace Nex
             return previewRectInNormalizedSpace;
         }
 
+        public Rect GetPreviewRegion()
+        {
+            return previewRectInNormalizedSpace;
+        }
+
         #endregion
 
         #region Life Cycle
 
         void OnDestroy()
         {
-            cvDetectionManager.captureCameraFrame -= CvDetectionManagerOnCaptureCameraFrame;
+            CvDetectionManager.previewController.RemovePreviewTextureHandler(this);
         }
 
         #endregion
 
         #region Event
-
-        void CvDetectionManagerOnCaptureCameraFrame(FrameInformation frameInformation)
+        public void OnTextureUpdated(Texture2D newTexture, Rect newUV)
         {
             if (!isFirstFrameReceived)
             {
@@ -72,11 +78,11 @@ namespace Nex
                 canvasGroup.DOFade(1f, 0.5f).WithCancellation(this.GetCancellationTokenOnDestroy());
             }
 
-            rawImage.texture = frameInformation.texture;
+            rawImage.texture = newTexture;
 
             UpdatePreviewRectInWorldSpaceInfoIfNeeded();
 
-            var rawFrameAspectRatio = frameInformation.texture.width / (float)frameInformation.texture.height;
+            var rawFrameAspectRatio = CvDetectionManager.previewController.PreviewWidth / (float)CvDetectionManager.previewController.PreviewHeight;
             var previewWidthRatio = previewRectInWorldSpaceAspectRatio / rawFrameAspectRatio; // If preview is 16/9 (and raw is 16/9), then widthRatio = 1.
 
             playAreaRectInNormalizedSpace = playAreaController.GetPlayAreaInNormalizedSpace();
@@ -84,7 +90,7 @@ namespace Nex
             var playerCenterXRatio = PlayerPositionDefinition.GetXRatioForPlayer(playerIndex, numOfPlayers);
             previewRectInNormalizedSpace = PlayerRect(playAreaRectInNormalizedSpace, playerCenterXRatio, previewWidthRatio);
 
-            rawImage.uvRect = previewRectInNormalizedSpace;
+            rawImage.uvRect = newUV;
         }
 
         Rect PlayerRect(Rect fullRect, float playerXRatio, float previewWidthRatio)

@@ -6,13 +6,18 @@ using UnityEngine;
 
 namespace Nex
 {
-    public class PlayerPhotoManager : MonoBehaviour
+    public class PlayerPhotoManager : MonoBehaviour, IPreviewTextureHandler
     {
         int numOfPlayers;
         CvDetectionManager cvDetectionManager = null!;
         readonly List<OnePlayerPhotoTracker> playerPhotoTrackers = new();
 
         #region Public
+
+        public Rect GetPreviewRegion()
+        {
+            return new Rect();
+        }
 
         public void Initialize(
             int aNumOfPlayers,
@@ -28,7 +33,7 @@ namespace Nex
             }
 
             cvDetectionManager = aCvDetectionManager;
-            cvDetectionManager.captureCameraFrame += CvDetectionManagerOnCaptureCameraFrame;
+            CvDetectionManager.previewController.AddPreviewTextureHandler(this);
         }
 
         void OnDestroy()
@@ -39,7 +44,7 @@ namespace Nex
             }
             playerPhotoTrackers.Clear();
 
-            cvDetectionManager.captureCameraFrame -= CvDetectionManagerOnCaptureCameraFrame;
+            CvDetectionManager.previewController.RemovePreviewTextureHandler(this);
         }
 
         public OnePlayerPhotoTracker GetTrackerByPlayerIndex(int playerIndex)
@@ -61,11 +66,11 @@ namespace Nex
 
         #region Raw Input
 
-        void CvDetectionManagerOnCaptureCameraFrame(FrameInformation frameInformation)
+        public void OnTextureUpdated(Texture2D newTexture, Rect newUV)
         {
             foreach (var tracker in playerPhotoTrackers)
             {
-                tracker.SetPreviewImageTexture((Texture2D?)frameInformation.texture);
+                tracker.SetPreviewImageTexture(newTexture);
             }
         }
 

@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Nex
 {
-    public class PlayerPreviewSprite : MonoBehaviour
+    public class PlayerPreviewSprite : MonoBehaviour, IPreviewTextureHandler
     {
         [Serializable]
         public struct Margins
@@ -49,6 +49,11 @@ namespace Nex
 
         Rect previewRectInNormalizedSpace;
 
+        public Rect GetPreviewRegion()
+        {
+            return previewRectInNormalizedSpace;
+        }
+
         void OnDestroy()
         {
             if (baseSprite != null)
@@ -66,7 +71,7 @@ namespace Nex
             cvDetectionManager = aCvDetectionManager;
             bodyPoseDetectionManager = aBodyPoseDetectionManager;
 
-            cvDetectionManager.captureCameraFrame += CvDetectionManagerOnCaptureCameraFrame;
+            CvDetectionManager.previewController.AddPreviewTextureHandler(this);
             bodyPoseDetectionManager.captureAspectNormalizedDetection += BodyPoseDetectionManagerOnCaptureAspectNormalizedDetection;
 
             // ReSharper disable once RedundantArgumentDefaultValue
@@ -102,9 +107,9 @@ namespace Nex
             spriteRenderer.sprite = baseSprite;
         }
 
-        void CvDetectionManagerOnCaptureCameraFrame(FrameInformation frameInformation)
+        public void OnTextureUpdated(Texture2D newTexture, Rect newUV)
         {
-            UpdateSprite((Texture2D)frameInformation.texture);
+            UpdateSprite(newTexture);
         }
 
         void BodyPoseDetectionManagerOnCaptureAspectNormalizedDetection(BodyPoseDetectionResult bodyPoseDetectionResult)

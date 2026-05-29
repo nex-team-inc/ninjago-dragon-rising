@@ -14,6 +14,7 @@ namespace Nex
             new()
             {
                 trackedNodeIndex = BodyPose.NodeIndex.Nose,
+                nodeRotation = new OnePlayerPhotoTracker.NodeRotation(BodyPose.NodeIndex.Nose, BodyPose.NodeIndex.Nose),
                 zoomInFactor = 0.8f,
                 topMarginInInches = 3.9f,
                 bottomMarginInInches = 3.5f,

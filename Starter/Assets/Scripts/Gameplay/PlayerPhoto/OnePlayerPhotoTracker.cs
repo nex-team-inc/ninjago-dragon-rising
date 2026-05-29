@@ -16,16 +16,30 @@ namespace Nex
         public class TrackedBodyNode
         {
             public BodyPose.NodeIndex trackedNodeIndex;
+            public NodeRotation? nodeRotation;
             public float zoomInFactor; // = 0.8f;
             public float topMarginInInches; // = 3.9f;
             public float bottomMarginInInches; // = 3.5f;
             public float leftMarginInInches; // = 3.7f;
             public float rightMarginInInches; // = 3.7f;
 
-
+            public Vector3 rotationVector = Vector3.zero;
             public Rect curFaceCrop = new(0, 0, 0, 0);
             public Rect nativeZoomFaceCrop = new(0, 0, 0, 0);
-            public readonly FloatHistory ppiHistory = new(3);
+            public readonly FloatHistory PpiHistory = new(3);
+        }
+
+        [Serializable]
+        public class NodeRotation
+        {
+            public BodyPose.NodeIndex nodeIndex1;
+            public BodyPose.NodeIndex nodeIndex2;
+
+            public NodeRotation(BodyPose.NodeIndex aNodeIndex1, BodyPose.NodeIndex aNodeIndex2)
+            {
+                nodeIndex1 = aNodeIndex1;
+                nodeIndex2 = aNodeIndex2;
+            }
         }
 
         int playerIndex;
@@ -36,6 +50,7 @@ namespace Nex
             new()
             {
                 trackedNodeIndex = BodyPose.NodeIndex.Nose,
+                nodeRotation = new NodeRotation(BodyPose.NodeIndex.Nose, BodyPose.NodeIndex.Nose),
                 zoomInFactor = 0.8f,
                 topMarginInInches = 3.9f,
                 bottomMarginInInches = 3.5f,
@@ -47,7 +62,7 @@ namespace Nex
         Texture2D? latestPhoto;
         Texture2D? previewImageTexture;
 
-        BodyPoseDetectionManager bodyPoseDetectionManager;
+        BodyPoseDetectionManager? bodyPoseDetectionManager;
 
         public event UnityAction<OnePlayerPhotoTracker>? PhotoUpdated;
 
@@ -58,7 +73,7 @@ namespace Nex
             playerIndex = aPlayerIndex;
             bodyPoseDetectionManager = aBodyPoseDetectionManager;
 
-            aBodyPoseDetectionManager.processed.captureAspectNormalizedDetection +=
+            bodyPoseDetectionManager.processed.captureAspectNormalizedDetection +=
                 BodyPoseDetectionManagerOnCaptureAspectNormalizedDetection;
         }
 
@@ -70,7 +85,7 @@ namespace Nex
 
         public void CleanUp()
         {
-            bodyPoseDetectionManager.processed.captureAspectNormalizedDetection -= BodyPoseDetectionManagerOnCaptureAspectNormalizedDetection;
+           if(bodyPoseDetectionManager) bodyPoseDetectionManager.processed.captureAspectNormalizedDetection -= BodyPoseDetectionManagerOnCaptureAspectNormalizedDetection;
         }
 
         public void SetPreviewImageTexture(Texture2D? aPreviewImageTexture)
@@ -105,8 +120,11 @@ namespace Nex
             width = Math.Min(previewImageTexture.width - x, width);
             height = Math.Min(previewImageTexture.height - y, height);
             if (width <= 0 || height <= 0) return;
+            var degree = trackedBodyNode.rotationVector.z;
+            var newXY = GetRotatedPoint(new Vector2(x, y) + new Vector2(width, height) / 2f, previewImageTexture.width, previewImageTexture.height, -degree) - new Vector2Int(width, height) / 2;
+            previewImageTexture = RotateAndCrop(previewImageTexture, degree, previewImageTexture.width, previewImageTexture.height);
             latestPhoto = new Texture2D(width, height, previewImageTexture.format, false, false);
-            Graphics.CopyTexture(previewImageTexture, 0, 0, x, y, latestPhoto.width, latestPhoto.height, latestPhoto, 0, 0, 0,
+            Graphics.CopyTexture(previewImageTexture, 0, 0, newXY.x, newXY.y, width, height, latestPhoto, 0, 0, 0,
                 0);
 
             PhotoUpdated?.Invoke(this);
@@ -146,12 +164,24 @@ namespace Nex
 
                 if (pose.Nose().isDetected && ppi > 0)
                 {
-                    var nosePoint = node.ToVector2();
+                    var nodePoint = node.ToVector2();
                     var curFaceCropInAspectNormFrameSpace = new Rect(
-                        nosePoint.x - trackedBodyNode.leftMarginInInches * ppi,
-                        nosePoint.y - trackedBodyNode.bottomMarginInInches * ppi,
+                        nodePoint.x - trackedBodyNode.leftMarginInInches * ppi,
+                        nodePoint.y - trackedBodyNode.bottomMarginInInches * ppi,
                         (trackedBodyNode.leftMarginInInches + trackedBodyNode.rightMarginInInches) * ppi,
                         (trackedBodyNode.bottomMarginInInches + trackedBodyNode.topMarginInInches) * ppi);
+
+                    if (trackedBodyNode.nodeRotation == null || trackedBodyNode.nodeRotation.nodeIndex1 == trackedBodyNode.nodeRotation.nodeIndex2)
+                    {
+                        trackedBodyNode.rotationVector = Vector3.zero;
+                    }
+                    else
+                    {
+                        var nodePoint1 = pose.GetNode(trackedBodyNode.nodeRotation.nodeIndex1).ToVector2();
+                        var nodePoint2 = pose.GetNode(trackedBodyNode.nodeRotation.nodeIndex2).ToVector2();
+                        var rotationVec = nodePoint2 - nodePoint1;
+                        trackedBodyNode.rotationVector = new Vector3(0, 0, Vector2.SignedAngle(Vector2.up, rotationVec));
+                    }
 
                     trackedBodyNode.curFaceCrop =
                         RectUtils.FromFrameSpaceToNormalizedSpace(curFaceCropInAspectNormFrameSpace,
@@ -174,6 +204,61 @@ namespace Nex
             SetPreviewImageTexture(newTexture);
 
             trackedBodyNodes[0].nativeZoomFaceCrop = newUV;
+        }
+
+        //Drop Texture with rotation
+        public Texture2D RotateAndCrop(Texture2D source, float angleDegrees, int targetWidth, int targetHeight)
+        {
+            var result = new Texture2D(targetWidth, targetHeight);
+            var angleRad = angleDegrees * Mathf.Deg2Rad;
+            var cos = Mathf.Cos(angleRad);
+            var sin = Mathf.Sin(angleRad);
+
+            // Center of the target image
+            var targetCenter = new Vector2(targetWidth * 0.5f, targetHeight * 0.5f);
+            // Center of the source image (in normalized 0-1 UV space)
+            var sourceCenter = new Vector2(0.5f, 0.5f);
+
+            for (var y = 0; y < targetHeight; y++)
+            {
+                for (var x = 0; x < targetWidth; x++)
+                {
+                    // 1. Shift to center
+                    var tx = (x - targetCenter.x);
+                    var ty = (y - targetCenter.y);
+
+                    // 2. Rotate
+                    var rx = tx * cos - ty * sin;
+                    var ry = tx * sin + ty * cos;
+
+                    // 3. Convert back to UV space (0 to 1)
+                    // Divide by source dimensions if you want the crop to scale with original size
+                    var u = (rx / source.width) + sourceCenter.x;
+                    var v = (ry / source.height) + sourceCenter.y;
+
+                    // 4. Sample and Set
+                    result.SetPixel(x, y, source.GetPixelBilinear(u, v));
+                }
+            }
+            result.Apply(); //
+            return result;
+        }
+
+        //Rotate a point in a rect
+        public Vector2Int GetRotatedPoint(Vector2 point, float width, float height, float angleDegrees)
+        {
+            var center = new Vector2(width * 0.5f, height * 0.5f);
+
+            // Create a rotation quaternion around the Z axis
+            var rotation = Quaternion.Euler(0, 0, angleDegrees);
+
+            // Shift point to center, rotate it, and shift it back
+            var shiftedPoint = point - center;
+            Vector2 rotatedPoint = rotation * shiftedPoint;
+
+            var result = rotatedPoint + center;
+
+            return new Vector2Int(Mathf.FloorToInt(result.x), Mathf.FloorToInt(result.y));
         }
     }
 }

@@ -247,8 +247,8 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.localization": {
-      "version": "1.5.10",
-      "depth": 0,
+      "version": "1.5.11",
+      "depth": 1,
       "source": "registry",
       "dependencies": {
         "com.unity.addressables": "1.25.0",
@@ -563,8 +563,20 @@
       },
       "url": "https://packages.nex.inc"
     },
+    "team.nex.localization": {
+      "version": "0.1.14",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.localization": "1.5.11",
+        "com.unity.addressables": "1.25.0",
+        "com.cysharp.unitask": "2.3.1",
+        "team.nex.tmprichtextutils": "0.0.9"
+      },
+      "url": "https://packages.nex.inc"
+    },
     "team.nex.mdk": {
-      "version": "3.4.1",
+      "version": "3.4.3",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -572,8 +584,8 @@
         "team.nex.app-support": "1.13.10",
         "team.nex.tflite": "2.11.0",
         "team.nex.tflite.common": "2.11.0",
-        "team.nex.nex-opencv-for-unity": "3.4.1",
-        "team.nex.mdk.dcl": "3.4.1",
+        "team.nex.nex-opencv-for-unity": "3.4.3",
+        "team.nex.mdk.dcl": "3.4.3",
         "com.unity.textmeshpro": "3.0.6",
         "team.nex.nex-camera": "0.11.4",
         "com.textus-games.serialized-reference-ui": "1.0.0",
@@ -585,16 +597,16 @@
       "url": "https://packages.nex.inc"
     },
     "team.nex.mdk.body": {
-      "version": "3.4.1",
+      "version": "3.4.3",
       "depth": 0,
       "source": "registry",
       "dependencies": {
-        "team.nex.mdk": "3.4.1"
+        "team.nex.mdk": "3.4.3"
       },
       "url": "https://packages.nex.inc"
     },
     "team.nex.mdk.dcl": {
-      "version": "3.4.1",
+      "version": "3.4.3",
       "depth": 1,
       "source": "registry",
       "dependencies": {},
@@ -619,16 +631,16 @@
       "url": "https://packages.nex.inc"
     },
     "team.nex.nex-opencv-for-unity": {
-      "version": "3.4.1",
+      "version": "3.4.3",
       "depth": 0,
       "source": "registry",
       "dependencies": {
-        "team.nex.nex-opencv-for-unity.native": "3.4.1"
+        "team.nex.nex-opencv-for-unity.native": "3.4.3"
       },
       "url": "https://packages.nex.inc"
     },
     "team.nex.nex-opencv-for-unity.native": {
-      "version": "3.4.1",
+      "version": "3.4.3",
       "depth": 1,
       "source": "registry",
       "dependencies": {},
@@ -695,6 +707,13 @@
       "dependencies": {
         "team.nex.tflite": "2.11.0"
       },
+      "url": "https://packages.nex.inc"
+    },
+    "team.nex.tmprichtextutils": {
+      "version": "0.0.9",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {},
       "url": "https://packages.nex.inc"
     },
     "team.nex.toolbar-extension": {

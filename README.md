@@ -33,6 +33,12 @@ git push  # Push all git commits and history.
 git lfs push origin --all  # Push all lfs objects as well.
 ```
 
+`Step 4 - Boostrap GitHub Resources`
+1. Go to the "Actions" page on GitHub.
+2. Select "Bootstrap Project" workflow and run it.
+3. The workflow will auto-create Milestones, Labels, and Issues that are common to game development. Make changes as you see fit.
+4. Feel free to contribute the list of common issues in `.github/bootstrap/bootstrap-config.json`.
+
 ## What's Included
 
 - **Pre-installed libraries**

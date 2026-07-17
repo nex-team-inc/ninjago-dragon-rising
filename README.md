@@ -23,6 +23,7 @@ git lfs fetch --all
 ```
 - Change the root folder name
 - Change the unity folder name
+- Rename `Starter.sln.DotSettings` to `ProjectName.sln.DotSettings`
 - Change the `Product Name` in Unity project settings (Player Tab).
 ```
 

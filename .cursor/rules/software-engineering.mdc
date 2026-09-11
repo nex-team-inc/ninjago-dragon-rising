@@ -1,3 +1,8 @@
 ---
-alwaysApply: true
+description: Rules to produce reusable, human-maintainable and readable code in Unity
+alwaysApply: false
 ---
+
+- When asked to implement a huge feature, break it down into pieces to ensure user agrees with the current approach / behaviour.
+- Keep it simple, stupid, including not only code but also comments.
+- Reuse and extend existing types (e.g. Singleton, managers) before adding new abstractions.

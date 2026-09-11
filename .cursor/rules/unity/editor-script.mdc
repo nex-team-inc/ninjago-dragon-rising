@@ -1,4 +1,19 @@
 ---
-globs: **/Assets/Scripts/**/*.cs
+description: Conventions for Unity Editor scripts, custom inspectors, and property drawers
+globs: **/Assets/**/Editor/**/*.cs
 alwaysApply: false
 ---
+
+# When to use an Editor script
+
+- Prefer `NaughtyAttributes` on runtime `MonoBehaviour` / `ScriptableObject` types for simple inspector behaviour (buttons, show/hide fields, ranges).
+- Create an Editor script only when UI is non-trivial (multi-object workflows, custom layouts, batch tools, `MenuItem` utilities).
+
+# Editor script conventions
+
+- Place files under `Assets/**/Editor/` (e.g. `Assets/Scripts/Editor/`, `Assets/Scripts/Utils/Editor/`).
+- Use `UnityEditor` APIs; keep editor-only code out of runtime assemblies.
+- Use `namespace Nex.*.Editor` (e.g. `Nex.Utils.Editor`, `Nex.Dev.Editor`).
+- Use `[CustomEditor]`, `[CustomPropertyDrawer]`, or `[MenuItem("Nex/...")]` as appropriate.
+- Record undo for asset changes: `Undo.RecordObject(...)` before modifying serialized objects.
+- Fix Rider and Unity warnings/errors in changed editor code.

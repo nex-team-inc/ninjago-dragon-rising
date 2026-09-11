@@ -1,0 +1,42 @@
+---
+description: C# and Unity coding conventions for Assets/Scripts
+globs: **/Assets/Scripts/**/*.cs
+alwaysApply: false
+---
+
+# Coding Style
+- Try to separate the concerns when there are more than 500 lines of code; if impossible, use `#region` to separate the concerns (e.g: `Life Cycle`, `Public Methods`, `Helpers`, `Editor` etc.).
+- Use braces in control statements unless they are simple single-line guard statements (`if (x) return;`, `if (x) continue;`).
+- Implicit private in variables.
+- Use `UniTask` instead of coroutine to perform asynchronous programming.
+- During code review / code editing, prevent any warnings or errors in Rider Editor and Unity Editor.
+- Use `#nullable enable` for scripts.
+
+# GameObject
+- Prefer parent-driven setup via `Initialize(...)` (or similar) over `Start` for cross-component wiring.
+- `Awake`/`Start` are OK for self-contained setup (e.g. singleton registration, disabling editor-only objects).
+- Do not rely on `Start` execution order across sibling components when a parent can wire dependencies explicitly.
+- Avoid asynchronous initialization unless we want to optimize initialization time.
+- For simple inspector behaviour on runtime components, use `NaughtyAttributes` instead of a custom Editor script.
+
+# Compile Errors
+- For first time installation with compile errors due to `GlobalOptions`, fix by changing build profile to `Andoird`.
+- Statically check whether there are compile errors during local build by ensuring there are no editor-only code (`NaughtyAttributes`, `NUnit` etc.) shipped.
+
+# Folder Structure
+In general, they follow the Resources Type → Features sub-folder structure:
+- Assets/
+    - ArtTeamHandoff/ (Temporary, need engineer to follow up)
+    - Audio/
+    - Configs/
+    - Prefabs/
+        - Views/…
+        - Singletons/…
+    - Scenes/
+    - Scripts/
+        - Views/…
+        - Gameplay/…
+    - Sprites/
+    - Views/…
+    - Textures/
+

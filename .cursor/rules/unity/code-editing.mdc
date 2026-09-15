@@ -19,6 +19,9 @@ alwaysApply: false
 - Avoid asynchronous initialization unless we want to optimize initialization time.
 - For simple inspector behaviour on runtime components, use `NaughtyAttributes` instead of a custom Editor script.
 
+# Asynchronous Programming
+- Use `destroyCancellationToken` for object destroy cancellation token that are passed in asynchronous tasks instead of `this.GetCancellationTokenOnDestroy()`.
+
 # Compile Errors
 - For first time installation with compile errors due to `GlobalOptions`, fix by changing build profile to `Andoird`.
 - Statically check whether there are compile errors during local build by ensuring there are no editor-only code (`NaughtyAttributes`, `NUnit` etc.) shipped.

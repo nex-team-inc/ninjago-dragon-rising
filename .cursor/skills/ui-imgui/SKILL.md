@@ -1,12 +1,9 @@
 ---
 name: ui-imgui
-description: Unity IMGUI (Immediate Mode GUI) expert for legacy editor tools using OnGUI/immediate mode. Generates and modifies IMGUI EditorWindows, custom Inspectors, PropertyDrawers, and scripts with IMGUI code (OnGUI, OnInspectorGUI). Use when maintaining existing IMGUI editor code or when user explicitly requests IMGUI/OnGUI. Do not use for NEW editor windows or tools: new editor UI defaults to UI Toolkit (ui-uitk) unless the project already uses IMGUI exclusively or the user asks for OnGUI by name.
+description: Unity IMGUI (Immediate Mode GUI) expert for editor tools using OnGUI/immediate mode. Generates and modifies IMGUI EditorWindows, custom Inspectors, PropertyDrawers, and scripts with IMGUI code (OnGUI, OnInspectorGUI). Use when maintaining existing IMGUI editor code, creating editor tools in this project, or when the user explicitly requests IMGUI/OnGUI.
 ---
 
-**Before proceeding:** If the user is asking about creating a **new** editor window, custom inspector, or PropertyDrawer without explicitly mentioning IMGUI/OnGUI, recommend using UI Toolkit (CreateGUI) instead, as it's the modern approach. Only proceed with IMGUI if:
-- User is modifying existing IMGUI code
-- User explicitly requests IMGUI/immediate mode
-- The project exclusively uses IMGUI for editor tools
+**Before proceeding:** For a new editor window, custom inspector, or PropertyDrawer, first determine the requested editor-tool type. Use IMGUI unless the project establishes another editor UI convention or the user explicitly requests a different approach.
 
 When activated, read the reference files:
 - [references/templates.md](references/templates.md) — EditorWindow, Inspector, PropertyDrawer templates
@@ -14,40 +11,37 @@ When activated, read the reference files:
 
 ## When to Use This Skill
 
-**IMPORTANT:** This skill is for **legacy IMGUI code only**. Use this skill when:
+**IMPORTANT:** Use this skill for IMGUI editor code. Use it when:
 
 - User is maintaining/updating **existing** IMGUI editor code (files with `OnGUI()`, `OnInspectorGUI()`)
 - User **explicitly requests** IMGUI/immediate mode GUI
-- Project exclusively uses IMGUI for all editor tools
+- User is creating an editor tool for this project
 
-**Do NOT use this skill for:**
-- New editor windows (use UI Toolkit with `CreateGUI()` instead)
-- New custom inspectors (use UI Toolkit instead)
-- Requests that don't explicitly mention IMGUI or OnGUI
+**Do NOT use this skill for runtime game UI.** Use uGUI instead.
 
-**Legacy IMGUI is used for:**
+**IMGUI is used for:**
 - **Editor windows** — `EditorWindow` classes with `OnGUI()`
 - **Custom inspectors** — `Editor`, `PropertyDrawer` classes with `OnInspectorGUI()`
 - **Debug overlays** — `OnGUI()` in MonoBehaviour (runtime)
 
-IMGUI is **not** for runtime game UI — use UI Toolkit or uGUI instead.
+IMGUI is **not** for runtime game UI — use uGUI instead.
 
 ## Scope
 
-**Generate only what is requested (for legacy IMGUI code):**
+**Generate only what is requested:**
 
 | Request | Output | Note |
 |---------|--------|------|
-| Editor window (IMGUI/OnGUI) | `EditorWindow` with `OnGUI()` | Only if explicitly IMGUI |
-| Custom inspector (IMGUI) | `Editor` with `OnInspectorGUI()` | Only if explicitly IMGUI |
-| Property drawer (IMGUI) | `PropertyDrawer` with `OnGUI()` | Only if explicitly IMGUI |
+| Editor window (IMGUI/OnGUI) | `EditorWindow` with `OnGUI()` | Use for editor tools |
+| Custom inspector (IMGUI) | `Editor` with `OnInspectorGUI()` | Use for custom inspectors |
+| Property drawer (IMGUI) | `PropertyDrawer` with `OnGUI()` | Use for property drawers |
 | Debug overlay | `MonoBehaviour` with `OnGUI()` | Runtime debugging |
 | Update existing IMGUI script | Modify existing OnGUI code | Always appropriate |
 
 **Clarify if ambiguous:**
-- "inspector" → Custom Editor for a specific type, or PropertyDrawer? **Also ask:** Should this use UI Toolkit (modern) or IMGUI (legacy)?
-- "editor window" → **First ask:** Should this use UI Toolkit (modern/CreateGUI) or IMGUI (legacy/OnGUI)?
-- "tool window" → EditorWindow with what functionality? Which UI system?
+- "inspector" → Custom Editor for a specific type, or PropertyDrawer?
+- "editor window" → What functionality should the window provide?
+- "tool window" → What type of editor tool is required?
 
 ## Conventions
 

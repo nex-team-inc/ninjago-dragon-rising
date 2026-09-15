@@ -1,6 +1,6 @@
 ---
 name: ui
-description: Unity UI expert for menus, HUDs, screens, panels, buttons, labels, and all visual interface elements. Handles questions about UI in scenes or prefabs (how many elements, what exists, structure analysis), styling changes (colors, borders, backgrounds, fonts, spacing, rounded corners), layout adjustments, and UI generation. Routes to UI Toolkit, uGUI, or IMGUI based on project context. Use for ANY request to build, edit, or understand game UI (menus, HUDs, settings or pause screens) when no framework is named: consult this skill to detect which UI system the project uses before writing any UI code, even for a request that looks simple enough to build directly.
+description: Unity UI expert for menus, HUDs, screens, panels, buttons, labels, and all visual interface elements. Handles questions about UI in scenes or prefabs (how many elements, what exists, structure analysis), styling changes (colors, borders, backgrounds, fonts, spacing, rounded corners), layout adjustments, and UI generation. Routes to uGUI or IMGUI based on project context. Use for ANY request to build, edit, or understand game UI (menus, HUDs, settings or pause screens) when no framework is named: consult this skill to detect which UI system the project uses before writing any UI code, even for a request that looks simple enough to build directly.
 ---
 
 Determine the appropriate UI system for the project and route to the correct specialized skill.
@@ -23,8 +23,8 @@ Determine the appropriate UI system for the project and route to the correct spe
 
 | User mentions | Route to |
 |---------------|----------|
-| `.uxml` or `.uss` files (including in `/Editor/`) | `ui-uitk` |
-| "UI Toolkit", "UITK", "UIElements", "CreateGUI" | `ui-uitk` |
+| `.uxml` or `.uss` files (including in `/Editor/`) | Inspect directly; no dedicated project skill |
+| "UI Toolkit", "UITK", "UIElements", "CreateGUI" | Inspect directly; no dedicated project skill |
 | Canvas prefabs/objects, `.prefab` with UI | `ui-ugui` |
 | "uGUI", "Canvas", "RectTransform", "legacy UI" | `ui-ugui` |
 | "IMGUI", "OnGUI", "OnInspectorGUI", "immediate mode" | `ui-imgui` |
@@ -32,8 +32,8 @@ Determine the appropriate UI system for the project and route to the correct spe
 
 **For editor-related requests (EditorWindow, custom inspector, PropertyDrawer):**
 - If no explicit UI system mentioned → **Go to Step 2** to detect project's editor UI system
-- If no existing pattern is detected, default to `ui-uitk` for new editor UI
-- Only use `ui-imgui` if project exclusively uses IMGUI or user explicitly requests it
+- If no existing pattern is detected, default to `ui-imgui` for new editor UI in this project
+- Use `ui-imgui` for existing or new project editor tools unless another framework is explicitly required
 
 If explicit file or keywords found, activate the corresponding skill immediately.
 
@@ -43,9 +43,9 @@ Search the project to determine which UI system is in use:
 
 | Look for | Indicates |
 |----------|-----------|
-| `.uxml` or `.uss` files (including in `/Editor/`) | UI Toolkit (runtime or editor) |
-| `UIDocument` components in scenes | UI Toolkit (runtime) |
-| Editor scripts with `CreateGUI()` method | UI Toolkit (editor) |
+| `.uxml` or `.uss` files (including in `/Editor/`) | Existing UI Toolkit code; inspect directly |
+| `UIDocument` components in scenes | UI Toolkit runtime; inspect directly |
+| Editor scripts with `CreateGUI()` method | UI Toolkit editor code; inspect directly |
 | `Canvas` in scenes/prefabs | uGUI |
 | `RectTransform` heavy usage | uGUI |
 | Editor scripts with `OnGUI()` or `OnInspectorGUI()` | IMGUI (legacy editor) |
@@ -53,7 +53,7 @@ Search the project to determine which UI system is in use:
 **Step 3: If still unclear, ask or default:**
 
 - For existing projects: detect and follow whichever framework is already in use (Step 2)
-- For new projects with no UI yet: ask the user which framework they prefer (UI Toolkit vs uGUI), briefly explaining that UI Toolkit is modern/CSS-like while uGUI is Canvas-based/mature
+- For new projects with no UI yet: ask the user whether they prefer uGUI or another explicitly requested framework
 - For new runtime/game UI where the user has no preference: default to uGUI (`ui-ugui`)
 - When the user mentions mobile/performance constraints or older Unity versions (pre-6.0): bias toward uGUI (`ui-ugui`)
 
@@ -71,11 +71,10 @@ Route all types to the appropriate specialized skill based on the UI system.
 
 ## Available Sub-Skills
 
-### UI Toolkit — `ui-uitk`
-- For Unity 6.0+ projects using UI Toolkit (runtime game UI and editor tools)
-- **Understands**, **edits**, and **generates** `.uxml` and `.uss` files
-- Modern, CSS-like styling approach
-- Preferred for new editor windows (CreateGUI) and existing UI Toolkit projects
+### Existing UI Toolkit code
+- Third-party libraries may contain UI Toolkit runtime or editor code
+- Inspect existing `.uxml`, `.uss`, `UIDocument`, or `CreateGUI()` implementations directly
+- Do not introduce UI Toolkit into project-authored UI unless the user explicitly requests it
 
 ### uGUI — `ui-ugui`
 - For projects using Unity's Canvas-based UI system
@@ -84,10 +83,10 @@ Route all types to the appropriate specialized skill based on the UI system.
 - Default for new runtime/game UI when the user has no framework preference
 
 ### IMGUI — `ui-imgui`
-- For legacy editor tools using OnGUI/immediate mode
-- Only use when project has existing IMGUI editor code or user explicitly requests IMGUI
+- For editor tools using OnGUI/immediate mode
+- Use for existing or new editor tools in this project
 - **Understands**, **edits**, and **generates** EditorWindow, inspectors, PropertyDrawers built with OnGUI
-- Not for runtime game UI — for new editor tools, use UI Toolkit unless the project already uses IMGUI exclusively
+- Not for runtime game UI — use uGUI
 
 ### Figma design import — not available here
 
@@ -127,16 +126,13 @@ appropriate framework skill above.
 1. **Determine UI system** — Use routing logic above
    - For Figma requests, tell the user the automated import is not available here, then
      work from their description or screenshot and continue with framework detection
-2. **Activate specialized skill** — Route to `ui-uitk`, `ui-ugui`, or `ui-imgui`
+2. **Activate specialized skill** — Route to `ui-ugui` or `ui-imgui`
 3. **Skill handles request** — Understanding, editing, or generation as appropriate
 
 ## Handling Mixed Projects
 
-Many Unity projects use multiple UI systems simultaneously (e.g., UI Toolkit for runtime game UI plus editor tools). When you detect multiple systems:
+Third-party Unity libraries may use UI Toolkit even when the project itself uses uGUI and IMGUI. When you detect this:
 
-- **For runtime UI requests** (menus, HUDs, game screens) → Route to whichever runtime system (UITK or uGUI) is already in use
-- **For editor tool requests** (custom inspectors, editor windows):
-  - **Prefer UI Toolkit** (CreateGUI) for new editor UI — it's the modern approach
-  - Only use IMGUI if the project's existing editor tools use IMGUI exclusively, or user explicitly requests IMGUI
-  - Check for existing editor `.uxml` files to confirm UITK usage
-- **If creating new runtime UI in a mixed project** → Match the pattern used by similar existing UI; if there is no similar existing UI and the user has no preference, use uGUI
+- **For runtime UI requests** (menus, HUDs, game screens) → Route to `ui-ugui`
+- **For editor tool requests** (custom inspectors, editor windows) → Route to `ui-imgui`
+- **For third-party UI Toolkit code** → Inspect the existing implementation directly; do not introduce UI Toolkit into project-authored UI without the user explicitly requesting it

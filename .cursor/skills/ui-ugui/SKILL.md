@@ -39,6 +39,11 @@ Determine what the user is asking for:
 - `UnityEngine.UI.Button`, not `Button`
 - Other namespaces in the project can cause ambiguous type errors
 
+**Asset editing workflow:**
+- Before modifying a prefab, scene, or other Unity asset, follow `unity/asset-editing.mdc`.
+- Inspect the current hierarchy before changing it, and use Unity CLI when the relevant Editor is available.
+- Do not hand-edit Unity YAML or `.meta` files as a shortcut.
+
 **Verify before modifying:**
 - Always check what currently exists before making changes
 - Confirm parent objects exist before adding children
@@ -73,7 +78,7 @@ Determine what the user is asking for:
 | Type | Convention | Good | Bad |
 |------|------------|------|-----|
 | GameObject names | PascalCase | `SubmitButton` | `submit-button` |
-| Prefab paths | Feature folders | `Assets/UI/Inventory/` | `Assets/Prefabs/UI/` |
+| Prefab paths | Existing project feature folders | `Assets/Prefabs/Views/Inventory/` | `Assets/UI/Inventory/` |
 
 ## Workflow
 
@@ -242,9 +247,11 @@ For targeted changes to existing UI:
 
 - Use fully qualified UI types to avoid namespace conflicts
 - Use `[SerializeField]` for inspector references
-- Cache component references in Awake()
+- Cache self-contained component references in `Awake()`
+- Use `Initialize(...)` for dependencies supplied by a parent or manager
 - Use events/delegates for button callbacks
-- Place scripts in same folder as prefabs (follow project patterns)
+- Place runtime scripts under `Assets/Scripts/<matching-feature>/`
+- Place editor-only scripts under `Assets/**/Editor/`
 
 **Component references:**
 - Verify referenced objects exist before accessing them

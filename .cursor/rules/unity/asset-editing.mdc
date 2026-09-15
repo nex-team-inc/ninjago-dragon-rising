@@ -1,0 +1,9 @@
+---
+description: Rules when editing or creating Unity prefabs and assets
+globs: **/Assets/**/*
+alwaysApply: false
+---
+
+- Avoid editing metdata directly and use Unity CLI instead.
+- Refer to `/unity-cli` skill for more information.
+- If user doesn't have Unity CLI, prompt user to install (see [here](docs.unity.com/en-us/unity-cli/use-unity-cli#install-with-a-package-manager]))

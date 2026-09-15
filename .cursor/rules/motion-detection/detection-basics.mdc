@@ -1,4 +1,22 @@
 ---
-description: Provides standards for using MDK (Jazz) for motion detection
+description: Project conventions for MDK/Jazz motion detection, pose processing, player tracking, and play areas
 alwaysApply: false
 ---
+
+- Use `DetectionManager` for MDK lifecycle and setup/gameplay configuration.
+- Use `BasePlayAreaController` implementations for play-area and player-position logic.
+- Use `BaseOnePlayerDetectionEngine` derivatives or `PlayerAttachmentDataSource` for gameplay pose nodes.
+- Use `SetupStateManager` and `OnePlayerSetupStateTracker` for setup flow and readiness checks.
+- Use `PreviewFrameBase` derivatives and `PreviewsManager` for camera previews.
+- Access raw MDK managers only when no project abstraction supports the requirement (e.g: hand pose, face landmark)
+- Treat poses and individual nodes as unavailable; check nullable values and `isDetected` before using them.
+- Use aspect-normalized coordinates for gameplay logic; do not hardcode raw camera pixels.
+- Prefer processed/smoothed poses for gameplay. Setup detection may intentionally use raw pose data.
+- Use `pixelsPerInch` to scale gameplay thresholds, margins, and player-related objects instead of fixed pixel distances.
+- During setup, keep player consistency disabled and allow dewarp/play-area adjustment. During gameplay, enable consistency and lock stabilized tracking state.
+- Use the configured `BasePlayAreaController` implementation; do not introduce the deprecated Game Viewport API.
+- When deriving nodes, validate all source nodes and hide or invalidate the derived node when its inputs are unavailable.
+- Use `PoseNodeIndex`, `DetectionUtils`, and existing filtering/history utilities before creating equivalents.
+- Provide player feedback for incorrect tracking, poor positioning, and lost detection.
+- Consider players with different heights, distances, and multiple players; players must not need to cross each other.
+- Check the project's pinned MDK version before using APIs from newer documentation.

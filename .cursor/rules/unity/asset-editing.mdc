@@ -4,9 +4,10 @@ globs: **/Assets/**/*
 alwaysApply: false
 ---
 
-- Avoid editing metdata directly and use Unity CLI instead.
-- Refer to `/unity-cli` skill for more information.
-- If user doesn't have Unity CLI, prompt user to install (see [here](docs.unity.com/en-us/unity-cli/use-unity-cli#install-with-a-package-manager]))
+- NEVER editing metdata directly; use Unity CLI instead.
+- Refer to `/unity-cli` skill for more information regarding Unity CLI.
+- If user doesn't have Unity CLI, prompt user to install (see [here](docs.unity.com/en-us/unity-cli/use-unity-cli#install-with-a-package-manager])).
+- If for some reason Unity CLI cannot be run, prompt user to fix it first.
 - For prototyping assets from scratch, use `/asset-prototype` skill.
 - For sprites, either width and height must be multiple of 4, or pack them in SpriteAtlas, or else no compression is applied.
 - Provide visual checks for users to confirm if the assets look what user is expecting for.

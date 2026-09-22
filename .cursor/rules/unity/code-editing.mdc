@@ -5,7 +5,8 @@ alwaysApply: false
 ---
 
 # Coding Style
-- Separate the concerns when there are more than 300 lines of code; if impossible, use `#region` to separate the concerns (e.g: `Life Cycle`, `Public Methods`, `Helpers`, `Editor` etc.).
+- Separate the concerns when there are more than 400 lines of code.
+- Use `#region` to separate the concerns further within the file (e.g: `Life Cycle`, `Public Methods`, `Helpers`, `Editor` etc.).
 - Use braces in control statements unless they are simple single-line guard statements (`if (x) return;`, `if (x) continue;`).
 - Private fields and methods use camelCase and omit explicit `private`.
 - Use `UniTask` instead of coroutine (unless matching existing code in the touched area) to perform asynchronous programming.
@@ -14,6 +15,7 @@ alwaysApply: false
 - Use `[SerializeField]` camelCase fields for inspector refs and tunables.
 - Use `= null!` for required serialized refs when nullable annotations are enabled.
 - Use EnumDictionary to map enum to a value, especially if they are configured in the editor
+- Never use LINQ as it triggers GC more frequently.
 
 # GameObject
 - Prefer parent-driven setup via `Initialize(...)` (or similar) over `Start` / `Awake` for cross-component wiring.
@@ -24,12 +26,12 @@ alwaysApply: false
 - Do not construct runtime `GameObject` hierarchies or UI elements with `new GameObject`. Create prefabs with configured components and serialized references, then use `Instantiate` and `Destroy`.
 - No expensive call like: `GameObject.Find`. Prefer:
   - Maintain a list
-  - foreach transform
-  - object pool
+  - `foreach` transform
+  - Object pool (use `ObjectPooler<T>` if possible)
 
 # Asynchronous Programming
 - Always use `destroyCancellationToken` instead of `this.GetCancellationTokenOnDestroy()` when passing token to asynchronous tasks.
 
 # Compile Errors
 - For first time installation with compile errors due to `GlobalOptions`, fix by changing build profile to `Andoird`.
-- Statically check whether there are compile errors during local build by ensuring there are no editor-only code (`NaughtyAttributes`, `NUnit` etc.) shipped.
+- Beware of editor-only code (`NaughtyAttributes`, `NUnit` etc.) accidentally shipped to local build, but do not run local build to test this unless requested as this process is very slow.

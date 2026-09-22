@@ -25,3 +25,4 @@ description: Use when prototyping a game and completely new game assets has to b
 - Verify the license file included with each downloaded archive and inspect the archive before importing it into Unity.
 - Treat external downloads as untrusted: do not execute installers, scripts, or binaries from an asset archive.
 - If any suspicious or executable file appears, stop using the entire asset pack immediately and warn the user before taking further action.
+- Let Unity generate the `.meta` files for anything you import. Never hand-write or copy one, even when the Unity CLI is blocked; see [`unity/asset-editing.mdc`](../../rules/unity/asset-editing.mdc).

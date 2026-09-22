@@ -9,6 +9,16 @@ alwaysApply: true
 - Code, comments, commits and identifiers must be in English only.
 - Use plain, direct language.
 - For simple questions: be brief. For complex topics (debugging, architecture): be thorough.
+- NEVER hand-write or hand-edit a `.meta`, `.unity`, `.prefab`, or `.asset` file, and never invent a
+  GUID — Unity mints them. This holds when creating assets, not just editing them, and a missing or
+  broken Unity CLI is not an exception; see [`unity/asset-editing.mdc`](unity/asset-editing.mdc).
+- Before creating a **new** file under `Assets/`, read the rules in `.cursor/rules/` that match its
+  path — they attach automatically only once a matching file is already in context, so a file you
+  are about to create will not pull them in:
+    - [`software-engineering.mdc`](software-engineering.mdc) — anything under `Assets/`
+    - [`unity/asset-editing.mdc`](unity/asset-editing.mdc) — assets, prefabs, and metadata
+    - [`unity/code-editing.mdc`](unity/code-editing.mdc) — `Assets/Scripts/**/*.cs`
+    - [`unity/editor-script.mdc`](unity/editor-script.mdc) — `Assets/**/Editor/**/*.cs`
 
 # Folder Structure
 In general, they follow the Resources Type → Features sub-folder structure:

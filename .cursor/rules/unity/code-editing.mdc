@@ -28,7 +28,7 @@ alwaysApply: false
   - object pool
 
 # Asynchronous Programming
-- Use `destroyCancellationToken` for object destroy cancellation token that are passed in asynchronous tasks instead of `this.GetCancellationTokenOnDestroy()`.
+- Always use `destroyCancellationToken` instead of `this.GetCancellationTokenOnDestroy()` when passing token to asynchronous tasks.
 
 # Compile Errors
 - For first time installation with compile errors due to `GlobalOptions`, fix by changing build profile to `Andoird`.

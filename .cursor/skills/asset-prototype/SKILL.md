@@ -10,7 +10,8 @@ description: Use when prototyping a game and completely new game assets has to b
 4. If it is from an external website, download the assets. After downloading, security check the asset to ensure it is safe to use.
 5. If it is from the local repository, inspect the candidate asset and its dependencies before copying or exporting it into the current project.
 6. For external catalogs, use the reference links first and make only the minimum number of page requests needed. Do not crawl aggressively, enumerate download URLs, or send parallel/high-rate requests.
-7. Prompt the user to update the catalog if the list is outdated by at least three months.
+7. Report the names and the website of asset pack you have sourced.
+8. Prompt the user to update the catalog if the list is outdated by at least three months.
 
 # Usable Asset Catalog
 - [`references/asset-index.md`](references/asset-index.md): type-first routing index for 2D, 3D, UI, VFX, animation, and audio

@@ -5,19 +5,27 @@ alwaysApply: false
 ---
 
 # Coding Style
-- Try to separate the concerns when there are more than 500 lines of code; if impossible, use `#region` to separate the concerns (e.g: `Life Cycle`, `Public Methods`, `Helpers`, `Editor` etc.).
+- Separate the concerns when there are more than 300 lines of code; if impossible, use `#region` to separate the concerns (e.g: `Life Cycle`, `Public Methods`, `Helpers`, `Editor` etc.).
 - Use braces in control statements unless they are simple single-line guard statements (`if (x) return;`, `if (x) continue;`).
-- Implicit private in variables.
-- Use `UniTask` instead of coroutine to perform asynchronous programming.
+- Private fields and methods use camelCase and omit explicit `private`.
+- Use `UniTask` instead of coroutine (unless matching existing code in the touched area) to perform asynchronous programming.
 - During code review / code editing, prevent any warnings or errors in Rider Editor and Unity Editor.
 - Use `#nullable enable` for scripts.
+- Use `[SerializeField]` camelCase fields for inspector refs and tunables.
+- Use `= null!` for required serialized refs when nullable annotations are enabled.
+- Use EnumDictionary to map enum to a value, especially if they are configured in the editor
 
 # GameObject
-- Prefer parent-driven setup via `Initialize(...)` (or similar) over `Start` for cross-component wiring.
-- `Awake`/`Start` are OK for self-contained setup (e.g. singleton registration, disabling editor-only objects).
+- Prefer parent-driven setup via `Initialize(...)` (or similar) over `Start` / `Awake` for cross-component wiring.
+- `Awake`/`Start` are OK only for self-contained setup (e.g. singleton registration, disabling editor-only objects).
 - Do not rely on `Start` execution order across sibling components when a parent can wire dependencies explicitly.
-- Avoid asynchronous initialization unless we want to optimize initialization time.
+- `Initialize()` should not be async. You can make another async method and call immediately after Initialize.
 - For simple inspector behaviour on runtime components, use `NaughtyAttributes` instead of a custom Editor script.
+- Do not construct runtime `GameObject` hierarchies or UI elements with `new GameObject`. Create prefabs with configured components and serialized references, then use `Instantiate` and `Destroy`.
+- No expensive call like: `GameObject.Find`. Prefer:
+  - Maintain a list
+  - foreach transform
+  - object pool
 
 # Asynchronous Programming
 - Use `destroyCancellationToken` for object destroy cancellation token that are passed in asynchronous tasks instead of `this.GetCancellationTokenOnDestroy()`.

@@ -2,9 +2,11 @@
 
 Use this catalog to choose a source folder before searching for a specific asset. Search the
 repository with the user's keywords, then inspect the matching asset and its dependencies before
-copying or exporting it into the current project. Requires 
-`git clone git@github.com:nex-team-inc/music-cell-shared-assets.git` to download (only clone if 
-user doesn't have this repo in `Documents` folder)
+copying or exporting it into the current project.
+
+The Unity project is nested one level inside the repository, so every `Assets/...` path below is
+rooted at `<repo>/music-cell-shared-assets/` — for a default clone,
+`~/Documents/music-cell-shared-assets/music-cell-shared-assets/`.
 
 ## Categories
 

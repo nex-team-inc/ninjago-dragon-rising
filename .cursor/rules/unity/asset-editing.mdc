@@ -63,7 +63,8 @@ task blocked.
 
 # Assets
 
-- For prototyping assets from scratch, use `/asset-prototype` skill.
+- For prototyping assets, use the `/asset-prototype` skill — it sources from the team-owned
+  `music-cell-shared-assets` repository. Do not download third-party asset packs.
 - For sprites, either width and height must be multiple of 4, or pack them in SpriteAtlas, or else no compression is applied.
 - Provide visual checks for users to confirm if the assets look what user is expecting for.
 - For fixed Unity UI, author containers, dimensions, alignment, and visual styling in prefabs and use serialized prefab references for repeated elements; do not derive sizing from runtime RectTransforms or force layout rebuilds unless requirements explicitly call for dynamic layout.

@@ -4,18 +4,41 @@ globs: **/Assets/Scripts/**/*.cs
 alwaysApply: false
 ---
 
+# Coding Hygiene
+- Use `[SerializeField]` camelCase fields for inspector refs and tunables.
+- Keep a class under 400 lines, counting all of its `partial` files. Past that, split it by concern
+  into separate classes, with a controller that orchestrates them.
+- Use `#region` to separate the concerns further within the file (e.g: `Life Cycle`, `Public Methods`, `Helpers`, `Editor` etc.), but you don't have to wrap variables with `#region`.
+- For `[SerializeField]` variables, separate the categories of variables by `[Header(Category)]`.
+- Never use LINQ as it triggers GC more frequently.
+- Do not use `?.` or `??` as they are not overloaded by Unity.
+- For tunable `[SerializeField]` variables, use `[Range(lower bound, upper bound)]` when the parameter has range limit.
+
 # Coding Style
-- Separate the concerns when there are more than 400 lines of code.
-- Use `#region` to separate the concerns further within the file (e.g: `Life Cycle`, `Public Methods`, `Helpers`, `Editor` etc.).
-- Use braces in control statements unless they are simple single-line guard statements (`if (x) return;`, `if (x) continue;`).
+- `[Tooltip()]` should be put on the line above `[SerializeField]`.
+- Use braces in control statements, except a one-line guard that meets all of:
+  - a single condition — no `&&` or `||`;
+  - a bare `return;`, `continue;`, or `break;` — no return value, no `throw`;
+  - no trailing comment.
+  e.g. `if (locked) return;`, `if (!IsActive) continue;`.
 - Private fields and methods use camelCase and omit explicit `private`.
 - Use `UniTask` instead of coroutine (unless matching existing code in the touched area) to perform asynchronous programming.
 - During code review / code editing, prevent any warnings or errors in Rider Editor and Unity Editor.
+- Use `EnumDictionary` to map enum to a value, especially if they are configured in the editor.
+- No concrete type; use `var` instead.
+- When in doubt, use namespace `Nex`.
+
+# Null Handling
 - Use `#nullable enable` for scripts.
-- Use `[SerializeField]` camelCase fields for inspector refs and tunables.
 - Use `= null!` for required serialized refs when nullable annotations are enabled.
-- Use EnumDictionary to map enum to a value, especially if they are configured in the editor
-- Never use LINQ as it triggers GC more frequently.
+- Nullable annotations are the contract. A non-nullable reference (including `= null!` serialized
+  refs) is never null — do not null-check it. Only `T?` values may be checked.
+- If a required reference is missing, let it throw. Never write `if (x == null) return;` for a
+  required reference: it hides the bug instead of surfacing it.
+- Trust dependencies once they are wired. A required reference passed into `Initialize(...)` is not
+  re-checked in every method that uses it.
+- Check only genuinely optional or external data: `T?` fields, runtime detection data (poses,
+  nodes), dictionary lookups (`TryGetValue`), and objects that may be destroyed across an `await`.
 
 # GameObject
 - Prefer parent-driven setup via `Initialize(...)` (or similar) over `Start` / `Awake` for cross-component wiring.

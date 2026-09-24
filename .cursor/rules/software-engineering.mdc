@@ -10,3 +10,5 @@ alwaysApply: false
 - Avoid unnecessary coupling by passing one big container containing many irrelevant components.
 - Avoid a generic class containing all sorts of functionalities for the sake of convenience.
 - Avoid duplicated code; use existing configs (e.g: any sorts of `ScriptableObject`) when possible.
+- Avoid defensive null checks; let it scream out error when the object should never be null. For C#
+  specifics, see "Null Handling" in [`unity/code-editing.mdc`](unity/code-editing.mdc).

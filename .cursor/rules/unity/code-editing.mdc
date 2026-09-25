@@ -11,7 +11,7 @@ alwaysApply: false
 - Use `#region` to separate the concerns further within the file (e.g: `Life Cycle`, `Public Methods`, `Helpers`, `Editor` etc.), but you don't have to wrap variables with `#region`.
 - For `[SerializeField]` variables, separate the categories of variables by `[Header(Category)]`.
 - Never use LINQ as it triggers GC more frequently.
-- Do not use `?.` or `??` as they are not overloaded by Unity.
+- For `UnityEngine.Object`, do not use `?.` or `??` as they are not overloaded by Unity.
 - For tunable `[SerializeField]` variables, use `[Range(lower bound, upper bound)]` when the parameter has range limit.
 
 # Coding Style
@@ -25,7 +25,7 @@ alwaysApply: false
 - Use `UniTask` instead of coroutine (unless matching existing code in the touched area) to perform asynchronous programming.
 - During code review / code editing, prevent any warnings or errors in Rider Editor and Unity Editor.
 - Use `EnumDictionary` to map enum to a value, especially if they are configured in the editor.
-- No concrete type; use `var` instead.
+- For local variable delcarations, use `var` instead of concrete type.
 - When in doubt, use namespace `Nex`.
 
 # Null Handling
@@ -53,8 +53,8 @@ alwaysApply: false
   - Object pool (use `ObjectPooler<T>` if possible)
 
 # Asynchronous Programming
-- Always use `destroyCancellationToken` instead of `this.GetCancellationTokenOnDestroy()` when passing token to asynchronous tasks.
+- For Monobehaviours, always use `destroyCancellationToken` instead of `this.GetCancellationTokenOnDestroy()` when passing token to asynchronous tasks.
 
 # Compile Errors
-- For first time installation with compile errors due to `GlobalOptions`, fix by changing build profile to `Andoird`.
+- For first time installation with compile errors due to `GlobalOptions`, fix by changing build profile to `Android`.
 - Beware of editor-only code (`NaughtyAttributes`, `NUnit` etc.) accidentally shipped to local build, but do not run local build to test this unless requested as this process is very slow.

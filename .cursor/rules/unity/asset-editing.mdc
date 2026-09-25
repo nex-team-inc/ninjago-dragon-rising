@@ -9,57 +9,33 @@ alwaysApply: false
 - NEVER hand-write or hand-edit `.meta`, `.unity`, `.prefab`, or `.asset` files. GUIDs and fileIDs
   are Unity's to mint, and copying a `.meta` from another asset duplicates its GUID and silently
   breaks every reference to it.
-- Never generate a GUID yourself. If a sidecar is missing or malformed, delete only that sidecar,
-  let Unity regenerate it, then confirm the new `guid:` is 32 hex characters and unique.
+- Never generate a GUID yourself.
 - Importing needs no CLI. Files placed under `Assets/` are imported by the running Editor on focus,
   and it writes the `.meta` itself. Prefer this whenever an import is all you need.
+- Move, rename, or duplicate assets through Unity (Editor or CLI). If you move files on disk, move
+  the `.meta` with its asset (`git mv` both) so the GUID follows; never copy a `.meta` to a new file.
 
-# Resolving Unity CLI problems
+# Recovering a missing or broken `.meta`
 
-Work down this list. Never skip ahead to editing files by hand, and never treat a blocked CLI as
-permission to author metadata yourself — that holds when the CLI is missing entirely, not just when
-it is failing. No step below is a prerequisite for importing: files placed under `Assets/` are
-imported by the open Editor with no CLI involved at all, so reach for that before you consider the
-task blocked.
+A GUID is how every scene, prefab, and material points at an asset. Keeping the old GUID matters
+more than getting a valid file quickly:
 
-1. Confirm the binary exists before reading anything into a failure:
-   `which unity && unity --version`. A `command not found` is not proof it is absent. The Unity Hub
-   installs the CLI automatically, so it is usually present but not yet on `PATH` — a fresh shell
-   resolves that, most often on Windows — and a sandbox can hide it exactly as in step 4. Once it
-   responds, `unity doctor` checks `PATH` presence and whether a second `unity` binary shadows the
-   real one.
-2. If it is genuinely absent, ask the user to install it rather than installing it yourself. The
-   documented install pipes a script from Unity's CDN into a shell and writes a binary onto their
-   machine outside this project, so that is their call, not yours — unlike the project-scoped
-   package in step 6. The commands are in the `/unity-cli` skill. A new shell is needed afterwards,
-   so you will likely not be able to use it until the next session.
-3. Run `unity pipeline list`. It is the one command that works without the
-   `com.unity.pipeline` package, and it reports each instance's `isRunning`, `hasPipelinePackage`,
-   `pipelineServer.isReachable`, and `safeMode`.
-4. Rule out sandbox artifacts before believing a failure. `The required instruction sets are not
-   supported by the current CPU.` and `unity status` reporting no instances are both commonly
-   produced by a restrictive agent sandbox hiding a healthy Editor. Re-run the same command with
-   elevated permissions before concluding anything is unavailable.
-5. Safe Mode means C# compile errors, and `unity pipeline list` reports it. Fixing the source is the
-   fix, not a workaround; the Editor must be restarted afterwards.
-6. A missing `com.unity.pipeline` package blocks `unity status`, `unity command`, and `unity list`.
-   Installing it is Unity's documented setup step, not a workaround: run `unity auth login`, then
-   `unity pipeline install`, wait for the Editor to recompile, then confirm with
-   `unity pipeline list`. Take the default version rather than pinning one, and pass
-   `--project-path` when several projects are open, because non-interactive runs refuse to guess.
-   The package resolves from the Unity registry into `Packages/manifest.json`, which is tracked —
-   say that you changed it, and keep it out of unrelated commits.
-7. Batch mode refuses a project that is already open (`already open in a running Editor (PID ...)`).
-   Ask the user to close the Editor instead of working around it, and never run `-executeMethod`
-   against the project they have open.
-8. If none of that unblocks you, stop and say plainly what you tried and what you need — install the
-   CLI, close the Editor, sign in, or enable Unity MCP. Do not improvise a substitute path.
+1. **New file, never committed:** let the Editor create the `.meta` on import.
+2. **Tracked in git:** restore it (`git restore path/to/Asset.png.meta`). Do not regenerate — a new
+   GUID silently breaks every reference to the asset.
+3. **Untracked, or git has no good copy:** find references to the old GUID first
+   (`rg "guid: <old-guid>" Assets ProjectSettings`). If nothing references it, delete only that
+   `.meta` and let Unity regenerate it. If something does, stop and tell the user which assets will
+   lose the reference before proceeding.
+4. After any regeneration, confirm the new `guid:` is 32 hex characters and appears in exactly one
+   `.meta` (`rg -l "guid: <new-guid>" --glob "*.meta"`).
 
-- Refer to the `/unity-cli` skill for more information regarding Unity CLI, including how to detect
-  and install it. Installation is documented at
-  [Use the Unity CLI](https://docs.unity.com/en-us/unity-cli/use-unity-cli), and the Pipeline
-  package at
-  [Unity Pipeline package](https://docs.unity.com/en-us/unity-production-pipeline/local-tools-cli/unity-pipeline-package).
+# Unity CLI problems
+
+When the Unity CLI is missing, fails, or cannot reach the Editor, follow the
+[`unity-cli-troubleshooting`](../../skills/unity-cli-troubleshooting/SKILL.md) skill. A blocked or
+missing CLI is never permission to hand-edit Unity files. For normal CLI usage, see the
+[`unity-cli`](../../skills/unity-cli/SKILL.md) skill.
 
 # Assets
 

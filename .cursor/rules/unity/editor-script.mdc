@@ -1,8 +1,13 @@
 ---
-description: Conventions for Unity Editor scripts, custom inspectors, and property drawers
-globs: **/Assets/**/Editor/**/*.cs
+description: Conventions for Unity Editor scripts and keeping editor-only code out of player builds
+globs: **/Assets/**/*.cs
 alwaysApply: false
 ---
+
+# When this rule applies
+
+- For runtime scripts, apply only `Keeping editor code out of builds`.
+- For scripts under an `Editor/` folder or scripts defining editor tooling, apply all sections.
 
 # When to use an Editor script
 
@@ -12,8 +17,14 @@ alwaysApply: false
 # Editor script conventions
 
 - Place files under `Assets/**/Editor/` (e.g. `Assets/Scripts/Editor/`, `Assets/Scripts/Utils/Editor/`).
-- Use `UnityEditor` APIs; keep editor-only code out of runtime assemblies.
 - Use `namespace Nex.*.Editor` (e.g. `Nex.Utils.Editor`, `Nex.Dev.Editor`).
 - Use `[CustomEditor]`, `[CustomPropertyDrawer]`, or `[MenuItem("Nex/...")]` as appropriate.
 - Record undo for asset changes: `Undo.RecordObject(...)` before modifying serialized objects.
 - Fix Rider and Unity warnings/errors in changed editor code.
+
+# Keeping editor code out of builds
+
+- `UnityEditor` APIs do not exist in player builds. Code that uses them goes under an `Editor/` folder or inside `#if UNITY_EDITOR`; otherwise the Editor compiles but the build fails.
+- NaughtyAttributes attributes (`[Button]`, `[ShowIf]`, ...) are safe in runtime scripts; only their drawers are editor-only.
+- NUnit tests live in a test assembly (asmdef referencing the Test Framework), never in runtime scripts.
+- Do not run a local build to check this unless asked; it is very slow.

@@ -1,13 +1,35 @@
 ---
-description: Rules to produce reusable, human-maintainable and readable code in Unity
+description: Design rules for maintainable Unity code - simplicity, reuse, ownership, dependencies, and cohesion
 globs: **/Assets/**/*
 alwaysApply: false
 ---
 
-- Keep it simple, stupid, including not only code but also comments.
-- Reuse and extend existing types (e.g. Singleton, managers) before adding new abstractions.
-- Avoid unnecessary coupling by passing one big container containing many irrelevant components.
-- Avoid a generic class containing all sorts of functionalities for the sake of convenience.
-- Avoid duplicated code; use existing configs (e.g: any sorts of `ScriptableObject`) when possible.
-- Avoid defensive null checks; let it scream out error when the object should never be null. For C#
-  specifics, see "Null Handling" in [`unity/code-editing.mdc`](unity/code-editing.mdc).
+# Simplicity
+- Build the smallest design that meets the current requirement. Add an interface, base class, or generic only when a second real use exists.
+- Comments state a constraint or reason the code cannot show; do not narrate what the code does.
+
+# Reuse
+- Before adding a manager, utility, or base class, search `Assets/Scripts/` and [`unity/starter-infrastructure.mdc`](unity/starter-infrastructure.mdc). Extend the existing type (new enum entry, subclass, config field) instead of writing a parallel one.
+
+# Ownership
+- Each piece of state or config has exactly one owner. Other classes read it from that owner; they do not keep a copy that can drift.
+- Keep flow orchestration (coordinators, example-style scene scripts) separate from reusable logic, so the logic works in another flow unchanged.
+
+# Dependencies
+- Pass each class only what it uses, via `Initialize(...)`. Do not pass a container or manager just so the callee can reach one member of it.
+- Reusable components receive their dependencies from the parent; reserve `Singleton.Instance` lookups for app-wide services.
+
+```csharp
+// ❌ Player needs one engine but receives the whole scene controller
+player.Initialize(gameController);
+
+// ✅ Pass exactly what it uses
+player.Initialize(playerIndex, detectionEngine, playerPhotoManager);
+```
+
+# Cohesion
+- Name a class after its single responsibility. Do not create catch-all `Helper`, `Common`, or `GameManager` classes that collect unrelated features.
+- Split a class when it has unrelated reasons to change, not only when it reaches the size limit in [`unity/code-editing.mdc`](unity/code-editing.mdc).
+
+# Null Handling
+- Do not add defensive null checks for references that must exist; let the error surface. See "Null Handling" in [`unity/code-editing.mdc`](unity/code-editing.mdc).

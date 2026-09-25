@@ -4,57 +4,41 @@ globs: **/Assets/Scripts/**/*.cs
 alwaysApply: false
 ---
 
-# Coding Hygiene
-- Use `[SerializeField]` camelCase fields for inspector refs and tunables.
-- Keep a class under 400 lines, counting all of its `partial` files. Past that, split it by concern
-  into separate classes, with a controller that orchestrates them.
-- Use `#region` to separate the concerns further within the file (e.g: `Life Cycle`, `Public Methods`, `Helpers`, `Editor` etc.), but you don't have to wrap variables with `#region`.
-- For `[SerializeField]` variables, separate the categories of variables by `[Header(Category)]`.
-- Never use LINQ as it triggers GC more frequently.
-- For `UnityEngine.Object`, do not use `?.` or `??` as they are not overloaded by Unity.
-- For tunable `[SerializeField]` variables, use `[Range(lower bound, upper bound)]` when the parameter has range limit.
-
-# Coding Style
-- `[Tooltip()]` should be put on the line above `[SerializeField]`.
-- Use braces in control statements, except a one-line guard that meets all of:
-  - a single condition — no `&&` or `||`;
-  - a bare `return;`, `continue;`, or `break;` — no return value, no `throw`;
-  - no trailing comment.
-  e.g. `if (locked) return;`, `if (!IsActive) continue;`.
-- Private fields and methods use camelCase and omit explicit `private`.
-- Use `UniTask` instead of coroutine (unless matching existing code in the touched area) to perform asynchronous programming.
-- During code review / code editing, prevent any warnings or errors in Rider Editor and Unity Editor.
-- Use `EnumDictionary` to map enum to a value, especially if they are configured in the editor.
-- For local variable delcarations, use `var` instead of concrete type.
+# Structure
+- Keep a class under 400 lines, counting all its `partial` files; past that, split it by concern into separate classes orchestrated by a controller.
+- In classes of 100+ lines, separate concerns with `#region` (e.g. `Life Cycle`, `Public Methods`, `Helpers`); do not wrap fields. No `#region` in classes under 100 lines.
 - When in doubt, use namespace `Nex`.
+- Leave no Rider or Unity warnings or errors in code you edit or review.
+
+# Serialized Fields
+- Inspector refs and tunables are `[SerializeField]` camelCase fields, grouped by `[Header("Category")]`.
+- Put `[Tooltip(...)]` on the line above `[SerializeField]`; add `[Range(min, max)]` to bounded tunables.
+- Map enums to values with `EnumDictionary`, especially when configured in the Inspector.
+
+# Style
+- Private fields and methods use camelCase and omit `private`.
+- Use `var` for local variable declarations.
+- Use braces in control statements, except a one-line guard with a single condition (no `&&`/`||`), a bare `return;`/`continue;`/`break;`, and no trailing comment — e.g. `if (locked) return;`.
+
+# Performance
+- No LINQ in runtime code: each call allocates garbage, and GC spikes cause frame hitches. Use `for`/`foreach`. LINQ is fine in Editor-only code; existing starter scripts that use LINQ are not a precedent.
+- No `GameObject.Find`: keep a list, iterate child transforms, or pool with `ObjectPooler<T>`.
 
 # Null Handling
-- Use `#nullable enable` for scripts.
-- Use `= null!` for required serialized refs when nullable annotations are enabled.
-- Nullable annotations are the contract. A non-nullable reference (including `= null!` serialized
-  refs) is never null — do not null-check it. Only `T?` values may be checked.
-- If a required reference is missing, let it throw. Never write `if (x == null) return;` for a
-  required reference: it hides the bug instead of surfacing it.
-- Trust dependencies once they are wired. A required reference passed into `Initialize(...)` is not
-  re-checked in every method that uses it.
-- Check only genuinely optional or external data: `T?` fields, runtime detection data (poses,
-  nodes), dictionary lookups (`TryGetValue`), and objects that may be destroyed across an `await`.
+- Use `#nullable enable`; initialize required serialized refs with `= null!`.
+- Non-nullable references — including `= null!` refs and dependencies passed to `Initialize(...)` — are never null. Do not check them anywhere, and never write `if (x == null) return;`; let a missing reference throw.
+- Check only genuinely optional or external data: `T?` values, detection data (poses, nodes), `TryGetValue` lookups, and objects that may be destroyed across an `await`.
+- On a `UnityEngine.Object`, do not use `?.`, `??`, or `is null`: they skip Unity's overloaded `==`, so a destroyed object looks alive. Use `obj != null` or `if (obj)`. They are fine on ordinary C# types.
 
-# GameObject
-- Prefer parent-driven setup via `Initialize(...)` (or similar) over `Start` / `Awake` for cross-component wiring.
-- `Awake`/`Start` are OK only for self-contained setup (e.g. singleton registration, disabling editor-only objects).
-- Do not rely on `Start` execution order across sibling components when a parent can wire dependencies explicitly.
-- `Initialize()` should not be async. You can make another async method and call immediately after Initialize.
-- For simple inspector behaviour on runtime components, use `NaughtyAttributes` instead of a custom Editor script.
-- Do not construct runtime `GameObject` hierarchies or UI elements with `new GameObject`. Create prefabs with configured components and serialized references, then use `Instantiate` and `Destroy`.
-- No expensive call like: `GameObject.Find`. Prefer:
-  - Maintain a list
-  - `foreach` transform
-  - Object pool (use `ObjectPooler<T>` if possible)
+# Lifecycle and Objects
+- Wire cross-component dependencies from the parent via `Initialize(...)`, never through `Start`/`Awake` or sibling execution order. `Awake`/`Start` are only for self-contained setup (singleton registration, disabling editor-only objects).
+- `Initialize(...)` is synchronous; put awaited setup in a separate async method called right after it.
+- Build runtime hierarchies and UI from prefabs with `Instantiate`/`Destroy`, never `new GameObject`.
+- For simple inspector behaviour, use `NaughtyAttributes` instead of a custom Editor script. For editor-only code, follow [`editor-script.mdc`](editor-script.mdc).
 
-# Asynchronous Programming
-- For Monobehaviours, always use `destroyCancellationToken` instead of `this.GetCancellationTokenOnDestroy()` when passing token to asynchronous tasks.
+# Async
+- Use `UniTask` instead of coroutines, unless matching existing code in the touched area.
+- In a `MonoBehaviour`, pass `destroyCancellationToken`, not `this.GetCancellationTokenOnDestroy()`.
 
 # Compile Errors
-- For first time installation with compile errors due to `GlobalOptions`, fix by changing build profile to `Android`.
-- Beware of editor-only code (`NaughtyAttributes`, `NUnit` etc.) accidentally shipped to local build, but do not run local build to test this unless requested as this process is very slow.
+- For first-install compile errors about `GlobalOptions`, switch the build profile to `Android`.

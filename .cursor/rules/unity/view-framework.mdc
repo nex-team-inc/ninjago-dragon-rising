@@ -1,0 +1,43 @@
+---
+description: How to build UI flow steps with the starter's ViewManager / View framework (transitions, controls, keyboard navigation, lifecycle)
+globs: **/Assets/Scripts/**/*.cs
+alwaysApply: false
+---
+
+# View Framework
+
+Reference implementation: `WelcomeScreenView` pushed by `MainCoordinator`.
+
+# Choosing the Transition
+- `PushView` / `PushViewPrefab`: a step the player returns to with Back (menus, settings, overlays).
+- `ReplaceView`: linear steps that must not be revisited with Back (setup → gameplay → summary).
+- `PopSelf()` from inside a view; `SimpleView.OnBackButton` already pops.
+- Wrap several push/pop calls in `using (viewManager.CreateTransaction())` so intermediate views never activate (no stray analytics, focus, or top-view callbacks).
+- Only one transition runs at a time; a second call throws while `IsInTransition` is true.
+
+# Implementing a View
+- Subclass `SimpleCanvasView`; its `entryAnimator` / `toBackgroundAnimator` MMFeedbacks drive present, dismiss, and background animations.
+- Override `Identifier` (add a `View.ViewIdentifier` entry), `Controls`, and `AnalyticsScreenName`.
+- Start and stop view logic in `ViewDidBecomeTopView` / `ViewDidLoseTopView`, not `OnEnable` / `Start`.
+- Ignore input while the view is not on top: `if (!IsActive) return;` at the start of button handlers.
+- Return `true` from `RequiresAdditionalBackgroundBlur` for overlays (pause, dialogs) to blur the view below.
+
+# Top-Level Controls
+- Declare Back / Exit / Help via `Controls` (`TopLevelControlPanel.ControlConfig` flags) and handle them in `OnBackButton` / `OnControlButton`. Do not add per-view back or exit buttons.
+- Debug Settings is appended automatically in debug builds.
+
+# Keyboard Navigation
+- Every interactive view must be operable with arrow keys and Enter (TV remotes): assign a `KeyResponder` on the view or build one with `AbstractCustomKeyResponder<TView>.Create<TResponder>(this)`.
+- To block navigation temporarily, pair `ViewManager.SuspendKeyboardNavigation()` with `ResumeKeyboardNavigation()`.
+
+# Pause
+- A pause view pushes as an overlay and reports through `ViewManager.AnnouncePaused()`, `AnnouncePauseViewResumeClicked()`, and `AnnouncePauseViewHomeClicked()`; gameplay subscribes to `Paused`, `PauseViewResumeClicked`, and `PauseViewHomeClicked`.
+
+```csharp
+// Button handler inside a view
+void HandleNextButton()
+{
+    if (!IsActive) return;
+    Manager.ReplaceView(Instantiate(summaryViewPrefab)).Forget();
+}
+```

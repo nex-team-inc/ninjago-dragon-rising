@@ -3,11 +3,13 @@ description: Project conventions for MDK/Jazz motion detection, pose processing,
 alwaysApply: false
 ---
 
+- For the overall camera-game flow (setup, preview, indicators, local multiplayer), see [`../unity/starter-infrastructure.mdc`](../unity/starter-infrastructure.mdc).
 - Use `DetectionManager` for MDK lifecycle and setup/gameplay configuration.
-- Use `BasePlayAreaController` implementations for play-area and player-position logic.
+- Use `BasePlayAreaController` implementations for play-area and player-position logic: `PlayAreaController` or `WeightedAveragePlayAreaController`. `MixedPlayAreaController` is a testing-only A/B switch; do not ship it.
+- Lay out per-player lanes, UI, and gameplay with `PlayerPositionDefinition.GetXRatioForPlayer(playerIndex, numOfPlayers)` so they match where MDK expects each player to stand.
 - Use `BaseOnePlayerDetectionEngine` derivatives or `PlayerAttachmentDataSource` for gameplay pose nodes.
-- Use `SetupStateManager` and `OnePlayerSetupStateTracker` for setup flow and readiness checks.
-- Use `PreviewFrameBase` derivatives and `PreviewsManager` for camera previews.
+- Use `SetupStateManager` and `OnePlayerSetupStateTracker` for setup flow and readiness checks. For per-player setup feedback, subscribe to `SetupStateManager.PlayerTrackerUpdated` (see `SetupWarningMessage`) instead of polling trackers.
+- Use `PreviewFrameBase` derivatives and `PreviewsManager` for camera previews; use `PlayerPreviewSpritesController` to manage several `PlayerPreviewSprite`s.
 - Access raw MDK managers only when no project abstraction supports the requirement (e.g: hand pose, face landmark)
 - Treat poses and individual nodes as unavailable; check nullable values and `isDetected` before using them.
 - Use aspect-normalized coordinates for gameplay logic; do not hardcode raw camera pixels.

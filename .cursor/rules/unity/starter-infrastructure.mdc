@@ -1,0 +1,48 @@
+---
+description: Reuse the starter project's existing infrastructure (bootstrap, UI flow, camera flow, persistence, analytics, audio, VFX, config) instead of building new systems
+globs: **/Assets/Scripts/**/*.cs
+alwaysApply: false
+---
+
+# Starter Infrastructure
+
+Before writing a manager, flow, or utility, find the existing system below and extend it. Only build
+new infrastructure when none of these covers the requirement, and say so to the user first.
+Reference integrations live in `Assets/Scenes/Examples/` and `Assets/Scripts/Examples/`; copy their
+wiring patterns, not the `Example*` classes themselves.
+
+# Bootstrap and Global Services
+- Start the app from an entry scene with `SingletonSpawner`; it spawns the `StartUpSingletons` and `CommonSingletons` prefabs (`Assets/Prefabs/Singletons/`) into `DontDestroyOnLoad` and then activates the scene orchestrator. Later scenes reuse them; add a spawner only to scenes that must also run standalone (see `NonARGameExample`).
+- Global managers derive from `Singleton<T>` and are added to one of those singleton prefabs through Unity (never by hand-editing prefab YAML).
+- Boot the main flow like `MainInitializerExample` → `MainCoordinator`. Load scenes via `GameConfigsManager` names, cover transitions with `ScreenBlockerManager`, and respect platform pause/camera mute through `CherryIntegrationManager`.
+
+# UI Flow
+- Every flow step is a `View` pushed/popped on `ViewManager` (subclass `SimpleCanvasView`; use `EmptyView` or a non-visual `View` for steps without UI). Add new `View.ViewIdentifier` entries instead of parallel state machines.
+- Set `AnalyticsScreenName` on each view; `ViewManager` already tracks screens and plays enter/exit SFX.
+- For transitions, controls, keyboard navigation, and pause, follow [`view-framework.mdc`](view-framework.mdc).
+
+# Camera Games (read [`../motion-detection/detection-basics.mdc`](../motion-detection/detection-basics.mdc))
+- Follow `NonARGameExample`: `DetectionManager.Initialize(numOfPlayers)` → setup with `ConfigForSetup()`, `PreviewsManager`, and `SetupStateManager` waits → `ConfigForGameplay()`. Always run setup before camera-dependent gameplay.
+- `ARGameExample` wires raw MDK managers directly; use it only for its `AreaPreviewFrame` + `PlayerIndicatorsManager` + `OnePlayerPreviewPoseEngine` pattern.
+- During gameplay, show a camera preview (`PreviewFrameBase` derivative) and per-player indicators (`PlayerIndicatorsManager`).
+- "Multiplayer" means 1–4 local players tracked by one camera: one detection engine and player object per `playerIndex`. There is no netcode layer.
+- Attach visuals to bodies via `PlayerAttachmentDataSource`, `PlayerAttachment`, and `PlayerStyleController`; capture player images with `PlayerPhotoManager` or `PlayerPreviewSprite`.
+
+# Persistence, Debug, Localization, Analytics
+- Persist through `PlayerDataManager` only: player settings in `PlayerPreference` (update via `ScopedPlayerPreferenceUpdate`), developer settings in `DebugSettings`, UI restore state in `appViewState`. Never call `ES3` from features.
+- Developer-only tweaks go into `DebugSettingsView` / `DebugSettings`, guarded by `ENABLE_DEBUG_SETTINGS || DEVELOPMENT_BUILD || UNITY_EDITOR`.
+- Debug tooling: on-screen values via `DebugPrinter.Instance.Print(key, value)` (shown when `DebugSettings.enableDebugPrinter` is on; no custom `OnGUI`); debug hotkeys via `Nex.Dev.DebugInput` (disabled in `PRODUCTION`), never raw `Input.GetKey`; game speed via `DebugTimeScaleChanger` (T key).
+- All player-facing text uses Unity Localization (`NexLocalizedString`, `EnumStringSelector`); never hard-code display strings.
+- Log gameplay through `AnalyticsManager`: `TrackGameStart`/`TrackGameStop`, `TrackPause`/`TrackResume`, and `TrackEvent` for UI actions, results, and turns. These session calls are not wired yet — add them in new gameplay.
+
+# Audio, VFX, Feedback
+- SFX: add a `SfxManager.SoundEffect` entry and configure its clips in the prefab's `EnumDictionary`; call `PlaySoundEffect`, or `MMF_SfxManager` inside MMFeedbacks.
+- Music: `BgmManager` (`BgmType` + `Play`/`FadeIn`/`FadeOut`). Volumes: `PlayerDataManager` volume properties applied by `VolumeManager`; never set mixer values directly.
+- Particles: add a `VfxManager.VisualEffect` entry (the enum starts empty) and call `PlayVisualEffect`; it already pools.
+- UI/transition animation: MMFeedbacks (Feel) with `MMFeedbacksExtension.PlayAsUniTask`, or DOTween.
+
+# Configuration and Utilities
+- Shared, designer-tunable gameplay values go in a `ScriptableObject` (see `SetupDetectorWarningConfig`); per-prefab values stay `[SerializeField]`; enum-keyed maps use `Nex.Util.EnumDictionary`; remotely tuned values use `RemoteConfigManager`.
+- Pool repeated objects with `ObjectPooler<T>`: `T` must implement `IPoolableObject` and raise `OnRelease` to return itself; call `Initialize(prefab)` then `Get()`.
+- Sprite frame animation: `MMF_ImageSpriteSequence` (UI `Image`) or `MMF_SpriteRenderSpriteSequence` (`SpriteRenderer`) feedbacks.
+- Reuse before writing equivalents: `Filter.cs` (e.g. `OneEuroFilter`), `History`, `WeightedFloatHistory`, `FloatRange`, `RemapUtils`, `DetectionUtils`, `RectUtils.FromFrameSpaceToNormalizedSpace`, `TextureUtils.ComputeTextureRect`, `Vector2Utils`.

@@ -37,11 +37,15 @@ namespace Nex.BilliardRogue
         [SerializeField, Range(0f, 0.5f)] float tiltShiftHalfWidth = 0.18f;
         [SerializeField, Range(0.01f, 1f)] float tiltShiftFalloff = 0.25f;
         [SerializeField, Range(0.5f, 4f)] float tiltShiftMaxBlur = 1.5f;
+        [Tooltip("Gaussian taps per side of each half-resolution blur pass.")]
+        [SerializeField, Range(1, 8)] int tiltShiftSampleCount = 4;
 
         [Header("Post defaults")]
         [SerializeField, Range(0f, 2f)] float bloomThreshold = 0.9f;
         [SerializeField, Range(0f, 4f)] float bloomIntensity = 0.8f;
         [SerializeField, Range(0f, 1f)] float bloomScatter = 0.7f;
+        [Tooltip("Bloom mip chain length; 4–5 keeps the 640×360 target cheap.")]
+        [SerializeField, Range(2, 8)] int bloomMaxIterations = 4;
         [SerializeField, Range(0f, 1f)] float vignetteIntensity = 0.25f;
         [Tooltip("URP shadow distance measured from the world camera, which sits about 24 m from the arena centre (18–30 m to its edges).")]
         [SerializeField, Range(10f, 60f)] float shadowDistance = 30f;
@@ -58,9 +62,11 @@ namespace Nex.BilliardRogue
         public float TiltShiftHalfWidth => tiltShiftHalfWidth;
         public float TiltShiftFalloff => tiltShiftFalloff;
         public float TiltShiftMaxBlur => tiltShiftMaxBlur;
+        public int TiltShiftSampleCount => tiltShiftSampleCount;
         public float BloomThreshold => bloomThreshold;
         public float BloomIntensity => bloomIntensity;
         public float BloomScatter => bloomScatter;
+        public int BloomMaxIterations => bloomMaxIterations;
         public float VignetteIntensity => vignetteIntensity;
         public float ShadowDistance => shadowDistance;
         public QualityOverride[] QualityOverrides => qualityOverrides;

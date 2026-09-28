@@ -1,0 +1,117 @@
+"""One command to regenerate the Billiard Rogue environment kit + dressing layouts + review previews.
+
+    Tools/.venv/bin/python Tools/Blender/environment/build_all.py [--preview-dir DIR] [--jobs 4]
+        [--skip-models] [--skip-previews] [--acts 1,2,3] [--only Env_Bush,...]
+
+Steps (all deterministic):
+  1. build_env.py in parallel Blender processes -> Tools/Staging/Assets/Models/BilliardRogue/Environment/Env_*.fbx
+  2. make_layouts.py -> Tools/Blender/environment/layouts.json
+  3. previews (review only, never in the repo): stand-in surfaces (only used when the 2D-art Surfaces are missing
+     from staging), per-piece sheet, one game-camera diorama per act (+ wide overview), post-processed like the
+     HD-2D stack, contact sheets. Preview dir: --preview-dir, else $ENV_PREVIEW_DIR, else $TMPDIR/billiard_env_preview
+     (keep previews out of the repo).
+"""
+import argparse
+import glob
+import json
+import os
+import subprocess
+import sys
+import time
+from concurrent.futures import ThreadPoolExecutor
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+REPO = os.path.dirname(os.path.dirname(os.path.dirname(HERE)))
+BLENDER = "/Applications/Blender.app/Contents/MacOS/Blender"
+VENV_PY = os.path.join(REPO, "Tools", ".venv", "bin", "python")
+MODELS = os.path.join(REPO, "Tools", "Staging", "Assets", "Models", "BilliardRogue", "Environment")
+
+
+def blender(script, *args):
+    cmd = [BLENDER, "-b", "--factory-startup", "--python-exit-code", "1", "--python", os.path.join(HERE, script), "--",
+           *args]
+    proc = subprocess.run(cmd, capture_output=True, text=True)
+    if proc.returncode != 0:
+        tail = "\n".join((proc.stdout + proc.stderr).splitlines()[-40:])
+        raise SystemExit(f"{script} {' '.join(args)} failed:\n{tail}")
+    return proc.stdout
+
+
+def py(script, *args, venv=True):
+    cmd = [VENV_PY if venv else sys.executable, os.path.join(HERE, script), *args]
+    proc = subprocess.run(cmd, capture_output=True, text=True)
+    if proc.returncode != 0:
+        raise SystemExit(f"{script} failed:\n{proc.stdout}\n{proc.stderr}")
+    return proc.stdout
+
+
+def piece_names():
+    # env_pieces needs bpy, so read the registry keys from the source instead of importing it
+    src = open(os.path.join(HERE, "env_pieces.py")).read()
+    reg = src[src.index("PIECES = {"):src.index("TRI_BUDGET")]
+    return [line.split('"')[1] for line in reg.splitlines() if line.strip().startswith('"Env_')]
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--preview-dir", default=os.environ.get(
+        "ENV_PREVIEW_DIR", os.path.join(os.environ.get("TMPDIR", "/tmp"), "billiard_env_preview")))
+    ap.add_argument("--jobs", type=int, default=4)
+    ap.add_argument("--skip-models", action="store_true")
+    ap.add_argument("--skip-previews", action="store_true")
+    ap.add_argument("--acts", default="1,2,3")
+    ap.add_argument("--only", default="")
+    a = ap.parse_args()
+    t0 = time.time()
+    names = [n for n in piece_names() if not a.only or n in a.only.split(",")]
+    stats = {}
+    if not a.skip_models:
+        chunks = [names[i::a.jobs] for i in range(a.jobs)]
+        work = os.path.join(a.preview_dir, "_stats")
+        os.makedirs(work, exist_ok=True)
+
+        def run(i):
+            if not chunks[i]:
+                return
+            blender("build_env.py", "--only", ",".join(chunks[i]), "--stats", os.path.join(work, f"stats_{i}.json"))
+        with ThreadPoolExecutor(a.jobs) as pool:
+            list(pool.map(run, range(a.jobs)))
+        for f in glob.glob(os.path.join(work, "stats_*.json")):
+            stats.update(json.load(open(f)))
+            os.remove(f)
+        with open(os.path.join(a.preview_dir, "env_stats.json"), "w") as f:
+            json.dump(stats, f, indent=1, sort_keys=True)
+        changed = sum(1 for s in stats.values() if s["fbx_changed"])
+        print(f"models: {len(stats)} FBX ({changed} changed), max tris {max(s['tris'] for s in stats.values())}")
+    print(py("make_layouts.py", venv=False).strip())
+    if a.skip_previews:
+        print(f"done in {time.time() - t0:.1f}s")
+        return
+    pv = a.preview_dir
+    stand_in = os.path.join(pv, "preview_surfaces")
+    py("make_preview_surfaces.py", "--out-dir", stand_in)
+    acts = [x for x in a.acts.split(",") if x]
+    jobs = [("render_pieces.py", "--out-dir", os.path.join(pv, "_pieces"), "--preview-surfaces", stand_in)]
+    for act in acts:
+        for cam in ("game", "overview"):
+            jobs.append(("render_diorama.py", "--act", act, "--camera", cam, "--preview-surfaces", stand_in,
+                         "--out", os.path.join(pv, "_raw", f"act{act}_{cam}")))
+    os.makedirs(os.path.join(pv, "_raw"), exist_ok=True)
+    with ThreadPoolExecutor(a.jobs) as pool:
+        list(pool.map(lambda j: blender(*j), jobs))
+    outs = []
+    for act in acts:
+        game = os.path.join(pv, f"act{act}_diorama.png")
+        py("post_diorama.py", "--npy", os.path.join(pv, "_raw", f"act{act}_game.npy"), "--act", act, "--out", game)
+        py("post_diorama.py", "--npy", os.path.join(pv, "_raw", f"act{act}_overview.npy"), "--act", act,
+           "--out", os.path.join(pv, f"act{act}_overview.png"), "--no-tilt")
+        outs.append(game)
+    layouts = json.load(open(os.path.join(HERE, "layouts.json")))
+    labels = "|".join(f"Act {k} - {layouts['acts'][k]['name']}" for k in acts)
+    py("post_diorama.py", "--sheet", os.path.join(pv, "acts_contact_sheet.png"), "--labels", labels, *outs)
+    py("sheet_pieces.py", os.path.join(pv, "_pieces"), os.path.join(pv, "pieces_sheet.png"))
+    print(f"previews -> {pv} ({time.time() - t0:.1f}s)")
+
+
+if __name__ == "__main__":
+    main()

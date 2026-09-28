@@ -420,13 +420,14 @@ def dirt():
     clod_d = np.clip(pk.torus_distance(clod) / 2.0, 0, 1)
     damp = pk.value_noise(S, 4, rng)
     height = 0.35 + 0.18 * noise + 0.08 * fine + 0.18 * clod_d
-    tone = 0.52 + 0.3 * (noise - 0.5) + 0.12 * (fine - 0.5) + 0.06 * clod_d - 0.12 * (damp < 0.35)
+    # low-contrast macro variation so 2x2-cell tiling does not read as repeating blotches
+    tone = 0.5 + 0.16 * (noise - 0.5) + 0.14 * (fine - 0.5) + 0.07 * clod_d - 0.06 * (damp < 0.35)
     pebbles = np.zeros((S, S), bool)
     p_tone = np.zeros((S, S), np.float32)
     x, y = np.meshgrid(np.arange(S) + 0.5, np.arange(S) + 0.5)
-    for _ in range(16):
+    for _ in range(22):
         cx, cy = rng.uniform(0, S), rng.uniform(0, S)
-        rx, ry = rng.uniform(1.4, 3.2), rng.uniform(1.1, 2.3)
+        rx, ry = rng.uniform(1.1, 3.0), rng.uniform(1.0, 2.2)
         m = pk.torus_ellipse(S, cx, cy, rx, ry, rng.uniform(0, 180))
         dx = (x - cx + S / 2) % S - S / 2
         dy = (y - cy + S / 2) % S - S / 2
@@ -457,7 +458,7 @@ def dirt():
     stone = tone_to_albedo(p_tone, pal.mix("gray", "brown", 0.5, range(4, 13, 2)), 0.0)
     twig = tone_to_albedo(0.3 + light, pal.ramp("brown", [2, 3, 5, 7]), 0.0)
     albedo = np.where(pebbles[..., None], stone, np.where(twigs[..., None], twig, soil))
-    return finish("Dirt", albedo, height, strength=4.0, cav_gain=1.3)
+    return finish("Dirt", albedo, height, strength=6.5, cav_gain=1.3)
 
 
 def grass():
@@ -498,7 +499,7 @@ def grass():
         for ddx, ddy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
             albedo[(fy + ddy) % S, (fx + ddx) % S] = petal
         albedo[fy % S, fx % S] = pal("orange", 11)
-    return finish("Grass", albedo, height, strength=3.5, cav_gain=1.1)
+    return finish("Grass", albedo, height, strength=4.5, cav_gain=1.1)
 
 
 SURFACES = [stone_floor, mossy_brick, crypt_brick, crypt_floor, wood_plank, crystal_rock, dirt, grass]

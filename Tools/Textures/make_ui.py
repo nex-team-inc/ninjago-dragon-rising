@@ -2,13 +2,17 @@
 
 Run:  Tools/.venv/bin/python Tools/Textures/make_ui.py [--preview-dir DIR]
 Out:  Tools/Staging/Assets/Sprites/BilliardRogue/UI/*.png + ui_slices.json (9-slice borders, suggested Image
-      type, native size, pixel scale) and previews (sheet + mock-up at 3x) in DIR.
+      type, native size, pixel scale) and previews in DIR: ui_kit.png, ui_logo.png, ui_mockup.png (reward overlay +
+      HUD at 3x with real text from the built BilliardPixel fonts - run Tools/Fonts/build_pixel_font.py first).
+Sprites: Frame_Panel/Card/Button/ButtonFocused/Banner/Slot/SlotActive, Bar_Bg, Bar_Fill_Hp/Boss, Chip, Icon_Heart/
+      Ball/Skull/Turn, Arrow(+_Left), Cursor, Overlay_Dim (flat 72% navy for Pause/Reward/TrackingLost, TDD D3),
+      Overlay_Vignette, Logo_BilliardRogue (640x200).
 
 Scale: UI pixel art is drawn at 1x and shown at an integer 3x on the 1920x1080 canvas (the same texel size as
 the 640x360 world RT). ImportSettingsBuilder therefore imports these sprites with PPU = 100/3, so
 Image.SetNativeSize() gives 3x; the logo is usually placed at 2x (rect set explicitly).
 9-slice rules: edges are uniform along their stretch axis and centres are flat or tileable, so Sliced (and
-Tiled where noted) never distort the pixel art. Borders are in sprite pixels (left, bottom, right, top =
+Tiled where noted) never distort the pixel art; validate_slices() enforces this and the build fails otherwise. Borders are in sprite pixels (left, bottom, right, top =
 Unity's Sprite.border order x,y,z,w). Deterministic.
 """
 import argparse
@@ -138,17 +142,19 @@ def frame_panel():
     return img, {"border": [10, 10, 10, 10], "imageType": "Tiled", "note": "tile the plank centre; edges are uniform"}
 
 
-def parchment_center(tile=16):
+def parchment_center(tile=16, border=16):
+    """Flat parchment in the 9-slice edge strips, speckled only inside the centre slice (tile-periodic), so the
+    edges stay uniform along their stretch axis and the frame works as Sliced and as Tiled."""
     def fill(img, mask):
-        ys, xs = np.nonzero(mask)
-        x0, y0 = xs.min(), ys.min()
+        h, w = img.shape[:2]
         rng = np.random.default_rng(5)
         speck = rng.random((tile, tile))
-        x, y = np.meshgrid(np.arange(img.shape[1]), np.arange(img.shape[0]))
-        s = speck[(y - y0) % tile, (x - x0) % tile]
+        x, y = np.meshgrid(np.arange(w), np.arange(h))
+        s = speck[(y - border) % tile, (x - border) % tile]
+        centre = (x >= border) & (x < w - border) & (y >= border) & (y < h - border)
         pk.put(img, mask, PARCH["a"])
-        pk.put(img, mask & (s < 0.10), PARCH["b"])
-        pk.put(img, mask & (s > 0.96), PARCH["hi"])
+        pk.put(img, mask & centre & (s < 0.10), PARCH["b"])
+        pk.put(img, mask & centre & (s > 0.96), PARCH["hi"])
     return fill
 
 
@@ -156,7 +162,7 @@ def frame_card():
     layers = [("#1a0e06", "#1a0e06"), (GOLD["hi"], GOLD["md"]), (GOLD["lt"], GOLD["dk"]), (GOLD["xd"], GOLD["xd"]),
               (NAVY["b"], NAVY["d"]), (NAVY["c"], NAVY["e"]), (NAVY["e"], NAVY["e"]), (GOLD["lt"], GOLD["dk"]),
               ("#3a2208", "#3a2208"), (PARCH["d"], PARCH["e"]), (PARCH["c"], PARCH["d"]), (PARCH["b"], PARCH["c"])]
-    img = frame(48, 48, layers, parchment_center(16), chamfer=3)
+    img = frame(48, 48, layers, parchment_center(16, 16), chamfer=3)
 
     def corner(l):
         # gold filigree L in the corner of the parchment + rivet on the frame
@@ -168,7 +174,7 @@ def frame_card():
     return img, {"border": [16, 16, 16, 16], "imageType": "Tiled", "note": "parchment centre tiles (16 px); corner filigree"}
 
 
-BUTTON = {"w": 24, "h": 24, "margin": 3}
+BUTTON = {"w": 32, "h": 32, "margin": 3}  # native 32x32: 16 px caps fit with 3-4 px air
 
 
 def button(focused):
@@ -197,43 +203,55 @@ def button(focused):
         img = pk.blend(glow, img)
         for x, y in ((m + 2, m + 1), (w - m - 3, h - m - 2)):
             img[y, x] = pk.rgba("#ffffff")
-    top = m + 1 + len(layers) - 1
-    return img, {"border": [m + 3, m + 4, m + 3, m + 3], "imageType": "Sliced", "glowMargin": m,
-                 "note": "same geometry as the other button state; visible frame is inset by glowMargin"}
+    # borders cover the glow margin + every ring (+ the bottom lip row) so edges/centre stay uniform when sliced
+    ring = m + len(layers)
+    return img, {"border": [ring, ring + 1, ring, ring], "imageType": "Sliced", "glowMargin": m,
+                 "note": "same geometry as the other button state; visible frame is inset by glowMargin; "
+                         "native 32 px (96 at 3x) holds one line of 16 px caps; stretch freely (edges and centre are uniform)"}
 
 
 def frame_banner():
-    w, h = 64, 24
+    """Crimson title ribbon with gold trim and notched tails. 16 crimson rows hold one line of 16 px caps
+    (10 px) with 3 px air. Stretch horizontally only (the tails live in the left/right borders)."""
+    w, h = 64, 32
     img = pk.canvas(w, h)
     x, y = pk.grid(w, h)
-    # tails (behind), notched, darker
+    fy = np.floor(y)
+    band_top, band_bot, band_x0 = 2, 25, 12
+    # tails (behind), notched, darker, with a folded corner where they tuck behind the band
     for flip in (False, True):
         layer = pk.canvas(w, h)
-        tail = pk.poly(w, h, [(0, 6), (14, 6), (14, 23), (0, 23), (5, 14.5)])
+        tail = pk.poly(w, h, [(1, 9), (17, 9), (17, 30), (1, 30), (7, 19.5)])
         pk.put(layer, tail, CRIMSON["c"])
-        pk.put(layer, tail & (np.floor(y) == 7), CRIMSON["b"])
-        pk.put(layer, tail & (np.floor(y) >= 20), CRIMSON["d"])
-        pk.put(layer, tail & (np.floor(y) == 9) & (x > 3), GOLD["dk"])
-        pk.put(layer, tail & (np.floor(y) == 19) & (x > 3), GOLD["xd"])
-        fold = pk.poly(w, h, [(10, 18), (16, 18), (16, 23)])
+        pk.put(layer, tail & (fy == 10), CRIMSON["b"])
+        pk.put(layer, tail & (fy >= 27), CRIMSON["d"])
+        pk.put(layer, tail & (fy == 12) & (x > 4), GOLD["dk"])
+        pk.put(layer, tail & (fy == 27) & (x > 4), GOLD["xd"])
+        fold = pk.poly(w, h, [(13, band_bot + 1), (18, band_bot + 1), (18, 30)])
         pk.put(layer, fold, CRIMSON["e"])
         ring = pk.dilate(tail | fold, False) & ~(tail | fold)
         pk.put(layer, ring, "#1a0610")
         if flip:
             layer = np.ascontiguousarray(layer[:, ::-1])
         pk.blit(img, layer, 0, 0)
-    # band (front), uniform along x between x = 10 .. w-11
+    # band (front): every row is uniform along x between the end caps
     band = np.zeros((h, w), bool)
-    band[1:18, 10:w - 10] = True
-    rows = {1: "#1a0610", 2: GOLD["hi"], 3: GOLD["md"], 4: GOLD["xd"], 5: CRIMSON["a"], 6: CRIMSON["b"],
-            13: CRIMSON["c"], 14: GOLD["xd"], 15: GOLD["lt"], 16: GOLD["dk"], 17: "#1a0610"}
-    for yy in range(1, 18):
-        pk.put(img, band & (np.floor(y) == yy), rows.get(yy, CRIMSON["b"]))
-    pk.put(img, band & ((np.floor(x) == 10) | (np.floor(x) == w - 11)), "#1a0610")
-    pk.put(img, band & ((np.floor(x) == 11)) & (y > 4) & (y < 14), CRIMSON["c"])
-    pk.put(img, band & ((np.floor(x) == w - 12)) & (y > 4) & (y < 14), CRIMSON["c"])
-    return img, {"border": [17, 7, 17, 5], "imageType": "Sliced",
-                 "note": "stretch horizontally; keep native height (24 px -> 72 at 3x); text rows 5..13"}
+    band[band_top:band_bot + 1, band_x0:w - band_x0] = True
+    rows = {2: "#1a0610", 3: GOLD["hi"], 4: GOLD["md"], 5: GOLD["xd"], 6: CRIMSON["hi"], 7: CRIMSON["a"],
+            19: CRIMSON["c"], 20: CRIMSON["c"], 21: CRIMSON["d"], 22: GOLD["xd"], 23: GOLD["lt"], 24: GOLD["dk"],
+            25: "#1a0610"}
+    for yy in range(band_top, band_bot + 1):
+        pk.put(img, band & (fy == yy), rows.get(yy, CRIMSON["b"]))
+    # end caps: dark outline + shaded crimson column + a gold rivet (all inside the 20 px side borders)
+    fx = np.floor(x)
+    pk.put(img, band & ((fx == band_x0) | (fx == w - 1 - band_x0)), "#1a0610")
+    inner = band & (fy >= 6) & (fy <= 21)
+    pk.put(img, inner & ((fx == band_x0 + 1) | (fx == w - 2 - band_x0)), CRIMSON["c"])
+    stud(img, band_x0 + 4, 13)
+    stud(img, w - 1 - band_x0 - 4, 13)
+    return img, {"border": [20, 10, 20, 6], "imageType": "Sliced", "stretch": "horizontal",
+                 "note": "stretch horizontally; keep native height (32 px -> 96 at 3x); text rows 6..21 "
+                         "(centre a 16 px line on row 14)"}
 
 
 def bar_bg():
@@ -287,8 +305,10 @@ def frame_slot(active):
 
 def chip():
     layers = [(INK, INK), (GOLD["lt"], GOLD["dk"]), ("#0a0e20", "#0a0e20")]
-    img = frame(16, 12, layers, NAVY["d"], chamfer=3)
-    return img, {"border": [5, 4, 5, 4], "imageType": "Sliced", "note": "small rounded tag (Fast-forward, P1/P2, BOSS)"}
+    img = frame(20, 16, layers, NAVY["d"], chamfer=3)
+    # the rounded corner shapes rings up to chamfer + rings deep -> 6 px borders keep the edges uniform
+    return img, {"border": [6, 6, 6, 6], "imageType": "Sliced",
+                 "note": "small rounded tag (Fast-forward, P1/P2, BOSS, turn counter); interior 10 px tall at native size"}
 
 
 # ----------------------------------------------------------------------------------------------
@@ -400,6 +420,15 @@ def overlay_vignette():
     img[..., 3] = a.round().astype(np.uint8)
     return img, {"border": [0, 0, 0, 0], "imageType": "Simple", "filter": "Bilinear",
                  "note": "full-screen stretch, smooth alpha (not pixel art); tint via Image.color"}
+
+
+def overlay_dim():
+    """Flat night-navy dim for Pause / Reward / TrackingLost overlays (TDD D3: no background blur).
+    72% alpha baked in so a plain white Image dims the world; fade it with Image.color.a (unscaled time)."""
+    img = pk.canvas(16, 16, "#070a18")
+    img[..., 3] = 184
+    return img, {"border": [0, 0, 0, 0], "imageType": "Simple",
+                 "note": "full-screen stretch (flat colour, point filter is fine); pair with Overlay_Vignette"}
 
 
 # ----------------------------------------------------------------------------------------------
@@ -580,57 +609,147 @@ def logo():
 # main
 # ----------------------------------------------------------------------------------------------
 
+def validate_slices(name, img, info):
+    """9-slice contract: edge strips are uniform along their stretch axis and a Sliced centre is flat, so Unity's
+    Sliced/Tiled image types never smear or tear the pixel art. Returns a list of problems (empty = ok)."""
+    L, B, R, T = info.get("border", [0, 0, 0, 0])
+    if L + B + R + T == 0:
+        return []
+    a = img.astype(np.int32)
+    H, W = a.shape[:2]
+    horizontal_only = info.get("stretch") == "horizontal"
+    problems = []
+    top, bottom, centre = a[:T, L:W - R], a[H - B:, L:W - R], a[T:H - B, L:W - R]
+    left, right = a[T:H - B, :L], a[T:H - B, W - R:]
+    if T and (top != top[:, :1]).any():
+        problems.append("top edge varies along x")
+    if B and (bottom != bottom[:, :1]).any():
+        problems.append("bottom edge varies along x")
+    if horizontal_only:
+        if (centre != centre[:, :1]).any():
+            problems.append("centre varies along x")
+        return problems
+    if L and (left != left[:1]).any():
+        problems.append("left edge varies along y")
+    if R and (right != right[:1]).any():
+        problems.append("right edge varies along y")
+    if info.get("imageType") == "Sliced" and (centre != centre[:1, :1]).any():
+        problems.append("Sliced centre is not flat")
+    return problems
+
+
+def nine_slice(spr, border, w, h, tiled=False):
+    """Preview-side 9-slice (Sliced = nearest stretch of edges/centre, Tiled = repeat) at 1x."""
+    L, B, R, T = border
+    sh, sw = spr.shape[:2]
+
+    def span(n_out, lead, src1, trail):
+        mid = n_out - lead - trail
+        width = src1 - lead
+        if tiled:
+            idx = [lead + (i % width) for i in range(mid)]
+        else:
+            idx = [lead + min(int(i * width / max(mid, 1)), width - 1) for i in range(mid)]
+        return np.array(list(range(lead)) + idx + list(range(src1, src1 + trail)))
+    return spr[span(h, T, sh - B, B)][:, span(w, L, sw - R, R)]
+
+
+class TextStamp:
+    """Draws 1-bit text with the built Billiard Pixel fonts at 16 px = one font pixel per UI art pixel (TMP size 48
+    at 3x). Missing font files (fonts not built yet) turn text off instead of failing the sprite build."""
+
+    def __init__(self):
+        from PIL import ImageFont
+        fonts = os.path.join(pk.STAGING_ASSETS, "Fonts", "BilliardRogue")
+        self.fonts = {}
+        for key, fname in (("regular", "BilliardPixel.ttf"), ("bold", "BilliardPixel-Bold.ttf")):
+            path = os.path.join(fonts, fname)
+            if os.path.exists(path):
+                self.fonts[key] = ImageFont.truetype(path, 16)
+
+    def width(self, text, style="bold"):
+        return int(self.fonts[style].getlength(text)) if style in self.fonts else 0
+
+    def draw(self, img, text, x, cap_top, color, style="bold", shadow=None, center=False):
+        """cap_top: y of the first cap-height row (caps are 10 px tall, ascender 14)."""
+        from PIL import Image, ImageDraw
+        if style not in self.fonts:
+            return
+        font = self.fonts[style]
+        w = int(font.getlength(text)) + 2
+        if center:
+            x -= (w - 2) // 2
+        im = Image.new("L", (w, 20), 0)
+        d = ImageDraw.Draw(im)
+        d.fontmode = "1"
+        d.text((0, 0), text, font=font, fill=255)
+        m = np.asarray(im) > 0
+        layer = pk.canvas(w + 1, 21)
+        if shadow is not None:
+            pk.put(layer, np.pad(m, ((1, 0), (1, 0)))[:21, :w + 1], shadow)
+        pk.put(layer, np.pad(m, ((0, 1), (0, 1))), color)
+        pk.blit(img, layer, int(x), int(cap_top) - 4)
+
+
 def mockup(sprites):
-    """3x mock-up of a reward overlay + HUD to judge the kit together (preview only)."""
+    """3x mock-up of a reward overlay + HUD (1 font px = 1 art px) to judge kit + font together (preview only)."""
     W, H = 640, 360
+    text = TextStamp()
     bg = pk.canvas(W, H, "#3a4a3a")
     x, y = pk.grid(W, H)
     bg[..., :3] = np.dstack([40 + 30 * (y / H), 52 + 36 * (y / H), 44 + 10 * (x / W)]).astype(np.uint8)
 
-    def nine(name, w, h, tiled=False):
-        spr, meta = sprites[name]
-        L, B, R, T = meta["border"]
-        sh, sw = spr.shape[:2]
-        out = pk.canvas(w, h)
-        cx0, cx1, cy0, cy1 = L, sw - R, T, sh - B
-        cw, ch = cx1 - cx0, cy1 - cy0
-
-        def span(n_out, src0, src1, lead, trail):
-            mid = n_out - lead - trail
-            idx = list(range(lead))
-            if tiled:
-                idx += [src0 + (i % (src1 - src0)) for i in range(mid)]
-            else:
-                idx += [src0 + min(int(i * (src1 - src0) / max(mid, 1)), src1 - src0 - 1) for i in range(mid)]
-            idx += list(range(src1, src1 + trail))
-            return np.array(idx)
-        xi = span(w, cx0, cx1, L, R)
-        yi = span(h, cy0, cy1, T, B)
-        return spr[yi][:, xi]
+    def nine(name, w, h, tiled=None):
+        spr, info = sprites[name]
+        return nine_slice(spr, info["border"], w, h, info.get("imageType") == "Tiled" if tiled is None else tiled)
 
     img = bg.copy()
-    pk.blend(img, np.dstack([np.zeros((H, W, 3), np.uint8), np.full((H, W), 110, np.uint8)]))
-    pk.blit(img, nine("Frame_Banner", 300, 24), 170, 22)
-    for i in range(3):
-        card = nine("Frame_Card", 120, 170, tiled=True)
+    dim = sprites["Overlay_Dim"][0]
+    pk.blend(img, np.broadcast_to(dim[:1, :1], (H, W, 4)).copy())
+    vig = sprites["Overlay_Vignette"][0]
+    vy = (np.arange(H) * vig.shape[0] / H).astype(int)
+    vx = (np.arange(W) * vig.shape[1] / W).astype(int)
+    pk.blend(img, vig[vy][:, vx].copy())
+    ink, cream, gold = "#1a0c06", "#fff4d6", "#ffd65a"
+    # title banner
+    pk.blit(img, nine("Frame_Banner", 300, 32), 170, 16)
+    text.draw(img, "CHOOSE A REWARD", 320, 16 + 9, cream, "bold", shadow="#4a0a16", center=True)
+    cards = [("FLAME BALL", ["Burns what", "it touches"]), ("HEAL", ["Restore 10 HP"]),
+             ("MAX HP +5", ["Tougher knight,", "full heal"])]
+    for i, (title, lines) in enumerate(cards):
         cx = 110 + i * 150
-        pk.blit(img, card, cx, 70)
-        icon = sprites["_icons"][i]
-        pk.blit(img, pk.upscale(icon, 2), cx + 28, 100)
-    pk.blit(img, nine("Frame_Panel", 220, 60, tiled=True), 210, 262)
-    pk.blit(img, nine("Frame_ButtonFocused", 90, 24), 222, 280)
-    pk.blit(img, nine("Frame_Button", 90, 24), 318, 280)
-    # HUD: hp bar + balls + chip
-    pk.blit(img, nine("Bar_Bg", 80, 14), 8, 8)
+        pk.blit(img, nine("Frame_Card", 120, 176), cx, 60)
+        pk.blit(img, pk.upscale(sprites["_icons"][i], 2), cx + 28, 80)
+        text.draw(img, title, cx + 60, 152, ink, "bold", center=True)
+        for k, ln in enumerate(lines):
+            text.draw(img, ln, cx + 60, 172 + k * 16, "#5c3a1a", "regular", center=True)
+    pk.blit(img, sprites["Arrow"][0], 90, 140)
+    pk.blit(img, sprites["Arrow_Left"][0], 534, 140)
+    # button row on a wood panel
+    pk.blit(img, nine("Frame_Panel", 236, 56), 202, 252)
+    pk.blit(img, nine("Frame_ButtonFocused", 104, 32), 214, 264)
+    pk.blit(img, nine("Frame_Button", 104, 32), 322, 264)
+    text.draw(img, "CONTINUE", 266, 264 + 3 + 8, "#ffffff", "bold", shadow="#1a2650", center=True)
+    text.draw(img, "REROLL", 374, 264 + 3 + 8, "#b8c4e8", "bold", shadow=NAVY["f"], center=True)
+    pk.blit(img, sprites["Cursor"][0], 196, 272)
+    # HUD: hp bar + value, balls, turn chip, boss bar
+    pk.blit(img, nine("Bar_Bg", 96, 14), 20, 10)
     fill = sprites["Bar_Fill_Hp"][0]
-    fw = 74 - 0
-    xi = (np.arange(int(fw * 0.7)) * fill.shape[1] / fw).astype(int)
-    yi = (np.arange(8) * fill.shape[0] / 8).astype(int)
-    pk.blit(img, fill[yi][:, xi], 11, 11)
-    pk.blit(img, sprites["Icon_Heart"][0], 4, 7)
-    pk.blit(img, nine("Chip", 60, 12), 570, 8)
-    pk.blit(img, sprites["Arrow"][0], 88, 140)
-    pk.blit(img, sprites["Cursor"][0], 200, 284)
+    fw = int((96 - 6) * 0.8)
+    pk.blit(img, fill[(np.arange(8) * fill.shape[0] / 8).astype(int)][:, (np.arange(fw) * fill.shape[1] / fw).astype(int)], 23, 13)
+    pk.blit(img, sprites["Icon_Heart"][0], 6, 9)
+    text.draw(img, "24/30", 122, 12, cream, "bold", shadow=INK)
+    pk.blit(img, sprites["Icon_Ball"][0], 6, 30)
+    text.draw(img, "x6", 24, 33, cream, "bold", shadow=INK)
+    pk.blit(img, sprites["Icon_Turn"][0], 540, 10)
+    pk.blit(img, nine("Chip", 76, 16), 558, 10)
+    text.draw(img, "TURN 3", 596, 13, cream, "regular", center=True)
+    pk.blit(img, nine("Bar_Bg", 200, 14), 220, 332)
+    boss = sprites["Bar_Fill_Boss"][0]
+    bw = int(194 * 0.55)
+    pk.blit(img, boss[(np.arange(8) * boss.shape[0] / 8).astype(int)][:, (np.arange(bw) * boss.shape[1] / bw).astype(int)], 223, 335)
+    pk.blit(img, sprites["Icon_Skull"][0], 202, 331)
+    text.draw(img, "KING SLIME", 320, 318, cream, "bold", shadow=INK, center=True)
     return pk.upscale(img, 3)
 
 
@@ -657,29 +776,34 @@ def main():
         "Icon_Turn": (icon_turn(), {}),
         "Arrow": (icon_arrow(), {"note": "right chevron; Arrow_Left is the mirrored copy"}),
         "Cursor": (icon_cursor(), {"note": "paw pointer, toes point right; bob it horizontally"}),
+        "Overlay_Dim": overlay_dim(),
         "Overlay_Vignette": overlay_vignette(),
         "Logo_BilliardRogue": logo(),
     }
     sprites["Arrow_Left"] = (pk.flip_h(sprites["Arrow"][0]), {"note": "left chevron"})
-    meta = {}
+    meta, failures = {}, []
     for name, (img, info) in sprites.items():
         h, w = img.shape[:2]
         assert w % 4 == 0 and h % 4 == 0, (name, w, h)
+        failures += [f"{name}: {p}" for p in validate_slices(name, img, info)]
         pk.save_rgba(pk.staging(*OUT_DIR, name + ".png"), img)
         L, B, R, T = info.get("border", [0, 0, 0, 0])
         meta[name] = {"file": name + ".png", "size": [w, h],
                       "border": {"left": L, "bottom": B, "right": R, "top": T},
                       "imageType": info.get("imageType", "Simple"), "filter": info.get("filter", "Point"),
                       "note": info.get("note", "")}
-        for k in ("glowMargin", "fillInset", "fillMethod"):
+        for k in ("stretch", "glowMargin", "fillInset", "fillMethod"):
             if k in info:
                 meta[name][k] = info[k]
+    if failures:
+        sys.exit("9-slice contract broken: " + "; ".join(failures))
     pk.save_json(pk.staging(*OUT_DIR, "ui_slices.json"), {
-        "note": "Generated by Tools/Textures/make_ui.py. Borders in sprite pixels. Show UI pixel art at an integer "
-                "3x (PPU = 100/3 at CanvasScaler 1920x1080 scale 1).",
+        "note": "Generated by Tools/Textures/make_ui.py. Borders in sprite pixels (Unity Sprite.border order is "
+                "left, bottom, right, top). Show UI pixel art at an integer 3x (PPU = 100/3 at CanvasScaler "
+                "1920x1080 scale 1); text in the same grid = BilliardPixel at TMP size 48.",
         "pixelScale": PIXEL_SCALE, "pixelsPerUnit": round(100.0 / PIXEL_SCALE, 4),
         "sprites": [dict(name=k, **v) for k, v in meta.items()]})
-    order = [k for k in sprites if k not in ("Logo_BilliardRogue", "Overlay_Vignette")]
+    order = [k for k in sprites if k not in ("Logo_BilliardRogue", "Overlay_Vignette", "Overlay_Dim")]
     items = [(k, sprites[k][0]) for k in order]
     pk.save_rgb(os.path.join(preview_dir, "ui_kit.png"), pk.contact_sheet(items, scale=4, cols=7))
     pk.save_rgb(os.path.join(preview_dir, "ui_logo.png"),

@@ -5,7 +5,10 @@ In:   Tools/Fonts/glyphs_regular.txt, Tools/Fonts/glyphs_bold.txt (edit these to
 Out:  Tools/Staging/Assets/Fonts/BilliardRogue/BilliardPixel.ttf        (Regular, body text)
       Tools/Staging/Assets/Fonts/BilliardRogue/BilliardPixel-Bold.ttf   (Bold / display, headlines)
       Tools/Staging/Assets/Fonts/BilliardRogue/BilliardPixel_charset.txt (every code point, for TMP static atlases)
-      sample sheets (English, French, digits) at 16/32/48 px in DIR.
+      previews in DIR: font_<style>_{en,fr,digits}.png (1x/2x/3x = 16/32/48 px; digits right-aligned to prove
+      tabular figures), font_<style>_cjk_chain.png (Latin from this font + CJK from GlowSansJ-Normal-Bold, as the TMP
+      fallback chain built by FontAssetsBuilder), font_<style>_charset.png.
+Tabular digits: 0-9 and U+2007 FIGURE SPACE share one advance (7 px regular, 8 px bold).
 
 Grid: 16 px em (UPM 1024, 1 design px = 64 units). Ascender 14 px, descender 4 px (line height 18 px at size 16);
 (ascender + descender) / 2 = 5 = the cap-height centre, so TMP "Middle" alignment centres capitals exactly.
@@ -22,7 +25,7 @@ import sys
 import numpy as np
 from fontTools.fontBuilder import FontBuilder
 from fontTools.pens.ttGlyphPen import TTGlyphPen
-from fontTools.ttLib import newTable
+from fontTools.ttLib import TTFont, newTable
 from fontTools.ttLib.tables import ttProgram
 from PIL import Image, ImageDraw, ImageFont
 
@@ -65,10 +68,9 @@ COMPOSITES.update({
     "Ý": ("Y", "acute"), "ý": ("y", "acute"), "Ÿ": ("Y", "diaeresis"), "ÿ": ("y", "diaeresis"),
 })
 
-SPACES = {0x20: 4, 0xA0: 4, 0x2009: 2, 0x202F: 2}  # regular advances (bold +1)
+SPACES = {0x20: 4, 0xA0: 4, 0x2007: 7, 0x2009: 2, 0x202F: 2}  # regular advances (bold +1); U+2007 = digit width
 REQUIRED = ([chr(c) for c in range(0x20, 0x7F)] + [chr(c) for c in range(0xA0, 0x100)] +
-            list("ŒœŸ‘’‚“”„…–—€•"
-                 "‹›←↑→↓♥★ı  "))
+            list("ŒœŸ‘’‚“”„…–—€•‹›←↑→↓♥★ı") + ["\u2007", "\u2009", "\u202F"])
 
 
 # ----------------------------------------------------------------------------------------------
@@ -319,28 +321,59 @@ def charset(glyphs):
 # sample sheets
 # ----------------------------------------------------------------------------------------------
 
-SAMPLES = [
+SAMPLES_EN = [
     "BILLIARD ROGUE — Act 1 · Stage 2 — Mossy Ruins",
     "The quick brown fox jumps over the lazy dog.",
     "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG!",
-    "Épreuve réussie ! Œuvre, cœur, « À bientôt » — l’été…",
+    "Choose a reward · Continue · Settings · Quit?",
+    "CRIT! BLOCK! POWER SHOT! x7 COMBO — \"Nice shot!\"",
+    "Flame Ball: burns what it touches (3 turns).",
+]
+SAMPLES_FR = [
+    "Épreuve réussie ! Œuvre, cœur, « À bientôt » — l’été…",
     "Ça va ? Où êtes-vous ? Noël, naïf, français, garçon, à côté.",
-    "CHOISISSEZ UNE RÉCOMPENSE · À L’ATTAQUE ! ÉTÉ À ÎÎLE",
-    "0123456789 x7 COMBO! +12 HP 30/30 Balls 6/8",
-    "Tour 3 → PV 24/30 ♥ ★ CRIT! BLOCK POWER! « Continuer »",
+    "CHOISISSEZ UNE RÉCOMPENSE · À L’ATTAQUE ! ÉTÉ À ÎLE",
+    "Boule de feu : brûle tout ce qu’elle touche (3 tours).",
+    "Tour 3 → PV 24/30 ♥ ★ « Continuer » – Paramètres",
+    "ÀÂÆÇÉÈÊËÎÏÔŒÙÛÜŸ àâæçéèêëîïôœùûüÿ",
+]
+# Tabular digits: every digit and U+2007 (figure space) share one advance, so right-aligned numbers line up.
+SAMPLES_DIGITS = [
+    "0123456789",
+    "\u2007\u2007\u20071",
+    "\u2007\u200721",
+    "\u2007321",
+    "4321",
+    "8888",
+    "1111",
+    "24/30  HP 30/30  x12  +5  -3",
+    "00:59  1 234,5 €  100%  #7",
 ]
 
 
-def render_lines(path, size, lines, fg=(255, 244, 214), bg=(22, 28, 52), pad=8):
+def render_lines(path, size, lines, fg=(255, 244, 214), bg=(22, 28, 52), pad=8, right=False, label=None):
+    """1-bit render (as TMP RASTER_HINTED) of `lines` at `size` px; right=True right-aligns (tabular check)."""
     font = ImageFont.truetype(path, size)
     asc, desc = font.getmetrics()
     lh = asc + desc
-    width = max(int(font.getlength(t)) for t in lines) + 2 * pad
-    img = Image.new("RGB", (width, lh * len(lines) + 2 * pad), bg)
+    label_h = 14 if label else 0
+    width = max(max(int(font.getlength(t)) for t in lines) + 2 * pad, 160)
+    img = Image.new("RGB", (width, label_h + lh * len(lines) + 2 * pad), bg)
     d = ImageDraw.Draw(img)
+    if label:
+        d.text((pad, 1), label, fill=(150, 160, 200))
     d.fontmode = "1"
     for i, t in enumerate(lines):
-        d.text((pad, pad + i * lh), t, font=font, fill=fg)
+        x = width - pad - int(font.getlength(t)) if right else pad
+        d.text((x, label_h + pad + i * lh), t, font=font, fill=fg)
+    if right:  # guide: digit columns must stay aligned under right alignment
+        adv = int(font.getlength("0"))
+        for k in range(1, 5):
+            gx = width - pad - k * adv
+            d.line([(gx, label_h + pad), (gx, label_h + pad + 7 * lh)], fill=(60, 72, 120))
+        for i, t in enumerate(lines[:7]):
+            x = width - pad - int(font.getlength(t))
+            d.text((x, label_h + pad + i * lh), t, font=font, fill=fg)
     return img
 
 
@@ -370,6 +403,36 @@ def stack(images, gap=6, bg=(10, 12, 22)):
     return out
 
 
+CJK_SOURCE = os.path.join(REPO, "Starter", "Assets", "Fonts", "Localization", "GlowSans-ja", "GlowSansJ-Normal-Bold.otf")
+SAMPLES_CHAIN = [
+    "第3回合 · CRIT! x7 COMBO · 24/30 HP",   # zh-Hans
+    "選擇獎勵 · 繼續 · 第2關 — 骷髏王",       # zh-Hant
+    "ターン3 · ボス出現！ · スタート（AR）",   # ja
+    "报酬を選ぶ « Continuer » 骨の王 ♥ ★",
+]
+
+
+def render_chain(path, size, lines, fg=(255, 244, 214), bg=(22, 28, 52), pad=8):
+    """Preview of the TMP fallback chain (FontAssetsBuilder): each character comes from Billiard Pixel when it has it,
+    otherwise from Glow Sans J Bold (the CJK atlas source), both 1-bit at the same px size on a shared baseline."""
+    pixel = ImageFont.truetype(path, size)
+    cjk = ImageFont.truetype(CJK_SOURCE, size)
+    cmap = set(TTFont(path).getBestCmap())
+    asc, desc = pixel.getmetrics()
+    lh = asc + desc + size // 8
+    width = 2 * pad + max(int(sum((pixel if ord(c) in cmap else cjk).getlength(c) for c in t)) for t in lines)
+    img = Image.new("RGB", (width, lh * len(lines) + 2 * pad), bg)
+    d = ImageDraw.Draw(img)
+    d.fontmode = "1"
+    for i, t in enumerate(lines):
+        x, base = pad, pad + i * lh + asc
+        for c in t:
+            f = pixel if ord(c) in cmap else cjk
+            d.text((x, base), c, font=f, fill=fg, anchor="ls")
+            x += f.getlength(c)
+    return img
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--preview-dir", default=None)
@@ -395,8 +458,13 @@ def main():
         if style == "regular":
             with open(os.path.join(OUT_DIR, "BilliardPixel_charset.txt"), "w", encoding="utf-8") as f:
                 f.write(charset(glyphs))
-        sheets = [render_lines(path, s, SAMPLES) for s in (16, 32, 48)]
-        stack(sheets).save(os.path.join(preview, f"font_{style}_samples.png"))
+        for tag, lines in (("en", SAMPLES_EN), ("fr", SAMPLES_FR), ("digits", SAMPLES_DIGITS)):
+            sheets = [render_lines(path, size, lines, right=(tag == "digits"), label=f"{tag} {size // 16}x ({size} px)")
+                      for size in (16, 32, 48)]
+            stack(sheets).save(os.path.join(preview, f"font_{style}_{tag}.png"))
+        if os.path.exists(CJK_SOURCE):
+            stack([render_chain(path, size, SAMPLES_CHAIN) for size in (16, 32, 48)]).save(
+                os.path.join(preview, f"font_{style}_cjk_chain.png"))
         grid = charset_grid(path, glyphs)
         grid.resize((grid.width * 2, grid.height * 2), Image.NEAREST).save(os.path.join(preview, f"font_{style}_charset.png"))
     print("FONTS", report)

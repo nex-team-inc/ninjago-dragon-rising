@@ -138,6 +138,13 @@ def flame_fn(fams=(("yellow", 15), ("yellow", 14), ("orange", 15), ("orange", 13
 
 # ================================================================ arena kit
 def floor_tile(danger=False):
+    """1 x 1 x 0.2 m arena cell (pivot = centre of the top face). The cell seam is modelled: a 3.5 cm palette bevel on
+    every edge, so neighbouring cells always read as separate tiles whatever surface the act binds to Top_Surface.
+    Top_Surface box UVs start on the cell corner (u, v 0..1 per cell): with M_Surface_* at _Tiling 0.5 every cell
+    samples texels 1..31 of the 64 px tile, i.e. exactly one panel of a one-panel-per-cell surface (CryptFloor).
+    danger=True: the danger-row cell. A carved groove (DangerFrame, dark red palette, never emissive) frames the cell
+    and a 3.5 cm line inside it (DangerInlay_Emissive, M_DangerTile) is the only part that glows when the row is
+    occupied, so the idle row reads as part of the floor instead of a lit UI frame."""
     base, top = Part("Base"), Part("Top_Surface")
     c, h = 0.035, 0.2
     f = base.quads([rect(0.5 - c, 0.5 - c, 0.0), rect(0.5, 0.5, -c), rect(0.5, 0.5, -h)], close_ends=False)
@@ -146,17 +153,22 @@ def floor_tile(danger=False):
     if not danger:
         quad_up(top, -0.5 + c, 0.5 - c, -0.5 + c, 0.5 - c)
         return parts
-    inner, outer = 0.36, 0.5 - c
+    inner, outer, gd = 0.395, 0.5 - c, 0.014
     quad_up(top, -inner, inner, -inner, inner)
+    frame = Part("DangerFrame")
+    vi0, vi1, vo0, vo1 = rect(inner, inner, 0.0), rect(inner, inner, -gd), rect(outer, outer, 0.0), rect(outer, outer, -gd)
+    ring = [(i, (i + 1) % 4, 4 + (i + 1) % 4, 4 + i) for i in range(4)]
+    fw = frame.raw(vi0 + vi1, ring, outward=lambda c_: (c_[0], 0.0, c_[2]))            # inner wall faces the groove
+    fw += frame.raw(vo1 + vo0, ring, outward=lambda c_: (-c_[0], 0.0, -c_[2]))         # outer wall faces the groove
+    frame.paint(fw, "red", 3, top=0, bottom=0)
+    li, lo = 0.41, 0.445
+    fg = frame.raw(rect(inner, inner, -gd) + rect(li, li, -gd), ring, outward=(0, 1, 0))
+    fg += frame.raw(rect(lo, lo, -gd) + rect(outer, outer, -gd), ring, outward=(0, 1, 0))
+    frame.paint(fg, "red", 4, top=0, bottom=0)
     inlay = Part("DangerInlay_Emissive")
-    vi, vo = rect(inner, inner, 0.0), rect(outer, outer, 0.0)
-    fs = inlay.raw(vi + vo, [(i, (i + 1) % 4, 4 + (i + 1) % 4, 4 + i) for i in range(4)], outward=(0, 1, 0))
-    # corner studs make the band read as a deliberate inlay, not a texture seam
-    for sx in (-1, 1):
-        for sz in (-1, 1):
-            fs += inlay.cyl(4, 0.05, 0.035, 0.012, X((sx * 0.415, 0.0, sz * 0.415)), cap_bot=False)
+    fs = inlay.raw(rect(li, li, -gd) + rect(lo, lo, -gd), ring, outward=(0, 1, 0))
     inlay.paint(fs, "red", 8, emissive=True, top=0)
-    parts.append(inlay)
+    parts += [frame, inlay]
     return parts
 
 
@@ -167,7 +179,7 @@ def launch_pad():
     hx, hz, ix, iz = W / 2, D / 2, W / 2 - c, D / 2 - c
     lz = 0.55 - D / 2          # launch line in local z
     gz0, gz1, gx, gd = lz - 0.075, lz + 0.075, 3.28, 0.07
-    top = Part("Top_Surface")
+    top = Part("Top_Surface", uv_offset=(0.5, 0.0, 0.2))   # UV integers on world x -3.5 + k, z 1.6 - k: cell corners
     for x0, x1, z0, z1 in ((-ix, ix, -iz, gz0), (-ix, ix, gz1, iz), (-ix, -gx, gz0, gz1), (gx, ix, gz0, gz1)):
         quad_up(top, x0, x1, z0, z1)
 
@@ -268,42 +280,51 @@ MOSS = ("green", 6)
 
 
 def tree_a():
-    """Round oak, ~3.7 m: faceted trunk with root flares + five canopy blobs (Canopy pivot at the crown base)."""
+    """Round oak, ~4 m: faceted trunk with root flares and two limbs carrying three separate canopy clumps (main
+    crown, a low left clump, a high right-back clump) so the silhouette has notches instead of one lollipop blob.
+    Clump bottoms are flattened: bright lime tops, mid sides, a dark green underside band for the 4-band shading.
+    Canopy pivot at the crown base (sway)."""
     trunk, canopy = Part("Trunk"), Part("Canopy", pivot=(0.0, 1.9, 0.0))
-    t = trunk.lathe([(0.44, 0.0), (0.3, 0.22), (0.24, 0.9), (0.21, 1.6), (0.17, 2.2)], 6, X(lean_f=-3, lean_r=4),
+    t = trunk.lathe([(0.44, 0.0), (0.3, 0.22), (0.24, 0.9), (0.21, 1.6), (0.16, 2.4)], 6, X(lean_f=-3, lean_r=4),
                     jitter=0.1, seed=11, cap_bot=False)
     for i, a in enumerate((20, 140, 260)):
         t += trunk.box((0.16, 0.2, 0.42), X((0.24 * math.sin(math.radians(a)), 0.07, 0.24 * math.cos(math.radians(a))),
                                             yaw=a, lean_f=0), taper=(0.6, 0.45), skip_bottom=True)
-    for sx, yaw in ((-1, -60), (1, 70)):
-        t += trunk.box((0.12, 0.12, 0.9), X((sx * 0.3, 1.75, 0.05), yaw=yaw, lean_f=-35), taper=(0.6, 0.6))
+    for pos, yaw, lean, L in (((-0.42, 1.95, 0.1), -80, -48, 1.0), ((0.36, 2.2, -0.12), 115, -42, 0.95)):
+        t += trunk.box((0.12, 0.12, L), X(pos, yaw=yaw, lean_f=lean), taper=(0.55, 0.55))
     trunk.paint_fn(t, lambda f, n, c: ("brown", 4 + min(3, int(c[1] * 1.4)) + (1 if hash01(*c) > 0.75 else 0)))
-    blobs = [((0.0, 2.8, 0.0), 1.2, (1.15, 0.86, 1.05)), ((-1.0, 2.4, 0.2), 0.85, (1.0, 0.82, 1.0)),
-             ((1.0, 2.5, -0.15), 0.82, (1.0, 0.85, 1.0)), ((0.15, 2.3, -0.85), 0.78, (1.05, 0.8, 1.0)),
-             ((-0.15, 3.5, 0.1), 0.72, (1.0, 0.9, 1.0))]
+    clumps = [((0.05, 3.0, 0.0), 1.08, (1.12, 0.78, 1.05)), ((-1.2, 2.3, 0.25), 0.74, (1.05, 0.74, 1.0)),
+              ((1.05, 2.72, -0.3), 0.7, (1.05, 0.76, 1.0))]
     c = []
-    for i, (p, r, s) in enumerate(blobs):
-        c += canopy.ico(2, r, X(p, yaw=i * 37, scale=s), jitter=0.13, seed=100 + i)
+    for i, (p, r, sc) in enumerate(clumps):
+        c += canopy.ico(2, r, X(p, yaw=i * 37, scale=sc), jitter=0.12, seed=100 + i, flatten_below=-r * 0.45)
     canopy.paint_fn(c, foliage_fn("lime", "lime", "green", base=8, seed=1.0))
     return [trunk, canopy]
 
 
 def tree_b():
-    """Tall layered pine, ~4.6 m: four jittered cone tiers (Canopy pivot at the first tier)."""
+    """Tall pine, ~4.4 m: three separated tiers with drooping skirts (dark undersides, lit upper faces) stacked on a
+    visible trunk, so it reads as a layered conifer rather than one cone (Canopy pivot at the first tier)."""
     trunk, canopy = Part("Trunk"), Part("Canopy", pivot=(0.0, 0.9, 0.0))
     t = trunk.lathe([(0.34, 0.0), (0.22, 0.25), (0.17, 1.2), (0.1, 3.6)], 6, jitter=0.08, seed=5, cap_bot=False)
     trunk.paint_fn(t, lambda f, n, c: ("brown", 4 + (1 if c[1] > 0.4 else 0) + (1 if hash01(*c) > 0.7 else 0)))
-    tiers = ((0.85, 1.4, 1.55), (1.7, 1.13, 1.4), (2.5, 0.86, 1.25), (3.25, 0.56, 1.3))
+    tiers = ((0.95, 1.5, 1.2), (2.0, 1.12, 1.05), (2.9, 0.76, 1.4))
     c = []
     for i, (y0, r, h) in enumerate(tiers):
-        c += canopy.lathe([(0.0, y0 + 0.28), (r, y0), (r * 0.62, y0 + h * 0.42), (0.0, y0 + h)], 9,
-                          X(lean_r=(-2, 2, -3, 3)[i]), rot_offset=i * 17, jitter=0.1, seed=20 + i)
+        c += canopy.lathe([(0.0, y0 + 0.34), (r, y0 - 0.08), (r * 0.72, y0 + h * 0.22), (r * 0.42, y0 + h * 0.5),
+                           (0.0, y0 + h)], 9, X(lean_r=(-2, 2, -3)[i]), rot_offset=i * 17, jitter=0.1, seed=20 + i)
 
     def fn(f, n, cc):
+        # seen from the high game camera only the upper faces show: a dark skirt band on every tier's rim outlines
+        # the tiers, lighter needles above it
         r = hash01(cc[0], cc[1], cc[2], 7.0)
         if n[1] < -0.2:
-            return "green", 3
-        s = 6 + (2 if n[1] > 0.55 else 0) + (1 if r > 0.78 else 0) - (1 if r < 0.2 else 0)
+            return "green", 2
+        tier = max(i for i, t in enumerate(tiers) if cc[1] >= t[0] - 0.1 or i == 0)
+        y0, _, h = tiers[tier]
+        if (cc[1] - y0) / h < 0.2:
+            return "green", 4 + (1 if r > 0.6 else 0)
+        s = 7 + (2 if n[1] > 0.55 else 0) + (1 if r > 0.78 else 0) - (1 if r < 0.2 else 0)
         return ("teal" if r < 0.12 else "green"), s
     canopy.paint_fn(c, fn)
     return [trunk, canopy]
@@ -579,11 +600,11 @@ def tombstone(variant):
     mound.delete_faces(lambda f_: f_.normal.z < -0.99)
     fm = [x for x in fm if x.is_valid]
 
-    def earth(f_, n, c):
+    def earth(f_, n, c):   # dark, cool grave soil with a little moss: a low mound, not a bright dirt bed
         r = patch01(c, 5.0, 3.0 if variant == "A" else 4.0)
         if n[1] > 0.8 and r > 0.62:
-            return "green", 4 + (1 if hash01(*c) > 0.5 else 0)       # sparse grass tufts on the crown
-        return "brown", 3 + (1 if n[1] > 0.5 else 0) + (1 if hash01(*c) > 0.8 else 0)
+            return "green", 3 + (1 if hash01(*c) > 0.5 else 0)       # sparse moss on the crown
+        return "brown", 2 + (1 if n[1] > 0.5 else 0)
     mound.paint_fn(fm, earth)
     return [stone, mound]
 
@@ -812,6 +833,8 @@ def crystal(variant):
 
 
 def stalagmite():
+    """Cluster of three spires on a rubble skirt. Upper faces and the tips are pale lavender-grey so the spires read
+    against the dark cave floor (the base stays in the cave indigo)."""
     p = Part("Rock")
     f = p.lathe([(0.78, 0.0), (0.5, 0.14), (0.0, 0.2)], 8, jitter=0.2, seed=301, cap_bot=False)
     for i, (pos, h, r, lf, lr) in enumerate((((0, 0.0, 0), 2.5, 0.46, -3, 4), ((0.48, 0.0, 0.2), 1.55, 0.32, 6, 8),
@@ -820,10 +843,12 @@ def stalagmite():
                      X(pos, lean_f=lf, lean_r=lr), jitter=0.14, seed=310 + i, rot_offset=i * 21, cap_bot=False)
 
     def fn(f_, n, c):
-        band = int(c[1] * 4.0) % 2
-        s = 2 + min(4, int(c[1] * 1.5)) + band + (1 if n[1] > 0.5 else 0)
-        r = hash01(*c)
-        return (CAVE if r > 0.45 else ("gray" if r > 0.1 else "purple")), s
+        y, r = c[1], hash01(*c)
+        if y > 1.25 or (y > 0.7 and n[1] > 0.25):
+            return "gray", 8 + (1 if y > 1.8 else 0) + (1 if n[1] > 0.3 else 0)       # pale tips / lit shoulders
+        band = int(y * 4.0) % 2
+        s = 3 + min(3, int(y * 2.0)) + band + (1 if n[1] > 0.5 else 0)
+        return (CAVE if r > 0.35 else "gray"), s
     p.paint_fn(f, fn)
     return [p]
 
@@ -898,8 +923,10 @@ def rune_stone():
 # ================================================================ extra dressing (density + height layering)
 def water_pool(glow=False):
     """Irregular shallow pool, ~2.7 x 2.0 m, water surface 3 cm above the pivot (ground) plane, ringed by stones.
-    Water: lighter shallow band at the rim, dark deep centre, faint ripple ring; Glints_Emissive = tiny sparkles.
-    glow=True (Act 3): the whole water is emissive cyan (a light pool, no separate glints)."""
+    Water (mid-value, so it reads as water and not a hole): pale teal shallows at the shore, sky-blue body, a lighter
+    ripple ring, three floating lily pads (they bob with the Water part); Rim = stones, a pale wet-sand shoreline and a
+    reed clump. Glints_Emissive = four tiny sparkles.
+    glow=True (Act 3): the whole water is emissive cyan (a light pool, no separate glints, no pads / reeds)."""
     rim, water = Part("Rim"), Part("Water_Emissive" if glow else "Water", pivot=(0.0, 0.03, 0.0))
     n, y = 18, 0.03
     outline = []
@@ -910,23 +937,40 @@ def water_pool(glow=False):
     rings = [[(x * k, y, z * k) for x, z in outline] for k in (1.0, 0.8, 0.62, 0.5)]
     fw = water.quads(rings + [[(0.0, y, 0.0)]], close_ends=False)
     water.orient(fw, (0, 1, 0))
-    fam = "cyan" if glow else "sky"
 
     def wfn(f_, nn, c):
         rr = math.hypot(c[0] / 1.1, c[2] / 0.82) / 1.25
         if glow:
-            return fam, 6 if rr > 0.78 else (5 if 0.56 < rr < 0.66 else 3)
-        return fam, 3 if rr > 0.78 else (3 if 0.56 < rr < 0.66 else 1)
+            return "cyan", 6 if rr > 0.78 else (5 if 0.56 < rr < 0.66 else 3)
+        if rr > 0.78:
+            return "teal", 8                                # shallows over sand
+        return "sky", 8 if 0.56 < rr < 0.66 else 6          # ripple ring / open water
     water.paint_fn(fw, wfn)
     parts = [rim, water]
+    rng = Rng(611 if glow else 601)
     if not glow:
+        pads = []
+        for i, (px, pz, pr) in enumerate(((-0.55, -0.12, 0.2), (-0.3, 0.3, 0.15), (0.62, -0.28, 0.17))):
+            pads += water.cyl(7, pr, pr, 0.012, X((px, y, pz), yaw=i * 50), cap_bot=False, rot_offset=i * 13)
+        water.paint_fn(pads, lambda f_, nn, c: ("green", 7 if nn[1] > 0.5 else 4))
         gl = Part("Glints_Emissive", pivot=(0.0, 0.03, 0.0))
         fg = []
-        for i, (gx, gz, gw) in enumerate(((-0.35, 0.2, 0.2), (0.3, -0.15, 0.14), (0.05, 0.42, 0.1), (0.55, 0.25, 0.08))):
+        for i, (gx, gz, gw) in enumerate(((-0.1, 0.12, 0.2), (0.3, -0.15, 0.14), (0.05, 0.42, 0.1), (0.55, 0.25, 0.08))):
             fg += gl.box((gw, 0.006, 0.035), X((gx, y + 0.004, gz), yaw=12 + i * 7))
         gl.paint(fg, "sky", 14, top=0, bottom=0)
         parts.append(gl)
-    rng = Rng(611 if glow else 601)
+        # pale wet-sand shoreline between the water edge and the stones
+        shore = rim.quads([[(x * 1.1, y - 0.004, z * 1.1) for x, z in outline],
+                           [(x * 0.99, y - 0.004, z * 0.99) for x, z in outline]], close_ends=False)
+        rim.orient(shore, (0, 1, 0))
+        rim.paint(shore, "skin", 9, top=0, bottom=0)
+        reeds = []
+        for i in range(6):
+            a = math.radians(200 + i * 11)
+            rx, rz = math.cos(a) * 1.15, math.sin(a) * 0.9
+            reeds += _blade(rim, (rx, 0.0, rz), rng.uniform(0.45, 0.7), rng.uniform(4, 14), rng.uniform(0, 360),
+                            w=0.035, seed=i)
+        rim.paint_fn(reeds, lambda f_, nn, c: ("green", 5 + min(3, int(c[1] * 6))))
     fr = []
     for i, (x, z) in enumerate(outline):
         if i % 3 == 2 and not glow:
@@ -1094,12 +1138,12 @@ def paving_patch():
     rng = Rng(801)
     fr = []
     for i, (x, z) in enumerate(outline):
-        if i % 2:
+        if i % 4:                      # a few loose slabs only (the review read dense rubble as grey specks)
             continue
         k = 1.08 + rng.uniform(0.0, 0.12)
-        fr += rub.box((rng.uniform(0.22, 0.34), 0.05, rng.uniform(0.16, 0.26)), X((x * k, 0.02, z * k),
+        fr += rub.box((rng.uniform(0.26, 0.36), 0.05, rng.uniform(0.18, 0.28)), X((x * k, 0.02, z * k),
                                                                                   yaw=rng.uniform(0, 90)))
-    rub.paint_fn(fr, stone_fn("gray", 8, 17.0, alt=("skin", 9, 0.3), patch=4.0))
+    rub.paint_fn(fr, stone_fn("gray", 6, 17.0, patch=4.0))
     return [top, rub]
 
 
@@ -1130,9 +1174,71 @@ def cave_floor_tile():
 
     def fn(f_, nn, c):
         r, q = hash01(*c), patch01(c, 0.9, 21.0)
-        fam = "purple" if q > 0.82 else ("gray" if q < 0.14 else CAVE)
-        return fam, 2 + (1 if nn[1] > 0.995 else 0) + (1 if r > 0.8 else 0) - (1 if r < 0.15 else 0)
+        fam = "purple" if q > 0.9 else ("gray" if q < 0.3 else CAVE)
+        return fam, 1 + (1 if nn[1] > 0.995 else 0) + (1 if r > 0.8 else 0)
     p.paint_fn(f, fn)
+    return [p]
+
+
+def moss_border():
+    """Shade skirt for the outside of the arena walls (Act 1): a flat, 4 m long strip of dark moss and soil, 2.1-2.8 m
+    wide with a ragged outer edge, 1.2 cm above the ground, plus a few low, dark moss cushions near the straight inner
+    edge. It darkens the ground band next to the rim so the sunlit arena reads as the stage. Pivot = centre of the
+    straight inner edge on the ground plane; the strip extends toward local -X (rotY 0 for the left wall, 180 for the
+    right, 90 for the top wall)."""
+    p = Part("Moss")
+    L, n = 4.0, 8
+    rng = Rng(1311)
+    inner = [(0.0, -L / 2 + L * i / n) for i in range(n + 1)]
+    mid = [(-1.1 - 0.15 * rng.uniform(-1, 1), z) for _, z in inner]
+    outer = [(-2.1 - 0.7 * hash01(i * 1.9, 3.0, 5.0), z + (0.0 if i in (0, n) else rng.uniform(-0.15, 0.15)))
+             for i, (_, z) in enumerate(inner)]
+    rows = [[(x, 0.012 + (0.0 if k in (0, 2) else 0.012 * hash01(x, z, 2.0)), z) for x, z in row]
+            for k, row in enumerate((inner, mid, outer))]
+    f = p.quads(rows, close_ends=False)
+    p.orient(f, (0, 1, 0))
+
+    def fn(f_, nn, c):
+        q = patch01(c, 1.1, 5.0)
+        if q < 0.3:
+            return "brown", 2
+        return "green", 2 + (1 if q > 0.75 else 0)
+    p.paint_fn(f, fn)
+    cushions = []
+    for i in range(4):
+        z = -L / 2 + 0.5 + i * (L - 1.0) / 3 + rng.uniform(-0.2, 0.2)
+        cushions += p.ico(1, rng.uniform(0.16, 0.24), X((-0.3 - rng.uniform(0.0, 0.3), 0.0, z), yaw=i * 47,
+                                                        scale=(1.3, 0.4, 1.1)), jitter=0.18, seed=1320 + i)
+    clamp_ground(p, cushions, 0.0)
+    p.paint_fn(cushions, lambda f_, nn, c: ("green", 4 if nn[1] > 0.6 else 3))
+    return [p]
+
+
+def crypt_ground_tile():
+    """4 x 4 m crypt flagstone ground (Act 2; palette, no surface): four courses of large, dark slate slabs with
+    bevelled edges over a near-black joint bed. Low contrast on purpose, so the lit arena is the brightest thing in
+    the crypt. Pivot = centre of the tile at ground level; rotate copies by 90 deg to hide repeats."""
+    p = Part("Floor")
+    S, c, jy = 4.0, 0.04, -0.018
+    bed = quad_up(p, -S / 2, S / 2, -S / 2, S / 2, jy)
+    p.paint(bed, "gray", 0, top=0, bottom=0)
+    rng = Rng(1401)
+    rows = ((1.3, 1.5, 1.2), (0.9, 1.6, 1.5), (1.6, 1.1, 1.3), (1.2, 1.4, 1.4))
+    for j, widths in enumerate(rows):
+        z0, z1 = -S / 2 + j, -S / 2 + j + 1
+        x = -S / 2
+        for k, w in enumerate(widths):
+            x0, x1 = x, min(S / 2, x + w * S / sum(widths))
+            x = x1
+            g = 0.012
+            top = rect((x1 - x0) / 2 - g - c, (z1 - z0) / 2 - g - c, 0.0, (x0 + x1) / 2, (z0 + z1) / 2)
+            low = rect((x1 - x0) / 2 - g, (z1 - z0) / 2 - g, jy, (x0 + x1) / 2, (z0 + z1) / 2)
+            f = p.quads([top, low], close_ends=False)
+            f += p.raw(top, [(0, 1, 2, 3)], outward=(0, 1, 0))
+            p.orient(f, lambda cc, cx=(x0 + x1) / 2, cz=(z0 + z1) / 2: (cc[0] - cx, 0.4, cc[2] - cz))
+            v = rng.uniform(0, 1)
+            fam, shade = "gray", (1 if v < 0.3 else (2 if v < 0.85 else 3))
+            p.paint_fn(f, lambda f_, nn, cc, fam=fam, shade=shade: (fam, shade + (1 if nn[1] > 0.9 else 0)))
     return [p]
 
 
@@ -1253,6 +1359,8 @@ PIECES = {
     "Env_GroundPatch": ground_patch,
     "Env_PavingPatch": paving_patch,
     "Env_CaveFloorTile": cave_floor_tile,
+    "Env_CryptGroundTile": crypt_ground_tile,
+    "Env_MossBorder": moss_border,
     "Env_Pebbles": pebbles,
     # effects (not palette: unit UVs for BilliardRogue/LightShaft)
     "Env_LightShaft": light_shaft,

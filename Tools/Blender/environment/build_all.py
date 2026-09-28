@@ -100,25 +100,30 @@ def main():
     stand_in = os.path.join(pv, "preview_surfaces")
     py("make_preview_surfaces.py", "--out-dir", stand_in)
     acts = [x for x in a.acts.split(",") if x]
+    layouts = json.load(open(os.path.join(HERE, "layouts.json")))
+    cams = ("game", "requested") if "requested" in layouts["camera"] else ("game",)   # requested = pending pose
     jobs = [("render_pieces.py", "--out-dir", os.path.join(pv, "_pieces"), "--preview-surfaces", stand_in)]
     for act in acts:
         for cam, extra, tag in (("game", (), "game"), ("game", ("--actors",), "game_actors"),
                                 ("game", ("--mask",), "game_mask"), ("requested", (), "requested"),
                                 ("requested", ("--actors",), "requested_actors"),
                                 ("requested", ("--mask",), "requested_mask"), ("overview", (), "overview")):
+            if cam not in cams and cam != "overview":
+                continue
             jobs.append(("render_diorama.py", "--act", act, "--camera", cam, "--preview-surfaces", stand_in,
                          "--out", os.path.join(pv, "_raw", f"act{act}_{tag}"), *extra))
     os.makedirs(os.path.join(pv, "_raw"), exist_ok=True)
     with ThreadPoolExecutor(a.jobs) as pool:
         list(pool.map(lambda j: blender(*j), jobs))
     outs, labels = [], []
-    layouts = json.load(open(os.path.join(HERE, "layouts.json")))
     names = {str(x["id"]): x["name"] for x in layouts["acts"]}
     req_outs, req_labels = [], []
     for act in acts:
         for tag, name, extra in (("game", "diorama", ()), ("game_actors", "actors", ()),
                                  ("requested", "requested", ()), ("requested_actors", "requested_actors", ()),
                                  ("overview", "overview", ("--no-tilt",))):
+            if tag.startswith("requested") and "requested" not in cams:
+                continue
             out = os.path.join(pv, f"act{act}_{name}.png")
             py("post_diorama.py", "--npy", os.path.join(pv, "_raw", f"act{act}_{tag}.npy"), "--act", act,
                "--out", out, *extra)
@@ -131,9 +136,10 @@ def main():
                 req_labels.append(f"Act {act} - {names[act]}" + (" (with actors)" if "actors" in name else "") +
                                   " - requested camera (aim z 5.8)")
     py("post_diorama.py", "--sheet", os.path.join(pv, "acts_contact_sheet.png"), "--labels", "|".join(labels), *outs)
-    py("post_diorama.py", "--sheet", os.path.join(pv, "acts_requested_camera_sheet.png"), "--labels",
-       "|".join(req_labels), *req_outs)
-    for cam in ("game", "requested"):
+    if req_outs:
+        py("post_diorama.py", "--sheet", os.path.join(pv, "acts_requested_camera_sheet.png"), "--labels",
+           "|".join(req_labels), *req_outs)
+    for cam in cams:
         print(py("measure_previews.py", "--preview-dir", pv, "--acts", ",".join(acts), "--camera", cam,
                  "--crops", os.path.join(pv, f"boss_backdrops_{cam}.png")).strip())
     py("sheet_pieces.py", os.path.join(pv, "_pieces"), os.path.join(pv, "pieces_sheet.png"))

@@ -31,11 +31,24 @@ def _img(path, colorspace="sRGB"):
     return img
 
 
-def _uv_tex(nt, img):
+def _uv_tex(nt, img, tiling=None):
+    """Point-sampled texture on the mesh UVs; tiling = UV multiplier (ToonLit _Tiling without _WORLD_UV)."""
     tex = nt.nodes.new("ShaderNodeTexImage")
     tex.image = img
     tex.interpolation = "Closest"
+    if tiling is not None and tiling != 1.0:
+        tc = nt.nodes.new("ShaderNodeTexCoord")
+        sc = nt.nodes.new("ShaderNodeVectorMath")
+        sc.operation = "SCALE"
+        sc.inputs["Scale"].default_value = tiling
+        nt.links.new(tc.outputs["UV"], sc.inputs[0])
+        nt.links.new(sc.outputs[0], tex.inputs["Vector"])
     return tex.outputs["Color"]
+
+
+# How previews sample *_Surface parts. "mesh" = what Unity does today (MaterialsBuilder: ToonLit, _WORLD_UV off,
+# _Tiling 0.5 on the kit's per-piece metre UVs); "world" = world-space box mapping (ToonLit _WORLD_UV).
+SURFACE_UV_MODE = "mesh"
 
 
 def _world_box(nt, img, tiling, offset=(0.5, 0.0, 0.4)):
@@ -128,9 +141,10 @@ def _trilight(nt, amb):
 
 
 def toon_material(name, albedo_img, ambient, emission_img=None, emission_strength=0.0, bands=None,
-                  cavity_img=None, world_tiling=None, tint=None):
+                  cavity_img=None, world_tiling=None, tint=None, uv_tiling=None):
     """Emission-only node tree: albedo [* tint] * (ambient + banded(direct light)) [* cavity] + emission * strength.
-    world_tiling != None -> albedo/cavity use world-space box mapping (surface materials); tint = _BaseColor."""
+    world_tiling != None -> albedo/cavity use world-space box mapping (surface materials); uv_tiling = mesh-UV
+    multiplier; tint = _BaseColor."""
     mat = bpy.data.materials.new(name)
     mat.use_nodes = True
     mat.use_backface_culling = True     # Unity culls back faces: flipped normals must show up in previews
@@ -138,7 +152,7 @@ def toon_material(name, albedo_img, ambient, emission_img=None, emission_strengt
     nt.nodes.clear()
     N, L = nt.nodes.new, nt.links.new
     out = N("ShaderNodeOutputMaterial")
-    albedo = _world_box(nt, albedo_img, world_tiling) if world_tiling else _uv_tex(nt, albedo_img)
+    albedo = _world_box(nt, albedo_img, world_tiling) if world_tiling else _uv_tex(nt, albedo_img, uv_tiling)
     if tint is not None and tuple(tint) != (1.0, 1.0, 1.0):
         tm = N("ShaderNodeVectorMath")
         tm.operation = "MULTIPLY"
@@ -191,7 +205,7 @@ def toon_material(name, albedo_img, ambient, emission_img=None, emission_strengt
     L(amb.outputs[0], col.inputs[1])
     last = col.outputs[0]
     if cavity_img is not None:
-        cav = _world_box(nt, cavity_img, world_tiling) if world_tiling else _uv_tex(nt, cavity_img)
+        cav = _world_box(nt, cavity_img, world_tiling) if world_tiling else _uv_tex(nt, cavity_img, uv_tiling)
         bwc = N("ShaderNodeRGBToBW")
         L(cav, bwc.inputs["Color"])
         cmul = N("ShaderNodeMath")          # 1 + (cavity - 0.5) * 1.2
@@ -239,7 +253,9 @@ def surface_textures(name, dirs):
 
 
 def surface_material(name, albedo, ambient, cavity, tiling, tint=None):
-    return toon_material(name, albedo, ambient, cavity_img=cavity, world_tiling=tiling, tint=tint)
+    if SURFACE_UV_MODE == "world":
+        return toon_material(name, albedo, ambient, cavity_img=cavity, world_tiling=tiling, tint=tint)
+    return toon_material(name, albedo, ambient, cavity_img=cavity, uv_tiling=tiling, tint=tint)
 
 
 # ---------------------------------------------------------------- scene assembly

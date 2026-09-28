@@ -24,7 +24,7 @@ EMISSIVE_KEYWORDS = ("Emissive", "Gem", "Orb", "Flame", "Crystal", "Fuse", "Eyes
 # required parts (exact set) for pieces other modules address by name; '*' = emissive part
 REQUIRED = {
     "Env_FloorTile": ["Base", "Top_Surface"],
-    "Env_FloorTile_Danger": ["Base", "Top_Surface", "DangerInlay_Emissive*"],
+    "Env_FloorTile_Danger": ["Base", "Top_Surface", "DangerFrame", "DangerInlay_Emissive*"],
     "Env_LaunchPad": ["Base", "Top_Surface", "Rail", "Trim"],
     "Env_WallSegment": ["Side_Surface", "Top_Surface", "Trim"],
     "Env_WallCorner": ["Side_Surface", "Trim"],

@@ -64,6 +64,9 @@ def args():
     p.add_argument("--no-fx", action="store_true", help="skip light shafts + particles")
     p.add_argument("--actors", action="store_true")
     p.add_argument("--mask", action="store_true", help="actors only, flat ID colours (implies --actors)")
+    p.add_argument("--world-uv", action="store_true",
+                   help="sample *_Surface parts with world box mapping (ToonLit _WORLD_UV) instead of the mesh UVs "
+                        "x _Tiling Unity uses today")
     return p.parse_args(argv)
 
 
@@ -129,6 +132,7 @@ def cell_centre(col, row, w=1, h=1):
 
 def main():
     a = args()
+    rc.SURFACE_UV_MODE = "world" if a.world_uv else "mesh"
     with open(a.layouts) as f:
         doc = json.load(f)
     if a.mask:

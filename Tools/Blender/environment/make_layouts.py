@@ -20,6 +20,7 @@ import math
 import os
 import random
 import re
+import subprocess
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(HERE)))
@@ -37,22 +38,37 @@ ASPECT = 16 / 9
 REQUESTED_TARGET_Z = 5.8
 
 
+NUM = r"(-?[\d.]+(?:[eE][-+]?\d+)?)"
+
+
+def parse_arena_config(txt):
+    pos = re.search(rf"cameraPosition: {{x: {NUM}, y: {NUM}, z: {NUM}}}", txt)
+    pitch, fov = re.search(rf"cameraPitchDeg: {NUM}", txt), re.search(rf"cameraFov: {NUM}", txt)
+    return pose_from([float(v) for v in pos.groups()], float(pitch.group(1)), float(fov.group(1)))
+
+
 def read_camera():
     """Game camera pose from ArenaConfig.asset (fallback: the ArenaConfig.cs field defaults). cameraPosition is
     relative to the ArenaLayout origin = this frame's origin; the rig is Euler(pitch, 0, 0), FOV vertical."""
-    num = r"(-?[\d.]+(?:[eE][-+]?\d+)?)"
     try:
-        txt = open(os.path.join(REPO, ARENA_CONFIG)).read()
-        pos = re.search(rf"cameraPosition: {{x: {num}, y: {num}, z: {num}}}", txt)
-        pitch, fov = re.search(rf"cameraPitchDeg: {num}", txt), re.search(rf"cameraFov: {num}", txt)
-        src = ARENA_CONFIG
+        return parse_arena_config(open(os.path.join(REPO, ARENA_CONFIG)).read()), ARENA_CONFIG
     except OSError:
         txt = open(os.path.join(REPO, ARENA_CONFIG_CS)).read()
-        pos = re.search(rf"cameraPosition = new\({num}f, {num}f, {num}f\)", txt)
-        pitch, fov = re.search(rf"cameraPitchDeg = {num}f", txt), re.search(rf"cameraFov = {num}f", txt)
+        pos = re.search(rf"cameraPosition = new\({NUM}f, {NUM}f, {NUM}f\)", txt)
+        pitch, fov = re.search(rf"cameraPitchDeg = {NUM}f", txt), re.search(rf"cameraFov = {NUM}f", txt)
         src = ARENA_CONFIG_CS + " (defaults; the asset is missing)"
-    position = [float(v) for v in pos.groups()]
-    return pose_from(position, float(pitch.group(1)), float(fov.group(1))), src
+        return pose_from([float(v) for v in pos.groups()], float(pitch.group(1)), float(fov.group(1))), src
+
+
+def committed_camera():
+    """The ArenaConfig pose at git HEAD (None when git is unavailable). While the working tree differs (a camera
+    change in progress) the dressing is pruned against both, so neither pose shows holes."""
+    try:
+        txt = subprocess.run(["git", "-C", REPO, "show", f"HEAD:{ARENA_CONFIG}"], capture_output=True, text=True,
+                             check=True).stdout
+        return parse_arena_config(txt)
+    except (OSError, subprocess.CalledProcessError, AttributeError):
+        return None
 
 
 def pose_from(position, pitch_deg, fov_deg):
@@ -65,16 +81,26 @@ def pose_from(position, pitch_deg, fov_deg):
 
 
 def camera_block():
+    """Game pose (read from ArenaConfig), the committed pose while a change is in progress, and the pose requested
+    of the ArenaConfig owner when the game pose is not aimed at the arena centre (GDD §4)."""
     game, src = read_camera()
-    p = math.radians(game["pitchDeg"])
-    req_pos = [0.0, game["position"][1], REQUESTED_TARGET_Z - game["distance"] * math.cos(p)]
-    req = pose_from(req_pos, game["pitchDeg"], game["fovDeg"])
-    req["note"] = ("pose requested of the ArenaConfig owner (Foundation / Presentation-World): aim at the arena centre "
-                   f"z {REQUESTED_TARGET_Z} so the launch pad and the cat are in frame; dressing is pruned against "
-                   "both poses")
-    return {"source": src, **game, "requested": req,
-            "note": "game pose read from ArenaConfig (cameraPosition relative to the ArenaLayout origin, rig "
-                    "Euler(cameraPitchDeg, 0, 0), vertical FOV); target / distance are derived (ray to the floor)"}
+    block = {"source": src, **game,
+             "note": "game pose read from ArenaConfig (cameraPosition relative to the ArenaLayout origin, rig "
+                     "Euler(cameraPitchDeg, 0, 0), vertical FOV); target / distance are derived (ray to the floor)"}
+    head = committed_camera()
+    if head is not None and (head["position"] != game["position"] or head["pitchDeg"] != game["pitchDeg"] or
+                             head["fovDeg"] != game["fovDeg"]):
+        block["committed"] = {**head, "note": "ArenaConfig at git HEAD (working tree differs); dressing is pruned "
+                                              "against both poses"}
+    if abs(game["target"][2] - REQUESTED_TARGET_Z) > 0.3:
+        p = math.radians(game["pitchDeg"])
+        req_pos = [0.0, game["position"][1], REQUESTED_TARGET_Z - game["distance"] * math.cos(p)]
+        req = pose_from(req_pos, game["pitchDeg"], game["fovDeg"])
+        req["note"] = ("pose requested of the ArenaConfig owner (Foundation / Presentation-World): aim at the arena "
+                       f"centre z {REQUESTED_TARGET_Z} so the launch pad and the cat are in frame; dressing is pruned "
+                       "against every pose listed here")
+        block["requested"] = req
+    return block
 
 
 def r3(v):
@@ -84,11 +110,53 @@ def r3(v):
 CAMERA = camera_block()
 # keep scenery out of this rectangle (arena + walls + torches + a little air)
 KEEP_OUT = (-4.3, 4.3, -1.05, 12.35)
+WALL_OUT, TOP_OUT = 3.9, 12.0      # outer faces of the side / top walls
+EMISSIVE_CLEAR = 1.5               # scenery emissives stay this far from the wall outer faces (value hierarchy)
+# boss spawn backdrop (2x2 boss on the top-centre rows): no emissive props and no bright clutter in here
+BOSS_BACKDROP = (-2.5, 2.5, 11.6, 14.5)
+EMISSIVE_PIECES = ("Env_WallTorch", "Env_WallTorch_Arcane", "Env_StoneLantern", "Env_Brazier", "Env_Candles",
+                   "Env_Crystal_A", "Env_Crystal_B", "Env_Crystal_C", "Env_GlowMushroom", "Env_RuneStone",
+                   "Env_WaterPool_Glow")
+TOP_CLEAR = 0.7                    # screen y (-1 bottom .. 1 top): a shaft top ends off-frame or in the blurred top 15 %
+
+# Arena floor Top_Surface per act. Unity samples *_Surface parts on the kit's per-cell mesh UVs x _Tiling 0.5
+# (MaterialsBuilder, _WORLD_UV off), so every cell shows texels 1..31 of one 32 px quadrant of the 64 px tile: only a
+# one-panel-per-cell surface (joints on the cell borders) reads as calm, countable cells. The per-act variants were
+# requested of 2D art; an act binds its variant once the texture exists in Starter or in the staging mirror (2D art
+# output the integrator syncs), else FLOOR_FALLBACK.
+ARENA_FLOOR_REQUESTS = {
+    "1": ("RuinFloor", "warm grey sandstone, one panel per 1 m cell, moss only in the joints, sat <= 0.15"),
+    "2": ("CryptFloor", "one panel per cell; desaturated slate grey-blue (sat <= 0.15), out of the purple enemy band"),
+    "3": ("HollowFloor", "pale cyan-grey slate, one panel per cell, cyan grout; violet stays in the scenery"),
+}
+FLOOR_FALLBACK = "CryptFloor"
+STARTER = os.path.join(REPO, "Starter", "Assets")
+STAGING = os.path.join(REPO, "Tools", "Staging", "Assets")
+
+
+def arena_floor(act):
+    want, spec = ARENA_FLOOR_REQUESTS[act]
+    tex = os.path.join("Textures", "BilliardRogue", "Surfaces", f"{want}_Albedo.png")
+    mat = os.path.join(STARTER, "Materials", "BilliardRogue", f"M_Surface_{want}.mat")
+    if not any(os.path.exists(os.path.join(root, tex)) for root in (STARTER, STAGING)):
+        return {"surface": FLOOR_FALLBACK, "requested": want, "spec": spec,
+                "status": f"{want} not produced yet (2D art); bound {FLOOR_FALLBACK}"}
+    status = "bound" if os.path.exists(mat) else \
+        f"bound; Unity needs M_Surface_{want} (MaterialsBuilder.Surfaces) and the synced texture"
+    return {"surface": want, "requested": want, "spec": spec, "status": status}
+
+
+def arena_surfaces(floor):
+    return {"Env_FloorTile/Top_Surface": floor, "Env_FloorTile_Danger/Top_Surface": floor,
+            "Env_LaunchPad/Top_Surface": floor}
 
 # default real-time light per emissive piece (piece-local offset). Only props flagged "light": true get one.
 PIECE_LIGHTS = {
-    "Env_WallTorch": {"offset": [0.0, 0.52, 0.26], "color": [1.0, 0.62, 0.3], "intensity": 1.6, "range": 4.5},
-    "Env_WallTorch_Arcane": {"offset": [0.0, 0.52, 0.26], "color": [0.35, 0.85, 1.0], "intensity": 1.6, "range": 4.5},
+    # sconce lights sit above the rim, 0.45 m inside the wall (local -Z): they pool on the edge cells of the arena
+    # instead of on the ground outside it (the wall body would shade the arena from a light at the flame)
+    "Env_WallTorch": {"offset": [0.0, 0.95, -0.45], "color": [1.0, 0.62, 0.3], "intensity": 1.6, "range": 5.0},
+    "Env_WallTorch_Arcane": {"offset": [0.0, 0.95, -0.45], "color": [0.35, 0.85, 1.0], "intensity": 1.6,
+                             "range": 5.0},
     "Env_StoneLantern": {"offset": [0.0, 0.93, 0.0], "color": [1.0, 0.72, 0.38], "intensity": 1.4, "range": 4.0},
     "Env_Brazier": {"offset": [0.0, 1.45, 0.0], "color": [1.0, 0.55, 0.25], "intensity": 2.4, "range": 6.5},
     "Env_Candles": {"offset": [0.0, 0.62, 0.0], "color": [1.0, 0.66, 0.35], "intensity": 0.9, "range": 2.6},
@@ -156,6 +224,45 @@ def shaft(land, direction, length, width, color, intensity, sink=0.6):
             "z": round(top[2], 3), "direction": r3(d), "euler": euler_for_down(d),
             "size": [round(width, 3), round(length, 3), round(width, 3)], "color": r3(color),
             "intensity": round(intensity, 3)}
+
+
+def floor_hit(sx, sy, pose, y=0.0):
+    """Where the camera ray through screen point (sx, sy) meets the plane y (x, z)."""
+    p = math.radians(pose["pitchDeg"])
+    fwd, up = (0.0, -math.sin(p), math.cos(p)), (0.0, math.cos(p), math.sin(p))
+    t = math.tan(math.radians(pose["fovDeg"]) / 2)
+    d = [fwd[i] + (1.0 if i == 0 else 0.0) * sx * t * ASPECT + up[i] * sy * t for i in range(3)]
+    cam = pose["position"]
+    k = (y - cam[1]) / d[1]
+    return cam[0] + d[0] * k, cam[2] + d[2] * k
+
+
+def shaft_ok(land, direction, length):
+    """On screen the shaft never overlays the arena (walls included)."""
+    d = norm(direction)
+    for i in range(41):
+        t = length * i / 40
+        q = (land[0] - d[0] * t, GROUND_Y - d[1] * t, land[1] - d[2] * t)
+        sc = project(*q)
+        if sc is None or abs(sc[0]) > 1.0 or abs(sc[1]) > 1.0:
+            continue
+        x, z = floor_hit(sc[0], sc[1], CAMERA)
+        if -WALL_OUT - 0.1 < x < WALL_OUT + 0.1 and -0.8 < z < TOP_OUT + 0.1:
+            return False
+    return True
+
+
+def fit_shaft(land, direction, length, width, color, intensity, sink=0.6):
+    """shaft() shortened (0.25 m steps) until it never overlays the arena on screen. Its top end must then leave the
+    frame or sit in the blurred top band (screen y >= TOP_CLEAR), so no shaft ends mid-frame like a pole."""
+    L = length
+    while L > 3.0 and not shaft_ok(land, direction, L):
+        L -= 0.25
+    d = norm(direction)
+    top = project(land[0] - d[0] * L, GROUND_Y - d[1] * L, land[1] - d[2] * L)
+    if not shaft_ok(land, direction, L) or (top and abs(top[0]) <= 1.0 and abs(top[1]) <= 1.0 and top[1] < TOP_CLEAR):
+        raise SystemExit(f"light shaft landing at {land}: overlays the arena or ends mid-frame at {L} m")
+    return shaft(land, direction, L, width, color, intensity, sink)
 
 
 def particles(ptype, centre, size, max_particles, rate, lifetime, velocity, start_size, colors, glow, noise=0.3,
@@ -307,11 +414,20 @@ def path(points, s=0.8, step=1.0):
 SUN1 = (0.62, -0.72, -0.1)
 
 
+def moss_borders():
+    """Env_MossBorder shade skirts hugging the outer faces of the side and top walls (Act 1 value hierarchy)."""
+    out = [P("Env_MossBorder", -WALL_OUT - 0.05, z, 0, 1.0) for z in (0.4, 4.4, 8.4, 12.2)]
+    out += [P("Env_MossBorder", WALL_OUT + 0.05, z, 180, 1.0) for z in (0.4, 4.4, 8.4, 12.2)]
+    out += [P("Env_MossBorder", x, TOP_OUT + 0.05, 90, 1.0) for x in (-2.0, 2.0)]
+    return out
+
+
 def act1():
     rng = random.Random(101)
-    props = torches("Env_WallTorch", (2.6, 8.6))
+    props = torches("Env_WallTorch", (2.6, 8.6), light_zs=(2.6, 8.6))
+    props += moss_borders()
     # ---- left: forest edge (tall trees frame the edge) + lantern shrine clearing on a dirt path
-    props += path([(-5.6, -0.6), (-5.9, 1.4), (-6.3, 3.3), (-6.9, 5.2), (-7.4, 6.9), (-7.5, 8.3)], 0.66, step=0.95)
+    props += path([(-6.0, -0.6), (-6.2, 1.4), (-6.5, 3.3), (-7.0, 5.2), (-7.4, 6.9), (-7.5, 8.3)], 0.66, step=0.95)
     props += [P("Env_GroundPatch", -7.6, 9.1, 20, 1.2)]
     props += [
         P("Env_Tree_A", -11.4, 12.6, 30, 1.3), P("Env_Tree_B", -9.3, 14.2, 0, 1.1), P("Env_Tree_A", -12.4, 8.4, 200, 1.25),
@@ -319,56 +435,50 @@ def act1():
         P("Env_Tree_A", -8.0, -1.9, 80, 0.95), P("Env_Tree_B", -13.2, 11.0, 150, 1.2),
         P("Env_StoneLantern", -6.3, 9.3, 180, 1.0, light=True), P("Env_StoneLantern", -8.8, 9.5, 180, 1.0, light=True),
         P("Env_RuinColumn_Broken", -7.6, 11.1, 210, 0.85), P("Env_MossyRock_A", -9.6, 5.2, 60, 1.0),
-        P("Env_MossyRock_B", -5.2, 4.3, 110, 0.75), P("Env_MossyRock_B", -8.9, 7.0, 20, 0.9),
+        P("Env_MossyRock_B", -5.5, 4.3, 110, 0.75), P("Env_MossyRock_B", -8.9, 7.0, 20, 0.9),
         P("Env_Stump", -6.0, 6.2, 30, 1.0), P("Env_Log", -8.2, 0.9, 70, 1.0),
-        P("Env_Bush", -4.95, 11.4, 20, 0.85), P("Env_Bush", -5.0, 7.4, 140, 0.7), P("Env_Bush", -5.05, 1.9, 80, 0.8),
+        P("Env_Bush", -5.0, 11.4, 20, 0.85), P("Env_Bush", -5.1, 7.4, 140, 0.7), P("Env_Bush", -5.1, 1.9, 80, 0.8),
         P("Env_Bush", -9.4, 10.2, 200, 0.9), P("Env_Bush", -6.8, -1.2, 10, 1.0), P("Env_Bush", -10.4, 7.6, 90, 0.95),
         P("Env_WaterPool", -8.5, 3.0, 15, 0.85),
         P("Env_GroundMound", -11.0, 7.0, 20, 1.3), P("Env_GroundMound", -10.8, 1.6, -30, 1.0),
-        P("Env_Mushrooms", -8.2, 2.6, 0, 1.0), P("Env_Mushrooms", -6.9, 10.4, 90, 0.9),
-        P("Env_Mushrooms", -10.1, 9.1, 40, 1.0),
+        P("Env_Mushrooms", -9.9, 2.3, 0, 1.0), P("Env_Mushrooms", -6.9, 10.4, 90, 0.9),
     ]
-    # ---- right: temple terrace - colonnade on ruined paving, stairs up to an arch, fence at the lower right
+    # ---- right: temple terrace - colonnade on ruined paving, stairs up to a (smaller, fully framed) arch gateway,
+    # fence at the lower right; the paving between the colonnade and the stairs stays an open, calm patch
     props += [P("Env_PavingPatch", 6.3, z, rot, 1.0) for z, rot in ((1.3, 80), (3.6, 95), (6.0, 85), (8.4, 100),
                                                                       (10.6, 90))]
-    props += [P("Env_PavingPatch", 8.9, 5.2, 10, 0.9), P("Env_PavingPatch", 8.9, 9.6, 170, 0.95),
-              P("Env_FloorTile", 7.6, 2.4, 12, 1.0, GROUND_Y + 0.02), P("Env_FloorTile", 4.9, 11.9, -8, 1.0, GROUND_Y + 0.02)]
+    props += [P("Env_PavingPatch", 8.9, 5.2, 10, 0.9), P("Env_PavingPatch", 8.9, 9.6, 170, 0.95)]
     props += [
-        P("Env_RuinColumn_Broken", 5.4, 1.5, 40, 0.95), P("Env_RuinColumn", 5.4, 4.4, 0, 1.0),
-        P("Env_RuinColumn", 5.4, 7.3, 10, 1.0), P("Env_RuinColumn_Broken", 5.4, 10.2, 160, 1.0),
-        P("Env_RuinColumn_Broken", 8.4, 4.0, 250, 0.9),
-        # stairs (risers toward the camera) up to a landing that carries the arch gateway
-        P("Env_Stairs", 8.9, 7.3, 180, 1.0), P("Env_RuinArch", 8.9, 7.6, 180, 1.0, y=GROUND_Y + 0.42), P("Env_MossyRock_A", 10.7, 2.6, 250, 0.9),
-        P("Env_MossyRock_B", 7.2, 0.4, 20, 0.8), P("Env_Log", 10.0, 5.0, 160, 0.9),
+        P("Env_RuinColumn_Broken", 5.5, 1.5, 40, 0.95), P("Env_RuinColumn", 5.5, 4.4, 0, 1.0),
+        P("Env_RuinColumn", 5.5, 7.3, 10, 1.0), P("Env_RuinColumn_Broken", 5.5, 10.2, 160, 1.0),
+        # stairs (risers toward the camera) up to a landing that carries the arch gateway (0.72 x: 3 m tall)
+        P("Env_Stairs", 8.9, 7.5, 180, 0.8), P("Env_RuinArch", 8.9, 7.75, 180, 0.72, y=GROUND_Y + 0.8 * 0.42),
+        P("Env_MossyRock_A", 10.7, 2.6, 250, 0.9), P("Env_MossyRock_B", 7.2, 0.4, 20, 0.8),
         P("Env_Tree_A", 11.4, 11.9, 300, 1.25), P("Env_Tree_B", 11.6, 8.3, 45, 1.2), P("Env_Tree_A", 11.3, 3.6, 80, 1.15),
         P("Env_Tree_A", 13.0, 6.2, 20, 1.3),
         P("Env_Tree_B", 10.4, -0.9, 20, 1.0), P("Env_Tree_B", 10.2, 14.2, 110, 1.05),
-        P("Env_Bush", 10.2, 9.8, 70, 0.95), P("Env_Bush", 7.4, 12.5, 30, 0.9), P("Env_Bush", 5.2, -0.8, 200, 0.8),
-        P("Env_Bush", 10.4, 5.9, 250, 0.8),
-        P("Env_StoneLantern", 5.1, 12.6, 180, 1.0, light=True), P("Env_Stump", 9.5, 1.3, 0, 0.9),
+        P("Env_Bush", 10.2, 9.8, 70, 0.95), P("Env_Bush", 7.4, 12.5, 30, 0.9), P("Env_Bush", 5.3, -0.8, 200, 0.8),
+        P("Env_StoneLantern", 5.3, 12.6, 180, 1.0, light=True), P("Env_Stump", 9.5, 1.3, 0, 0.9),
         P("Env_Fence", 6.4, -0.35, 8, 1.0), P("Env_Fence", 8.4, -0.6, -5, 1.0),
-        P("Env_GroundMound", 11.3, 9.4, 10, 1.1), P("Env_Mushrooms", 9.2, 8.6, 70, 0.8),
+        P("Env_GroundMound", 11.3, 9.4, 10, 1.1),
     ]
-    # ---- behind the top rim: only low props show (the frame's top edge cuts at ~1 m there)
-    props += [P("Env_Bush", -2.5, 13.2, 0, 0.9), P("Env_Bush", 1.9, 13.4, 90, 1.0), P("Env_MossyRock_B", -0.3, 12.9, 30, 0.9),
-              P("Env_RuinColumn_Broken", 3.4, 13.0, 300, 0.8), P("Env_Fence", -4.9, 13.0, 95, 0.9),
-              P("Env_Mushrooms", 0.8, 12.7, 0, 0.9)]
-    props += dress(props, rng, "Env_Flowers", [(-5.5, 8.4), (-8.2, 8.0), (-6.1, 4.9), (-5.4, 0.3), (6.9, 0.2),
-                                               (9.8, 0.4), (10.6, 8.0), (-1.2, 12.8), (0.9, 13.3), (-8.3, 5.9),
-                                               (-10.6, 4.2), (-7.0, 12.4)], 2, 0.8, 0.35)
-    props += dress(props, rng, "Env_GrassTuft", [(-5.2, 9.9), (-7.9, 2.3), (-6.3, 5.5), (-9.0, 11.2), (-4.8, 0.6),
-                                                 (6.6, 2.4), (6.7, 5.8), (6.6, 10.8), (9.7, 3.5), (9.4, 11.4),
-                                                 (4.8, 3.0), (4.8, 8.7), (-2.9, 12.8), (2.7, 12.9), (8.0, -1.0),
-                                                 (-9.8, 3.9), (-8.1, 5.0)], 3, 0.9, 0.28)
-    props += scatter(props, rng, "Env_GrassTuft", 22, [(-12, -4.5, -1.5, 14.5), (4.5, 12, -1.5, 14.5)], 0.3)
-    props += scatter(props, rng, "Env_Pebbles", 5, [(-9, -4.6, -1.0, 12), (4.6, 9, -1.0, 12)], 0.4, s=(0.6, 0.9))
-    # ---- light: warm low sun from the left through the canopy; motes and leaves ride the shafts
+    # ---- behind the top rim (boss spawn backdrop): only low, dark props; nothing glows
+    props += [P("Env_Bush", -2.6, 13.3, 0, 0.9), P("Env_Bush", 1.9, 13.5, 90, 1.0), P("Env_MossyRock_B", -0.3, 13.0, 30, 0.9),
+              P("Env_RuinColumn_Broken", 3.6, 13.1, 300, 0.8), P("Env_Fence", -5.0, 13.1, 95, 0.9)]
+    # small scatter kept to a few clusters (the review found the sides busier than the arena)
+    props += dress(props, rng, "Env_Flowers", [(-5.6, 8.4), (-8.2, 8.0), (-6.1, 4.9), (-10.6, 4.2), (9.8, 0.4),
+                                               (10.6, 8.0), (-1.2, 12.9), (-7.0, 12.4)], 2, 0.8, 0.35)
+    props += dress(props, rng, "Env_GrassTuft", [(-5.3, 9.9), (-7.9, 2.3), (-6.3, 5.5), (-9.0, 11.2), (-5.0, 0.6),
+                                                 (6.7, 5.8), (9.4, 11.4), (-2.9, 12.9), (2.7, 13.0), (8.0, -1.0),
+                                                 (-9.8, 3.9)], 2, 0.9, 0.28)
+    props += scatter(props, rng, "Env_GrassTuft", 10, [(-12, -4.8, -1.5, 14.5), (9.6, 12, -1.5, 14.5)], 0.3)
+    props += scatter(props, rng, "Env_Pebbles", 3, [(-9, -4.8, -1.0, 12)], 0.4, s=(0.6, 0.9))
+    # ---- light: warm low sun from the left through the canopy. Three shafts of different widths, each landing on
+    # a feature (the path, the pond edge, the lantern shrine); motes and leaves ride them
     gold = (1.0, 1.0, 1.0)      # relative tint: final colour = color * lighting.preset.godRayColor
-    # shafts only on the sun side: a shaft landing on the right would have to cross over the arena
-    for (lx, lz), L, w, k in (((-7.2, 9.7), 10.0, 0.85, 0.34), ((-6.3, 5.8), 10.0, 0.75, 0.3),
-                              ((-8.6, 12.9), 9.5, 0.7, 0.26), ((-5.5, 1.9), 9.5, 0.65, 0.24),
-                              ((-9.4, 7.6), 9.0, 0.6, 0.22)):
-        props.append(shaft((lx, lz), SUN1, L, w, gold, k))
+    for land, L, w, k in (((-6.6, 4.4), 10.0, 1.45, 0.34), ((-8.4, 3.6), 9.0, 0.7, 0.2),
+                          ((-7.5, 9.5), 9.5, 1.05, 0.27)):
+        props.append(fit_shaft(land, SUN1, L, w, gold, k))
     props += [
         particles("Leaf", (0.0, 3.2, 6.8), (24.0, 5.5, 16.0), 46, 6.0, (6.0, 9.0), (0.35, -0.42, -0.08),
                   (0.1, 0.16), [(0.98, 0.62, 0.22), (0.92, 0.78, 0.3), (0.55, 0.72, 0.25)], False, noise=0.6,
@@ -378,13 +488,14 @@ def act1():
         particles("Mote", (7.8, 1.4, 6.5), (6.0, 2.4, 13.0), 26, 4.0, (4.0, 7.0), (0.05, 0.12, 0.0), (0.05, 0.08),
                   [(1.0, 0.86, 0.45)], True, noise=0.35, tag="pollen over the temple terrace"),
     ]
+    floor = arena_floor("1")
     return {
         "name": "Mossy Ruins",
-        "surfaces": {"Env_FloorTile/Top_Surface": "StoneFloor", "Env_FloorTile_Danger/Top_Surface": "StoneFloor",
-                     "Env_LaunchPad/Top_Surface": "StoneFloor", "Env_WallSegment/Side_Surface": "MossyBrick",
+        "arenaFloor": floor,
+        "surfaces": {**arena_surfaces(floor["surface"]), "Env_WallSegment/Side_Surface": "MossyBrick",
                      "Env_WallSegment/Top_Surface": "StoneFloor", "Env_WallCorner/Side_Surface": "MossyBrick",
                      "Env_GroundMound/Top_Surface": "Grass", "Env_GroundPatch/Top_Surface": "Dirt",
-                     "Env_PavingPatch/Top_Surface": "MossyBrick"},
+                     "Env_PavingPatch/Top_Surface": "StoneFloor"},
         "ground": ground("Grass"),
         "lighting": lighting(SUN1, (1.0, 0.78, 0.5), 1.35, (0.5, 0.52, 0.78), (0.42, 0.36, 0.5), (0.22, 0.2, 0.24),
                              (0.95, 0.78, 0.55), 0.008, (1.0, 0.85, 0.6), (1.0, 0.82, 0.55), (1.0, 0.8, 0.5), 1.0,
@@ -403,7 +514,8 @@ MOON2 = (-0.42, -0.86, -0.2)
 
 def act2():
     rng = random.Random(202)
-    props = torches("Env_WallTorch", (2.6, 8.6), light_zs=(8.6,))
+    # all four sconces light the rim: warm pools on the arena edge, so the board is the lit stage of the crypt
+    props = torches("Env_WallTorch", (2.6, 8.6), light_zs=(2.6, 8.6))
     # far walls: behind the top rim only the plinths show; the side back walls at z 11.3 are fully in frame
     props += [P("Env_CryptWall", x, 13.4, 180, 1.0) for x in (-3.0, -1.0, 1.0, 3.0)]
     props += [P("Env_CryptWall", -5.3, 11.4, 180, 1.0), P("Env_IronGate", -7.85, 11.4, 180, 1.0),
@@ -415,70 +527,69 @@ def act2():
     props += [P("Env_Banner", x, 11.1, 180, 1.0, y=2.25) for x in (-5.3, -10.4, 5.3, 9.3)]
     props += [P("Env_Banner", sx * 10.9, z, 90 if sx < 0 else 270, 0.9, y=2.25) for sx in (-1, 1) for z in (3.4, 7.4)]
     props += [
-        P("Env_Brazier", -5.0, 10.2, 0, 1.0, light=True), P("Env_Brazier", 5.0, 10.2, 0, 1.0, light=True),
-        P("Env_Brazier", -5.1, 0.3, 0, 0.95, light=True), P("Env_Brazier", 5.1, 0.3, 0, 0.95, light=True),
-        # left: sunken graveyard - tombstone rows either side of a path to the gate
-        P("Env_Tombstone_A", -6.2, 8.4, 180, 1.0), P("Env_Tombstone_B", -9.4, 8.6, 172, 1.0),
-        P("Env_Tombstone_A", -6.3, 5.6, 185, 0.95), P("Env_Tombstone_B", -9.5, 5.5, 176, 1.05),
-        P("Env_Tombstone_A", -6.2, 2.8, 190, 0.95), P("Env_Tombstone_A", -9.4, 2.6, 178, 1.0),
-        P("Env_Tombstone_B", -10.2, 9.9, 186, 0.9), P("Env_Tombstone_A", -8.9, 0.4, 170, 0.9),
-        P("Env_Candles", -7.0, 10.1, 0, 1.0, light=True), P("Env_Candles", -8.8, 7.0, 50, 0.85),
-        P("Env_Candles", -5.3, 4.2, 0, 0.8), P("Env_BonePile", -10.0, 1.6, 100, 1.1), P("Env_BonePile", -5.1, 7.1, 20, 0.8),
-        P("Env_Urn", -5.6, 9.6, 0, 1.0), P("Env_Urn", -10.2, 4.1, 40, 0.9),
+        # braziers stand back from the rim (>= 1.5 m): fire frames the scene without out-shining the board
+        P("Env_Brazier", -5.8, 10.3, 0, 1.0, light=True), P("Env_Brazier", 5.8, 10.3, 0, 1.0, light=True),
+        P("Env_Brazier", -5.9, 0.2, 0, 0.95), P("Env_Brazier", 5.9, 0.2, 0, 0.95),
+        # left: sunken graveyard - two tidy rows of graves either side of the flagstone path to the gate
+        P("Env_Tombstone_A", -6.5, 8.6, 180, 1.0), P("Env_Tombstone_B", -6.5, 6.2, 178, 1.0),
+        P("Env_Tombstone_A", -6.5, 3.8, 182, 0.95), P("Env_Tombstone_B", -6.5, 1.4, 180, 1.0),
+        P("Env_Tombstone_B", -9.2, 8.6, 181, 1.0), P("Env_Tombstone_A", -9.2, 6.2, 179, 1.0),
+        P("Env_Tombstone_B", -9.2, 3.8, 180, 1.05), P("Env_Tombstone_A", -9.2, 1.4, 182, 0.95),
+        P("Env_Candles", -7.0, 10.1, 0, 1.0, light=True), P("Env_Candles", -8.6, 5.0, 50, 0.8),
+        P("Env_BonePile", -10.3, 2.6, 100, 1.0), P("Env_Urn", -5.9, 9.8, 0, 1.0), P("Env_Urn", -10.2, 5.0, 40, 0.9),
         # right: flooded sarcophagus hall
-        P("Env_WaterPool", 8.0, 6.6, 90, 1.6), P("Env_WaterPool", 6.3, 1.7, 30, 1.0),
-        P("Env_Coffin", 6.3, 8.6, 90, 1.0), P("Env_Coffin", 6.3, 4.6, 90, 1.0), P("Env_Coffin", 9.7, 9.3, 90, 1.0),
+        P("Env_WaterPool", 8.0, 6.6, 90, 1.6), P("Env_WaterPool", 6.6, 1.7, 30, 1.0),
+        P("Env_Coffin", 6.4, 8.8, 90, 1.0), P("Env_Coffin", 6.4, 4.4, 90, 1.0), P("Env_Coffin", 9.7, 9.3, 90, 1.0),
+        P("Env_Coffin", 9.6, 3.2, 90, 0.9),
         P("Env_CryptPillar", 5.4, 1.6, 0, 1.0), P("Env_CryptPillar", 5.4, 5.6, 0, 1.0),
         P("Env_CryptPillar", 5.4, 9.6, 0, 1.0), P("Env_CryptPillar", -5.4, 11.9, 0, 1.0),
-        P("Env_Coffin", 9.6, 3.2, 90, 0.9),
-        P("Env_Candles", 5.1, 9.9, 30, 0.9, light=True), P("Env_Candles", 9.6, 7.8, 0, 0.8), P("Env_Candles", 5.1, 3.1, 90, 0.8),
-        P("Env_Tombstone_B", 9.6, 1.0, 190, 1.0), P("Env_BonePile", 10.1, 5.2, 300, 1.0), P("Env_BonePile", 5.0, 6.6, 200, 0.75),
-        P("Env_Urn", 7.3, 10.3, 0, 1.0), P("Env_Urn", 10.0, 6.4, 120, 0.85),
-        P("Env_Candles", -9.9, 5.4, 120, 0.7), P("Env_Candles", -6.8, 1.6, 200, 0.75), P("Env_Candles", 7.3, 3.4, 60, 0.7),
-        P("Env_Candles", 7.0, 9.9, 10, 0.75), P("Env_Candles", 10.0, 2.0, 0, 0.7),
-        # behind the top rim
-        P("Env_Candles", -1.4, 12.6, 0, 0.9), P("Env_Candles", 2.1, 12.55, 40, 0.85), P("Env_BonePile", -2.9, 12.8, 150, 0.9),
-        P("Env_BonePile", 0.4, 12.9, 20, 0.8), P("Env_Urn", 3.3, 12.7, 0, 0.9),
+        P("Env_Candles", 7.2, 10.2, 30, 0.9, light=True), P("Env_Candles", 9.6, 7.8, 0, 0.8),
+        P("Env_Tombstone_B", 9.6, 1.0, 190, 1.0), P("Env_BonePile", 10.1, 5.4, 300, 1.0),
+        P("Env_Urn", 7.6, 10.4, 0, 1.0), P("Env_Urn", 10.0, 6.8, 120, 0.85),
+        # behind the top rim = the boss backdrop: dark wall plinths only (no candles, no bone piles)
+        P("Env_Urn", 3.3, 12.8, 0, 0.9), P("Env_Urn", -3.2, 12.8, 30, 0.85),
     ]
     props += [P("Env_PavingPatch", -7.85, z, 90 + 7 * i, 0.62) for i, z in enumerate((10.3, 8.3, 6.3, 4.3, 2.3, 0.3))]
-    props += [P("Env_GroundPatch", x, z, 35 * i, 0.9) for i, (x, z) in
-              enumerate(((-6.2, 8.9), (-6.3, 5.9), (-6.2, 3.1), (-9.5, 9.1), (-9.5, 6.0), (-9.4, 3.0), (-9.0, 0.6)))]
     props += [P("Env_PavingPatch", 7.9, z, 90, 1.0) for z in (2.4, 5.2, 8.0, 10.3)]
-    props += scatter(props, rng, "Env_Pebbles", 6, [(-10.5, -4.5, -1.5, 12.8), (4.5, 10.5, -1.5, 12.8)], 0.4,
-                     s=(0.6, 0.85))
-    props += dress(props, rng, "Env_GrassTuft", [(-9.9, 9.4), (-4.9, 9.0), (10.2, 10.6), (4.8, 2.3), (-10.0, 3.2),
-                                                 (-6.6, 1.1)], 2, 0.6, 0.25, s=(0.55, 0.8))
-    # ---- light: cold moonbeams from high windows (upper right), embers above the braziers, dust in the beams
+    props += scatter(props, rng, "Env_Pebbles", 2, [(-10.5, -5.5, -1.5, 11), (5.5, 10.5, -1.5, 11)], 0.4,
+                     s=(0.6, 0.8))
+    props += dress(props, rng, "Env_GrassTuft", [(-9.9, 9.4), (10.2, 10.6), (-10.0, 3.2)], 2, 0.6, 0.25,
+                   s=(0.55, 0.8))
+    # ---- light: cold moonbeams from high windows (upper right): one broad beam on the graveyard path, one on the
+    # flooded hall, a narrow one on the gate; embers above the braziers, dust in the beams
     moon = (1.0, 1.0, 1.0)      # relative tint of preset.godRayColor (cold moonlight)
-    for (lx, lz), L, w, k in (((-7.8, 7.4), 10.0, 1.2, 0.5), ((-7.6, 3.2), 10.0, 1.0, 0.4),
-                              ((8.0, 6.6), 10.5, 1.3, 0.5), ((7.5, 1.9), 9.5, 0.9, 0.35), ((-9.6, 10.6), 9.0, 0.9, 0.3)):
-        props.append(shaft((lx, lz), MOON2, L, w, moon, k))
-    for x, z in ((-5.0, 10.2), (5.0, 10.2), (-5.1, 0.3), (5.1, 0.3)):
+    for land, L, w, k in (((-8.8, 5.6), 10.0, 1.4, 0.45), ((8.0, 6.4), 10.5, 1.2, 0.45),
+                          ((-7.85, 10.2), 9.0, 0.7, 0.3)):
+        props.append(fit_shaft(land, MOON2, L, w, moon, k))
+    for x, z in ((-5.8, 10.3), (5.8, 10.3), (-5.9, 0.2), (5.9, 0.2)):
         props.append(particles("Ember", (x, 2.2, z), (0.5, 0.4, 0.5), 14, 5.0, (1.2, 2.2), (0.0, 0.9, 0.05),
                                (0.04, 0.07), [(1.0, 0.62, 0.22), (1.0, 0.42, 0.14)], True, noise=0.5,
                                tag="embers rising from the brazier"))
     props += [
-        particles("Dust", (0.0, 2.5, 6.4), (22.0, 4.0, 15.0), 50, 6.0, (6.0, 10.0), (0.06, -0.03, 0.04), (0.04, 0.07),
+        particles("Dust", (0.0, 2.5, 6.4), (22.0, 4.0, 15.0), 24, 3.0, (6.0, 10.0), (0.06, -0.03, 0.04), (0.03, 0.05),
                   [(0.7, 0.78, 1.0)], False, noise=0.2, light_influence=1.0, tag="dust motes, visible in the moonbeams"),
         particles("Smoke", (-7.8, 0.15, 5.6), (4.5, 0.3, 11.0), 16, 2.0, (6.0, 9.0), (0.08, 0.02, 0.0), (0.9, 1.5),
                   [(0.35, 0.42, 0.7)], False, noise=0.1, light_influence=0.6,
                   tag="ground mist over the graveyard (low alpha, keep overdraw small)"),
     ]
+    floor = arena_floor("2")
     return {
         "name": "Sunken Crypt",
-        "surfaces": {"Env_FloorTile/Top_Surface": "CryptFloor", "Env_FloorTile_Danger/Top_Surface": "CryptFloor",
-                     "Env_LaunchPad/Top_Surface": "CryptFloor", "Env_WallSegment/Side_Surface": "CryptBrick",
+        "arenaFloor": floor,
+        "surfaces": {**arena_surfaces(floor["surface"]), "Env_WallSegment/Side_Surface": "CryptBrick",
                      "Env_WallSegment/Top_Surface": "CryptFloor", "Env_WallCorner/Side_Surface": "CryptBrick",
                      "Env_CryptWall/Side_Surface": "CryptBrick", "Env_GroundMound/Top_Surface": "Dirt",
                      "Env_GroundPatch/Top_Surface": "Dirt",
                      "Env_PavingPatch/Top_Surface": "CryptFloor"},
-        "ground": ground("CryptBrick"),
+        # dark, low-contrast palette flagstones (was the bright CryptBrick surface): the crypt falls into darkness
+        "ground": ground(None, "Env_CryptGroundTile"),
         "lighting": lighting(MOON2, (0.55, 0.66, 1.0), 0.75, (0.2, 0.24, 0.48), (0.14, 0.15, 0.3), (0.06, 0.06, 0.1),
                              (0.08, 0.1, 0.2), 0.02, (0.5, 0.6, 1.0), (1.0, 0.7, 0.45), (0.55, 0.68, 1.0), 0.6,
                              (0.9, 0.92, 1.0),
                              {"shadows": [0.3, 0.36, 0.72], "highlights": [1.0, 0.84, 0.68], "saturation": 1.05,
                               "contrast": 1.1, "vignette": 0.38},
-                             "deep blue moonlight from the upper right, warm brazier and candle pools, flooded hall"),
+                             "deep blue moonlight from the upper right, warm torch pools on the arena rim, braziers "
+                             "set back, flooded hall"),
         "props": props,
     }
 
@@ -489,7 +600,7 @@ CEIL3 = (0.18, -0.96, -0.12)
 
 def act3():
     rng = random.Random(303)
-    props = torches("Env_WallTorch_Arcane", (2.6, 8.6))
+    props = torches("Env_WallTorch_Arcane", (2.6, 8.6), light_zs=(2.6, 8.6))
     props += [
         # cave rim: big rock masses and stalagmites at the frame edges
         P("Env_CaveRock_A", -11.4, 11.6, 30, 1.7), P("Env_CaveRock_A", -12.4, 6.0, 100, 1.6),
@@ -497,52 +608,56 @@ def act3():
         P("Env_CaveRock_A", 12.4, 5.2, 300, 1.6), P("Env_CaveRock_A", 10.8, -0.6, 20, 1.3),
         P("Env_CaveRock_A", -7.8, 14.2, 150, 1.3), P("Env_CaveRock_A", 7.6, 14.6, 60, 1.3),
         P("Env_CaveRock_B", -5.9, 13.1, 0, 1.1), P("Env_CaveRock_B", 6.1, 13.2, 150, 1.0),
-        P("Env_CaveRock_B", -5.4, -1.0, 60, 0.85), P("Env_CaveRock_B", 10.2, 7.9, 10, 0.9),
+        P("Env_CaveRock_B", -5.6, -1.0, 60, 0.85), P("Env_CaveRock_B", 10.2, 7.9, 10, 0.9),
         P("Env_CaveRock_B", -9.9, 3.2, 200, 0.9),
+        # boss spawn backdrop (behind the top-centre rows): dark rock and stalagmite silhouettes, nothing glows
+        P("Env_CaveRock_B", -1.3, 13.3, 40, 1.05), P("Env_CaveRock_B", 1.6, 13.5, 210, 0.95),
+        P("Env_Stalagmite", 0.2, 13.9, 60, 0.85),
         P("Env_Stalagmite", -9.1, 12.6, 0, 1.3), P("Env_Stalagmite", 9.4, 12.4, 90, 1.25),
         P("Env_Stalagmite", -10.1, 8.4, 40, 1.05), P("Env_Stalagmite", 10.1, 2.3, 200, 1.1),
         P("Env_Stalagmite", -7.2, 0.0, 130, 0.8), P("Env_Stalagmite", 7.8, -0.6, 20, 0.8),
         P("Env_Stalagmite", 11.2, 8.6, 300, 0.95), P("Env_Stalagmite", -12.0, 2.6, 80, 1.0),
-        # crystal groves = the light sources
-        P("Env_Crystal_A", -7.0, 9.7, 20, 1.25, light=True), P("Env_Crystal_B", -5.3, 11.1, 200, 0.9),
-        P("Env_Crystal_C", -8.2, 10.8, 60, 1.0), P("Env_Crystal_C", -5.3, 8.5, 300, 0.7),
-        P("Env_Crystal_A", 7.2, 5.0, 170, 1.15, light=True), P("Env_Crystal_B", 5.5, 3.3, 20, 1.0, light=True),
-        P("Env_Crystal_C", 8.5, 6.3, 110, 1.1), P("Env_Crystal_C", 5.3, 5.9, 240, 0.7),
-        P("Env_Crystal_B", -5.6, 2.0, 300, 0.9, light=True), P("Env_Crystal_C", -4.95, 3.5, 0, 0.8),
-        P("Env_Crystal_B", -1.7, 12.9, 0, 0.9, light=True), P("Env_Crystal_C", -0.3, 12.7, 90, 0.85),
-        P("Env_Crystal_C", 2.2, 12.8, 200, 0.95), P("Env_Crystal_B", 8.6, 9.8, 60, 1.05),
-        P("Env_Crystal_C", 5.1, 11.4, 30, 0.8),
+        # crystal groves = the light sources, set back >= 2.2 m from the walls (a dark moat keeps the lit arena the
+        # focal value); the pale-tipped spires stand in their glow
+        P("Env_Crystal_A", -7.6, 9.7, 20, 1.25, light=True), P("Env_Crystal_B", -6.5, 11.6, 200, 0.9),
+        P("Env_Crystal_C", -8.7, 10.9, 60, 1.0), P("Env_Crystal_C", -6.3, 8.7, 300, 0.7),
+        P("Env_Crystal_A", 7.8, 5.0, 170, 1.15, light=True), P("Env_Crystal_B", 6.5, 3.4, 20, 1.0, light=True),
+        P("Env_Crystal_C", 8.9, 6.3, 110, 1.1), P("Env_Crystal_C", 6.3, 6.2, 240, 0.7),
+        P("Env_Crystal_B", -6.6, 2.0, 300, 0.9), P("Env_Crystal_C", -6.2, 3.3, 0, 0.8),
+        P("Env_Crystal_B", -6.0, 13.8, 20, 0.95, light=True), P("Env_Crystal_C", 6.2, 12.9, 200, 0.9),
+        P("Env_Crystal_B", 8.8, 9.8, 60, 1.05), P("Env_Crystal_C", 6.4, 11.2, 30, 0.8),
         # rune circle on the left around a glowing pool, mushroom patches
-        P("Env_WaterPool_Glow", -8.2, 5.5, 0, 1.0), P("Env_RuneStone", -7.0, 4.3, 150, 1.0, light=True),
-        P("Env_RuneStone", -9.5, 4.5, 205, 0.9), P("Env_RuneStone", -8.3, 6.9, 180, 0.95),
-        P("Env_GlowMushroom", -5.3, 6.6, 0, 1.1, light=True), P("Env_GlowMushroom", 5.5, 9.9, 90, 1.0),
+        P("Env_WaterPool_Glow", -8.6, 5.5, 0, 1.0), P("Env_RuneStone", -7.4, 4.3, 150, 1.0),
+        P("Env_RuneStone", -9.9, 4.5, 205, 0.9), P("Env_RuneStone", -8.7, 6.9, 180, 0.95),
+        P("Env_GlowMushroom", -6.2, 6.6, 0, 1.1), P("Env_GlowMushroom", 6.3, 9.9, 90, 1.0),
         P("Env_GlowMushroom", 8.8, 1.4, 40, 1.2), P("Env_GlowMushroom", -8.9, 1.8, 200, 1.0),
-        P("Env_GlowMushroom", 4.9, -0.6, 300, 0.9), P("Env_GlowMushroom", -10.2, 9.5, 120, 0.9),
+        P("Env_GlowMushroom", 6.2, -0.8, 300, 0.9), P("Env_GlowMushroom", -10.2, 9.5, 120, 0.9),
         P("Env_GroundMound", -9.6, 10.6, 30, 1.2), P("Env_GroundMound", 10.1, 4.9, 0, 1.1),
-        P("Env_GroundPatch", -6.8, 9.9, 20, 0.8), P("Env_GroundPatch", 7.1, 4.8, 60, 0.85),
+        P("Env_GroundPatch", -6.9, 9.9, 20, 0.8), P("Env_GroundPatch", 7.3, 4.8, 60, 0.85),
     ]
-    props += scatter(props, rng, "Env_Pebbles", 12, [(-11, -4.5, -1.5, 13), (4.5, 11, -1.5, 13)], 0.4)
-    props += scatter(props, rng, "Env_Crystal_C", 6, [(-10, -4.7, -1.0, 12), (4.7, 10, -1.0, 12)], 0.45, s=(0.45, 0.65))
-    # ---- light: violet shafts from cracks in the cave ceiling, floating motes, sparkles around the groves
-    for (lx, lz), L, w, col, k in (((-7.0, 9.4), 11.0, 1.1, (0.75, 0.55, 1.0), 0.55),
-                                   ((7.2, 5.0), 11.0, 1.2, (0.55, 0.85, 1.0), 0.5),
-                                   ((-8.3, 5.4), 11.5, 0.9, (0.8, 0.6, 1.0), 0.45),
-                                   ((8.4, 10.6), 10.5, 0.8, (0.75, 0.55, 1.0), 0.35),
-                                   ((-6.2, 1.3), 10.0, 0.8, (0.55, 0.85, 1.0), 0.3)):
-        props.append(shaft((lx, lz), CEIL3, L, w, col, k))
+    props += scatter(props, rng, "Env_Pebbles", 6, [(-11, -4.8, -1.5, 13), (4.8, 11, -1.5, 13)], 0.4)
+    props += scatter(props, rng, "Env_Crystal_C", 5, [(-10, -6.2, -1.0, 12), (6.2, 10, -1.0, 12)], 0.45,
+                     s=(0.45, 0.65))
+    # ---- light: shafts from cracks in the cave ceiling, one per feature: the big cyan grove, the right grove, the
+    # rune pool (narrow); floating motes, sparkles around the groves
+    for land, L, w, col, k in (((-7.6, 9.4), 11.0, 1.3, (0.75, 0.55, 1.0), 0.5),
+                               ((7.8, 5.0), 11.0, 0.95, (0.55, 0.85, 1.0), 0.3),
+                               ((-8.6, 5.4), 11.5, 0.65, (0.8, 0.6, 1.0), 0.35)):
+        props.append(fit_shaft(land, CEIL3, L, w, col, k))
     props += [
         particles("Mote", (0.0, 2.2, 6.4), (22.0, 3.6, 15.0), 70, 10.0, (4.0, 8.0), (0.0, 0.14, 0.0), (0.05, 0.09),
                   [(0.45, 0.95, 1.0), (0.8, 0.55, 1.0), (1.0, 0.6, 0.95)], True, noise=0.4,
                   tag="floating magic motes (sparse over the arena)"),
-        particles("Star", (-6.6, 1.0, 9.8), (3.0, 1.6, 3.0), 10, 3.0, (0.6, 1.2), (0.0, 0.05, 0.0), (0.08, 0.14),
+        particles("Star", (-7.4, 1.0, 9.8), (3.0, 1.6, 3.0), 10, 3.0, (0.6, 1.2), (0.0, 0.05, 0.0), (0.08, 0.14),
                   [(0.6, 1.0, 1.0)], True, noise=0.0, tag="sparkles on the big cyan grove"),
-        particles("Star", (7.0, 1.0, 4.6), (3.0, 1.6, 3.0), 10, 3.0, (0.6, 1.2), (0.0, 0.05, 0.0), (0.08, 0.14),
+        particles("Star", (7.6, 1.0, 4.6), (3.0, 1.6, 3.0), 10, 3.0, (0.6, 1.2), (0.0, 0.05, 0.0), (0.08, 0.14),
                   [(0.6, 1.0, 1.0), (0.85, 0.6, 1.0)], True, noise=0.0, tag="sparkles on the right grove"),
     ]
+    floor = arena_floor("3")
     return {
         "name": "Crystal Hollow",
-        "surfaces": {"Env_FloorTile/Top_Surface": "StoneFloor", "Env_FloorTile_Danger/Top_Surface": "StoneFloor",
-                     "Env_LaunchPad/Top_Surface": "StoneFloor", "Env_WallSegment/Side_Surface": "CrystalRock",
+        "arenaFloor": floor,
+        "surfaces": {**arena_surfaces(floor["surface"]), "Env_WallSegment/Side_Surface": "CrystalRock",
                      "Env_WallSegment/Top_Surface": "CrystalRock", "Env_WallCorner/Side_Surface": "CrystalRock",
                      "Env_GroundMound/Top_Surface": "CrystalRock", "Env_GroundPatch/Top_Surface": "CrystalRock"},
         "ground": ground(None, "Env_CaveFloorTile"),
@@ -557,7 +672,7 @@ def act3():
 
 
 # ---------------------------------------------------------------- checks + output
-POSES = (CAMERA, CAMERA["requested"])
+POSES = (CAMERA,) + tuple(CAMERA[k] for k in ("committed", "requested") if k in CAMERA)
 
 
 def project(x, y, z, pose=CAMERA):
@@ -646,6 +761,25 @@ def resolve_lights(act):
     return act
 
 
+def check_emissives(act):
+    """Value hierarchy rules from the art review: no emissive scenery inside the boss backdrop, none closer than
+    EMISSIVE_CLEAR to the wall outer faces (the kit's own wall torches excepted)."""
+    bad = []
+    for p in act["props"]:
+        if p["piece"] not in EMISSIVE_PIECES or p["piece"].startswith("Env_WallTorch"):
+            continue
+        x, z = p["x"], p["z"]
+        x0, x1, z0, z1 = BOSS_BACKDROP
+        if x0 <= x <= x1 and z0 <= z <= z1:
+            bad.append(f"{p['piece']} ({x}, {z}) in the boss backdrop")
+        dx, dz = max(abs(x) - WALL_OUT, 0.0), max(z - TOP_OUT, -0.62 - z, 0.0)
+        if math.hypot(dx, dz) < EMISSIVE_CLEAR:
+            bad.append(f"{p['piece']} ({x}, {z}) {math.hypot(dx, dz):.2f} m from the walls")
+    if bad:
+        raise SystemExit(f"{act['name']}: " + "; ".join(bad))
+    return act
+
+
 def surface_list(mapping):
     """{'Env_X/Part_Surface': 'Name'} -> [{piece, part, surface}] (JsonUtility has no dictionaries)."""
     out = []
@@ -662,6 +796,7 @@ def main():
     acts = {"1": act1(), "2": act2(), "3": act3()}
     for act in acts.values():
         prune(act)
+        check_emissives(act)
         resolve_lights(act)
     doc = {
         "version": 2,
@@ -672,12 +807,10 @@ def main():
                        "(ground props sit on groundY -0.2, arena kit on floorY 0).",
         "frame": {
             "simToFrame": "frame = (simX - 3.5, height, simY)",
-            "arenaLayoutNote": "Presentation/ArenaLayout.cs (Foundation) currently centres the arena on its "
-                               "transform and maps sim y to local -Z (TDD §14.1 says +Z). Until that is aligned, "
-                               "parent the whole dressing under a root at ArenaLayout-local (0, 0, 5.8) rotated "
-                               "rotY 180: that rigid transform lines the arena kit up exactly and mirrors the "
-                               "scenery left/right (harmless). Directions (sun euler Y, LightShaft euler Y, "
-                               "particle velocity) then rotate with the root: add 180 to world yaw values.",
+            "arenaLayoutNote": "ArenaLayout (Presentation) uses this frame (TDD §14.1: origin = launch-line centre, "
+                               "sim y -> +Z): parent the act dressing under the ArenaLayout transform with an "
+                               "identity local transform; yaw values, sun / shaft eulers and particle velocities are "
+                               "already in this frame.",
         },
         "models": "Assets/Models/BilliardRogue/Environment/<piece>.fbx",
         "arena": ARENA,
@@ -720,12 +853,21 @@ def main():
             "Parts named *_Surface take M_Surface_<surface> from the act's 'surfaces' list (piece + part); "
             "every other part takes M_Palette (Env_LightShaft/Shaft takes M_LightShaft). The ground tiles take "
             "M_Surface_<ground.surface> (ground.surface empty = palette ground piece, e.g. Env_CaveFloorTile).",
-            "*_Surface UVs are local box projections in metres (1 UV = 1 m) that start at each 1 m cell edge. "
-            "Surfaces.json tiles are 2 m (_Tiling 0.5): ToonLit should sample *_Surface parts with world-space box "
-            "mapping (what the previews do) so neighbouring pieces continue the pattern; with mesh UVs every 1 m "
-            "cell repeats the same half tile.",
-            "Env_FloorTile_Danger/DangerInlay_Emissive is the red danger-row inlay (emissive palette red): give it "
-            "M_DangerTile to pulse it when the danger row is occupied.",
+            "*_Surface UVs are per-piece box projections in metres (1 UV = 1 m) whose integers sit on the arena "
+            "cell corners (floor tiles, launch pad: world x = -3.5 + k, z = 1.6 + k). Unity today samples them as "
+            "mesh UVs x _Tiling 0.5 (MaterialsBuilder from surfaces.json, ToonLit _WORLD_UV off), and the previews "
+            "render exactly that: every arena cell shows texels 1..31 of the 64 px tile, i.e. one panel of a "
+            "one-panel-per-cell surface. Keep _WORLD_UV off for the arena kit (world UVs would need a _BaseMap offset "
+            "of (0.25, 0.2) to keep the panels on the cells); walls / ground repeat the half tile per 1 m piece.",
+            "Arena floor: acts[].arenaFloor = bound surface + the per-act one-panel-per-cell variant requested of "
+            "2D art. make_layouts binds the variant once Starter has its texture and M_Surface_<name>.mat "
+            "(MaterialsBuilder.Surfaces must list it), else CryptFloor.",
+            "Env_FloorTile_Danger: DangerFrame = carved dark-red groove (palette, never emissive); "
+            "DangerInlay_Emissive = the 3.5 cm line inside it: give only that part M_DangerTile and keep its "
+            "emission at 0 while the danger row is empty (GDD §4: pulse when occupied).",
+            "Draw cost (Mali-G52): static-batch everything but the animated parts (Canopy, Cloth, Flame, Gate, "
+            "Water*, Glints_Emissive); ground tiles are frustum-culled at build time. Flat decals (Env_MossBorder, "
+            "Env_CryptGroundTile, Env_CaveFloorTile, *Patch) need no shadow casting.",
             "Env_Tree_*/Canopy, Env_Banner/Cloth, */Flame, Env_IronGate/Gate and Env_WaterPool/Water have their own "
             "pivots for DOTween sway / flicker / raise / bob.",
             "lighting.preset uses ActLightingPreset field names; sunEuler = lighting.sun.euler (x = elevation, "
@@ -738,7 +880,8 @@ def main():
         json.dump(doc, f, indent=1)
         f.write("\n")
     for k, act in acts.items():
-        print(f"act {k}: pruned {act.pop('pruned')} props that never enter the game frame")
+        print(f"act {k}: pruned {act.pop('pruned')} props that never enter the game frame; arena floor "
+              f"{act['arenaFloor']['surface']} ({act['arenaFloor']['status']})")
     n = sum(len(x["props"]) for x in acts.values())
     fx = {k: (sum(p["piece"] == "LightShaft" for p in x["props"]), sum(p["piece"] == "AmbientParticles"
                                                                         for p in x["props"])) for k, x in acts.items()}

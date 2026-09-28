@@ -89,10 +89,11 @@ class Part:
     """One exported child object. surface=True (name ends with _Surface) -> box UVs instead of palette UVs.
     unit_uv=True -> the primitive writes its own 0..1 UVs (e.g. the light-shaft volume); no palette contract."""
 
-    def __init__(self, name, pivot=(0.0, 0.0, 0.0), unit_uv=False):
+    def __init__(self, name, pivot=(0.0, 0.0, 0.0), unit_uv=False, uv_offset=(0.5, 0.0, 0.5)):
         self.name = name
         self.pivot = pivot
         self.surface = name.endswith("_Surface")
+        self.uv_offset = uv_offset      # box-UV origin shift (surface parts): put UV integers on cell corners
         self.unit_uv = unit_uv
         self.emissive_name = any(k in name for k in EMISSIVE_KEYWORDS)
         self.bm = bmesh.new()
@@ -386,7 +387,7 @@ class Part:
     def to_object(self, material):
         self.bm.faces.layers.int.remove(self.pid)
         if self.surface:
-            self.box_uv()
+            self.box_uv(self.uv_offset)
         px, py, pz = self.pivot
         if (px, py, pz) != (0.0, 0.0, 0.0):
             bmesh.ops.translate(self.bm, vec=-u2b(px, py, pz), verts=list(self.bm.verts))

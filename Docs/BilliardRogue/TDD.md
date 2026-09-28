@@ -384,3 +384,21 @@ Shared palette: all character/prop models UV-map into `Assets/Textures/BilliardR
 
 Cross-module needs (a field in someone else's file, a new enum entry): don't edit — write it under "Requests" in your final report; the integrator applies it.
 Localization strings: add keys you need as constants in a module partial `public static partial class LocKeys` file inside your folder (e.g. `UI/LocKeys.UI.cs`) with the English text in a `// en: ...` trailing comment; the localization pass translates them.
+
+---
+
+## 16. Shader & material contract (Rendering owns shaders/materials; VFX, Presentation and builders only reference these names)
+
+| Shader | Use | Properties (exact names) | Keywords |
+|---|---|---|---|
+| `BilliardRogue/ToonLit` | all opaque models (palette or surface textures), balls | `_BaseMap`, `_BaseColor`, `_EmissionMap`, `_EmissionColor` (HDR), `_EmissionStrength`, `_BumpMap`, `_BumpScale` (default 2 — exaggerated), `_CavityMap`, `_CavityStrength`, `_Bands` (3–5, default 4), `_ShadowTint`, `_RimColor`, `_RimPower`, `_FlashColor`, `_FlashAmount` (hit flash 0..1), `_StatusTint` (rgb + a=amount; freeze/poison/burn tint), `_Tiling` (world-UV tiling for *_Surface meshes) | `_NORMALMAP`, `_CAVITYMAP`, `_EMISSION` |
+| `BilliardRogue/ToonLitTransparent` | ghosts, telegraph decals, ice overlay | same as ToonLit + `_Alpha` | |
+| `BilliardRogue/LitParticle` | pixel-sprite particles (alpha-clip, lit by main + additional lights, billboards via ParticleSystemRenderer), multiplies **vertex colour** | `_BaseMap`, `_BaseColor`, `_Cutoff`, `_LightInfluence` (0 unlit … 1 fully lit), `_EmissionStrength` | |
+| `BilliardRogue/GlowParticle` | additive glows, flashes, trails, light motes (bloom sources); vertex colour | `_BaseMap`, `_BaseColor` (HDR), `_Intensity` | |
+| `BilliardRogue/LightShaft` | fake volumetric god rays (additive quads/cones, scrolling noise, depth/edge fade) | `_Color` (HDR), `_Intensity`, `_NoiseTex`, `_NoiseScroll` (vec), `_EdgeSoftness`, `_FadeDistance` | |
+| `BilliardRogue/AimGuide` | dotted aim line on a LineRenderer (unlit, scrolling dashes, fades with distance) | `_DashTex`, `_Color` (HDR), `_ScrollSpeed`, `_FadeStart`, `_FadeEnd` | |
+| `BilliardRogue/TiltShiftBlur` | full-screen pass used only by `TiltShiftFeature` | internal | |
+
+Materials (built by `MaterialsBuilder` into `Assets/Materials/BilliardRogue/`): `M_Palette` (ToonLit, Palette_Main + Palette_Emission), `M_Palette_CatP2`, `M_Surface_<SurfaceName>` (StoneFloor, MossyBrick, CryptBrick, CryptFloor, WoodPlank, CrystalRock, Dirt, Grass — albedo/normal/cavity, `_Tiling` 1), `M_Ball_<BallType>` ×12 (ToonLit, neutral base, emission = ball glow colour), `M_LightShaft`, `M_AimGuide`, `M_GlowParticle_Default`, `M_LitParticle_Default`, `M_DangerTile` (ToonLit with emission driven by script). VFX materials live in `Assets/Materials/BilliardRogue/Vfx/` (VfxPrefabsBuilder).
+Per-renderer runtime changes (flash, status tint) use `MaterialPropertyBlock` with the property names above (cache `Shader.PropertyToID`).
+Layers (created by `RenderPipelineBuilder`): `World` (every 3D object the WorldCamera renders), `WorldVolume` (the world post-process Volume). UI stays on `UI`.

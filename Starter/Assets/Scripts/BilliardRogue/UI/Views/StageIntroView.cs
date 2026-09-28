@@ -32,7 +32,6 @@ namespace Nex.BilliardRogue
         PacingConfig pacing = null!;
         EnemyCatalog enemies = null!;
         IReadOnlyList<ActDefinition> acts = Array.Empty<ActDefinition>();
-        Color normalBandColor;
         bool isBoss;
         bool started;
 
@@ -47,7 +46,6 @@ namespace Nex.BilliardRogue
             this.pacing = pacing;
             this.enemies = enemies;
             this.acts = acts;
-            normalBandColor = bandImage.color;
         }
 
         /// <summary>actIndex / stageInAct are 0-based (as in RunState).</summary>
@@ -56,12 +54,12 @@ namespace Nex.BilliardRogue
             this.isBoss = isBoss;
             bossDecor.SetActive(isBoss);
             normalDecor.SetActive(!isBoss);
-            bandImage.color = isBoss ? theme.BossTint : normalBandColor;
+            bandImage.color = isBoss ? theme.BossTint : theme.StageBandColor;
             if (isBoss)
             {
                 var boss = acts[actIndex].Rules.bossType;
                 headerLabel.SetKey(LocKeys.StageIntro.BossStage);
-                headerLabel.Color = theme.Danger;
+                headerLabel.Color = theme.Accent;
                 subtitleLabel.SetKey(LocKeys.Enemy.Name(boss));
                 bossIcon.sprite = enemies.Get(boss).Icon;
             }

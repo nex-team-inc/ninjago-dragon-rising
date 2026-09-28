@@ -44,9 +44,14 @@ namespace Nex.BilliardRogue
         [SerializeField, Range(0f, 1f)] float lowHpFraction = 0.3f;
 
         [Header("Overlays")]
-        [SerializeField] Color dimColor = new(0.02f, 0.03f, 0.08f, 0.62f);
-        [SerializeField] Color vignetteColor = new(0f, 0f, 0f, 0.75f);
-        [SerializeField] Color bossTint = new(0.45f, 0.05f, 0.08f, 0.7f);
+        [Tooltip("Tint of the Overlay_Dim sprite (the art already is a 72% navy; white keeps it).")]
+        [SerializeField] Color dimColor = new(1f, 1f, 1f, 0.9f);
+        [Tooltip("Tint of the Overlay_Vignette sprite.")]
+        [SerializeField] Color vignetteColor = new(1f, 1f, 1f, 0.85f);
+        [Tooltip("Stage intro band (flat colour).")]
+        [SerializeField] Color stageBandColor = new(0.03f, 0.04f, 0.1f, 0.8f);
+        [Tooltip("Stage intro band on boss stages.")]
+        [SerializeField] Color bossTint = new(0.42f, 0.04f, 0.07f, 0.85f);
 
         [Header("Sprites (pixel UI kit, filled by UiViewsBuilder from Assets/Sprites/BilliardRogue/UI)")]
         [SerializeField] Sprite? panel;
@@ -137,6 +142,7 @@ namespace Nex.BilliardRogue
         public float LowHpFraction => lowHpFraction;
         public Color DimColor => dimColor;
         public Color VignetteColor => vignetteColor;
+        public Color StageBandColor => stageBandColor;
         public Color BossTint => bossTint;
 
         public Sprite? Panel => panel;

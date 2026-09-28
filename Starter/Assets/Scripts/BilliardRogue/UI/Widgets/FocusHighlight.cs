@@ -25,6 +25,8 @@ namespace Nex.BilliardRogue
         [SerializeField] RectTransform? cursor;
         [Tooltip("Graphics tinted with the theme accent while focused (labels, arrows); optional.")]
         [SerializeField] Graphic[] accentGraphics = System.Array.Empty<Graphic>();
+        [Tooltip("Share of the theme focus scale applied here (wide rows pulse less).")]
+        [SerializeField, Range(0f, 1f)] float scaleWeight = 1f;
 
         Sprite? normalSprite;
         Color[] accentBaseColors = System.Array.Empty<Color>();
@@ -80,9 +82,9 @@ namespace Nex.BilliardRogue
             StopTweens();
             if (!value || !isActiveAndEnabled) return;
 
-            var halfPulse = theme.FocusPulseDuration;
-            pulseTarget.localScale = baseScale * theme.FocusScale;
-            pulse = pulseTarget.DOScale(baseScale * (1f + (theme.FocusScale - 1f) * 0.4f), halfPulse)
+            var grow = (theme.FocusScale - 1f) * scaleWeight;
+            pulseTarget.localScale = baseScale * (1f + grow);
+            pulse = pulseTarget.DOScale(baseScale * (1f + grow * 0.4f), theme.FocusPulseDuration)
                 .SetEase(Ease.InOutSine).SetLoops(-1, LoopType.Yoyo).SetUpdate(true).SetLink(gameObject);
             if (cursor == null) return;
             bob = cursor.DOAnchorPosX(cursorBase.x - theme.CursorBobDistance, theme.CursorBobDuration)

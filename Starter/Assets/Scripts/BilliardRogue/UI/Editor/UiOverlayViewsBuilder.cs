@@ -27,7 +27,7 @@ namespace Nex.BilliardRogue.Editor
             band.anchorMax = new Vector2(1f, 0.5f);
             band.anchoredPosition = new Vector2(0f, 40f);
             band.sizeDelta = new Vector2(64f, 336f);
-            var bandImage = kit.Configure(bandGo.AddComponent<Image>(), theme.Dim, Fill.Simple, new Color(0.03f, 0.04f, 0.1f, 0.78f));
+            var bandImage = kit.Configure(bandGo.AddComponent<Image>(), null, Fill.Simple, theme.StageBandColor);
             bandImage.preserveAspect = false;
             Line(kit, band, "LineTop", 1f);
             Line(kit, band, "LineBottom", 0f);
@@ -41,12 +41,12 @@ namespace Nex.BilliardRogue.Editor
 
             var normal = kit.Ui("NormalDecor", text.transform);
             Kit.Stretch(normal);
-            kit.Image(normal.transform, "BallLeft", theme.Ball, Kit.Center, new Vector2(-672f, 56f), new Vector2(96f, 96f));
-            kit.Image(normal.transform, "BallRight", theme.Ball, Kit.Center, new Vector2(672f, 56f), new Vector2(96f, 96f));
+            kit.Image(normal.transform, "BallLeft", theme.Ball, Kit.Center, new Vector2(-512f, 56f), new Vector2(96f, 96f));
+            kit.Image(normal.transform, "BallRight", theme.Ball, Kit.Center, new Vector2(512f, 56f), new Vector2(96f, 96f));
             var boss = kit.Ui("BossDecor", text.transform);
             Kit.Stretch(boss);
-            kit.Image(boss.transform, "SkullLeft", theme.Skull, Kit.Center, new Vector2(-672f, 56f), new Vector2(96f, 96f));
-            kit.Image(boss.transform, "SkullRight", theme.Skull, Kit.Center, new Vector2(672f, 56f), new Vector2(96f, 96f));
+            kit.Image(boss.transform, "SkullLeft", theme.Skull, Kit.Center, new Vector2(-512f, 56f), new Vector2(96f, 96f));
+            kit.Image(boss.transform, "SkullRight", theme.Skull, Kit.Center, new Vector2(512f, 56f), new Vector2(96f, 96f));
             var bossIcon = kit.Image(boss.transform, "BossIcon", null, Kit.Center, new Vector2(0f, 232f), new Vector2(144f, 144f));
             boss.SetActive(false);
 
@@ -102,7 +102,7 @@ namespace Nex.BilliardRogue.Editor
 
             kit.Image(c, "ArrowLeft", theme.ArrowLeft, Kit.Center, new Vector2(-800f, -24f), new Vector2(96f, 96f));
             kit.Image(c, "ArrowRight", theme.ArrowRight, Kit.Center, new Vector2(800f, -24f), new Vector2(96f, 96f));
-            kit.Label(c, "Hint", LocKeys.Reward.Hint, 32, theme.TextMuted, Kit.Bottom, new Vector2(0f, 40f), new Vector2(1200f, 48f));
+            kit.Label(c, "Hint", LocKeys.Reward.ChooseHint, 32, theme.TextMuted, Kit.Bottom, new Vector2(0f, 40f), new Vector2(1200f, 48f));
 
             Kit.SetArray(view, "cards", cards);
             Kit.Set(view, "cardsGroup", group);
@@ -180,20 +180,20 @@ namespace Nex.BilliardRogue.Editor
             var view = UiViewsBuilder.ViewRoot<TrackingLostView>(kit, root, out var content);
             var c = content.transform;
             kit.DimLayers(c);
-            var panel = kit.Image(c, "Panel", theme.Panel, Kit.Center, Vector2.zero, new Vector2(1216f, 528f), Fill.Tiled);
+            var panel = kit.Image(c, "Panel", theme.Panel, Kit.Center, Vector2.zero, new Vector2(1280f, 576f), Fill.Tiled);
             var p = panel.transform;
-            var portrait = kit.Image(p, "Portrait", theme.PortraitP1, Kit.Center, new Vector2(-400f, 32f), new Vector2(256f, 256f));
-            var chip = kit.Image(p, "PlayerChip", theme.Chip, Kit.Center, new Vector2(-400f, -168f), new Vector2(160f, 64f), Fill.Sliced);
+            kit.Label(p, "Header", LocKeys.TrackingLost.Header, 96, theme.Accent, Kit.Center, new Vector2(0f, 176f), new Vector2(1200f, 128f));
+            var portrait = kit.Image(p, "Portrait", theme.PortraitP1, Kit.Center, new Vector2(-424f, -40f), new Vector2(256f, 256f));
+            var chip = kit.Image(p, "PlayerChip", theme.Chip, Kit.Center, new Vector2(-424f, -212f), new Vector2(160f, 64f), Fill.Sliced);
             var chipLabel = kit.Label(chip.transform, "Label", LocKeys.Hud.PlayerTag, 48, theme.PlayerColor(0), Kit.Center, new Vector2(0f, 3f), new Vector2(144f, 64f));
-            kit.Label(p, "Header", LocKeys.TrackingLost.Header, 64, theme.Accent, Kit.Center, new Vector2(144f, 136f), new Vector2(816f, 80f));
             var waiting = kit.Ui("Waiting", p);
-            Kit.Place(waiting, Kit.Center, new Vector2(144f, -48f), new Vector2(816f, 256f));
-            var body = kit.Label(waiting.transform, "Body", LocKeys.TrackingLost.Body, 48, theme.TextPrimary, Kit.Center, new Vector2(0f, 48f), new Vector2(816f, 64f));
+            Kit.Place(waiting, Kit.Center, new Vector2(152f, -72f), new Vector2(832f, 256f));
+            var body = kit.Label(waiting.transform, "Body", LocKeys.TrackingLost.Body, 48, theme.TextPrimary, Kit.Center, new Vector2(0f, 48f), new Vector2(832f, 64f));
             kit.Label(waiting.transform, "Hint", LocKeys.TrackingLost.Hint, 32, theme.TextMuted, Kit.Center, new Vector2(0f, -56f),
                 new Vector2(736f, 112f), TextAlignmentOptions.Top, wrap: true);
             var resuming = kit.Ui("Resuming", p);
-            Kit.Place(resuming, Kit.Center, new Vector2(144f, -48f), new Vector2(816f, 256f));
-            kit.Label(resuming.transform, "Label", LocKeys.TrackingLost.Resuming, 48, theme.Positive, Kit.Center, new Vector2(0f, 48f), new Vector2(816f, 64f));
+            Kit.Place(resuming, Kit.Center, new Vector2(152f, -72f), new Vector2(832f, 256f));
+            kit.Label(resuming.transform, "Label", LocKeys.TrackingLost.Resuming, 48, theme.Positive, Kit.Center, new Vector2(0f, 48f), new Vector2(832f, 64f));
             resuming.SetActive(false);
 
             Kit.Set(view, "bodyLabel", body);

@@ -31,6 +31,8 @@ namespace Nex.BilliardRogue.Editor
         const string TableName = "LocalizationTable";
         static readonly Regex englishLine = new(@"""(br\.[^""]+)""[^/]*//\s*en:\s*(.*)$", RegexOptions.Compiled);
         static readonly Regex placeholder = new(@"\{\d[^}]*\}", RegexOptions.Compiled);
+        static readonly Regex keyLiteral = new(@"""(br\.[^""]+)""", RegexOptions.Compiled);
+        static readonly Regex englishOnly = new(@"^\s*//\s*en:\s*(.*)$", RegexOptions.Compiled);
 
         readonly Dictionary<string, string> english = new();
         readonly HashSet<string> knownKeys = new();
@@ -40,7 +42,7 @@ namespace Nex.BilliardRogue.Editor
         public UiTheme Theme { get; }
         public TMP_FontAsset Font { get; }
         public TMP_FontAsset BoldFont { get; }
-        public List<string> Warnings { get; } = new();
+        public SortedSet<string> Warnings { get; } = new();
 
         public UiPrefabKit(UiTheme theme)
         {
@@ -248,15 +250,34 @@ namespace Nex.BilliardRogue.Editor
             var root = Path.Combine(Application.dataPath, "Scripts/BilliardRogue");
             foreach (var file in Directory.GetFiles(root, "LocKeys*.cs", SearchOption.AllDirectories))
             {
-                foreach (var line in File.ReadAllLines(file))
+                var lines = File.ReadAllLines(file);
+                for (var i = 0; i < lines.Length; i++)
                 {
-                    var match = englishLine.Match(line);
-                    if (!match.Success) continue;
-                    var text = match.Groups[2].Value.Trim();
-                    if (text.EndsWith("(smart)")) text = text[..^"(smart)".Length].TrimEnd();
-                    english[match.Groups[1].Value] = text;
+                    var match = englishLine.Match(lines[i]);
+                    if (match.Success)
+                    {
+                        english[match.Groups[1].Value] = Clean(match.Groups[2].Value);
+                        continue;
+                    }
+
+                    // Per-level description arrays: keys on one line, "// en: a | b | c" on the next.
+                    var keys = keyLiteral.Matches(lines[i]);
+                    if (keys.Count < 2 || i + 1 >= lines.Length) continue;
+                    var next = englishOnly.Match(lines[i + 1]);
+                    if (!next.Success) continue;
+                    var parts = next.Groups[1].Value.Split('|');
+                    for (var k = 0; k < keys.Count && k < parts.Length; k++)
+                    {
+                        english[keys[k].Groups[1].Value] = Clean(parts[k]);
+                    }
                 }
             }
+        }
+
+        static string Clean(string text)
+        {
+            text = text.Trim();
+            return text.EndsWith("(smart)") ? text[..^"(smart)".Length].TrimEnd() : text;
         }
 
         #endregion
@@ -367,6 +388,13 @@ namespace Nex.BilliardRogue.Editor
         {
             var so = new SerializedObject(target);
             so.FindProperty(field).boolValue = value;
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        public static void SetFloat(Object target, string field, float value)
+        {
+            var so = new SerializedObject(target);
+            so.FindProperty(field).floatValue = value;
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 

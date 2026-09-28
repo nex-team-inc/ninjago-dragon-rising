@@ -52,7 +52,7 @@ namespace Nex.BilliardRogue.Editor
         {
             var theme = EnsureTheme(out var themeWarnings);
             var kit = new UiPrefabKit(theme);
-            kit.Warnings.AddRange(themeWarnings);
+            kit.Warnings.UnionWith(themeWarnings);
             BuilderAssets.EnsureFolder(ViewsFolder);
             BuilderAssets.EnsureFolder(UiFolder);
 
@@ -155,7 +155,7 @@ namespace Nex.BilliardRogue.Editor
                 Object? asset = field.EndsWith("Font") ? AssetDatabase.LoadAssetAtPath<TMPro.TMP_FontAsset>(path) : AssetDatabase.LoadAssetAtPath<Sprite>(path);
                 if (asset == null)
                 {
-                    warnings.Add($"{path} missing (not built or not imported as a sprite): '{field}' stays empty");
+                    warnings.Add($"{path} not found (not built yet or not imported as that type): theme '{field}' stays empty");
                     continue;
                 }
 

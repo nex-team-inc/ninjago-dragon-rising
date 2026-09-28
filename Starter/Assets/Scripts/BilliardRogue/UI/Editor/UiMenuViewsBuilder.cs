@@ -44,6 +44,12 @@ namespace Nex.BilliardRogue.Editor
             var settings = kit.MenuButton(menu.transform, "SettingsButton", LocKeys.Title.Settings, new Vector2(560f, 96f));
 
             var record = kit.Image(c, "RecordPanel", theme.Panel, Kit.Bottom, new Vector2(0f, 24f), new Vector2(1008f, 144f), Fill.Tiled);
+            // Centres the best line alone when the runs line is hidden (no runs yet).
+            var recordLayout = record.gameObject.AddComponent<VerticalLayoutGroup>();
+            recordLayout.spacing = -8f;
+            recordLayout.childAlignment = TextAnchor.MiddleCenter;
+            recordLayout.childControlWidth = recordLayout.childControlHeight = false;
+            recordLayout.childForceExpandWidth = recordLayout.childForceExpandHeight = false;
             var best = kit.Label(record.transform, "Best", LocKeys.Title.Best, 32, theme.Accent, Kit.Center, new Vector2(0f, 18f), new Vector2(944f, 48f));
             var runs = kit.Label(record.transform, "Runs", LocKeys.Title.Runs, 32, theme.TextMuted, Kit.Center, new Vector2(0f, -22f), new Vector2(944f, 48f));
 
@@ -195,6 +201,7 @@ namespace Nex.BilliardRogue.Editor
 
             var cursor = kit.Cursor(go.transform, width);
             var highlight = kit.Highlight(go, go.transform, frame, theme.ButtonFocused, null, cursor, left, right);
+            Kit.SetFloat(highlight, "scaleWeight", 0.4f);
             var row = go.AddComponent<SettingRow>();
             Kit.Set(row, "highlight", highlight);
             Kit.Set(row, "valueLabel", value);
@@ -214,10 +221,10 @@ namespace Nex.BilliardRogue.Editor
             var view = UiViewsBuilder.ViewRoot<PauseView>(kit, root, out var content);
             var c = content.transform;
             kit.DimLayers(c);
-            var panel = kit.Image(c, "Panel", theme.Panel, Kit.Center, new Vector2(0f, -8f), new Vector2(704f, 560f), Fill.Tiled);
+            var panel = kit.Image(c, "Panel", theme.Panel, Kit.Center, new Vector2(0f, -8f), new Vector2(704f, 512f), Fill.Tiled);
             Banner(kit, panel.transform, "Header", LocKeys.Pause.Header, new Vector2(0f, 48f), 576f);
             var menu = kit.Ui("Menu", panel.transform);
-            Kit.Place(menu, Kit.Center, new Vector2(0f, -24f), new Vector2(544f, 336f));
+            Kit.Place(menu, Kit.Center, new Vector2(0f, -8f), new Vector2(544f, 336f));
             var group = kit.Group(menu, true);
             var resume = kit.MenuButton(menu.transform, "ResumeButton", LocKeys.Pause.Resume, new Vector2(544f, 96f));
             var settings = kit.MenuButton(menu.transform, "SettingsButton", LocKeys.Pause.Settings, new Vector2(544f, 96f));

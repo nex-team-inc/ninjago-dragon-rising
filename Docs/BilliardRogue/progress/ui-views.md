@@ -7,13 +7,16 @@ Owner paths: `Starter/Assets/Scripts/BilliardRogue/UI/**`, `UI/LocKeys.UI.cs`, `
 - Milestone 1 (compiles, no warnings): runtime UI code (UiTheme, RogueView base, widgets, 8 views, GameplayHud + HUD
   widgets) and the builder (Editor/UiViewsBuilder.cs + UI/Editor/{UiPrefabKit,UiMenuViewsBuilder,UiOverlayViewsBuilder,UiHudBuilder}.cs).
 
+- Milestone 2: builder run in the Editor (9 prefabs + UiTheme.asset committed); root components keep their fileIDs
+  across rebuilds (checked: PauseView.settingsViewPrefab ref stable). Preview renders iterated (title, player mode,
+  settings, stage intro normal/boss, reward, pause, tracking lost, summary victory/defeat, HUD).
+  Preview tool (scratch, not committed): scratchpad/modules/ui-views/UiPreview.cs + run_all.sh.
+
 ## In progress
-- Editor: recompile, run UiViewsBuilder, preview renders, iterate on layout.
+- Final review pass + final report.
 
 ## Next steps
-1. Editor lock: recompile → run builder → commit prefabs + .meta files + UiTheme.asset.
-2. Preview renderer (scratchpad run_script) → PNGs → iterate.
-3. Final report (API + Requests).
+1. Final report (API + Requests). Re-run UiViewsBuilder after ImportSettingsBuilder + FontAssetsBuilder (Build All order).
 
 ## Decisions
 - Enter/exit animations in code (DOTween, SetUpdate(true)) in the shared base `RogueView`; no MMF players in views.

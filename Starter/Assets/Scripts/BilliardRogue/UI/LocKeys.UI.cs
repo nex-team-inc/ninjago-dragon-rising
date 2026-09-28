@@ -25,6 +25,8 @@ namespace Nex.BilliardRogue
             public const string HealName = "br.reward.healName";              // en: Hearty Meal
             public const string MaxHpName = "br.reward.maxHpName";            // en: Vitality Charm
             public const string LevelUp = "br.reward.levelUp";                // en: Lv {0} → Lv {1} (smart)
+            // Arrows the pixel font has (Reward.Hint uses ◀ ▶, which it lacks).
+            public const string ChooseHint = "br.ui.reward.chooseHint";       // en: ← → choose · OK to confirm
         }
 
         public static partial class TrackingLost
@@ -40,7 +42,7 @@ namespace Nex.BilliardRogue
 
         public static partial class Settings
         {
-            public const string Hint = "br.ui.settings.hint";                 // en: ◀ ▶ adjust · Back to return
+            public const string Hint = "br.ui.settings.hint";                 // en: ← → adjust · Back to return
         }
     }
 }

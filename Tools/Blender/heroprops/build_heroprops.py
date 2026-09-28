@@ -3,17 +3,25 @@
     /Users/simonbut/project/VibeProject3/Tools/.venv/bin/python \
         /Users/simonbut/project/VibeProject3/Tools/Blender/heroprops/build_heroprops.py [--preview-dir DIR]
 
+0. Tools/Textures/make_palette.py -> Tools/Staging/Assets/Textures/BilliardRogue/Palette/ (Palette_CatP2.png: P2
+   charcoal-tuxedo fur + crimson cape; Palette_Main / Palette_Emission / palette.json byte-identical to Starter's).
 1. Blender 5.2 headless runs heroprops_models.py: builds the 10 models (TDD 14.1) from deterministic bmesh code,
-   palette-UVs them (Palette_Main.png, emissive faces in the right half), exports FBX only when content changed:
+   palette-UVs them (Palette_Main.png, emissive faces in the right half), exports FBX only when content changed
+   (nested hierarchies through bl_common.export_fbx_nested_if_changed):
      Tools/Staging/Assets/Models/BilliardRogue/Player/{Cat_Hero,Cue_Stick}.fbx
      Tools/Staging/Assets/Models/BilliardRogue/Balls/Ball.fbx
      Tools/Staging/Assets/Models/BilliardRogue/Props/{Prop_Pillar,Prop_Crate,Prop_Portal,Prop_Mud,
                                                      Pickup_ExtraBall,Pickup_Heal,Pickup_Power}.fbx
-   and renders review passes (ToonLit-like 4-band cel shading + emission-only pass) + raw 128 px portraits.
+   and renders review passes (ToonLit-like 4-band cel shading + emission-only pass) + raw 128 px portraits. The
+   gameplay mock uses the REAL staged act surfaces (StoneFloor / CryptFloor ... from the 2D-art module).
 2. This script (venv: numpy/Pillow/scipy) post-processes:
-     Tools/Staging/Assets/Sprites/BilliardRogue/UI/Portrait_CatP1.png / Portrait_CatP2.png (128x128, 1 px outline)
-   and writes review images to --preview-dir: game_act{1,2,3}.png (640x360 gameplay-camera mock with bloom +
-   tilt-shift, shown 2x), crops at 4x, per-model tiles, contact_sheet.png.
+     Tools/Staging/Assets/Sprites/BilliardRogue/UI/Portrait_CatP1.png / Portrait_CatP2.png (128x128, snapped to the
+     palette, <= 32 colours + the UI kit outline, P2 mirrored so the two HUD busts face each other)
+   and writes review images to --preview-dir: game_act{1,2,3}_640.png (640x360 gameplay-camera mock with bloom +
+   tilt-shift) and _x2, 1x crops shown nearest-neighbour (crop_launch_act*_x4, crop_field_act*_x3), per-model
+   tiles, contact_sheet.png.
+Verify: Blender -b --factory-startup --python-exit-code 1 --python verify_fbx.py -- Tools/Staging/Assets
+        --stats <preview-dir>/raw/stats.json
 Options: --only Cat_Hero,Ball (subset, no contact sheet), --no-render (FBX only), --post-only (skip Blender).
 """
 import argparse
@@ -32,10 +40,23 @@ ROOT = os.path.dirname(os.path.dirname(HERE))
 BLENDER = "/Applications/Blender.app/Contents/MacOS/Blender"
 PALETTE_DIR = os.path.join(os.path.dirname(ROOT), "Starter", "Assets", "Textures", "BilliardRogue", "Palette")
 STAGING = os.path.join(ROOT, "Staging", "Assets")
+STAGED_PALETTE = os.path.join(STAGING, "Textures", "BilliardRogue", "Palette")  # make_palette.py output (P2 recolour)
 ACT_BG = {"act1": (38, 30, 24), "act2": (10, 12, 22), "act3": (18, 10, 26)}
-OUTLINE_RGB = (28, 18, 30)
+OUTLINE_RGB = (26, 14, 6)  # UI kit outline (Frame_Card / Logo warm near-black)
+MAX_PORTRAIT_COLORS = 32
 MODEL_ORDER = ["Cat_Hero", "Cat_HeroP2", "Cue_Stick", "Ball", "Prop_Pillar", "Prop_Crate", "Prop_Portal",
                "Prop_Mud", "Pickup_ExtraBall", "Pickup_Heal", "Pickup_Power"]
+
+
+def p2_palette():
+    staged = os.path.join(STAGED_PALETTE, "Palette_CatP2.png")
+    return staged if os.path.exists(staged) else os.path.join(PALETTE_DIR, "Palette_CatP2.png")
+
+
+def run_palette():
+    """Step 0: Tools/Textures/make_palette.py -> staged Palette_CatP2.png (P2 charcoal fur + crimson cape)."""
+    subprocess.run([sys.executable, os.path.join(ROOT, "Textures", "make_palette.py")], check=True,
+                   capture_output=True)
 
 
 def run_blender(a):
@@ -43,7 +64,8 @@ def run_blender(a):
            os.path.join(HERE, "heroprops_models.py"), "--",
            "--palette-json", os.path.join(PALETTE_DIR, "palette.json"),
            "--palette-png", os.path.join(PALETTE_DIR, "Palette_Main.png"),
-           "--staging", a.staging, "--preview-dir", a.raw, "--context-staging", STAGING]
+           "--staging", a.staging, "--preview-dir", a.raw, "--context-staging", STAGING,
+           "--p2-palette", p2_palette()]
     if a.only:
         cmd += ["--only", a.only]
     if a.no_render:
@@ -118,6 +140,44 @@ def pixel_outline(img, rgb=OUTLINE_RGB):
     return Image.fromarray(a, "RGBA")
 
 
+def _oklab(rgb):
+    """sRGB 0..255 (N x 3) -> OKLab, for perceptual nearest-swatch matching."""
+    c = np.asarray(rgb, np.float64) / 255.0
+    c = np.where(c <= 0.04045, c / 12.92, ((c + 0.055) / 1.055) ** 2.4)
+    lms = c @ np.array([[0.4122214708, 0.2119034982, 0.0883024619], [0.5363325363, 0.6806995451, 0.2817188376],
+                        [0.0514459929, 0.1073969566, 0.6299787005]])
+    lms = np.cbrt(lms)
+    return lms @ np.array([[0.2104542553, 1.9779984951, 0.0259040371], [0.7936177850, -2.4285922050, 0.7827717662],
+                           [-0.0040720468, 0.4505937099, -0.8086757660]])
+
+
+def palette_swatches(path):
+    """Left (albedo) half of a palette PNG as unique RGB swatches."""
+    pal = np.asarray(Image.open(path).convert("RGB"))
+    half = pal[:, :pal.shape[1] // 2].reshape(-1, 3)
+    return np.unique(half, axis=0)
+
+
+def snap_to_palette(img, swatches, max_colors=MAX_PORTRAIT_COLORS):
+    """Every opaque pixel -> nearest palette swatch (OKLab), then merge the rarest swatches into their nearest kept
+    neighbour until at most `max_colors` remain: the portrait matches the UI kit's limited pixel-art colour count."""
+    a = np.asarray(img.convert("RGBA")).copy()
+    solid = a[..., 3] >= 128
+    px = a[solid, :3]
+    sw_lab = _oklab(swatches)
+    d = ((_oklab(px)[:, None, :] - sw_lab[None, :, :]) ** 2).sum(-1)
+    idx = d.argmin(1)
+    used, counts = np.unique(idx, return_counts=True)
+    keep = list(used[np.argsort(-counts, kind="stable")])
+    while len(keep) > max_colors:
+        drop = keep.pop()  # rarest
+        rest = np.array(keep)
+        nearest = rest[((sw_lab[rest] - sw_lab[drop]) ** 2).sum(-1).argmin()]
+        idx[idx == drop] = nearest
+    a[solid, :3] = swatches[idx]
+    return Image.fromarray(a, "RGBA")
+
+
 # ------------------------------------------------------------------------------------------ steps
 MOUTH = ["X.X.X", ".X.X."]  # pixel 'w' mouth under the nose (5 x 2)
 
@@ -133,18 +193,26 @@ def draw_mouth(img, centre, rgb=(52, 30, 40)):
 
 
 def portraits(a):
+    """128 px HUD portraits: raw pixel-mode render -> mouth -> snap to the palette (P1 Palette_Main, P2 Palette_CatP2,
+    <= 32 colours) -> 1 px outline in the UI kit's warm near-black. P2 is mirrored so the two HUD busts face each
+    other (P1 looks screen-right, P2 screen-left). Ownership note: heroprops generates these (UI folder)."""
     out_dir = os.path.join(a.staging, "Sprites", "BilliardRogue", "UI")
     os.makedirs(out_dir, exist_ok=True)
     meta_path = os.path.join(a.raw, "portrait_meta.json")
     meta = json.load(open(meta_path)) if os.path.exists(meta_path) else None
+    pals = {1: os.path.join(PALETTE_DIR, "Palette_Main.png"), 2: p2_palette()}
     made = []
     for p in (1, 2):
         raw = os.path.join(a.raw, "portrait_p%d_raw.png" % p)
         if not os.path.exists(raw):
             continue
-        img = pixel_outline(Image.open(raw))
+        img = Image.open(raw).convert("RGBA")
         if meta:
             img = draw_mouth(img, meta["mouth_px"])
+        img = snap_to_palette(img, palette_swatches(pals[p]))
+        img = pixel_outline(img)
+        if p == 2:
+            img = img.transpose(Image.FLIP_LEFT_RIGHT)
         path = os.path.join(out_dir, "Portrait_CatP%d.png" % p)
         img.save(path, optimize=True)
         up(img, 4).save(os.path.join(a.preview, "portrait_p%d_x4.png" % p))
@@ -164,10 +232,9 @@ def game_views(a):
         im.save(os.path.join(a.preview, "game_%s_640.png" % act))
         up(im, 2).save(os.path.join(a.preview, "game_%s_x2.png" % act))
         views[act] = im
-    if "act1" in views:  # 4x crops: launch zone with the cats, and the prop-dense middle
-        v = views["act1"]
-        up(v.crop((200, 250, 440, 360)), 4).save(os.path.join(a.preview, "crop_launch_x4.png"))
-        up(v.crop((170, 90, 470, 250)), 3).save(os.path.join(a.preview, "crop_field_x3.png"))
+    for act, v in views.items():  # 1x crops shown nearest-neighbour: launch zone (4 cats) and the pickup rows
+        up(v.crop((190, 296, 450, 360)), 4).save(os.path.join(a.preview, "crop_launch_%s_x4.png" % act))
+        up(v.crop((190, 110, 450, 250)), 3).save(os.path.join(a.preview, "crop_field_%s_x3.png" % act))
     return views
 
 
@@ -218,7 +285,7 @@ def contact_sheet(a, stats, views):
             sheet.paste(views[act], (x, y))
             d.text((x + 6, y + 6), act.replace("act", "Act ") + " lighting (1x)", fill=(255, 255, 255), font=f_small)
             x += 640 + 16
-    crop = os.path.join(a.preview, "crop_launch_x4.png")
+    crop = os.path.join(a.preview, "crop_launch_act1_x4.png")
     if os.path.exists(crop):
         c = Image.open(crop)
         c = c.resize((c.width // 2, c.height // 2), Image.NEAREST)
@@ -252,6 +319,7 @@ def main():
     a.raw = os.path.join(a.preview, "raw")
     os.makedirs(a.raw, exist_ok=True)
     if not a.post_only:
+        run_palette()
         run_blender(a)
     if a.no_render:
         return

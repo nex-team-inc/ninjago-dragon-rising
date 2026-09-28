@@ -5,7 +5,18 @@ Run through build_heroprops.py (the one command, see that file). Direct use:
       --python heroprops_models.py -- --staging <Tools/Staging/Assets> --preview-dir <dir> [--only Cat_Hero,Ball] [--no-render]
 
 Conventions (research/asset-toolchain.md 5.2): model faces Blender -Y (= Unity +Z), +X is the character's LEFT, origin
-= pivot, children have identity rotation/scale (rotations are baked into mesh data), 1 m = 1 cell.
+= pivot, children have identity rotation/scale (rotations are baked into mesh data), 1 m = 1 cell. Hierarchies may be
+nested (Cat: Body > Head > EarL/EarR); export goes through bl_common.export_fbx_nested_if_changed.
+
+Integration contract (Presentation / WorldPrefabsBuilder):
+  * Emission: every part uses M_Palette (M_Palette_CatP2 for the P2 cat) WITH Palette_Emission as _EmissionMap; the
+    palette's right half is what glows, so no per-part flag is required. Parts that carry emissive faces and whose
+    names match the TDD 14.1 rule: Runes_Emissive (Pillar, Portal), Plus_Emissive, Cross_Emissive, PommelGem.
+    Parts that need a per-model override if the builder flags by name: Cue_Stick/Tip, Prop_Portal/Swirl.
+  * Pickups (Pickup_*) are built to face the gameplay camera at IDENTITY rotation (icon face toward Unity -Z, top
+    leaning 28 deg back toward +Z so it looks up at the 58 deg camera). Never rotate them 180 like enemies. Bob on Y;
+    do not spin the whole model (the lean would wobble). The file root is at the floor; the icon part hovers at 0.45.
+  * Ball.fbx: pivot at the sphere CENTRE (it rolls/spins), radius 0.5 -> BallView scales by 0.4 and lifts by 0.2.
 """
 import json
 import math
@@ -28,8 +39,11 @@ WHITE = C("gray", 15)
 
 
 # =============================================================================================== cat
-# fur shades (orange family only; Palette_CatP2 recolours this row for player 2)
-FUR_HEAD, FUR_BODY, FUR_LIMB, FUR_DARK, FUR_STRIPE = 13, 12, 11, 10, 10
+# fur shades (orange family only; Palette_CatP2 recolours this row to charcoal for player 2)
+FUR_HEAD, FUR_BODY, FUR_LIMB, FUR_DARK, FUR_STRIPE, EAR_BACK = 13, 12, 11, 10, 10, 8
+# ears: base centre (y, z), height, forward tilt (deg). Tilting forward (-Y = north) makes the tips project ABOVE
+# the head outline from the 58 deg camera behind the cat; about 0.06 m of the base is buried in the head.
+EAR_Y, EAR_Z, EAR_H, EAR_FWD = -0.02, 0.75, 0.31, 20.0
 
 
 def _surface_strip(mesh, bvh, centre, radii, dirs, width, color, lift=0.004, taper=None):
@@ -53,11 +67,20 @@ def _surface_strip(mesh, bvh, centre, radii, dirs, width, color, lift=0.004, tap
     return infos
 
 
+def _project(bvh, p, n, lift):
+    """Drop point p onto the surface along -n (ray from outside) and lift it by `lift` along the hit normal."""
+    hit, hn, _, _ = bvh.ray_cast(Vector(p) + Vector(n) * 0.3, -Vector(n))
+    return hit + hn * lift
+
+
 def build_cat(mat):
-    """Chibi cat knight, ~0.95 m. Hierarchy (one level, see the ear note): Body -> Head, EarL, EarR, PawL, PawR,
-    Tail, Cape. Pivots: Body feet, Head neck, ears at their base, paws at the shoulders, tail at its root, cape at
-    the neck-back.
-    Fur uses ONLY the 'orange' family (Palette_CatP2 recolours it); white = gray 14/15, stays white for P2."""
+    """Chibi cat knight, ~1.0 m to the ear tips. Hierarchy: Body -> Head -> EarL, EarR; Body -> PawL, PawR, Tail,
+    Cape. Pivots: Body feet, Head neck, ears at their base, paws at the shoulders, tail at its root, cape at the
+    neck-back. Designed for the BACK view (the camera sees the striking cat from behind at a 58 deg pitch): big
+    dark-backed ears that break the head outline, horizontal tabby bars on the back of the head, a tail curling up
+    beside the cape with a white tip, a gold crest on the cape.
+    Fur uses ONLY the 'orange' family (Palette_CatP2 recolours it); white = gray 14/15, stays white for P2; the cape
+    uses only the 'blue' family (P2 recolours it crimson)."""
     # ------------------------------------------------------------------ Body (torso, legs, belt, pauldron)
     m = Mesh()
 
@@ -83,10 +106,10 @@ def build_cat(mat):
                 lambda fi: WHITE if fi.c.z < 0.05 else C("orange", FUR_LIMB), matrix=tr(s * 0.085, -0.005, 0.0),
                 deform=foot, phase=math.radians(30))
     m.box((-0.032, -0.158, 0.192), (0.032, -0.128, 0.238), C("yellow", 12))  # belt buckle
-    # small silver pauldron (domed plate, gold rim) on the RIGHT (cue-arm) shoulder, tilted outward
-    m.lathe([(0.098, -0.035), (0.102, -0.008), (0.092, 0.03), (0.06, 0.068), (0.0, 0.082)], 8,
-            lambda fi: {0: C("yellow", 11), 1: C("gray", 9)}.get(fi.i, C("gray", 13)),
-            matrix=tr(-0.158, 0.0, 0.4) @ rot("Y", -36), closed=False, cap0=False)
+    # small silver pauldron with a gold rim on the RIGHT (cue-arm) shoulder, tilted outward
+    m.lathe([(0.064, -0.02), (0.066, -0.004), (0.058, 0.02), (0.036, 0.042), (0.0, 0.05)], 6,
+            lambda fi: {0: C("yellow", 10), 1: C("yellow", 12)}.get(fi.i, C("gray", 13)),
+            matrix=tr(-0.162, 0.0, 0.418) @ rot("Y", -40), closed=False, cap0=False)
     body = m.to_object("Body", mat, origin=(0, 0, 0), sharp_deg=55)
 
     # ------------------------------------------------------------------ Head
@@ -115,17 +138,19 @@ def build_cat(mat):
     muzzle_c, muzzle_r = Vector((0.0, -0.176, 0.566)), (0.098, 0.066, 0.062)
     h.sphere(muzzle_c, muzzle_r, 8, 3, WHITE)
     bvh = BVHTree.FromBMesh(h.bm)
-    # tabby stripes: thin decals over forehead/crown (+ cheek marks); the head mesh itself stays plain.
-    # 7 samples + 6 mm lift so the straight strip segments do not dip under the faceted head.
     stripe = C("orange", FUR_STRIPE)
-    for x0, x1, a0, a1, w in ((0.0, 0.0, 50, 162, 0.036), (0.3, 0.46, 58, 128, 0.026),
-                              (-0.3, -0.46, 58, 128, 0.026)):
+    # back of the head (what the gameplay camera sees): three short, chunky horizontal tabby bars
+    for elev, half, w in ((64.0, 30.0, 0.05), (41.0, 40.0, 0.056), (17.0, 44.0, 0.05)):
         dirs = []
-        for k in range(7):
-            t = k / 6.0
-            a = math.radians(a0 + (a1 - a0) * t)
-            dirs.append((x0 + (x1 - x0) * t, -math.cos(a), math.sin(a)))
-        _surface_strip(h, bvh, HC, HR, dirs, w, stripe, lift=0.006, taper=[0.4, 0.9, 1, 1, 1, 0.8, 0.4])
+        for k in range(4):
+            az = math.radians(-half + 2 * half * k / 3.0)
+            e = math.radians(elev)
+            dirs.append((math.sin(az) * math.cos(e), math.cos(az) * math.cos(e), math.sin(e)))
+        _surface_strip(h, bvh, HC, HR, dirs, w, stripe, lift=0.007, taper=[0.35, 1.0, 1.0, 0.35])
+    # forehead 'M' dashes (front / idle view + portrait) and cheek marks
+    for x0, a0, a1, w in ((0.0, 44.0, 80.0, 0.034), (0.26, 50.0, 74.0, 0.026), (-0.26, 50.0, 74.0, 0.026)):
+        dirs = [(x0, -math.cos(math.radians(a)), math.sin(math.radians(a))) for a in (a0, (a0 + a1) / 2, a1)]
+        _surface_strip(h, bvh, HC, HR, dirs, w, stripe, lift=0.006, taper=[0.4, 1.0, 0.5])
     for s in (-1, 1):
         for z0 in (0.02, -0.16):
             _surface_strip(h, bvh, HC, HR, [(s, -0.2, z0), (s, 0.05, z0 + 0.02), (s, 0.3, z0 + 0.05)], 0.02, stripe,
@@ -142,30 +167,26 @@ def build_cat(mat):
         h.sphere((0, 0, 0), (0.018, 0.018, 0.01), 6, 2, WHITE, matrix=tr(*g) @ frame)
     head = h.to_object("Head", mat, origin=(0, 0, 0.455), parent=body)
 
-    # ------------------------------------------------------------------ Ears (pivot at the base)
+    # ------------------------------------------------------------------ Ears (children of Head, pivot at the base)
+    # big pyramids: 0.20 m base, 0.27 m tall, 10 deg outward tilt, tip slightly forward so it clears the head
+    # outline from the 58 deg camera; the back faces are 5 shades darker than the head so they read against it.
     ears = []
     for s, name in ((1, "EarL"), (-1, "EarR")):
         e = Mesh()
-        M = tr(s * 0.15, 0.014, 0.768) @ rot("Y", s * 21)
-        base = [(-0.08, -0.034, 0.0), (0.08, -0.034, 0.0), (0.066, 0.044, 0.0), (-0.066, 0.044, 0.0)]
-        apex = Vector((0.004 * s, 0.016, 0.2))
-        e.loft([[M @ Vector(p) for p in base], [M @ apex]],
-               lambda fi: C("orange", FUR_HEAD) if fi.n.y < -0.2 else C("orange", FUR_DARK), smooth=False,
-               cap0=True)
-        bl, br = Vector(base[0]), Vector(base[1])
+        M = tr(s * 0.125, EAR_Y, EAR_Z) @ rot("Y", s * 10) @ rot("X", EAR_FWD)
+        base = [Vector((s * x, y, 0.0)) for x, y in ((-0.105, -0.05), (0.105, -0.05), (0.09, 0.052), (-0.09, 0.052))]
+        apex = Vector((s * 0.012, -0.03, EAR_H))
+        e.loft([[M @ p for p in base], [M @ apex]],
+               lambda fi: C("orange", FUR_HEAD) if (fi.n.y < -0.4 or fi.tag == "cap0") else C("orange", EAR_BACK),
+               smooth=False, cap0=True)
+        bl, br = base[0], base[1]
         fn = (br - bl).cross(apex - bl).normalized()
         if fn.y > 0:
             fn = -fn
         cen = (bl + br + apex) / 3.0
-        tri = [cen + (v - cen) * 0.64 + Vector((0, 0, -0.014)) + fn * 0.005 for v in (bl, br, apex)]
-        f = e.bm.faces.new([e.bm.verts.new(M @ v) for v in tri])
-        e.bm.normal_update()
-        if f.normal.dot(M.to_3x3() @ fn) < 0:
-            f.normal_flip()
-        e.paint(f, C("pink", 12))
-        # parent = Body, not Head: Blender's FBX exporter with bake_space_transform mis-bakes grandchildren
-        # (level >= 2 gets a bogus 90 deg rotation + offset), so every part stays a direct child of Body.
-        ears.append(e.to_object(name, mat, origin=M @ Vector((0, 0.005, 0)), parent=body, sharp_deg=30))
+        tri = [M @ (cen + (v - cen) * 0.62 + Vector((0, 0, -0.012)) + fn * 0.005) for v in (bl, br, apex)]
+        e.polygon(tri, C("pink", 12), normal=M.to_3x3() @ fn)
+        ears.append(e.to_object(name, mat, origin=M @ Vector((0, 0.005, 0)), parent=head, sharp_deg=30))
 
     # ------------------------------------------------------------------ Paws (arm + mitten, pivot at shoulder)
     paws = []
@@ -178,14 +199,15 @@ def build_cat(mat):
         paws.append(p.to_object(name, mat, origin=sh, parent=body))
 
     # ------------------------------------------------------------------ Tail (pivot at the base)
+    # curls out to the cat's left (screen-left from behind, away from the cue) and up beside the cape
     t = Mesh()
-    tail_pts = [(0.0, 0.10, 0.125), (0.02, 0.2, 0.088), (0.07, 0.295, 0.105), (0.112, 0.345, 0.2),
-                (0.122, 0.352, 0.31), (0.102, 0.332, 0.41), (0.064, 0.295, 0.482), (0.03, 0.258, 0.51)]
-    tail_r = [0.04, 0.042, 0.044, 0.046, 0.047, 0.048, 0.045, 0.0]
+    tail_pts = [(0.0, 0.10, 0.13), (0.07, 0.19, 0.10), (0.17, 0.235, 0.125), (0.25, 0.22, 0.21), (0.285, 0.18, 0.32),
+                (0.278, 0.13, 0.425), (0.245, 0.09, 0.51), (0.2, 0.06, 0.565)]
+    tail_r = [0.04, 0.042, 0.044, 0.046, 0.048, 0.05, 0.048, 0.0]
 
     def tail_color(fi):
-        if fi.i >= 6:
-            return C("gray", 15)  # small white tip
+        if fi.i >= 5:
+            return C("gray", 15)  # white tip (last ~0.15 m)
         return C("orange", FUR_BODY) if fi.i % 2 == 0 else C("orange", FUR_STRIPE - 1)
 
     t.tube(tail_pts, tail_r, 5, tail_color, cap0=True)
@@ -193,9 +215,9 @@ def build_cat(mat):
 
     # ------------------------------------------------------------------ Cape (pivot at the neck, top-back)
     c = Mesh()
-    Z = [0.462, 0.40, 0.315, 0.228, 0.19, 0.162]
-    R = [0.118, 0.17, 0.198, 0.214, 0.22, 0.225]
-    T = [150.0, 104.0, 90.0, 82.0, 78.0, 76.0]  # top row wraps round to the front: collar under the chin
+    Z = [0.466, 0.40, 0.315, 0.20, 0.165]
+    R = [0.13, 0.17, 0.198, 0.218, 0.224]
+    T = [158.0, 104.0, 90.0, 80.0, 77.0]  # top row wraps round to the front: collar framing the neck
     cols = 6
     outer, inner = [], []
     for k in range(len(Z)):
@@ -206,7 +228,7 @@ def build_cat(mat):
             r = R[k] + (0.012 * math.cos(u * math.pi * 2.0) if k >= 2 else 0.0)  # soft folds
             z = Z[k] + (0.03 * u * u if k >= 3 else 0.0)  # hem rises at the sides
             if k == 0:
-                z -= 0.035 * u * u  # collar dips towards the clasp at the front
+                z -= 0.028 * u * u  # collar dips towards the clasp at the front
             ro.append(Vector((r * math.sin(th), r * math.cos(th) + 0.012, z)))
             ri.append(Vector(((r - 0.02) * math.sin(th), (r - 0.02) * math.cos(th) + 0.012, z)))
         outer.append(ro)
@@ -228,7 +250,7 @@ def build_cat(mat):
 
     def cape_color(fi):
         if fi.tag == "in":
-            return C("yellow", 11) if fi.i == nk - 2 else C("indigo", 4)
+            return C("yellow", 11) if fi.i == nk - 2 else C("blue", 5)
         if fi.tag == "hem" or (fi.tag in ("out", "side") and fi.i == nk - 2):
             return C("yellow", 11)  # gold hem
         if fi.tag == "top" or (fi.tag == "out" and fi.i == 0):
@@ -236,9 +258,16 @@ def build_cat(mat):
         return C("blue", 9)
 
     c._finish(infos, cape_color, smooth=True, closed=True)
+    cape_bvh = BVHTree.FromBMesh(c.bm)
+    # gold crest on the cape back (knight identity from behind): a shield projected onto the folded cloth
+    cz, cn = Vector((0.0, 0.2, 0.352)), Vector((0.0, 0.905, 0.426)).normalized()
+    upv = Vector((0.0, -cn.z, cn.y))
+    shield = [(-0.058, 0.05), (0.058, 0.05), (0.058, -0.004), (0.0, -0.066), (-0.058, -0.004)]
+    pts = [_project(cape_bvh, cz + Vector((x, 0, 0)) + upv * y, cn, 0.007) for x, y in shield]
+    c.polygon(pts, C("yellow", 12), normal=cn, centre=True)
     c.lathe([(0.0, -0.012), (0.032, -0.003), (0.0, 0.012)], 6, C("yellow", 12),
-            matrix=tr(0.0, -0.118, 0.418) @ rot("X", 90), smooth=False)  # clasp
-    cape = c.to_object("Cape", mat, origin=(0.0, 0.134, 0.462), parent=body, sharp_deg=60)
+            matrix=tr(0.0, -0.13, 0.428) @ rot("X", 90), smooth=False)  # clasp
+    cape = c.to_object("Cape", mat, origin=(0.0, 0.134, 0.466), parent=body, sharp_deg=60)
 
     parts = [body, head] + ears + paws + [tail, cape]
     return body, parts
@@ -246,33 +275,35 @@ def build_cat(mat):
 
 # =============================================================================================== cue
 def build_cue(mat):
-    """1.2 m cue along Unity +Z (Blender -Y), pivot at the butt end. Tip = emissive cyan (child of Stick)."""
+    """1.2 m cue along Unity +Z (Blender -Y), pivot at the butt end. 0.12 m butt, 0.09-0.10 m shaft (>= 3 px at the
+    game camera so it does not crawl when it re-aims). Tip (child of Stick) = glowing cyan gem + emissive ferrule
+    band: the bloom point where the aim starts. Tip is emissive by palette; name-flag override: Cue_Stick/Tip."""
     M = rot("X", 90)  # lathe axis +Z -> -Y
     s = Mesh()
-    prof = [(0.0, 0.0), (0.036, 0.0), (0.041, 0.012), (0.041, 0.034), (0.041, 0.05), (0.037, 0.40),
-            (0.036, 0.425), (0.025, 1.10), (0.025, 1.158)]
+    prof = [(0.0, 0.0), (0.052, 0.0), (0.06, 0.014), (0.06, 0.05), (0.06, 0.07), (0.057, 0.40), (0.055, 0.425),
+            (0.055, 0.445), (0.046, 1.06)]
     brass = C("yellow", 10)
-    band_colors = {0: C("gray", 2), 1: C("gray", 2), 2: C("gray", 3), 3: brass, 4: C("red", 4), 5: brass,
-                   6: C("yellow", 13), 7: brass}
+    band_colors = {0: C("gray", 3), 1: C("gray", 3), 2: C("gray", 4), 3: brass, 4: C("red", 6), 5: brass,
+                   6: C("yellow", 13), 7: C("yellow", 13)}
 
     def cue_color(fi):
         if fi.tag == "cap1":
-            return brass
+            return C("yellow", 12)
         return band_colors.get(fi.i, C("yellow", 13))
 
     s.lathe(prof, 8, cue_color, matrix=M, phase=math.radians(22.5))
     stick = s.to_object("Stick", mat, origin=(0, 0, 0), sharp_deg=40)
     t = Mesh()
-    t.lathe([(0.025, 1.156), (0.031, 1.17), (0.029, 1.19), (0.0, 1.2)], 8, C("cyan", 12, True), matrix=M,
-            phase=math.radians(22.5))
-    tip = t.to_object("Tip", mat, origin=M @ Vector((0, 0, 1.18)), parent=stick)
+    t.lathe([(0.046, 1.058), (0.052, 1.066), (0.052, 1.094), (0.06, 1.13), (0.0, 1.2)], 8,
+            lambda fi: C("cyan", 9, True) if fi.i <= 1 else C("cyan", 13, True), matrix=M, phase=math.radians(22.5))
+    tip = t.to_object("Tip", mat, origin=M @ Vector((0, 0, 1.13)), parent=stick)
     return stick, [stick, tip]
 
 
 # =============================================================================================== ball
 def build_ball(mat):
-    """80-tri icosphere, r = 0.5, pivot at the CENTRE (it spins); one neutral white texel in the EMISSIVE half so
-    both 'albedo * tint' and 'emission map * glow colour' material setups work."""
+    """80-tri icosphere, r = 0.5, pivot at the CENTRE (it spins; BallView lifts it by its scaled radius). One
+    neutral white texel in the EMISSIVE half so both 'albedo * tint' and 'emission map * glow colour' setups work."""
     m = Mesh()
     m.icosphere((0, 0, 0), 0.5, 2, C("gray", 15, True), smooth=True)
     ball = m.to_object("Ball", mat, origin=(0, 0, 0))
@@ -281,22 +312,25 @@ def build_ball(mat):
 
 # =============================================================================================== props
 def build_pillar(mat):
+    """0.9 m stone pillar (low enough not to hide the enemy/ball behind it from the 58 deg camera), mossy cap and
+    plinth, dim teal rune band (child part Runes_Emissive) so it separates from grey stone floors and walls."""
     m = Mesh()
     stone = lambda s: C("gray", s)  # noqa: E731
+    moss = C("green", 6)
 
     def plinth_color(fi):
         if fi.tag == "cap1":
             return stone(10)
+        if fi.i == 1 and fi.j in (1, 2, 5):
+            return moss  # moss creeping up the plinth on a few sides
         return stone(7 if fi.i == 0 else 9)
 
-    m.block([(0.9, 0.9, 0.1, 0.0), (0.9, 0.9, 0.1, 0.1), (0.8, 0.8, 0.09, 0.165)], plinth_color)
-    prof = [(0.315, 0.16), (0.315, 0.225), (0.272, 0.255), (0.272, 0.545), (0.248, 0.565), (0.248, 0.625),
-            (0.272, 0.645), (0.272, 0.93), (0.315, 0.96), (0.315, 1.02)]
-    shaft_c = {0: stone(10), 1: stone(8), 3: stone(6), 4: stone(4), 5: stone(6), 7: stone(8), 8: stone(10)}
+    m.block([(0.9, 0.9, 0.1, 0.0), (0.9, 0.9, 0.1, 0.085), (0.8, 0.8, 0.09, 0.14)], plinth_color)
+    prof = [(0.3, 0.135), (0.3, 0.19), (0.262, 0.215), (0.262, 0.39), (0.24, 0.405), (0.24, 0.49), (0.262, 0.505),
+            (0.262, 0.655), (0.3, 0.68), (0.3, 0.73)]
+    shaft_c = {0: stone(10), 1: stone(8), 3: stone(6), 4: stone(3), 5: stone(6), 7: stone(8), 8: stone(10)}
 
     def shaft_color(fi):
-        if fi.i == 4:  # recessed band: carved glyph blocks
-            return stone(3) if fi.j % 2 == 0 else stone(7)
         if fi.i in shaft_c:
             return shaft_c[fi.i]
         return stone(9) if fi.j % 2 == 0 else stone(7)  # fluting
@@ -306,12 +340,27 @@ def build_pillar(mat):
     def cap_color(fi):
         if fi.tag == "cap1":
             return stone(9)
-        return {0: stone(7), 1: stone(10), 2: stone(12), 3: stone(7)}.get(fi.i, stone(10))
+        if fi.i == 2:
+            return moss if fi.j in (1, 2, 5) else stone(11)  # moss patches on the capital's top ring
+        if fi.i == 1 and fi.j in (1, 2):
+            return C("green", 5)  # moss hanging over the capital's edge
+        return {0: stone(7), 1: stone(10), 3: stone(7)}.get(fi.i, stone(10))
 
-    m.block([(0.72, 0.72, 0.08, 1.0), (0.86, 0.86, 0.1, 1.075), (0.86, 0.86, 0.1, 1.2), (0.68, 0.68, 0.07, 1.2),
-             (0.68, 0.68, 0.07, 1.18)], cap_color, cap0=False)
+    m.block([(0.72, 0.72, 0.08, 0.72), (0.86, 0.86, 0.1, 0.79), (0.86, 0.86, 0.1, 0.9), (0.68, 0.68, 0.07, 0.9),
+             (0.68, 0.68, 0.07, 0.88)], cap_color, cap0=False)
     obj = m.to_object("Pillar", mat, origin=(0, 0, 0))
-    return obj, [obj]
+    # rune glyphs: plates on the 4 cardinal recessed facets (one faces the camera), dim emissive teal
+    r = Mesh()
+    for k in range(4):
+        a = math.radians(90.0 * k)  # facet centres sit at multiples of 45 deg (lathe phase 22.5)
+        n = Vector((math.cos(a), math.sin(a), 0.0))
+        side = Vector((-n.y, n.x, 0.0))
+        cen = n * (0.24 * math.cos(math.radians(22.5)) + 0.004) + Vector((0, 0, 0.4475))
+        glyph = [cen + side * 0.055 + Vector((0, 0, 0.032)), cen - side * 0.055 + Vector((0, 0, 0.032)),
+                 cen - side * 0.055 + Vector((0, 0, -0.032)), cen + side * 0.055 + Vector((0, 0, -0.032))]
+        r.polygon(glyph, C("teal", 10, True), normal=n)
+    runes = r.to_object("Runes_Emissive", mat, origin=(0, 0, 0.4475), parent=obj)
+    return obj, [obj, runes]
 
 
 def build_crate(mat):
@@ -352,8 +401,9 @@ def build_crate(mat):
 
 
 def build_portal(mat):
-    """Ring = rune stone circle lying on the floor (runes emissive cyan); Swirl = flat emissive disc, own pivot so
-    PortalView can spin it around Y."""
+    """Ring = lit rune-stone circle lying on the floor; its glowing runes are the child part Runes_Emissive.
+    Swirl = flat emissive disc (shades 8-11 so live balls stay the brightest thing on the field), own pivot so
+    PortalView can spin it around Y. Name-flag override needed only for Prop_Portal/Swirl."""
     ring = Mesh()
     segs = 12
     prof = [(0.335, 0.0), (0.46, 0.0), (0.475, 0.07), (0.45, 0.145), (0.425, 0.155), (0.375, 0.155), (0.35, 0.145),
@@ -362,15 +412,24 @@ def build_portal(mat):
                r * math.sin(2 * math.pi * j / segs + math.pi / segs), z) for j in range(segs)] for r, z in prof]
 
     def ring_color(fi):
-        if fi.i == 4:  # top centre strip: a rune on every other stone
-            return C("cyan", 11, True) if fi.j % 2 == 0 else C("gray", 10)
-        if fi.i == 7 and fi.j % 2 == 0:
-            return C("cyan", 8, True)  # inner lip glows under each rune
+        if fi.i == 4:  # top centre strip: dark rune sockets under the glowing glyphs
+            return C("gray", 5) if fi.j % 2 == 0 else C("gray", 10)
         return {0: C("gray", 5), 1: C("gray", 7), 2: C("gray", 9), 3: C("gray", 10), 5: C("gray", 10),
                 6: C("gray", 8), 7: C("gray", 6)}.get(fi.i, C("gray", 8))
 
     ring.loft(rings, ring_color, smooth=False, wrap=True)
     ring_obj = ring.to_object("Ring", mat, origin=(0, 0, 0))
+
+    rn = Mesh()  # one glyph plate over every other top stone, slightly raised
+    for j in range(0, segs, 2):
+        a0 = 2 * math.pi * j / segs + math.pi / segs
+        a1 = a0 + 2 * math.pi / segs
+        am = (a0 + a1) / 2
+        pts = []
+        for r_, a in ((0.442, am - 0.16), (0.442, am + 0.16), (0.358, am + 0.13), (0.358, am - 0.13)):
+            pts.append((r_ * math.cos(a), r_ * math.sin(a), 0.159))
+        rn.polygon(pts, C("cyan", 10, True), normal=(0, 0, 1))
+    runes = rn.to_object("Runes_Emissive", mat, origin=(0, 0, 0.159), parent=ring_obj)
 
     sw = Mesh()
     rows = [[(0.0, 0.0, 0.0)]]
@@ -378,21 +437,22 @@ def build_portal(mat):
         twist = 0.55 * (k + 1)
         rows.append([(r * math.cos(2 * math.pi * j / 12 + twist), r * math.sin(2 * math.pi * j / 12 + twist), 0.0)
                      for j in range(12)])
-    arms = [C("magenta", 11, True), C("magenta", 8, True), C("cyan", 11, True), C("cyan", 8, True)]
+    arms = [C("magenta", 10, True), C("magenta", 8, True), C("cyan", 10, True), C("cyan", 8, True)]
 
     def swirl_color(fi):
         if fi.i == 2:  # rows are reversed: i == 2 is the centre fan
-            return C("pink", 14, True) if fi.j % 2 == 0 else C("magenta", 13, True)
+            return C("pink", 11, True) if fi.j % 2 == 0 else C("magenta", 11, True)
         return arms[(fi.j + 2 * fi.i) % 4]
 
     sw.loft([[Vector(p) + Vector((0, 0, 0.035)) for p in row] for row in rows[::-1]], swirl_color,
             smooth=False, closed=False)
     swirl = sw.to_object("Swirl", mat, origin=(0, 0, 0.035))
-    return ring_obj, [ring_obj, swirl]
+    return ring_obj, [ring_obj, runes, swirl]
 
 
 def build_mud(mat):
-    """Flat irregular puddle: dry lighter crust ridge around a dark wet centre, bubbles and sky glints."""
+    """Flat irregular puddle, everything at z >= 0: light dry crust ridge around a dark wet centre, bubble domes
+    sitting on the wet surface, big glossy sky-blue highlight streaks, splash drops at the rim."""
     m = Mesh()
     n = 20
 
@@ -407,110 +467,166 @@ def build_mud(mat):
 
     def mud_color(fi):
         if fi.i == 0:
-            return C("brown", 6)  # outer slope
+            return C("brown", 7)  # outer slope
         if fi.i == 1:
-            return C("brown", 8)  # dry crust ridge (light -> readable on dark floors)
+            return C("brown", 10)  # dry crust ridge (light -> readable on dark and stone floors)
         if fi.i == 2:
-            return C("brown", 3)
+            return C("brown", 4)
         return C("brown", 2)  # wet centre
 
     m.loft(rows, mud_color, smooth=False, closed=False)
-    for (x, y, r) in ((-0.14, 0.09, 0.06), (0.15, -0.1, 0.05), (0.06, 0.19, 0.038), (-0.05, -0.2, 0.03)):
-        m.sphere((x, y, 0.012), (r, r, r * 0.75), 6, 3,
-                 lambda fi: C("brown", 9) if fi.n.z > 0.85 else C("brown", 5))
-    for (x, y, a, l) in ((0.03, 0.02, 20, 0.07), (-0.2, -0.06, -15, 0.05), (0.2, 0.12, 40, 0.04)):
-        m.sphere((0, 0, 0), (l, l * 0.35, 0.004), 4, 2, C("sky", 12), matrix=tr(x, y, 0.017) @ rot("Z", a))
-    for (x, y, r, ph) in ((0.37, 0.31, 0.07, 0.3), (-0.41, -0.26, 0.055, 1.1)):
+    for (x, y, r) in ((-0.14, 0.09, 0.062), (0.15, -0.1, 0.05), (0.06, 0.2, 0.04), (-0.05, -0.2, 0.034)):
+        m.lathe([(r, 0.0), (r * 0.8, r * 0.42), (0.0, r * 0.62)], 6,
+                lambda fi: C("brown", 8) if fi.i == 1 else C("brown", 5), matrix=tr(x, y, 0.014), cap0=False)
+    # glossy wet highlights: tapered curved streaks lying on the wet surface
+    for (x, y, a0, span, rr, w) in ((0.02, 0.0, 195.0, 80.0, 0.21, 0.05), (0.0, 0.02, 15.0, 60.0, 0.17, 0.042),
+                                    (0.0, 0.0, 292.0, 40.0, 0.27, 0.034)):
+        inner_, outer_ = [], []
+        for k in range(4):
+            a = math.radians(a0 + span * k / 3.0)
+            wk = w * (0.35 if k in (0, 3) else 1.0) / 2
+            inner_.append((x + (rr - wk) * math.cos(a), y + (rr - wk) * math.sin(a), 0.019))
+            outer_.append((x + (rr + wk) * math.cos(a), y + (rr + wk) * math.sin(a), 0.019))
+        m.grid([outer_, inner_], C("sky", 14), smooth=False)  # outer first -> faces up
+    for (x, y, r, ph) in ((0.37, 0.31, 0.07, 0.3), (-0.41, -0.26, 0.055, 1.1)):  # splats beyond the rim
         sat = [[(x + r * (1 + 0.2 * math.sin(3 * j + ph)) * math.cos(2 * math.pi * j / 7),
                  y + r * (1 + 0.2 * math.sin(3 * j + ph)) * math.sin(2 * math.pi * j / 7), 0.0) for j in range(7)],
                [(x, y, 0.02)]]
-        m.loft(sat, C("brown", 4), smooth=False, closed=False)
+        m.loft(sat, C("brown", 5), smooth=False, closed=False)
+    for (x, y, r) in ((0.46, -0.08, 0.03), (-0.2, 0.43, 0.026), (0.12, -0.45, 0.022)):  # splash drops
+        m.lathe([(r, 0.0), (0.0, r * 0.8)], 5, C("brown", 6), matrix=tr(x, y, 0.0), cap0=False, smooth=False)
     obj = m.to_object("Mud", mat, origin=(0, 0, 0))
     return obj, [obj]
 
 
 FLOAT_Z = 0.45  # pickups hover; the file root stays at the floor
-
-
 PICKUP_TILT = 28.0  # icon pickups lean back so their face looks up at the 58-degree gameplay camera
 
 
 def pickup_frame():
-    """Local icon space (centre at origin, face along -Y/+Y) -> model space: hover height + backward lean."""
+    """Local icon space (centre at origin, face toward +Y = the camera) -> model space: hover height + lean back.
+    Pickups are placed at IDENTITY rotation (never turned 180 like enemies); bob on Y, no whole-model spin."""
     return tr(0, 0, FLOAT_Z) @ rot("X", PICKUP_TILT)
 
 
+FACE = rot("X", -90)  # lathe/extrude helpers: local +Z -> +Y (towards the camera)
+
+
+def plus_outline(span, bar):
+    a, b = span / 2.0, bar / 2.0
+    return hm.ensure_ccw([(b, a), (-b, a), (-b, b), (-a, b), (-a, -b), (-b, -b), (-b, -a), (b, -a), (b, -b), (a, -b),
+                          (a, b), (b, b)])
+
+
 def build_pickup_ball(mat):
-    """+1 Ball: glowing mini ball (Orb) inside a gold ring with two gems (Ring); both pivot at the hover centre."""
-    M = tr(0, 0, FLOAT_Z) @ rot("X", PICKUP_TILT)
-    r = Mesh()
-    r.torus(0.26, 0.05, 14, 5, lambda fi: C("yellow", 12) if fi.n.z > -0.3 else C("yellow", 10),
-            matrix=rot("X", 90))
-    for s in (-1, 1):  # two little gems on the ring sides (they catch the eye when it turns)
-        r.sphere((s * 0.26, 0, 0), (0.048, 0.064, 0.048), 4, 2, C("cyan", 11, True), phase=math.pi / 4)
-    r.transform(M)
-    ring = r.to_object("Ring", mat, origin=M @ Vector((0, 0, 0)), sharp_deg=None)
-    o = Mesh()
-    o.icosphere((0, 0, FLOAT_Z), 0.16, 2, lambda fi: C("gray", 15, True) if fi.c.z > FLOAT_Z - 0.07
-                else C("sky", 13, True))
-    orb = o.to_object("Orb", mat, origin=(0, 0, FLOAT_Z))
-    return ring, [ring, orb]
+    """+1 Ball: a chunky lit gold coin (Coin, 0.57 m) carrying a cel-shaded white mini ball with the blue paw print
+    of Ball_Basic, and a big emissive teal '+' (Plus_Emissive, child). Only the '+' glows, so it never blooms like a
+    live ball. Identity rotation faces the camera (see pickup_frame)."""
+    M = pickup_frame()
+    coin = Mesh()
+
+    def coin_color(fi):
+        if fi.i == 0:
+            return C("yellow", 9)  # back face
+        if fi.i in (1, 2):
+            return C("yellow", 11)  # rim
+        if fi.i == 3:
+            return C("yellow", 14)  # front bevel ring (bright gold edge)
+        return C("orange", 11)  # recessed centre: deeper amber gold so the white ball pops
+
+    coin.lathe([(0.0, -0.035), (0.26, -0.035), (0.285, 0.0), (0.265, 0.036), (0.212, 0.04), (0.0, 0.032)], 12,
+               coin_color, matrix=FACE, smooth=False)
+    bc_ = Vector((0.05, 0.08, -0.045))  # lower-LEFT on screen (+X)
+    coin.sphere(bc_, (0.135, 0.135, 0.135), 8, 5, lambda fi: C("gray", 15) if fi.n.z > -0.2 else C("gray", 12))
+    # paw print on the mini ball's camera-facing side: pad + three beans, projected onto the sphere
+    ball_bvh = BVHTree.FromBMesh(coin.bm)
+    nrm = Vector((0.0, 1.0, 0.35)).normalized()  # towards the camera in icon space
+    upv = Vector((0.0, -nrm.z, nrm.y))
+    sidev = Vector((1.0, 0.0, 0.0))
+    paw = C("blue", 9)
+    beans = [((0.0, -0.022), 0.034, 0.028, 6)] + [((dx, dy), 0.017, 0.019, 5)
+                                                   for dx, dy in ((-0.042, 0.022), (0.0, 0.045), (0.042, 0.022))]
+    for (dx, dy), rx, ry, n_ in beans:
+        c0 = bc_ + nrm * 0.135 + sidev * dx + upv * dy
+        pts = [c0 + sidev * (rx * math.cos(2 * math.pi * k / n_)) + upv * (ry * math.sin(2 * math.pi * k / n_))
+               for k in range(n_)]
+        coin.polygon([_project(ball_bvh, p, nrm, 0.004) for p in pts], paw, normal=nrm)
+    coin.transform(M)
+    coin_obj = coin.to_object("Coin", mat, origin=M @ Vector((0, 0, 0)), sharp_deg=None)
+    plus = Mesh()
+    plus.extrude(plus_outline(0.27, 0.09), [(0.0, -0.035), (0.0, 0.035)],
+                 lambda fi: C("teal", 13, True) if fi.tag == "cap1" else C("teal", 10, True),
+                 matrix=tr(-0.17, 0.075, 0.17))  # upper-RIGHT on screen
+    plus.transform(M)
+    plus_obj = plus.to_object("Plus_Emissive", mat, origin=M @ Vector((-0.17, 0.075, 0.17)), parent=coin_obj)
+    return coin_obj, [coin_obj, plus_obj]
 
 
 def build_pickup_heal(mat):
-    """Puffy emissive heart (two lobes + a tapered point) with a small cork on top = heart potion."""
+    """Heal: a puffy LIT red heart (Heart, ~0.62 m wide, 4-band cel shading) with a glowing white medical cross
+    (Cross_Emissive, child) as the only emissive part. Identity rotation faces the camera (see pickup_frame)."""
     h = Mesh()
+    S = 1.16
 
     def heart_color(fi):
-        return C("red", 9, True) if abs(fi.n.x) > 0.8 else C("red", 11, True)  # darker only on the flanks
+        if fi.n.y < -0.5:
+            return C("red", 7)  # back
+        return C("red", 9) if abs(fi.n.x) > 0.8 else C("red", 11)
 
     for s in (-1, 1):
-        h.sphere((s * 0.118, 0.0, 0.07), (0.155, 0.1, 0.145), 10, 5, heart_color)
-    # lower point: flattened cone from the lobes' equator down to the tip
-    h.lathe([(0.0, -0.245), (0.135, -0.09), (0.225, 0.02), (0.0, 0.065)], 10, heart_color,
+        h.sphere((s * 0.118 * S, 0.0, 0.07 * S), (0.155 * S, 0.1 * S, 0.145 * S), 10, 5, heart_color)
+    h.lathe([(0.0, -0.245 * S), (0.135 * S, -0.09 * S), (0.225 * S, 0.02 * S), (0.0, 0.065 * S)], 10, heart_color,
             matrix=scl(1.0, 0.46, 1.0), phase=math.radians(18))
-    for s in (-1, 1):  # glossy glint on the upper-left lobe, both faces
-        h.sphere((0, 0, 0), (0.042, 0.032, 0.012), 6, 2, C("gray", 15, True),
-                 matrix=tr(0.135, s * 0.094, 0.13) @ rot("X", 90) @ rot("Z", 35))
+    h.sphere((0, 0, 0), (0.045, 0.03, 0.012), 6, 2, C("gray", 15),
+             matrix=tr(0.17, 0.112, 0.165) @ rot("X", 90) @ rot("Z", 35))  # lit glint, upper-left lobe on screen
     M = pickup_frame()
     h.transform(M)
     heart = h.to_object("Heart", mat, origin=M @ Vector((0, 0, 0)), sharp_deg=None)
-    ck = Mesh()
-    top = 0.175
-    ck.lathe([(0.0, top - 0.03), (0.038, top - 0.03), (0.038, top + 0.02)], 6, C("sky", 12))  # glass neck
-    ck.lathe([(0.05, top + 0.02), (0.055, top + 0.075), (0.0, top + 0.08)], 6,
-             lambda fi: C("brown", 10) if fi.i == 1 else C("brown", 7))  # cork
-    ck.transform(M)
-    cork = ck.to_object("Cork", mat, origin=M @ Vector((0, 0, top)), parent=heart, sharp_deg=40)
-    return heart, [heart, cork]
-
-
-def bolt_outline(h=0.66, w=1.45):
-    pts = [(-0.05, 0.5), (0.28, 0.5), (0.10, 0.10), (0.27, 0.10), (-0.15, -0.5), (-0.02, -0.04), (-0.21, -0.04)]
-    return hm.ensure_ccw([(x * h * w, z * h) for x, z in pts])
+    cr = Mesh()
+    cc = Vector((0.0, 0.118, 0.035))
+    cr.extrude(plus_outline(0.2, 0.068), [(0.0, -0.025), (0.0, 0.025)],
+               lambda fi: C("gray", 15, True) if fi.tag == "cap1" else C("pink", 12, True),
+               matrix=tr(*cc))
+    cr.transform(M)
+    cross = cr.to_object("Cross_Emissive", mat, origin=M @ cc, parent=heart)
+    return heart, [heart, cross]
 
 
 def build_pickup_power(mat):
-    """Emissive orange lightning crystal: bevelled bolt with a hot yellow face."""
+    """Power ('next ball deals 2x on its first hit'): a short broad knight sword, tip up-right - silver lit blade
+    with a bright ridge, gold guard, leather grip and a glowing red pommel gem (PommelGem, child). Deliberately
+    not a bolt / not yellow (Ball_Thunder). Identity rotation faces the camera (see pickup_frame)."""
     m = Mesh()
-    layers = [(0.03, -0.085), (0.0, -0.048), (0.0, 0.048), (0.03, 0.085)]
+    blade = hm.ensure_ccw([(-0.088, -0.02), (0.088, -0.02), (0.094, 0.29), (0.0, 0.43), (-0.094, 0.29)])
 
-    def bolt_color(fi):
-        if fi.tag in ("cap0", "cap1"):
-            return C("yellow", 13, True)
-        if fi.i == 1:
-            return C("orange", 9, True)  # side walls
-        return C("orange", 12, True)  # bevels
+    def blade_color(fi):
+        if fi.tag == "cap1":
+            return C("gray", 14)  # front ridge flat (camera side)
+        if fi.tag == "cap0":
+            return C("gray", 10)
+        return {0: C("gray", 9), 1: C("gray", 7), 2: C("gray", 12)}[fi.i]  # back bevel, edge, front bevel
 
-    m.extrude(bolt_outline(), layers, bolt_color, smooth=False)
+    m.extrude(blade, [(0.048, -0.034), (0.0, -0.009), (0.0, 0.009), (0.048, 0.034)], blade_color)
+    guard = hm.ensure_ccw([(-0.22, -0.03), (-0.175, -0.085), (0.175, -0.085), (0.22, -0.03), (0.17, -0.012),
+                           (-0.17, -0.012)])
+    m.extrude(guard, [(0.0, -0.046), (0.0, 0.046)], lambda fi: C("yellow", 11) if fi.tag else C("yellow", 9))
+    m.tube([(0.0, 0.0, -0.085), (0.0, 0.0, -0.24)], [0.036, 0.036], 6, C("brown", 5), cap0=False, cap1=False,
+           smooth=False)
+    P = rot("Y", -35) @ tr(0, 0, -0.06)  # centred, tip up-RIGHT as seen from the camera (screen right = -X)
     M = pickup_frame()
-    m.transform(M)
-    obj = m.to_object("Crystal", mat, origin=M @ Vector((0, 0, 0)))
-    return obj, [obj]
+    m.transform(M @ P)
+    sword = m.to_object("Sword", mat, origin=M @ Vector((0, 0, 0)))
+    g = Mesh()
+    gc = Vector((0.0, 0.0, -0.292))
+    g.sphere(gc, (0.066, 0.066, 0.066), 6, 3, lambda fi: C("red", 12, True) if fi.n.y > 0.2 else C("red", 9, True),
+             phase=math.radians(30))
+    g.transform(M @ P)
+    gem = g.to_object("PommelGem", mat, origin=M @ P @ gc, parent=sword)
+    return sword, [sword, gem]
 
 
 MODELS = {
-    # name: (staging sub-folder, builder, in-game footprint note)
+    # name: (staging sub-folder, builder)
     "Cat_Hero": ("Player", build_cat),
     "Cue_Stick": ("Player", build_cue),
     "Ball": ("Balls", build_ball),
@@ -534,9 +650,15 @@ def hierarchy(obj, depth=0):
 
 def model_stats(parts):
     lo, hi = hr.bounds(parts)
+    part_info = {}
+    for p in parts:
+        plo, phi = hr.bounds([p])
+        part_info[p.name] = {"tris": bc.tri_count([p]), "parent": p.parent.name if p.parent else None,
+                             "world_min": [round(c, 4) for c in plo], "world_max": [round(c, 4) for c in phi]}
     return {
         "tris": bc.tri_count(parts),
         "parts": {p.name: bc.tri_count([p]) for p in parts},
+        "part_info": part_info,
         "size": [round(hi.x - lo.x, 3), round(hi.y - lo.y, 3), round(hi.z - lo.z, 3)],
         "min_z": round(lo.z, 3),
         "max_z": round(hi.z, 3),
@@ -558,7 +680,7 @@ def main():
         p.add_argument("--no-render", action="store_true")
         p.add_argument("--p2-palette", default=None)
         p.add_argument("--emission-png", default=None)
-        p.add_argument("--context-staging", default=None, help="staged enemies for the mock (read-only)")
+        p.add_argument("--context-staging", default=None, help="staged enemies/surfaces for the mock (read-only)")
 
     args = bc.parse_args(extra)
     pal_dir = os.path.dirname(os.path.abspath(args.palette_png))
@@ -579,10 +701,7 @@ def main():
         move_to_collection(parts, col)
         bpy.context.view_layer.update()
         path = os.path.join(args.staging, "Models", "BilliardRogue", folder, name + ".fbx")
-        for p in parts:
-            if p.parent is not None and p.parent.parent is not None:
-                raise RuntimeError("%s/%s: keep parts one level deep (FBX bake_space_transform bug)" % (name, p.name))
-        secs, changed = bc.export_fbx_if_changed(path, parts)
+        secs, changed = bc.export_fbx_nested_if_changed(path, parts)
         st = model_stats(parts)
         st.update(fbx=path, fbx_bytes=os.path.getsize(path), fbx_changed=changed, hierarchy=hierarchy(root))
         for p in parts:  # free the part names ("Ring" is used by two models) - object names are file-unique

@@ -4,6 +4,7 @@ Import from a model script with:
     import os, sys; sys.path.insert(0, os.path.dirname(__file__)); import bl_common as bc
 """
 import argparse
+import contextlib
 import json
 import math
 import os
@@ -292,6 +293,45 @@ def export_fbx(path, objects, bake_anim=False, blender_defaults=False):
         use_metadata=False,  # no exporter/version strings; timestamps + UIDs still change per export
     )
     return time.time() - t
+
+
+@contextlib.contextmanager
+def nested_bake_space_fix():
+    """Blender 5.2's FBX exporter with bake_space_transform=True mis-computes the local transform of objects
+    nested 2+ levels deep (it mixes the parent's Blender-local and FBX-local matrices): a grandchild comes out with
+    a bogus 90 deg Lcl Rotation and a wrong offset. Correct value for mesh/empty objects: conjugate the Blender
+    parent-space matrix by the axis conversion, M_fbx = G @ (P_world^-1 @ C_world) @ G^-1.
+    Promoted verbatim from Tools/Blender/enemies/ekit.py (verified there by re-import)."""
+    from io_scene_fbx import fbx_utils
+    wrapper = fbx_utils.ObjectWrapper
+    original = wrapper.fbx_object_matrix
+
+    def patched(self, scene_data, rest=False, local_space=False, global_space=False):
+        if not (self.use_bake_space_transform(scene_data) and self._tag == "OB" and not self.parented_to_armature
+                and self.bdata.type in {"MESH", "EMPTY"}):
+            return original(self, scene_data, rest=rest, local_space=local_space, global_space=global_space)
+        gm = scene_data.settings.global_matrix
+        gi = scene_data.settings.global_matrix_inv
+        parent = self.parent if self.has_valid_parent(scene_data.objects) else None
+        world = self.matrix_global
+        if parent is not None and not global_space:
+            if parent._tag != "OB" or parent.bdata.type not in {"MESH", "EMPTY"}:
+                return original(self, scene_data, rest=rest, local_space=local_space, global_space=global_space)
+            world = parent.matrix_global.inverted_safe() @ world
+        return gm @ world @ gi
+
+    wrapper.fbx_object_matrix = patched
+    try:
+        yield
+    finally:
+        wrapper.fbx_object_matrix = original
+
+
+def export_fbx_nested_if_changed(path, objects, **kwargs):
+    """export_fbx_if_changed for hierarchies deeper than one level (see nested_bake_space_fix)."""
+    bpy.context.view_layer.update()
+    with nested_bake_space_fix():
+        return export_fbx_if_changed(path, objects, **kwargs)
 
 
 # ---------------------------------------------------------------- icon render

@@ -39,36 +39,122 @@ def set_visible(cols_on, all_cols):
 
 
 # ------------------------------------------------------------------------------------------ arena mock
-FLOORS = {
-    "act1": dict(tile=("skin", 7, 8), danger=("red", 7, 8), launch=("brown", 6), wall=("gray", 7), moss=("lime", 6)),
-    "act2": dict(tile=("indigo", 4, 5), danger=("red", 5, 6), launch=("indigo", 3), wall=("gray", 4), moss=None),
-    "act3": dict(tile=("purple", 5, 6), danger=("red", 6, 7), launch=("indigo", 4), wall=("indigo", 6),
-                 moss=("cyan", 8)),
+# the REAL environment surfaces per act (Tools/Blender/environment/make_layouts.py 'surfaces'); 2D-art owns them
+ACT_SURFACES = {
+    "act1": dict(floor="StoneFloor", wall="MossyBrick", ground="Grass"),
+    "act2": dict(floor="CryptFloor", wall="CryptBrick", ground="Dirt"),
+    "act3": dict(floor="StoneFloor", wall="CrystalRock", ground="CryptFloor"),
 }
+FALLBACK = {"act1": ("gray", 8), "act2": ("indigo", 4), "act3": ("purple", 5)}  # if the surfaces are not staged
 
 
-def build_arena(mat, act, col):
-    f = FLOORS[act]
-    m = Mesh()
-    for row in range(ROWS):
-        for c in range(COLS):
-            p = cell(c, row)
-            fam, a, b = f["danger"] if row == ROWS - 1 else f["tile"]
-            shade = a if (row + c) % 2 == 0 else b
-            if f["moss"] and (row * 3 + c * 5) % 11 == 0 and row != ROWS - 1:
-                fam, shade = f["moss"][0], f["moss"][1]
-            m.block([(0.95, 0.95, 0.05, -0.12), (0.95, 0.95, 0.05, -0.02), (0.9, 0.9, 0.04, 0.0)],
-                    C(fam, shade), matrix=tr(p.x, p.y, 0.0), cap0=False)
-    # launch zone slab
-    m.box((-COLS / 2.0, -LAUNCH, -0.12), (COLS / 2.0, 0.6, -0.005), C(f["launch"][0], f["launch"][1]))
-    wall = C(f["wall"][0], f["wall"][1])
+def _black_png(out_dir):
+    path = os.path.join(out_dir, "_black.png")
+    img = bpy.data.images.new("HP_Black", 4, 4)
+    img.pixels = [0.0, 0.0, 0.0, 1.0] * 16
+    img.filepath_raw = path
+    img.file_format = "PNG"
+    img.save()
+    return path
+
+
+def _surface_meta(staging):
+    path = os.path.join(staging, "Textures", "BilliardRogue", "Surfaces", "surfaces.json")
+    try:
+        with open(path) as f:
+            return json.load(f).get("surfaces", {})
+    except (OSError, ValueError):
+        return {}
+
+
+def _surface_mat(staging, name, black, tint=None):
+    albedo = os.path.join(staging, "Textures", "BilliardRogue", "Surfaces", name + "_Albedo.png")
+    if not os.path.exists(albedo):
+        return None
+    return hr.toon_material("M_Mock_%s%s" % (name, "_T" if tint else ""), albedo, black, tint=tint)
+
+
+def _uv_box(bm, uv, tile):
+    """Box-project UVs in metres / tileMetres (world-aligned, like env_lib's *_Surface parts)."""
+    for f in bm.faces:
+        n = f.normal
+        ax = max(range(3), key=lambda k: abs(n[k]))
+        for loop in f.loops:
+            co = loop.vert.co
+            u, v = [(co.y, co.z), (co.x, co.z), (co.x, co.y)][ax]
+            loop[uv].uv = (u / tile, v / tile)
+
+
+def _surface_obj(name, boxes, material, col, tile):
+    """Boxes [(lo, hi), ...] as one object with metre box UVs (no palette UVs) on a surface material."""
+    import bmesh
+    bm = bmesh.new()
+    uv = bm.loops.layers.uv.verify()
+    for lo, hi in boxes:
+        vs = [bm.verts.new((x, y, z)) for z in (lo[2], hi[2]) for y in (lo[1], hi[1]) for x in (lo[0], hi[0])]
+        for q in ((0, 2, 3, 1), (4, 5, 7, 6), (0, 1, 5, 4), (2, 6, 7, 3), (0, 4, 6, 2), (1, 3, 7, 5)):
+            bm.faces.new([vs[i] for i in q])
+    bmesh.ops.recalc_face_normals(bm, faces=list(bm.faces))
+    bm.normal_update()
+    _uv_box(bm, uv, tile)
+    me = bpy.data.meshes.new(name)
+    bm.to_mesh(me)
+    bm.free()
+    me.materials.append(material)
+    ob = bpy.data.objects.new(name, me)
+    col.objects.link(ob)
+    return ob
+
+
+def build_arena(mat, act, col, staging, black):
+    """Arena mock on the real act surfaces: 7x10 floor tiles (1 m, 3 cm grout), danger row with the emissive red
+    inlay of Env_FloorTile_Danger, launch pad, walls, surrounding ground. Falls back to palette colours."""
+    names = ACT_SURFACES[act]
+    meta = _surface_meta(staging)
+    tile_m = lambda n: float(meta.get(n, {}).get("tileMetres", 2.0))  # noqa: E731
+    floor = _surface_mat(staging, names["floor"], black)
     top = LAUNCH + ROWS
-    m.box((COLS / 2.0, -top - 0.35, -0.12), (COLS / 2.0 + 0.35, 0.6, 0.5), wall)  # left wall (screen left)
-    m.box((-COLS / 2.0 - 0.35, -top - 0.35, -0.12), (-COLS / 2.0, 0.6, 0.5), wall)
-    m.box((-COLS / 2.0 - 0.35, -top - 0.35, -0.12), (COLS / 2.0 + 0.35, -top, 0.5), wall)
-    # surrounding ground so the frame is not empty
-    m.box((-9.0, -top - 6.0, -0.2), (9.0, 4.0, -0.12), C(f["launch"][0], max(f["launch"][1] - 2, 1)))
-    obj = m.to_object("Arena_" + act, mat, origin=(0, 0, 0))
+    g = 0.015
+    if floor is not None:
+        danger = _surface_mat(staging, names["floor"], black, tint=(1.0, 0.62, 0.58))
+        wall = _surface_mat(staging, names["wall"], black) or floor
+        ground = _surface_mat(staging, names["ground"], black) or floor
+        tiles, dtiles = [], []
+        for row in range(ROWS):
+            for c in range(COLS):
+                p = cell(c, row)
+                box = ((p.x - 0.5 + g, p.y - 0.5 + g, -0.2), (p.x + 0.5 - g, p.y + 0.5 - g, 0.0))
+                (dtiles if row == ROWS - 1 else tiles).append(box)
+        _surface_obj("Floor_" + act, tiles, floor, col, tile_m(names["floor"]))
+        _surface_obj("Danger_" + act, dtiles, danger, col, tile_m(names["floor"]))
+        _surface_obj("Launch_" + act, [((-COLS / 2.0, -LAUNCH, -0.2), (COLS / 2.0, 0.6, 0.0))], floor, col,
+                     tile_m(names["floor"]))
+        walls = [((COLS / 2.0, -top - 0.35, -0.2), (COLS / 2.0 + 0.35, 0.6, 0.5)),
+                 ((-COLS / 2.0 - 0.35, -top - 0.35, -0.2), (-COLS / 2.0, 0.6, 0.5)),
+                 ((-COLS / 2.0 - 0.35, -top - 0.35, -0.2), (COLS / 2.0 + 0.35, -top, 0.5))]
+        _surface_obj("Walls_" + act, walls, wall, col, tile_m(names["wall"]))
+        _surface_obj("Ground_" + act, [((-9.0, -top - 6.0, -0.4), (9.0, 4.0, -0.2))], ground, col,
+                     tile_m(names["ground"]))
+        grout = Mesh()  # dark grout under the tile gaps
+        grout.box((-COLS / 2.0, -top, -0.2), (COLS / 2.0, -LAUNCH, -0.01), C("gray", 2))
+        m = grout
+    else:
+        fam, shade = FALLBACK[act]
+        m = Mesh()
+        for row in range(ROWS):
+            for c in range(COLS):
+                p = cell(c, row)
+                fs = ("red", 7) if row == ROWS - 1 else (fam, shade + (row + c) % 2)
+                m.block([(0.97, 0.97, 0.03, -0.2), (0.97, 0.97, 0.03, 0.0)], C(*fs), matrix=tr(p.x, p.y, 0.0),
+                        cap0=False)
+        m.box((-COLS / 2.0, -LAUNCH, -0.2), (COLS / 2.0, 0.6, 0.0), C(fam, shade - 1))
+        m.box((-9.0, -top - 6.0, -0.4), (9.0, 4.0, -0.2), C(fam, max(shade - 3, 1)))
+    for c in range(COLS):  # Env_FloorTile_Danger: emissive red inlay frame (inner 0.36 .. outer 0.465)
+        p = cell(c, ROWS - 1)
+        for (x0, y0, x1, y1) in ((-0.465, -0.465, 0.465, -0.36), (-0.465, 0.36, 0.465, 0.465),
+                                 (-0.465, -0.36, -0.36, 0.36), (0.36, -0.36, 0.465, 0.36)):
+            m.box((p.x + x0, p.y + y0, -0.01), (p.x + x1, p.y + y1, 0.004), C("red", 8, True))
+    obj = m.to_object("ArenaPal_" + act, mat, origin=(0, 0, 0))
     for c in list(obj.users_collection):
         c.objects.unlink(obj)
     col.objects.link(obj)
@@ -149,33 +235,49 @@ def ball_material(name, tint, glow, emission_png, albedo_png):
     return m
 
 
+BALL_LOOKS = {  # (albedo tint, glow) ~ M_Ball_<Type>: Basic white, Thunder yellow, Flame orange, Vampire red, Frost
+    "Basic": ((1, 1, 1), (0.25, 0.25, 0.25)), "Thunder": ((1, 0.9, 0.4), (1.0, 0.85, 0.2)),
+    "Flame": ((1, 0.55, 0.35), (1.0, 0.35, 0.08)), "Vampire": ((1, 0.4, 0.45), (1.0, 0.15, 0.2)),
+    "Frost": ((0.65, 0.9, 1.0), (0.3, 0.75, 1.0)),
+}
+
+
+def cell_centre(c, r):
+    return c + 0.5, LAUNCH + (ROWS - 1 - r) + 0.5
+
+
 def build_mock(args, built, mat, p2mat, emission_png, col):
+    """Readability layout: enemies in rows 0-2, every prop in row 3, the three pickups in row 5 flanked by live
+    balls (pickup vs ball confusion check), a ball hidden behind a pillar (occlusion check), and in the launch zone
+    both cats from BEHIND (striking pose) and both idle 3/4 (P1 left, P2 right of each pair)."""
     get = lambda n: (built[n][0], built[n][1]) if n in built else None  # noqa: E731
-    # props
-    layout = [("Prop_Pillar", 1, 5, 0), ("Prop_Pillar", 5, 1, 0), ("Prop_Crate", 5, 6, 8), ("Prop_Crate", 2, 3, -5),
-              ("Prop_Portal", 0, 2, 0), ("Prop_Portal", 6, 7, 0), ("Prop_Mud", 3, 7, 0), ("Pickup_ExtraBall", 2, 8, 0),
-              ("Pickup_Heal", 4, 4, 0), ("Pickup_Power", 5, 3, 0)]
+    layout = [("Prop_Pillar", 0, 3, 0), ("Prop_Crate", 2, 3, 8), ("Prop_Portal", 4, 3, 0), ("Prop_Mud", 6, 3, 0),
+              ("Pickup_ExtraBall", 1, 5, 0), ("Pickup_Heal", 3, 5, 0), ("Pickup_Power", 5, 5, 0),
+              ("Prop_Pillar", 4, 7, 0), ("Prop_Mud", 1, 7, 0), ("Prop_Portal", 6, 8, 0), ("Pickup_ExtraBall", 2, 8, 0),
+              ("Pickup_Power", 5, 8, 0)]
     for name, c, r, yaw in layout:
         if get(name) is not None:
             place(get(name), col, cell(c, r), yaw)
-    # context enemies (if another agent already staged them)
     ctx = import_context_enemies(args.context_staging or args.staging, mat, col)
-    spots = [(0, 0), (1, 0), (3, 0), (4, 1), (6, 1), (2, 1), (0, 4), (6, 4), (3, 2), (1, 3), (4, 0), (5, 0)]
+    spots = [(0, 0), (1, 0), (3, 0), (4, 1), (6, 1), (2, 1), (5, 0), (1, 2), (5, 2), (3, 2), (6, 0), (0, 1)]
     for (name, holder), (c, r) in zip(sorted(ctx.items()), spots):
         holder.location = cell(c, r)
         holder.rotation_euler = (0, 0, math.pi)  # EnemyView turns enemies 180 deg to face the camera
-    # cats: P1 striking (faces +Z / north = model default), P2 idle turned 3/4 to the camera
-    if get("Cat_Hero") is not None:
-        place(get("Cat_Hero"), col, sim_to_blender(2.6, 0.55), 0.0)
-        place(get("Cat_Hero"), col, sim_to_blender(5.3, 0.45), 145.0, material=p2mat)
+    if get("Cat_Hero") is not None:  # striking = model default (faces +Z / north), idle = turned 3/4 to camera
+        place(get("Cat_Hero"), col, sim_to_blender(1.2, 0.55), 0.0)
+        place(get("Cat_Hero"), col, sim_to_blender(2.75, 0.55), 0.0, material=p2mat)
+        place(get("Cat_Hero"), col, sim_to_blender(4.6, 0.5), 145.0)
+        place(get("Cat_Hero"), col, sim_to_blender(6.0, 0.5), 145.0, material=p2mat)
     if get("Cue_Stick") is not None:
         # cue held behind the ball, pointing up-arena along the aim (roughly what CatView will do)
-        holder = place(get("Cue_Stick"), col, sim_to_blender(2.95, 0.02, 0.33), -18.0)
+        holder = place(get("Cue_Stick"), col, sim_to_blender(1.55, 0.02, 0.33), -18.0)
         holder.rotation_euler = (math.radians(-6), 0.0, math.radians(-18.0))
     if get("Ball") is not None:
-        balls = [((1, 1, 1), (0.25, 0.25, 0.25), (2.35, 0.95)), ((1, 0.55, 0.35), (1.0, 0.35, 0.08), (3.4, 5.2)),
-                 ((0.65, 0.9, 1.0), (0.3, 0.75, 1.0), (5.2, 8.6)), ((1, 0.9, 0.4), (1.0, 0.85, 0.2), (1.2, 7.9))]
-        for k, (tint, glow, (ux, uz)) in enumerate(balls):
+        balls = [("Basic", (0.95, 1.0)), ("Basic", (0.5, 5.6)), ("Thunder", (2.5, 5.6)), ("Flame", (4.5, 5.55)),
+                 ("Vampire", (6.5, 5.6)), ("Frost", cell_centre(4, 6)), ("Thunder", (3.4, 7.9)),
+                 ("Basic", (1.6, 3.3))]
+        for k, (kind, (ux, uz)) in enumerate(balls):
+            tint, glow = BALL_LOOKS[kind]
             bm = ball_material("M_BallMock%d" % k, tint, glow, emission_png, args.palette_png)
             place(get("Ball"), col, sim_to_blender(ux, uz, 0.2), 0.0, scale=0.4, material=bm)
 
@@ -197,10 +299,11 @@ def render_all(args, built, mat, emission_png, p2_png, stats):
     mock_col = bpy.data.collections.new("MOCK")
     scene.collection.children.link(mock_col)
     arena_cols = {}
+    black = _black_png(out)
     for act in ("act1", "act2", "act3"):
         ac = bpy.data.collections.new("ARENA_" + act)
         scene.collection.children.link(ac)
-        build_arena(mat, act, ac)
+        build_arena(mat, act, ac, args.context_staging or args.staging, black)
         arena_cols[act] = ac
     build_mock(args, built, mat, p2mat, emission_png, mock_col)
     every = src_cols + [mock_col] + list(arena_cols.values())
@@ -246,7 +349,7 @@ def render_all(args, built, mat, emission_png, p2_png, stats):
                 if mod.type == "SOLIDIFY":
                     mod.thickness = 0.0055
         hr.setup_render(128, 128, pixel=True)
-        cam = hr.frame_ortho(parts, -28.0, 12.0, margin=1.0, center=(0.015, -0.02, 0.605), radius=0.42)
+        cam = hr.frame_ortho(parts, -28.0, 12.0, margin=1.0, center=(0.015, -0.02, 0.628), radius=0.435)
         hr.sun("portrait")
         hr.set_params("portrait")
         hr.render(os.path.join(out, "portrait_p1_raw.png"))

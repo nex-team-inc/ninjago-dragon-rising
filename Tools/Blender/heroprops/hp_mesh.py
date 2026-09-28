@@ -249,6 +249,25 @@ class Mesh:
             rings.append([_xf(matrix, None, (x, y, z)) for x, z in outline])
         return self.loft(rings, color, smooth=smooth, cap0=cap0, cap1=cap1)
 
+    def polygon(self, points, color, normal=None, smooth=False, centre=False):
+        """One flat face through `points` (decals: crests, streaks, paw beans). `normal` picks the side it faces;
+        centre=True fans the outline around its centroid instead (follows a slightly curved surface)."""
+        pts = [Vector(p) for p in points]
+        if centre:
+            cen = sum(pts, Vector()) / len(pts)
+            vc = self.bm.verts.new(cen)
+            vs = [self.bm.verts.new(p) for p in pts]
+            faces = [self.bm.faces.new([vc, vs[k], vs[(k + 1) % len(vs)]]) for k in range(len(vs))]
+        else:
+            faces = [self.bm.faces.new([self.bm.verts.new(p) for p in pts])]
+        self.bm.normal_update()
+        infos = []
+        for k, f in enumerate(faces):
+            if normal is not None and f.normal.dot(Vector(normal)) < 0:
+                f.normal_flip()
+            infos.append(FaceInfo(f, 0, k, "poly"))
+        return self._finish(infos, color, smooth, False)
+
     def transform(self, matrix):
         """Apply a matrix to everything built so far (e.g. tilt a finished pickup towards the camera)."""
         bmesh.ops.transform(self.bm, matrix=matrix, verts=list(self.bm.verts))

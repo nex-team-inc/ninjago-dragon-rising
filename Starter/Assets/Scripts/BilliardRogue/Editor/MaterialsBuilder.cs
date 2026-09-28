@@ -27,7 +27,8 @@ namespace Nex.BilliardRogue.Editor
         const string ToonLitTransparent = "BilliardRogue/ToonLitTransparent";
         const string FallbackShader = "Universal Render Pipeline/Lit";
         const float PaletteEmission = 2.2f;
-        const float BallEmission = 1.6f;
+        // Resting glow: the ball colour must still read through it; Presentation pulses _EmissionStrength on hits.
+        const float BallEmission = 0.45f;
 
         public static readonly string[] Surfaces = { "StoneFloor", "MossyBrick", "CryptBrick", "CryptFloor", "WoodPlank", "CrystalRock", "Dirt", "Grass" };
         static readonly List<string> warnings = new();
@@ -139,12 +140,14 @@ namespace Nex.BilliardRogue.Editor
         static void BuildLightShaft()
         {
             var material = LoadOrCreate("M_LightShaft", "BilliardRogue/LightShaft");
-            material.SetColor("_Color", new Color(1f, 0.9f, 0.7f) * 1.5f);
-            material.SetFloat("_Intensity", 0.8f);
+            // Layouts drive the final brightness (shaft intensity 0.3–0.35 via MaterialPropertyBlock); these are the
+            // resting values for a 10 m shaft in the act dioramas.
+            material.SetColor("_Color", new Color(1f, 0.9f, 0.7f));
+            material.SetFloat("_Intensity", 0.6f);
             material.SetTexture("_NoiseTex", NoiseTexture());
             material.SetVector("_NoiseScroll", new Vector4(0.02f, 0.08f, -0.015f, 0.05f));
-            material.SetFloat("_EdgeSoftness", 0.25f);
-            material.SetFloat("_EdgePower", 2f);
+            material.SetFloat("_EdgeSoftness", 0.35f);
+            material.SetFloat("_EdgePower", 1.5f);
             material.SetFloat("_FadeDistance", 3f);
             SetKeyword(material, "_DEPTH_FADE", "_UseDepthFade", false);
         }

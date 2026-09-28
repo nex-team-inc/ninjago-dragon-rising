@@ -204,7 +204,8 @@ namespace Nex.BilliardRogue
             if (target == null) return;
             worldCamera.targetTexture = null;
             target.Release();
-            Destroy(target);
+            if (Application.isPlaying) Destroy(target);
+            else DestroyImmediate(target);   // Editor builders / captures rebuild the target outside play mode
             target = null;
         }
 

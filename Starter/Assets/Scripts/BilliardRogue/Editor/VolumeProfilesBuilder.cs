@@ -23,11 +23,13 @@ namespace Nex.BilliardRogue.Editor
         const string VisualConfigPath = BuilderAssets.ConfigRoot + "/HD2DVisualConfig.asset";
         const string ActConfigFormat = BuilderAssets.ConfigRoot + "/Acts/Act_{0}.asset";
 
+        // Bloom values are relative to HD2DVisualConfig (threshold 0.9 / intensity 0.8 / scatter 0.7 = 1×): only pixels
+        // above ~1.0 in HDR (emissive palette cells, ball glow, shafts) may bloom, sunlit albedo must stay crisp.
         sealed class Look
         {
-            public float bloomIntensity = 1f;
-            public float bloomThreshold = 0.9f;
-            public float bloomScatter = 0.7f;
+            public float bloomIntensity = 0.6f;
+            public float bloomThreshold = 1.05f;
+            public float bloomScatter = 0.65f;
             public Color bloomTint = Color.white;
             public float contrast = 10f;
             public float saturation = 10f;
@@ -62,10 +64,10 @@ namespace Nex.BilliardRogue.Editor
             }
 
             var defaultProfile = BuildLook(DefaultProfilePath, visual, new Look(), report);
-            BuildLook(VolumeRoot + "/Volume_Title.asset", visual, GoldenHour(1.2f, 0.3f), report);
+            BuildLook(VolumeRoot + "/Volume_Title.asset", visual, GoldenHour(0.8f, 0.3f), report);
             var acts = new[]
             {
-                BuildLook(VolumeRoot + "/Volume_Act1.asset", visual, GoldenHour(1f, 0.25f), report),
+                BuildLook(VolumeRoot + "/Volume_Act1.asset", visual, GoldenHour(0.65f, 0.25f), report),
                 BuildLook(VolumeRoot + "/Volume_Act2.asset", visual, DeepBlueNight(), report),
                 BuildLook(VolumeRoot + "/Volume_Act3.asset", visual, VioletCyanMagic(), report),
             };
@@ -96,9 +98,9 @@ namespace Nex.BilliardRogue.Editor
 
         static Look DeepBlueNight() => new()
         {
-            bloomIntensity = 1.6f,
-            bloomThreshold = 0.8f,
-            bloomScatter = 0.75f,
+            bloomIntensity = 0.9f,
+            bloomThreshold = 0.95f,
+            bloomScatter = 0.7f,
             bloomTint = new Color(0.8f, 0.9f, 1f),
             contrast = 16f,
             saturation = -4f,
@@ -116,9 +118,9 @@ namespace Nex.BilliardRogue.Editor
 
         static Look VioletCyanMagic() => new()
         {
-            bloomIntensity = 2f,
-            bloomThreshold = 0.85f,
-            bloomScatter = 0.8f,
+            bloomIntensity = 1.1f,
+            bloomThreshold = 0.95f,
+            bloomScatter = 0.75f,
             bloomTint = new Color(0.85f, 0.8f, 1f),
             contrast = 12f,
             saturation = 26f,

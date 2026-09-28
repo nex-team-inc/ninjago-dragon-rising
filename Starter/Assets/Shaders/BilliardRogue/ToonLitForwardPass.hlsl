@@ -44,10 +44,11 @@ Varyings ToonVert(Attributes input)
     o.positionWS = pos.positionWS;
     o.normalWS = nrm.normalWS;
 #if defined(_WORLD_UV)
-    o.uv = TRANSFORM_TEX(WorldProjectedUv(pos.positionWS, nrm.normalWS) * _Tiling, _BaseMap);
+    float2 uv = WorldProjectedUv(pos.positionWS, nrm.normalWS) * _Tiling;
 #else
-    o.uv = TRANSFORM_TEX(input.uv * _Tiling, _BaseMap);
+    float2 uv = input.uv * _Tiling;
 #endif
+    o.uv = TRANSFORM_TEX(uv, _BaseMap);
 #if defined(_NORMALMAP)
     o.tangentWS = half4(nrm.tangentWS, input.tangentOS.w * GetOddNegativeScale());
 #endif
@@ -70,7 +71,7 @@ half4 ToonFrag(Varyings input) : SV_Target
     UNITY_SETUP_INSTANCE_ID(input);
     UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
 
-    half4 albedo = SampleAlbedoAlpha(input.uv, TEXTURE2D_ARGS(_BaseMap, sampler_BaseMap)) * _BaseColor;
+    half4 albedo = SampleAlbedoAlpha(input.uv, TEXTURE2D_ARGS(_BaseMap, sampler_PointRepeat)) * _BaseColor;
 #if defined(_ALPHATEST_ON)
     clip(albedo.a - _Cutoff);
 #endif
@@ -79,7 +80,7 @@ half4 ToonFrag(Varyings input) : SV_Target
 
     half3 normalWS = normalize(input.normalWS);
 #if defined(_NORMALMAP)
-    half3 normalTS = SampleNormal(input.uv, TEXTURE2D_ARGS(_BumpMap, sampler_BumpMap), _BumpScale);
+    half3 normalTS = SampleNormal(input.uv, TEXTURE2D_ARGS(_BumpMap, sampler_PointRepeat), _BumpScale);
     half3 bitangentWS = input.tangentWS.w * cross(normalWS, input.tangentWS.xyz);
     normalWS = normalize(TransformTangentToWorld(normalTS, half3x3(input.tangentWS.xyz, bitangentWS, normalWS)));
 #endif
@@ -110,12 +111,12 @@ half4 ToonFrag(Varyings input) : SV_Target
 
     half3 color = albedo.rgb * lighting;
 #if defined(_CAVITYMAP)
-    half cavity = SAMPLE_TEXTURE2D(_CavityMap, sampler_CavityMap, input.uv).r;   // 0.5 neutral, <0.5 crevice, >0.5 edge
+    half cavity = SAMPLE_TEXTURE2D(_CavityMap, sampler_PointRepeat, input.uv).r;   // 0.5 neutral, <0.5 crevice, >0.5 edge
     color *= 1.0h + (cavity - 0.5h) * 2.0h * _CavityStrength;
 #endif
     half rim = pow(1.0h - saturate(dot(normalWS, inputData.viewDirectionWS)), _RimPower) * _RimColor.a;
     color += _RimColor.rgb * (rim * max(ramp, 0.2h));
-    color += SampleEmission(input.uv, _EmissionColor.rgb, TEXTURE2D_ARGS(_EmissionMap, sampler_EmissionMap)) * _EmissionStrength;
+    color += SampleEmission(input.uv, _EmissionColor.rgb, TEXTURE2D_ARGS(_EmissionMap, sampler_PointRepeat)) * _EmissionStrength;
     color = lerp(color, _FlashColor.rgb, _FlashAmount);
     color = MixFog(color, input.fogFactor);
 

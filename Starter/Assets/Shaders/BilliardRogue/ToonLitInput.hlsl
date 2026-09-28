@@ -29,8 +29,10 @@ CBUFFER_START(UnityPerMaterial)
     half _Alpha;
 CBUFFER_END
 
+// Every ToonLit map is sampled through URP's global point/repeat sampler state (GlobalSamplers.hlsl): the palette
+// atlas and the 64 px surface sets are pixel textures (TDD §14: point, no mips; surfaces repeat, palette UVs stay
+// inside the atlas), so the look does not depend on importer filter / wrap settings.
 TEXTURE2D(_CavityMap);
-SAMPLER(sampler_CavityMap);
 
 // Quantizes x (0..1) into _Bands levels with a soft step in the middle of every band so the terminator does not alias.
 half ToonRamp(half x)

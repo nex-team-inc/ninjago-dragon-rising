@@ -1,5 +1,6 @@
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 using System.Text;
 using UnityEditor;
@@ -11,15 +12,18 @@ namespace Nex.BilliardRogue.Editor
 {
     /// <summary>
     /// Builds Assets/Scenes/BilliardRogue/Tests/RenderTest.unity: the WorldCameraRig prefab, a sun with hard shadows,
-    /// two coloured point lights, a surface floor, staged palette models, balls, a light shaft, an aim guide and an
-    /// emissive probe — everything needed to judge the HD-2D look. Not in Build Settings. Refuses to run while the
-    /// open scene has unsaved changes and reopens it afterwards.
+    /// two coloured point lights, a world-UV surface floor, staged palette models (their *_Surface parts take the
+    /// surface materials like the arena kit), balls, a 10 m light shaft, an aim guide and an emissive probe —
+    /// everything needed to judge the HD-2D look. Not in Build Settings. Refuses to run while the open scene has
+    /// unsaved changes and reopens it afterwards.
     /// </summary>
     public static class RenderTestSceneBuilder
     {
         public const string ScenePath = "Assets/Scenes/BilliardRogue/Tests/RenderTest.unity";
         const string ModelRoot = "Assets/Models/BilliardRogue";
         const string MaterialRoot = MaterialsBuilder.MaterialRoot;
+        const string SurfaceSuffix = "_Surface";
+        const string SideSurfacePrefix = "Side";
 
         sealed class Placement
         {
@@ -28,6 +32,13 @@ namespace Nex.BilliardRogue.Editor
             public Vector3 position;
             public float yaw;
             public Vector3 placeholderScale = Vector3.one;
+        }
+
+        sealed class MaterialSet
+        {
+            public Material palette = null!;
+            public Material topSurface = null!;
+            public Material sideSurface = null!;
         }
 
         static readonly Placement[] Placements =
@@ -95,13 +106,18 @@ namespace Nex.BilliardRogue.Editor
                 Debug.LogWarning("[RenderTestSceneBuilder] WorldCameraRig.prefab missing (WorldCameraRigBuilder); scene has no camera.");
             }
 
+            var set = new MaterialSet
+            {
+                palette = LoadMaterial("M_Palette"),
+                topSurface = LoadMaterial("M_Surface_StoneFloor"),
+                sideSurface = LoadMaterial("M_Surface_MossyBrick"),
+            };
             BuildLights(layer);
             var world = new GameObject("World").transform;
-            BuildFloor(world, layer);
-            var palette = LoadMaterial("M_Palette");
+            BuildFloor(world, layer, set);
             foreach (var placement in Placements)
             {
-                PlaceModel(placement, world, layer, palette, report);
+                PlaceModel(placement, world, layer, set, report);
             }
 
             BuildBalls(world, layer);
@@ -115,8 +131,10 @@ namespace Nex.BilliardRogue.Editor
             var sun = new GameObject("Sun").AddComponent<Light>();
             sun.type = LightType.Directional;
             sun.color = new Color(1f, 0.93f, 0.8f);
-            sun.intensity = 1.4f;
-            sun.transform.rotation = Quaternion.Euler(52f, -28f, 0f);
+            sun.intensity = 1.15f;
+            // From the upper left, slightly towards the camera: tops and camera-facing sides sit in different bands and
+            // the hard shadows fall to the right where the floor shows them.
+            sun.transform.rotation = Quaternion.LookRotation(new Vector3(0.55f, -0.7f, -0.45f).normalized);
             sun.shadows = LightShadows.Hard;
             sun.shadowStrength = 1f;
             SetLayer(sun.gameObject, layer);
@@ -138,26 +156,26 @@ namespace Nex.BilliardRogue.Editor
             SetLayer(crystal.gameObject, layer);
         }
 
-        static void BuildFloor(Transform parent, int layer)
+        static void BuildFloor(Transform parent, int layer, MaterialSet set)
         {
             var floor = GameObject.CreatePrimitive(PrimitiveType.Plane);
             floor.name = "Floor_StoneFloor";
-            Object.DestroyImmediate(floor.GetComponent<Collider>());
+            UnityEngine.Object.DestroyImmediate(floor.GetComponent<Collider>());
             floor.transform.SetParent(parent, false);
             floor.transform.position = new Vector3(0f, 0f, 6f);
             floor.transform.localScale = new Vector3(1.4f, 1f, 1.8f);
-            var surface = LoadMaterial("M_Surface_StoneFloor");
-            var projected = new Material(surface) { name = "M_Surface_StoneFloor_WorldUv" };
-            projected.EnableKeyword("_WORLD_UV");
-            if (projected.HasProperty("_UseWorldUv")) projected.SetFloat("_UseWorldUv", 1f);
-            floor.GetComponent<MeshRenderer>().sharedMaterial = projected;
+            // Primitives have no 1 UV = 1 m mapping, so the plane exercises the _WORLD_UV box projection.
+            floor.GetComponent<MeshRenderer>().sharedMaterial = PersistedVariant("M_RenderTest_FloorWorldUv", set.topSurface, material =>
+            {
+                material.EnableKeyword("_WORLD_UV");
+                if (material.HasProperty("_UseWorldUv")) material.SetFloat("_UseWorldUv", 1f);
+            });
             SetLayer(floor, layer);
 
             var tiles = new GameObject("FloorTiles").transform;
             tiles.SetParent(parent, false);
             var tile = AssetDatabase.LoadAssetAtPath<GameObject>($"{ModelRoot}/Environment/Env_FloorTile.fbx");
             if (tile == null) return;
-            var palette = LoadMaterial("M_Palette");
             for (var x = -3; x <= 3; x++)
             {
                 for (var z = 1; z <= 4; z++)
@@ -165,13 +183,13 @@ namespace Nex.BilliardRogue.Editor
                     var instance = (GameObject)PrefabUtility.InstantiatePrefab(tile, tiles);
                     instance.name = $"Tile_{x}_{z}";
                     instance.transform.position = new Vector3(x, 0.001f, z + 0.5f);
-                    ApplyMaterial(instance, palette);
+                    ApplyMaterials(instance, set);
                     SetLayer(instance, layer);
                 }
             }
         }
 
-        static void PlaceModel(Placement placement, Transform parent, int layer, Material palette, StringBuilder report)
+        static void PlaceModel(Placement placement, Transform parent, int layer, MaterialSet set, StringBuilder report)
         {
             var container = new GameObject(placement.name);
             container.transform.SetParent(parent, false);
@@ -183,18 +201,18 @@ namespace Nex.BilliardRogue.Editor
                 var instance = (GameObject)PrefabUtility.InstantiatePrefab(model, container.transform);
                 instance.transform.localPosition = Vector3.zero;
                 instance.transform.localRotation = Quaternion.identity;
-                ApplyMaterial(instance, palette);
+                ApplyMaterials(instance, set);
             }
             else
             {
                 report.Append($" placeholder:{placement.name}");
                 var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
                 cube.name = "Placeholder";
-                Object.DestroyImmediate(cube.GetComponent<Collider>());
+                UnityEngine.Object.DestroyImmediate(cube.GetComponent<Collider>());
                 cube.transform.SetParent(container.transform, false);
                 cube.transform.localPosition = new Vector3(0f, placement.placeholderScale.y * 0.5f, 0f);
                 cube.transform.localScale = placement.placeholderScale;
-                cube.GetComponent<MeshRenderer>().sharedMaterial = palette;
+                cube.GetComponent<MeshRenderer>().sharedMaterial = set.palette;
             }
 
             SetLayer(container, layer);
@@ -214,18 +232,20 @@ namespace Nex.BilliardRogue.Editor
                 else
                 {
                     ball = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                    Object.DestroyImmediate(ball.GetComponent<Collider>());
+                    UnityEngine.Object.DestroyImmediate(ball.GetComponent<Collider>());
                     ball.transform.SetParent(parent, false);
                 }
 
                 ball.name = $"Ball_{types[i]}";
                 ball.transform.position = new Vector3(-1.5f + i, 0.25f, 1.6f + i * 0.4f);
                 ball.transform.localScale = Vector3.one * 0.5f;
-                ApplyMaterial(ball, LoadMaterial($"M_Ball_{types[i]}"));
+                SetAllMaterials(ball, LoadMaterial($"M_Ball_{types[i]}"));
                 SetLayer(ball, layer);
             }
         }
 
+        // Env_LightShaft is a unit cone with its pivot at the source; layouts scale it to (width, length, width) and aim
+        // it with Euler angles, so the test uses the Act 1 layout's shaft pose brought into view.
         static void BuildLightShaft(Transform parent, int layer)
         {
             var material = LoadMaterial("M_LightShaft");
@@ -234,20 +254,20 @@ namespace Nex.BilliardRogue.Editor
             if (model != null)
             {
                 shaft = (GameObject)PrefabUtility.InstantiatePrefab(model, parent);
-                shaft.transform.position = new Vector3(-1.2f, 0f, 7.5f);
+                shaft.transform.localScale = new Vector3(0.85f, 10f, 0.85f);
             }
             else
             {
                 shaft = GameObject.CreatePrimitive(PrimitiveType.Quad);
-                Object.DestroyImmediate(shaft.GetComponent<Collider>());
+                UnityEngine.Object.DestroyImmediate(shaft.GetComponent<Collider>());
                 shaft.transform.SetParent(parent, false);
-                shaft.transform.position = new Vector3(-1.2f, 2.5f, 7.5f);
-                shaft.transform.rotation = Quaternion.Euler(0f, 20f, 25f);
-                shaft.transform.localScale = new Vector3(1.5f, 6f, 1f);
+                shaft.transform.localScale = new Vector3(1.5f, 10f, 1f);
             }
 
             shaft.name = "LightShaft";
-            ApplyMaterial(shaft, material);
+            shaft.transform.position = new Vector3(-6.5f, 6.7f, 9f);
+            shaft.transform.rotation = Quaternion.Euler(41.1f, 279.16f, 0f);
+            SetAllMaterials(shaft, material);
             SetLayer(shaft, layer);
             foreach (var renderer in shaft.GetComponentsInChildren<Renderer>())
             {
@@ -280,15 +300,16 @@ namespace Nex.BilliardRogue.Editor
         {
             var probe = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             probe.name = "EmissiveProbe";
-            Object.DestroyImmediate(probe.GetComponent<Collider>());
+            UnityEngine.Object.DestroyImmediate(probe.GetComponent<Collider>());
             probe.transform.SetParent(parent, false);
             probe.transform.position = new Vector3(2.2f, 0.9f, 6.2f);
             probe.transform.localScale = Vector3.one * 0.45f;
-            var material = new Material(LoadMaterial("M_DangerTile")) { name = "M_EmissiveProbe" };
-            material.SetColor("_BaseColor", new Color(0.2f, 0.5f, 1f));
-            material.SetColor("_EmissionColor", new Color(0.3f, 0.7f, 1f) * 3f);
-            material.SetFloat("_EmissionStrength", 1f);
-            probe.GetComponent<MeshRenderer>().sharedMaterial = material;
+            probe.GetComponent<MeshRenderer>().sharedMaterial = PersistedVariant("M_RenderTest_Emissive", LoadMaterial("M_DangerTile"), material =>
+            {
+                material.SetColor("_BaseColor", new Color(0.2f, 0.5f, 1f));
+                material.SetColor("_EmissionColor", new Color(0.3f, 0.7f, 1f) * 3f);
+                material.SetFloat("_EmissionStrength", 1f);
+            });
             SetLayer(probe, layer);
         }
 
@@ -304,20 +325,64 @@ namespace Nex.BilliardRogue.Editor
             return new Material(Shader.Find("Universal Render Pipeline/Lit")) { name = $"{name}_Fallback" };
         }
 
-        static void ApplyMaterial(GameObject root, Material material)
+        // Scene renderers cannot reference unsaved materials, so test-only variants live next to the generated textures.
+        static Material PersistedVariant(string name, Material source, Action<Material> configure)
+        {
+            var path = $"{MaterialsBuilder.GeneratedRoot}/{name}.mat";
+            var material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material == null)
+            {
+                BuilderAssets.EnsureFolder(MaterialsBuilder.GeneratedRoot);
+                material = new Material(source) { name = name };
+                AssetDatabase.CreateAsset(material, path);
+            }
+            else
+            {
+                material.CopyPropertiesFromMaterial(source);
+                material.shader = source.shader;
+            }
+
+            configure(material);
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
+        // Mirrors the arena kit convention: *_Surface parts carry 1 UV = 1 m and take the tiling surface materials.
+        static void ApplyMaterials(GameObject root, MaterialSet set)
         {
             var renderers = new List<Renderer>();
             root.GetComponentsInChildren(true, renderers);
             foreach (var renderer in renderers)
             {
-                var materials = renderer.sharedMaterials;
-                for (var i = 0; i < materials.Length; i++)
+                var material = set.palette;
+                if (renderer.name.EndsWith(SurfaceSuffix, StringComparison.Ordinal))
                 {
-                    materials[i] = material;
+                    material = renderer.name.StartsWith(SideSurfacePrefix, StringComparison.Ordinal) ? set.sideSurface : set.topSurface;
                 }
 
-                renderer.sharedMaterials = materials.Length == 0 ? new[] { material } : materials;
+                SetMaterial(renderer, material);
             }
+        }
+
+        static void SetAllMaterials(GameObject root, Material material)
+        {
+            var renderers = new List<Renderer>();
+            root.GetComponentsInChildren(true, renderers);
+            foreach (var renderer in renderers)
+            {
+                SetMaterial(renderer, material);
+            }
+        }
+
+        static void SetMaterial(Renderer renderer, Material material)
+        {
+            var materials = renderer.sharedMaterials;
+            for (var i = 0; i < materials.Length; i++)
+            {
+                materials[i] = material;
+            }
+
+            renderer.sharedMaterials = materials.Length == 0 ? new[] { material } : materials;
         }
 
         static void SetLayer(GameObject root, int layer)

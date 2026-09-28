@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: M_LightShaft
+  m_Shader: {fileID: 4800000, guid: 982eea87f01064595af770ad0065ec8b, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _NoiseTex:
+        m_Texture: {fileID: 2800000, guid: da9d787130b5248638004b1bef2295c8, type: 2}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _DepthFade: 1
+    - _EdgePower: 1.5
+    - _EdgeSoftness: 0.35
+    - _FadeDistance: 3
+    - _Intensity: 0.6
+    - _UseDepthFade: 0
+    m_Colors:
+    - _Color: {r: 1, g: 0.9, b: 0.7, a: 1}
+    - _NoiseScroll: {r: 0.02, g: 0.08, b: -0.015, a: 0.05}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1

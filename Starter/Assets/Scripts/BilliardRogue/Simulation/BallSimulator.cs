@@ -3,67 +3,313 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// Implemented by Simulation module.
 namespace Nex.BilliardRogue.Simulation
 {
     /// <summary>
     /// Fixed-substep 2D ball physics in sim space: elastic reflections off the left/right/top walls, enemy
     /// footprints (inset per rules) and static objects; open bottom exit; per-ball abilities (GDD §5); pickups,
-    /// portals, mud, anti-stall. Allocation-free per step; balls are pooled internally.
+    /// portals, mud, anti-stall. Allocation-free per step; balls are pooled internally. A Splitter's BallSplit
+    /// event ends the parent ball; its minis then exit individually (BallExited, flag = isMini).
     /// </summary>
     public sealed class BallSimulator
     {
+        const int Capacity = 96;
+        const int MaxSubstepsPerStep = 120;
+        const float MiniRadiusScale = 0.7f;
+        const float SplitFanDegrees = 18f;
+        // Past this multiple of maxFlightSeconds a stalled ball ignores solids and drops straight out, so a turn
+        // can never hang even if the pull keeps losing against enemy reflections.
+        const float GhostAfterFlightMultiple = 2f;
+
+        readonly GameRules rules;
+        readonly BoardOps ops;
+        readonly BallHitResolver hitResolver;
+        readonly BallTriggers triggers;
+        readonly BallSlot[] slots = new BallSlot[Capacity];
+        float accumulator;
+        int nextBallId = 1;
+        int activeCount;
+
+        #region Life Cycle
+
         public BallSimulator(GameRules rules, BoardOps ops)
         {
-            throw new System.NotImplementedException("Simulation module");
+            this.rules = rules;
+            this.ops = ops;
+            hitResolver = new BallHitResolver(rules, ops);
+            triggers = new BallTriggers(rules, ops);
+            for (var i = 0; i < Capacity; i++)
+            {
+                slots[i] = new BallSlot();
+            }
         }
 
+        #endregion
+
         /// <summary>Number of balls (including minis) still in flight.</summary>
-        public int ActiveCount => throw new System.NotImplementedException("Simulation module");
+        public int ActiveCount => activeCount;
+
+        #region Public Methods
 
         /// <summary>
         /// Fires one ball from origin (on the launch line, see ArenaGeometry.LaunchOrigin) along direction (already
         /// clamped) at ballSpeed × speedMultiplier. powerShot adds balance.powerShotBonusDamage to the first enemy
-        /// hit; a Power pickup doubles the first hit and is consumed (PowerShotConsumed). Emits BallLaunched and
-        /// increments stats.shots.
+        /// hit; a Power pickup doubles the first hit and is consumed (PowerShotConsumed). Emits BallLaunched
+        /// (value = level, value2 = shooterIndex, position2 = direction, flag = powerShot) and increments stats.shots.
         /// </summary>
         public void Launch(RunState run, BallInstance ball, Vector2 origin, Vector2 direction, bool powerShot, int shooterIndex, List<SimEvent> events)
         {
-            throw new System.NotImplementedException("Simulation module");
+            var slot = Acquire();
+            if (slot == null) return;
+            var stats = hitResolver.LevelStats(ball.type, ball.level);
+            run.stats.shots++;
+            slot.Begin(nextBallId++, ball.type, ball.level, false, shooterIndex, run.stats.shots, 0, origin, direction.normalized,
+                rules.arena.ballSpeed * stats.speedMultiplier, rules.arena.ballRadius);
+            slot.powerShot = powerShot;
+            events.Add(new SimEvent
+            {
+                kind = SimEventKind.BallLaunched, ballId = slot.id, ballType = ball.type, value = ball.level, value2 = shooterIndex,
+                position = origin, position2 = slot.direction, flag = powerShot,
+            });
+            if (!run.powerPickupArmed) return;
+            run.powerPickupArmed = false;
+            slot.powerPickup = true;
+            events.Add(new SimEvent { kind = SimEventKind.PowerShotConsumed, ballId = slot.id, ballType = ball.type, position = origin });
         }
 
         /// <summary>
         /// Advances every ball by dt using substepsPerSecond internally. Handles wall bounces (BallWallBounce, Rubber
-        /// bonus, maxBounces), enemy hits via BoardOps (shield BLOCK from the shielded face, pierce, split, bomb area,
-        /// chain lightning, freeze/burn/poison procs, crit, vampire heal cap, combo per ball → ComboChanged), crates,
-        /// pickups (PickupCollected → extraBalls / heal / power), portal teleports with re-entry lock, mud slow, the
-        /// anti-stall pull after maxFlightSeconds or maxIdleWallBounces, and BallExited when y &lt; 0.
+        /// bonus, maxBounces), enemy hits via BallHitResolver/BoardOps (shield BLOCK from the shielded face, pierce,
+        /// split, bomb area, chain lightning, freeze/burn/poison procs, crit, vampire heal cap, combo per ball →
+        /// ComboChanged), crates, pickups, portal teleports with re-entry lock, mud slow, the anti-stall pull after
+        /// maxFlightSeconds, maxIdleWallBounces or the level's maxBounces, and BallExited (value = combo,
+        /// value2 = bounces) when y &lt; 0.
         /// </summary>
         public void Step(RunState run, float dt, List<SimEvent> events)
         {
-            throw new System.NotImplementedException("Simulation module");
+            if (activeCount == 0)
+            {
+                accumulator = 0f;
+                return;
+            }
+            var h = 1f / rules.arena.substepsPerSecond;
+            accumulator += dt;
+            var steps = 0;
+            while (accumulator >= h && steps < MaxSubstepsPerStep)
+            {
+                accumulator -= h;
+                steps++;
+                for (var i = 0; i < Capacity; i++)
+                {
+                    var b = slots[i];
+                    if (b.active) Substep(run, b, h, events);
+                }
+            }
+            if (steps == MaxSubstepsPerStep) accumulator = 0f;
         }
 
         /// <summary>Visits every active ball (id, type, level, position, velocity, isMini, radius) for presentation.</summary>
         public void ForEachBall(BallVisitor visitor)
         {
-            throw new System.NotImplementedException("Simulation module");
+            for (var i = 0; i < Capacity; i++)
+            {
+                var b = slots[i];
+                if (!b.active) continue;
+                var view = new BallView(b.id, b.type, b.level, b.position, b.direction * CurrentSpeed(b), b.isMini, b.radius);
+                visitor(in view);
+            }
         }
 
         /// <summary>
         /// Traces the aim guide from origin along dir against walls, enemies and objects without mutating state,
-        /// stopping after maxLength sim units or maxBounces reflections. Writes the polyline (origin first) into
-        /// pointsOut and returns the number of points written (≤ pointsOut.Length). Must match Step's trajectory.
+        /// stopping after maxLength sim units, after maxBounces reflections (the point of the next contact is the
+        /// last one), at a portal or at the exit. Writes the polyline (origin first) into pointsOut and returns the
+        /// number of points written (≤ pointsOut.Length). Uses the same substep length and collision code as Step.
         /// </summary>
         public int PredictPath(RunState run, Vector2 origin, Vector2 dir, float maxLength, int maxBounces, Vector2[] pointsOut)
         {
-            throw new System.NotImplementedException("Simulation module");
+            if (pointsOut.Length == 0) return 0;
+            var a = rules.arena;
+            var position = origin;
+            var direction = dir.normalized;
+            var count = 0;
+            pointsOut[count++] = origin;
+            var stepLength = a.ballSpeed / a.substepsPerSecond;
+            var travelled = 0f;
+            var reflections = 0;
+            while (travelled < maxLength && count < pointsOut.Length)
+            {
+                position += direction * stepLength;
+                travelled += stepLength;
+                if (position.y < 0f || triggers.PortalIndexAt(run.board, position, a.ballRadius) >= 0)
+                {
+                    pointsOut[count++] = position;
+                    return count;
+                }
+                var bounced = BallCollision.CollideWalls(a, ref position, ref direction, a.ballRadius);
+                if (BallCollision.FindSolidContact(a, run.board, position, direction, a.ballRadius, null, 0, out var contact))
+                {
+                    position += contact.normal * contact.depth;
+                    direction = BallCollision.Reflect(direction, contact.normal);
+                    bounced = true;
+                }
+                if (!bounced) continue;
+                pointsOut[count++] = position;
+                reflections++;
+                if (reflections > maxBounces) return count;
+            }
+            if (count < pointsOut.Length) pointsOut[count++] = position;
+            return count;
         }
 
         /// <summary>Removes every ball without emitting events (stage transitions, abandon).</summary>
         public void Clear()
         {
-            throw new System.NotImplementedException("Simulation module");
+            for (var i = 0; i < Capacity; i++)
+            {
+                slots[i].active = false;
+            }
+            activeCount = 0;
+            accumulator = 0f;
         }
+
+        #endregion
+
+        #region Helpers
+
+        void Substep(RunState run, BallSlot b, float h, List<SimEvent> events)
+        {
+            var a = rules.arena;
+            b.flightTime += h;
+            b.portalLock -= h;
+            b.slowTimer -= h;
+            var ghost = b.flightTime > a.maxFlightSeconds * GhostAfterFlightMultiple;
+            if (ghost)
+            {
+                b.direction = Vector2.down;
+            }
+            else
+            {
+                ApplyStallPull(b, h);
+            }
+            b.position += b.direction * (CurrentSpeed(b) * h);
+            if (b.position.y < 0f)
+            {
+                Exit(b, events);
+                return;
+            }
+            if (BallCollision.CollideWalls(a, ref b.position, ref b.direction, b.radius))
+            {
+                b.bounces++;
+                b.wallBounces++;
+                b.idleWallBounces++;
+                events.Add(new SimEvent { kind = SimEventKind.BallWallBounce, ballId = b.id, ballType = b.type, value = b.wallBounces, position = b.position });
+            }
+            if (ghost) return;
+            triggers.CollectPickups(run, b, events);
+            if (triggers.TryTeleport(run, b, events)) return;
+            triggers.UpdateMud(run, b, events);
+            if (b.piercedCount > 0) triggers.PrunePierced(run.board, b);
+            if (!BallCollision.FindSolidContact(a, run.board, b.position, b.direction, b.radius, b.piercedIds, b.piercedCount, out var contact)) return;
+            b.idleWallBounces = 0;
+            if (contact.kind == BallContactKind.Enemy)
+            {
+                var outcome = hitResolver.Resolve(run, b, contact.enemy!, contact.normal, events);
+                if (outcome == HitOutcome.PassThrough) return;
+                Bounce(b, contact);
+                if (outcome == HitOutcome.Split) Split(b, events);
+                return;
+            }
+            Bounce(b, contact);
+            if (contact.kind == BallContactKind.Crate) ops.DamageCrate(run, contact.fieldObject!, CrateDamage(b), events);
+        }
+
+        void ApplyStallPull(BallSlot b, float h)
+        {
+            if (!b.stalled)
+            {
+                var a = rules.arena;
+                var maxBounces = hitResolver.LevelStats(b.type, b.level).maxBounces;
+                b.stalled = b.flightTime > a.maxFlightSeconds || b.idleWallBounces >= a.maxIdleWallBounces
+                    || (maxBounces > 0 && b.bounces >= maxBounces);
+                if (!b.stalled) return;
+            }
+            b.stallTime += h;
+            var pull = rules.arena.antiStallAccel * (1f + b.stallTime) * h / Mathf.Max(CurrentSpeed(b), 0.01f);
+            b.direction = (b.direction + Vector2.down * pull).normalized;
+        }
+
+        static void Bounce(BallSlot b, in BallContact contact)
+        {
+            b.position += contact.normal * contact.depth;
+            b.direction = BallCollision.Reflect(b.direction, contact.normal);
+            b.bounces++;
+        }
+
+        void Split(BallSlot parent, List<SimEvent> events)
+        {
+            var count = hitResolver.LevelStats(parent.type, parent.level).splitCount;
+            events.Add(new SimEvent { kind = SimEventKind.BallSplit, ballId = parent.id, ballType = parent.type, value = count, position = parent.position });
+            var baseAngle = Mathf.Atan2(parent.direction.y, parent.direction.x);
+            for (var i = 0; i < count; i++)
+            {
+                var mini = Acquire();
+                if (mini == null) break;
+                var angle = baseAngle + (i - (count - 1) * 0.5f) * SplitFanDegrees * Mathf.Deg2Rad;
+                var direction = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+                mini.Begin(nextBallId++, parent.type, parent.level, true, parent.shooterIndex, parent.shotNumber, i + 1,
+                    parent.position, direction, parent.speed, parent.radius * MiniRadiusScale);
+                mini.flightTime = parent.flightTime;
+                mini.combo = parent.combo;
+                mini.hitIndex = parent.hitIndex;
+                mini.healedThisShot = parent.healedThisShot;
+                mini.areaUsed = parent.areaUsed;
+                mini.splitUsed = true;
+                mini.firstHitPending = false;
+            }
+            Release(parent);
+        }
+
+        int CrateDamage(BallSlot b)
+        {
+            var stats = hitResolver.LevelStats(b.type, b.level);
+            return Mathf.Max(1, b.isMini ? stats.splitDamage : stats.damage);
+        }
+
+        float CurrentSpeed(BallSlot b)
+        {
+            return b.slowTimer > 0f ? b.speed * rules.balance.mudSlowFactor : b.speed;
+        }
+
+        void Exit(BallSlot b, List<SimEvent> events)
+        {
+            events.Add(new SimEvent
+            {
+                kind = SimEventKind.BallExited, ballId = b.id, ballType = b.type, value = b.combo, value2 = b.bounces,
+                position = b.position, flag = b.isMini,
+            });
+            Release(b);
+        }
+
+        BallSlot? Acquire()
+        {
+            for (var i = 0; i < Capacity; i++)
+            {
+                var slot = slots[i];
+                if (slot.active) continue;
+                slot.active = true;
+                activeCount++;
+                return slot;
+            }
+            return null;
+        }
+
+        void Release(BallSlot b)
+        {
+            b.active = false;
+            activeCount--;
+        }
+
+        #endregion
     }
 }

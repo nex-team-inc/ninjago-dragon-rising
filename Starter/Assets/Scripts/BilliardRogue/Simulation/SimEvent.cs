@@ -35,6 +35,7 @@ namespace Nex.BilliardRogue.Simulation
         public bool isStatusTick;
         public bool isExplosion;
         public bool isChain;
+        public bool isCrit;
     }
 
     /// <summary>Read-only snapshot of one in-flight ball for presentation (see BallSimulator.ForEachBall).</summary>

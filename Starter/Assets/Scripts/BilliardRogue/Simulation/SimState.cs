@@ -27,6 +27,8 @@ namespace Nex.BilliardRogue.Simulation
         public int burn;
         public int poison;
         public int frozenTurns;
+        /// <summary>Burn came from a Flame ball whose level spreads it to one neighbour on death.</summary>
+        public bool burnSpreads;
     }
 
     [Serializable, Preserve]

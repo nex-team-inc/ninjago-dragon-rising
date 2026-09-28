@@ -1,13 +1,20 @@
 #nullable enable
 
+using System;
 using System.Collections.Generic;
+using UnityEngine;
 
-// Implemented by Simulation module.
 namespace Nex.BilliardRogue.Simulation
 {
     /// <summary>Creates runs and drives the stage progression (3 acts × 4 stages, GDD §7).</summary>
     public sealed class RunFactory
     {
+        readonly StageGenerator stageGenerator = new();
+        BoardOps? cachedOps;
+        GameRules? cachedOpsRules;
+
+        #region Public Methods
+
         /// <summary>
         /// New run at act 0 / stage 0 with playerHp = playerMaxHp = balance.playerMaxHp, bag = balance.startingBag at
         /// level 1, rngState = SimRandom.SeedToState(seed), a fresh runId, numPlayers and empty board/plan.
@@ -15,33 +22,171 @@ namespace Nex.BilliardRogue.Simulation
         /// </summary>
         public RunState NewRun(GameRules rules, int seed, int numPlayers)
         {
-            throw new System.NotImplementedException("Simulation module");
+            var balance = rules.balance;
+            var run = new RunState
+            {
+                runId = Guid.NewGuid().ToString("N"),
+                seed = seed,
+                rngState = SimRandom.SeedToState(seed),
+                numPlayers = Math.Max(1, numPlayers),
+                playerHp = balance.playerMaxHp,
+                playerMaxHp = balance.playerMaxHp,
+            };
+            foreach (var type in balance.startingBag)
+            {
+                run.bag.Add(new BallInstance { type = type, level = 1 });
+            }
+            return run;
         }
 
         /// <summary>
-        /// Generates run.stage for the current act/stage (StageGenerator), clears the board, places the plan's field
-        /// objects, spawns wave rows 0-1 (WaveSpawned/EnemySpawned), resets turnInStage/nextWaveIndex/extraBalls and
-        /// stores rng.State back into run.rngState. Boss stages heal balance.bossHealFraction of max HP first
-        /// (PlayerHealed) — GDD: "After a boss: full heal 50% of max HP first" applies when entering the reward.
+        /// Generates run.stage for the current act/stage (StageGenerator), clears the board, copies the plan's field
+        /// objects (same ids; crates without hp get balance.crateHp; board.nextId = max id + 1), resets
+        /// turnInStage/nextWaveIndex/extraBalls and spawns the opening waves: normal stage waves[0] into row 1 and
+        /// waves[1] into row 0; boss stage waves[0] (the boss) into row 0. Stores rng.State into run.rngState.
+        /// The post-boss heal happens in CompleteStage, before the reward.
         /// </summary>
         public void BeginStage(GameRules rules, RunState run, SimRandom rng, List<SimEvent> events)
         {
-            throw new System.NotImplementedException("Simulation module");
-        }
-
-        /// <summary>True when every scheduled wave has spawned and no enemy remains on the board.</summary>
-        public bool IsStageCleared(RunState run)
-        {
-            throw new System.NotImplementedException("Simulation module");
+            var ops = OpsFor(rules);
+            var plan = stageGenerator.Generate(rules, run.actIndex, run.stageInAct, run.stageNumber, rng);
+            run.stage = plan;
+            var board = run.board;
+            board.enemies.Clear();
+            board.fieldObjects.Clear();
+            board.pickups.Clear();
+            var maxId = 0;
+            foreach (var planned in plan.fieldObjects)
+            {
+                var hp = planned.hp;
+                if (planned.type == FieldObjectType.Crate && hp <= 0)
+                {
+                    hp = rules.balance.crateHp;
+                }
+                board.fieldObjects.Add(new FieldObjectState
+                {
+                    id = planned.id,
+                    type = planned.type,
+                    col = planned.col,
+                    row = planned.row,
+                    hp = hp,
+                    pairId = planned.pairId,
+                });
+                maxId = Math.Max(maxId, planned.id);
+            }
+            board.nextId = maxId + 1;
+            run.turnInStage = 0;
+            run.nextWaveIndex = 0;
+            run.extraBalls = 0;
+            if (plan.isBoss)
+            {
+                SpawnNextWave(ops, run, 0, events);
+            }
+            else
+            {
+                SpawnNextWave(ops, run, 1, events);
+                SpawnNextWave(ops, run, 0, events);
+            }
+            run.rngState = rng.State;
         }
 
         /// <summary>
-        /// Moves to the next stage (stageInAct++, wrapping into the next act; stageNumber++). Returns false when the
-        /// act-3 boss stage was the last one: the run is complete and outcome should become Victory.
+        /// True when every scheduled wave has spawned (normal stage) or the boss is dead (boss stage), and no enemy
+        /// other than BoneWall remains on the board.
+        /// </summary>
+        public bool IsStageCleared(RunState run)
+        {
+            if (!run.stage.isBoss && run.nextWaveIndex < run.stage.waves.Count)
+            {
+                return false;
+            }
+            foreach (var e in run.board.enemies)
+            {
+                if (e.type != EnemyType.BoneWall)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Call once when IsStageCleared turns true: leftover pickups vanish (PickupExpired), a boss stage heals
+        /// balance.bossHealFraction of max HP (PlayerHealed), emits StageCleared (value = stageNumber, flag = boss)
+        /// and sets awaitingReward unless this was the final stage.
+        /// </summary>
+        public void CompleteStage(GameRules rules, RunState run, List<SimEvent> events)
+        {
+            var pickups = run.board.pickups;
+            foreach (var p in pickups)
+            {
+                events.Add(new SimEvent
+                {
+                    kind = SimEventKind.PickupExpired,
+                    targetId = p.id,
+                    pickup = p.type,
+                    position = ArenaGeometry.CellCenter(rules.arena, p.col, p.row),
+                });
+            }
+            pickups.Clear();
+            if (run.stage.isBoss)
+            {
+                OpsFor(rules).HealPlayer(run, Mathf.RoundToInt(run.playerMaxHp * rules.balance.bossHealFraction), events);
+            }
+            events.Add(new SimEvent { kind = SimEventKind.StageCleared, value = run.stageNumber, flag = run.stage.isBoss });
+            run.awaitingReward = !IsFinalStage(rules, run);
+        }
+
+        /// <summary>
+        /// Moves to the next stage (stageInAct++, wrapping into the next act after its boss stage; stageNumber++).
+        /// Returns false and sets outcome = Victory when the act-3 boss stage was the last one.
         /// </summary>
         public bool AdvanceToNextStage(GameRules rules, RunState run)
         {
-            throw new System.NotImplementedException("Simulation module");
+            if (IsFinalStage(rules, run))
+            {
+                run.outcome = RunOutcome.Victory;
+                return false;
+            }
+            if (run.stageInAct < rules.acts[run.actIndex].normalStages)
+            {
+                run.stageInAct++;
+            }
+            else
+            {
+                run.actIndex++;
+                run.stageInAct = 0;
+            }
+            run.stageNumber++;
+            run.turnInStage = 0;
+            return true;
         }
+
+        #endregion
+
+        #region Helpers
+
+        static bool IsFinalStage(GameRules rules, RunState run)
+        {
+            return run.actIndex >= rules.acts.Length - 1 && run.stageInAct >= rules.acts[run.actIndex].normalStages;
+        }
+
+        static void SpawnNextWave(BoardOps ops, RunState run, int row, List<SimEvent> events)
+        {
+            if (run.nextWaveIndex >= run.stage.waves.Count) return;
+            ops.SpawnWaveRow(run, run.stage.waves[run.nextWaveIndex++], row, events);
+        }
+
+        BoardOps OpsFor(GameRules rules)
+        {
+            if (cachedOps == null || cachedOpsRules != rules)
+            {
+                cachedOps = new BoardOps(rules);
+                cachedOpsRules = rules;
+            }
+            return cachedOps;
+        }
+
+        #endregion
     }
 }

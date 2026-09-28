@@ -113,6 +113,30 @@ SFX_CANDIDATES = {
     "UiPause": [U + "TIME_WARPS/TIME_WARP_Stop_01_mono.wav", U + "TIME_WARPS/TIME_WARP_Start_01_mono.wav"],
     "CountdownTick": [U + "8BIT/Beeps/8BIT_RETRO_Beep_Short_Bright_mono.wav", C + "UI/Countdown/SFX_UI_Countdown_Blow_1.wav"],
     "Generic": [M + "SFX/UI/Click/SFX_UI_Click_Open_1.wav", M + "SFX/UI/Click/SFX_UI_Click_Close_1.wav"],
+    # --- revision 2: short accents that layer on top of the music stingers (the music lives only in Stinger_*.ogg) ---
+    "AccentStageClear": [U + f"RETRO_LOFI/RETRO_Bonus_0{i}_mono.wav" for i in range(1, 9)] +
+                        [U + "8BIT/Coin_Collect/8BIT_RETRO_Coin_Collect_Two_Note_Bright_Twinkle_mono.wav",
+                         U + "MUSIC_EFFECTS/Solo_Chip_Square/MUSIC_EFFECT_Solo_Chip_Square_Positive_01_stereo.wav"],
+    "AccentBossAppear": [U + "IMPACTS/Metal/IMPACT_Metal_Cling_Deep_mono.wav", U + "IMPACTS/Stone/IMPACT_Stone_Deep_mono.wav",
+                         CG + "Cute_Game_Musical_SFX_Percussion_Gong_Time_Up_01.wav",
+                         CG + "Cute_Game_Musical_SFX_Percussion_Gong_Time_Up_02.wav",
+                         UGMC + "Short Cues/Scares/Deep Drum SCARE.wav", U + "RETRO_LOFI/LOFI_Rumble_01_mono.wav",
+                         U + "EXPLOSIONS/Long/EXPLOSION_Long_Distant_Impact_Rumble_mono.wav",
+                         U + "MAGIC_SPELLS/MAGIC_SPELL_Slow_In_Muffled_Boom_mono.wav", U + "RETRO_LOFI/RETRO_Thump_01_mono.wav",
+                         U + "RETRO_LOFI/RETRO_Thump_03_mono.wav"],
+    "AccentGameOver": [U + f"MUSIC_EFFECTS/Solo_Chip_Square/MUSIC_EFFECT_Solo_Chip_Square_Negative_0{i}_stereo.wav" for i in range(1, 7)] +
+                      [U + "RETRO_LOFI/RETRO_Death_01_mono.wav", U + "RETRO_LOFI/RETRO_Death_02_mono.wav"],
+    "AccentVictory": [C + "Confetti/SFX_Confetti_Explosion_1.wav", C + "Confetti/SFX_Confetti_Explosion_2.wav",
+                      C + "Confetti/SFX_Confetti_Explosion_Bright_1.wav", C + "Confetti/SFX_Confetti_Explosion_Bright_2.wav",
+                      C + "Firework/SFX_Firework_Explosion_1.wav", "Epic Toon FX/Sound/etfx_explosion_sparkle2.wav",
+                      "Epic Toon FX/Sound/etfx_explosion_sparkle3.wav"],
+    "Burn2": [U + "MAGIC_SPELLS/MAGIC_SPELL_Flame_03_mono.wav", U + "MAGIC_SPELLS/MAGIC_SPELL_Flame_04_mono.wav",
+              U + "MAGIC_SPELLS/MAGIC_SPELL_Flame_Mechanical_01_mono.wav",
+              U + "EXPLOSIONS/Short/EXPLOSION_Short_Ignite_Kickback_Debris_mono.wav", "Epic Toon FX/Sound/etfx_explosion_fireball.wav",
+              "Epic Toon FX/Sound/etfx_shoot_fireball.wav", U + "ELEMENTS/Fire/FIRE_Campfire_Active_01_loop_mono.wav"],
+    "ExplosionTransient": [U + "EXPLOSIONS/Short/EXPLOSION_Short_Kickback_Crackle_mono.wav",
+                           U + "EXPLOSIONS/Short/EXPLOSION_Short_Smooth_Crackle_mono.wav", U + "RETRO_LOFI/LOFI_Bang_01_mono.wav",
+                           U + "RETRO_LOFI/LOFI_Bang_03_mono.wav", U + "RETRO_LOFI/RETRO_Bang_01_mono.wav"],
     "Round2": [U + f"IMPACTS/Shoot_Em_Up/Short/IMPACT_ShootEmUp_Short_05_RR 0{i}_mono.wav" for i in (2, 3)] +
               [U + f"IMPACTS/Shoot_Em_Up/Short/IMPACT_ShootEmUp_Short_04_RR 0{i}_mono.wav" for i in (2, 3)] +
               [U + f"IMPACTS/Shoot_Em_Up/Medium/IMPACT_ShootEmUp_Medium_06_RR 0{i}_mono.wav" for i in (2, 3)] +

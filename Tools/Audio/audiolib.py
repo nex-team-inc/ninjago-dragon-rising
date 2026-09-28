@@ -126,6 +126,13 @@ def max_short_lufs(x: np.ndarray, window_s: float = 0.1) -> float:
     return float(_lufs(p.max()))
 
 
+def onset_lufs(x: np.ndarray, window_s: float = 0.1, latest_start_s: float = 0.01) -> float:
+    """Loudest 100 ms window that starts within the first 10 ms (i.e. the first ~110 ms): how loud the sound is at the
+    moment it is triggered, which is what competes with other sounds fired on the same frame."""
+    p = _block_power(k_weight(x), int(window_s * SR), int(0.005 * SR))
+    return float(_lufs(p[:int(latest_start_s / 0.005) + 1].max()))
+
+
 # ----------------------------------------------------------------------------------------------------------
 # Analysis
 # ----------------------------------------------------------------------------------------------------------
@@ -169,15 +176,41 @@ def attack_ms(x: np.ndarray) -> float:
     return (reach - start) * 0.5
 
 
+def time_to_ms(x: np.ndarray, below_peak_db: float) -> float:
+    """Time (ms) until |x| first reaches `below_peak_db` under its absolute peak (e.g. -3 -> 70.8 % of the peak)."""
+    env = np.abs(x) if x.ndim == 1 else np.abs(x).max(axis=1)
+    if len(env) == 0 or env.max() <= 0:
+        return 0.0
+    return float(np.argmax(env >= env.max() * 10 ** (below_peak_db / 20)) / SR * 1000)
+
+
+def strongest_partial_hz(x: np.ndarray, lo: float = 1000.0, hi: float = 1100.0, seconds: float = 0.25) -> float:
+    """Frequency of the strongest spectral peak in [lo, hi] over the first `seconds` (0.17 Hz bins, parabolic refine)."""
+    seg = x[:int(seconds * SR)]
+    seg = seg * np.hanning(len(seg))
+    n = 1 << 18
+    mag = np.abs(np.fft.rfft(seg, n))
+    freqs = np.fft.rfftfreq(n, 1 / SR)
+    band = np.nonzero((freqs >= lo) & (freqs <= hi))[0]
+    k = int(band[np.argmax(mag[band])])
+    a, b, c = np.log(mag[k - 1:k + 2] + 1e-12)
+    offset = 0.5 * (a - c) / (a - 2 * b + c) if (a - 2 * b + c) != 0 else 0.0
+    return float((k + offset) * SR / n)
+
+
 def analyze(x: np.ndarray) -> dict:
     peak = float(np.max(np.abs(x))) if len(x) else 0.0
     info = {
         "dur_s": round(len(x) / SR, 3),
+        "samples": len(x),
         "peak_db": round(db(peak), 2),
         "rms_db": round(db(_rms(x)), 2),
         "short_lufs": round(max_short_lufs(x), 2),
+        "onset_lufs": round(onset_lufs(x), 2),
         "centroid_hz": round(spectral_centroid(x)),
         "attack_ms": round(attack_ms(x), 1),
+        "to_3db_ms": round(time_to_ms(x, -3.0), 1),
+        "to_6db_ms": round(time_to_ms(x, -6.0), 1),
     }
     if len(x) >= int(0.4 * SR):
         info["int_lufs"] = round(integrated_lufs(x), 2)

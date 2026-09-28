@@ -9,7 +9,7 @@ Used where the shared repo has no good file, or as a layer on top of a sourced s
   turn_start    rising C-E-G chime ("your turn").
   ui_pause      two-note falling square blip.
   ui_resume     the same two notes rising.
-  crit_shing    bright crushed arpeggio + air for critical hits.
+  crit_shing    bright crushed arpeggio (from a just fifth over the C6 ping) + air for critical hits.
   power_boom    sub boom + noise for the power strike.
   ice_chime     C7-E7-G7 crystalline chime for Freeze.
   bubbles       rising sine chirps for Poison.
@@ -17,6 +17,7 @@ Used where the shared repo has no good file, or as a layer on top of a sourced s
   player_hurt   falling square + crushed noise (template preset).
   boss_thud     weight layer for boss hits.
   sub_thump     weight layer for hard hits.
+  blast_crack   t=0 noise crack + crushed square snap: the front transient of the Bomber explosions.
 """
 import numpy as np
 
@@ -88,7 +89,8 @@ def ui_resume(p: float = 1.0) -> list:
 
 def crit_shing(p: float = 1.0) -> list:
     return [
-        Voice("square", freq=1568 * p, duty=0.25, arp=[(0.035, 5), (0.07, 7)], attack=0.0, sustain=0.1, decay=0.16,
+        # Just fifth over the C6 ping (1569.75 Hz, not 1568): the drive's 2*G - 2*C product then lands on C6 itself.
+        Voice("square", freq=1.5 * C6 * p, duty=0.25, arp=[(0.035, 5), (0.07, 7)], attack=0.0, sustain=0.1, decay=0.16,
               crush_bits=5, volume=0.5, lowpass=10000),
         Voice("noise", freq=12000, attack=0.0, sustain=0.01, decay=0.08, highpass=4000, volume=0.5),
     ]
@@ -142,8 +144,16 @@ def sub_thump(p: float = 1.0) -> list:
     return [Voice("sine", freq=95 * p, slide=-2.0, attack=0.0, sustain=0.01, decay=0.09, punch=0.5)]
 
 
+def blast_crack(p: float = 1.0) -> list:
+    return [
+        Voice("noise", freq=9000, attack=0.0, sustain=0.006, decay=0.045, highpass=700, volume=1.0),
+        Voice("square", freq=200 * p, slide=-3.5, duty=0.4, attack=0.0, sustain=0.008, decay=0.06, volume=0.55, crush_bits=5),
+    ]
+
+
 PRESETS = {fn.__name__: fn for fn in (hit_ping, cue_thump, enemy_step, heartbeat, turn_start, ui_pause, ui_resume, crit_shing,
-                                       power_boom, ice_chime, bubbles, enemy_pop, player_hurt, boss_thud, sub_thump)}
+                                       power_boom, ice_chime, bubbles, enemy_pop, player_hurt, boss_thud, sub_thump,
+                                       blast_crack)}
 SATURATION = {"heartbeat": 2.5, "enemy_step": 1.6, "boss_thud": 1.8, "sub_thump": 1.5}
 
 

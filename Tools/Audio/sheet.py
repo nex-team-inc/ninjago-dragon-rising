@@ -1,4 +1,5 @@
-"""Review images (PIL): waveform + log-frequency spectrogram rows, loop-wrap close-ups, loudness bars.
+"""Review images (PIL): waveform + log-frequency spectrogram rows, loop-wrap close-ups, loudness bars, onset close-ups,
+worst-case summing headroom.
 
 Used by build_audio.py (final contact sheet) and by ad-hoc audition runs. Pure numpy/Pillow, deterministic.
 """
@@ -17,6 +18,7 @@ CATEGORY_COLORS = {
     "enemy": (255, 110, 120), "pickup": (120, 230, 150), "stinger": (255, 230, 170), "bgm": (140, 220, 210),
     "player": (255, 170, 200), "flow": (200, 200, 120),
 }
+GUIDE_DB = -3.0  # red guide lines = the SFX peak ceiling
 
 
 def font(size: int):
@@ -46,8 +48,8 @@ def waveform(draw, x: np.ndarray, box, color, max_s: float = 0.0):
             break
         lo, hi = float(seg.min()), float(seg.max())
         draw.line([(x0 + c, mid - hi * half), (x0 + c, mid - lo * half)], fill=color)
-    # -1 dBFS guide lines
-    g = 10 ** (-1 / 20) * half
+    # peak-ceiling guide lines
+    g = 10 ** (GUIDE_DB / 20) * half
     for yy in (mid - g, mid + g):
         draw.line([(x0, yy), (x1, yy)], fill=(80, 60, 60))
 
@@ -92,7 +94,7 @@ def sfx_sheet(rows, path: str, title: str, cols: int = 3, max_s: float = 1.2):
     d = ImageDraw.Draw(im)
     f_title, f_lab, f_sub = font(22), font(14), font(11)
     d.text((pad, 14), title, fill=TEXT, font=f_title)
-    d.text((pad, 40), f"time axis 0..{max_s:.1f}s per cell (longer clips are truncated); red lines = -1 dBFS",
+    d.text((pad, 40), f"time axis 0..{max_s:.1f}s per cell (longer clips are truncated); red lines = {GUIDE_DB:g} dBFS",
            fill=DIM, font=f_sub)
     for i, row in enumerate(rows):
         cx = pad + (i % cols) * (cell_w + pad)
@@ -165,5 +167,77 @@ def loudness_bars(rows, path: str, title: str):
         if row.get("target") is not None:
             tx = xpos(row["target"])
             d.line([(tx, y - 1), (tx, y + bar_h + 1)], fill=(255, 255, 255), width=2)
+        if row.get("onset_db") is not None:
+            ox = xpos(row["onset_db"])
+            d.line([(ox, y + 3), (ox, y + bar_h - 3)], fill=(20, 20, 20), width=3)
         d.text((xpos(row["value_db"]) + 4, y + 2), f"{row['value_db']:.1f}", fill=DIM, font=f_lab)
+    im.save(path, optimize=True)
+
+
+def onset_sheet(rows, path: str, title: str, window_s: float = 0.25, cols: int = 3):
+    """rows: dict(label, samples, category). First `window_s` of each clip (peak-normalised |x|) with markers:
+    green = first reach of -3 dB under the peak, red = absolute peak; grid every 10 ms (brighter every 50 ms)."""
+    cell_w, cell_h, pad = 600, 92, 8
+    grid_rows = (len(rows) + cols - 1) // cols
+    W = cols * (cell_w + pad) + pad
+    H = 60 + grid_rows * (cell_h + pad) + pad
+    im = Image.new("RGB", (W, H), BG)
+    d = ImageDraw.Draw(im)
+    f_title, f_lab = font(20), font(11)
+    d.text((pad, 12), title, fill=TEXT, font=f_title)
+    d.text((pad, 38), f"first {window_s * 1000:.0f} ms, grid 10 ms (bright = 50 ms); green = -3 dB of peak, red = peak",
+           fill=DIM, font=f_lab)
+    for i, row in enumerate(rows):
+        cx = pad + (i % cols) * (cell_w + pad)
+        cy = 60 + (i // cols) * (cell_h + pad)
+        d.rectangle([cx, cy, cx + cell_w, cy + cell_h], fill=PANEL)
+        n = int(window_s * al.SR)
+        x = np.abs(row["samples"])
+        peak = x.max() or 1.0
+        x = np.pad(x, (0, max(0, n - len(x))))[:n] / peak
+        x0, x1, base, top = cx + 8, cx + cell_w - 8, cy + cell_h - 6, cy + 22
+        for ms in range(0, int(window_s * 1000) + 1, 10):
+            gx = x0 + ms / (window_s * 1000) * (x1 - x0)
+            d.line([(gx, top), (gx, base)], fill=GRID if ms % 50 else (90, 95, 110))
+        for c, seg in enumerate(np.array_split(x, x1 - x0)):
+            d.line([(x0 + c, base), (x0 + c, base - float(seg.max()) * (base - top))], fill=CATEGORY_COLORS.get(row["category"], TEXT))
+        t3 = float(np.argmax(x >= 10 ** (-3 / 20))) / al.SR
+        tp = float(np.argmax(x)) / al.SR
+        for t, colour in ((tp, (235, 80, 80)), (t3, (90, 220, 120))):
+            gx = x0 + min(t, window_s) / window_s * (x1 - x0)
+            d.line([(gx, top), (gx, base)], fill=colour, width=2)
+        d.text((cx + 8, cy + 4), f"{row['label']}   -3 dB @ {t3 * 1000:.1f} ms   peak @ {tp * 1000:.1f} ms", fill=TEXT, font=f_lab)
+    im.save(path, optimize=True)
+
+
+def headroom_bars(rows, path: str, title: str, trim_db: float):
+    """rows: headroom results (scenario, loop, max_db, median_db, max_after_trim_db). Output peak per scenario."""
+    bar_h, pad, label_w, plot_w = 18, 6, 330, 640
+    W = label_w + plot_w + 200
+    H = 76 + len(rows) * (bar_h + pad) + 34
+    im = Image.new("RGB", (W, H), BG)
+    d = ImageDraw.Draw(im)
+    f_title, f_lab = font(18), font(11)
+    d.text((10, 12), title, fill=TEXT, font=f_title)
+    d.text((10, 38), f"grey = raw max, colour = max after the planned {trim_db:+.0f} dB master trim, | = raw median; "
+                     "red line = 0 dBFS (clip)", fill=DIM, font=f_lab)
+    lo, hi = -12.0, 9.0
+
+    def xpos(v):
+        return label_w + (np.clip(v, lo, hi) - lo) / (hi - lo) * plot_w
+
+    for v in range(int(lo), int(hi) + 1, 3):
+        d.line([(xpos(v), 58), (xpos(v), H - 24)], fill=GRID)
+        d.text((xpos(v) - 8, H - 20), f"{v:+d}", fill=DIM, font=f_lab)
+    for i, row in enumerate(rows):
+        y = 62 + i * (bar_h + pad)
+        d.text((10, y + 3), f"{row['scenario']} / {row['loop']}", fill=TEXT, font=f_lab)
+        d.rectangle([xpos(lo), y, xpos(row["max_db"]), y + bar_h], fill=(80, 84, 96))
+        ok = row["max_after_trim_db"] <= 0
+        d.rectangle([xpos(lo), y + 4, xpos(row["max_after_trim_db"]), y + bar_h - 4], fill=(120, 230, 150) if ok else (255, 110, 120))
+        mx = xpos(row["median_db"])
+        d.line([(mx, y), (mx, y + bar_h)], fill=TEXT, width=2)
+        d.text((xpos(max(row["max_db"], row["max_after_trim_db"])) + 6, y + 3),
+               f"raw {row['max_db']:+.1f} / trimmed {row['max_after_trim_db']:+.1f} dBFS", fill=DIM, font=f_lab)
+    d.line([(xpos(0), 58), (xpos(0), H - 24)], fill=(235, 80, 80), width=2)
     im.save(path, optimize=True)

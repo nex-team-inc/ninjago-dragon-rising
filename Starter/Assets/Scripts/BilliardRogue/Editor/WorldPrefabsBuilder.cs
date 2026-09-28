@@ -109,7 +109,8 @@ namespace Nex.BilliardRogue.Editor
             viewSo.ApplyModifiedPropertiesWithoutUndo();
 
             var idleSo = new SerializedObject(idle);
-            idleSo.FindProperty("bobPart").objectReferenceValue = WorldPrefabModels.FindFirstPart(modelTransform, "Body", "Stem", "Base", "Robe", "Wall");
+            var bobPart = WorldPrefabModels.FindFirstPart(modelTransform, "Body", "Stem", "Base", "Robe", "Wall");
+            idleSo.FindProperty("bobPart").objectReferenceValue = bobPart != null ? bobPart : WorldPrefabModels.FbxRoot(model);
             SerializedPropertyWriter.Write(idleSo.FindProperty("blinkParts"), WorldPrefabModels.FindParts(modelTransform, "Eyes"));
             SerializedPropertyWriter.Write(idleSo.FindProperty("flapParts"), WorldPrefabModels.FindParts(modelTransform, "WingL", "WingR"));
             idleSo.ApplyModifiedPropertiesWithoutUndo();
@@ -135,7 +136,8 @@ namespace Nex.BilliardRogue.Editor
             var root = WorldPrefabModels.NewRoot("Ball");
             root.layer = Mathf.Max(0, layer);
             var mesh = WorldPrefabModels.InstantiateModel("Balls/Ball.fbx", root.transform, "Mesh", PrimitiveType.Sphere, Vector3.one, layer, out var placeholder);
-            if (placeholder) mesh.transform.localPosition = Vector3.zero;
+            // The sphere primitive is centred like Ball.fbx; undo the feet-pivot offset CreatePrimitive applies.
+            if (placeholder) WorldPrefabModels.FbxRoot(mesh).localPosition = Vector3.zero;
             var renderers = new List<Renderer>();
             var basic = WorldPrefabModels.Ball(BallType.Basic);
             WorldPrefabModels.ApplyMaterial(mesh, basic != null ? basic : palette, renderers);

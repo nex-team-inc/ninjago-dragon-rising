@@ -128,33 +128,38 @@ namespace Nex.BilliardRogue.Editor
         #region Models
 
         /// <summary>
-        /// Instantiates the FBX at ModelRoot/relativePath under parent (nested prefab instance, so model re-exports
-        /// flow through) or a primitive placeholder of the given scale when the model is missing.
+        /// Instantiates the FBX at ModelRoot/relativePath (nested prefab instance, so model re-exports flow through)
+        /// or a primitive placeholder when the model is missing, inside a "name" container under parent. Views
+        /// animate the container; parts are looked up below it. A default import merges a single top-level node
+        /// into the FBX root, so part lookups fall back to FbxRoot(container) when a named body part is absent.
         /// </summary>
         public static GameObject InstantiateModel(string relativePath, Transform parent, string name, PrimitiveType placeholder, Vector3 placeholderScale, int layer, out bool isPlaceholder)
         {
+            var container = new GameObject(name);
+            container.transform.SetParent(parent, false);
             var path = $"{ModelRoot}/{relativePath}";
             var model = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-            GameObject instance;
             if (model != null)
             {
-                instance = (GameObject)PrefabUtility.InstantiatePrefab(model, parent);
+                var instance = (GameObject)PrefabUtility.InstantiatePrefab(model, container.transform);
+                instance.transform.localPosition = Vector3.zero;
+                instance.transform.localRotation = Quaternion.identity;
+                instance.transform.localScale = Vector3.one;
                 isPlaceholder = false;
             }
             else
             {
                 Warn($"{path} missing; using a {placeholder} placeholder.");
-                instance = CreatePrimitive(parent, name, placeholder, new Vector3(0f, placeholderScale.y * 0.5f, 0f), placeholderScale, null, layer);
+                CreatePrimitive(container.transform, "Placeholder", placeholder, new Vector3(0f, placeholderScale.y * 0.5f, 0f), placeholderScale, null, layer);
                 isPlaceholder = true;
             }
 
-            instance.name = name;
-            instance.transform.localPosition = Vector3.zero;
-            instance.transform.localRotation = Quaternion.identity;
-            instance.transform.localScale = Vector3.one;
-            WorldLayers.Apply(instance, layer);
-            return instance;
+            WorldLayers.Apply(container, layer);
+            return container;
         }
+
+        /// <summary>The FBX instance (or placeholder) root inside a container made by InstantiateModel.</summary>
+        public static Transform FbxRoot(GameObject container) => container.transform.GetChild(0);
 
         public static GameObject CreatePrimitive(Transform parent, string name, PrimitiveType type, Vector3 localPosition, Vector3 localScale, Material? material, int layer)
         {

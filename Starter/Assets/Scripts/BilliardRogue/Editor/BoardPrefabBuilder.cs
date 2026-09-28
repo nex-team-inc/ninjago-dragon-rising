@@ -35,15 +35,17 @@ namespace Nex.BilliardRogue.Editor
             WorldPrefabModels.ApplyMaterial(model, paletteP1, renderers);
             var modelTransform = model.transform;
             var pawR = WorldPrefabModels.FindPart(modelTransform, "PawR");
-            var cue = WorldPrefabModels.InstantiateModel("Player/Cue_Stick.fbx", modelTransform, "Cue", PrimitiveType.Cylinder, new Vector3(0.06f, 0.6f, 0.06f), layer, out var cuePlaceholder);
+            // The cue hangs from the FBX root (merged Body) so it follows the body pose but not the container tweens.
+            var cue = WorldPrefabModels.InstantiateModel("Player/Cue_Stick.fbx", WorldPrefabModels.FbxRoot(model), "Cue", PrimitiveType.Cylinder, new Vector3(0.06f, 0.6f, 0.06f), layer, out var cuePlaceholder);
             var cueRenderers = new List<Renderer>();
             WorldPrefabModels.ApplyMaterial(cue, paletteP1, cueRenderers);
             cue.transform.localPosition = pawR != null ? pawR.localPosition + new Vector3(0f, 0f, -0.15f) : new Vector3(-0.14f, 0.385f, -0.15f);
             if (cuePlaceholder)
             {
                 // A cylinder primitive stands along Y; the cue must point along +Z (TDD §14.1).
-                cue.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
-                cue.transform.localPosition += new Vector3(0f, 0f, 0.6f);
+                var placeholder = WorldPrefabModels.FbxRoot(cue);
+                placeholder.localRotation = Quaternion.Euler(90f, 0f, 0f);
+                placeholder.localPosition = new Vector3(0f, 0f, 0.6f);
             }
 
             var bounds = WorldPrefabModels.RendererBounds(model);

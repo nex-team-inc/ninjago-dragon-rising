@@ -5,14 +5,23 @@ Owner paths: `Starter/Assets/Scripts/BilliardRogue/Presentation/**` (except Aren
 `Editor/BoardPrefabBuilder.cs`), `Assets/Prefabs/BilliardRogue/{Enemies,Balls,Board,Player}/**`, `World/BoardPresenter.prefab`.
 
 ## Status
-- [ ] JuiceConfig additions (nested settings groups), LocKeys.Presentation.cs
-- [ ] Views: EnemyView (+EnemyIdleMotion, EnemyStatusVisuals), BallView, FieldObjectView, PickupView, CatView, AimGuideView
-- [ ] Labels: WorldLabelLayer, WorldLabel, DamageNumber, FloatTextCache, ComboPresenter
-- [ ] CameraShaker, pools (EnemyViewPool, BallViewPool, FieldObjectViewPool, PickupViewPool, WorldLabelPool, DamageNumberPool)
-- [ ] BoardPresenter + BoardViews + BoardEventPlayer + EnemyPhasePlayer + BoardSequencePlayer
-- [ ] WorldPrefabsBuilder / WorldPrefabModels / BoardPrefabBuilder
-- [ ] compile_check green, Editor recompile + builder run inside the lock, prefab inspection
-- [ ] commits
+- [x] JuiceConfig additions (nested settings groups), LocKeys.Presentation.cs (commit 8ddaa2cb)
+- [x] Views: EnemyView (+EnemyIdleMotion, EnemyStatusVisuals), BallView, FieldObjectView, PickupView, CatView, AimGuideView
+- [x] Labels: WorldLabelLayer, WorldLabel, DamageNumber, FloatTextCache, ComboPresenter (commit 7a99e4c8)
+- [x] CameraShaker, pools (EnemyViewPool, BallViewPool, FieldObjectViewPool, PickupViewPool, WorldLabelPool, DamageNumberPool)
+- [x] BoardPresenter + BoardViews + BoardEventPlayer + EnemyPhasePlayer + BoardSequencePlayer
+- [x] WorldPrefabsBuilder / WorldPrefabModels / BoardPrefabBuilder written (runtime compiles; editor assembly pending a
+      green tree — other modules had transient errors at the time)
+- [ ] IN PROGRESS: wait for green compile_check → inside the editor lock: `urecompile` (first import of Models/Sprites/Audio),
+      `ueval 'return Nex.BilliardRogue.Editor.WorldPrefabsBuilder.Run();'`, inspect prefabs, commit prefabs + .meta files
+- [ ] Final report (Requests: TryWorldToCanvas convention, rig parent for CameraShaker, stingers played by presenter)
+
+## Next steps if resuming
+1. `python3 Tools/compile_check.py` must be green (editor assembly included). Fix any error in my Editor files.
+2. `Tools/editor_lock.sh presentation-core bash -c 'source Docs/BilliardRogue/research/unity-cli-helpers.sh; urecompile 600'`
+3. `Tools/editor_lock.sh presentation-core bash -c '... ueval "return Nex.BilliardRogue.Editor.WorldPrefabsBuilder.Run();" 300000'`
+4. Inspect: `ueval` loading Assets/Prefabs/BilliardRogue/World/BoardPresenter.prefab, Enemies/Enemy_Slime.prefab (children, components).
+5. `git add Starter/Assets/Prefabs/BilliardRogue Starter/Assets/Scripts/BilliardRogue/Presentation/*.meta Starter/Assets/Scripts/BilliardRogue/Editor/{WorldPrefabModels,WorldPrefabsBuilder,BoardPrefabBuilder}.cs.meta` + commit.
 
 ## Decisions
 - No DOTween in per-event paths: views run small manual tweens in Update (no allocations); sequences use UniTask.Delay (scaled time).

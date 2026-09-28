@@ -32,8 +32,6 @@ namespace Nex.BilliardRogue
         public bool IsMini { get; private set; }
         public Vector3 Velocity { get; private set; }
 
-        #region Public Methods
-
         public void Spawn(int id, BallDefinition definition, bool isMini, float worldRadius, Vector3 world, JuiceConfig.BallSettings settings)
         {
             Id = id;
@@ -85,7 +83,5 @@ namespace Nex.BilliardRogue
             trail.Clear();
             OnRelease?.Invoke(this);
         }
-
-        #endregion
     }
 }

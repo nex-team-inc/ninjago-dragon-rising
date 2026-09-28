@@ -27,8 +27,6 @@ namespace Nex.BilliardRogue
         public float Lifetime { get; private set; } = 1f;
         public float Rise { get; private set; }
 
-        #region Public Methods
-
         public void Show(string value, Color aColor, float size, Vector3 world, float lifetime, float rise, Vector2 jitter)
         {
             text.SetText(value);
@@ -62,7 +60,5 @@ namespace Nex.BilliardRogue
         {
             OnRelease?.Invoke(this);
         }
-
-        #endregion
     }
 }

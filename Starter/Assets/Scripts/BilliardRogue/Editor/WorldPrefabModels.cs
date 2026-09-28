@@ -3,7 +3,9 @@
 using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Nex.BilliardRogue.Editor
 {
@@ -25,6 +27,8 @@ namespace Nex.BilliardRogue.Editor
 
         static readonly string[] EmissiveTokens = { "Emissive", "Gem", "Orb", "Flame", "Crystal", "Fuse", "Eyes" };
         static readonly List<string> warnings = new();
+        static Scene staging;
+        static bool stagingOpen;
 
         public static IReadOnlyList<string> Warnings => warnings;
 
@@ -35,6 +39,32 @@ namespace Nex.BilliardRogue.Editor
             warnings.Add(message);
             Debug.LogWarning("[WorldPrefabsBuilder] " + message);
         }
+
+        #region Staging scene
+
+        /// <summary>Temporary prefab roots live in a preview scene so the builder never dirties the open scene.</summary>
+        public static void BeginStaging()
+        {
+            if (stagingOpen) return;
+            staging = EditorSceneManager.NewPreviewScene();
+            stagingOpen = true;
+        }
+
+        public static void EndStaging()
+        {
+            if (!stagingOpen) return;
+            EditorSceneManager.ClosePreviewScene(staging);
+            stagingOpen = false;
+        }
+
+        public static GameObject NewRoot(string name, params System.Type[] components)
+        {
+            var go = new GameObject(name, components);
+            if (stagingOpen) SceneManager.MoveGameObjectToScene(go, staging);
+            return go;
+        }
+
+        #endregion
 
         #region Layers & materials
 

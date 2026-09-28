@@ -28,7 +28,7 @@ namespace Nex.BilliardRogue.Editor
 
         public static CatView BuildCat(Material paletteP1, Material paletteP2, Material glow, int layer)
         {
-            var root = new GameObject("Cat_Hero");
+            var root = WorldPrefabModels.NewRoot("Cat_Hero");
             root.layer = Mathf.Max(0, layer);
             var model = WorldPrefabModels.InstantiateModel("Player/Cat_Hero.fbx", root.transform, "Model", PrimitiveType.Capsule, new Vector3(0.5f, 0.9f, 0.5f), layer, out _);
             var renderers = new List<Renderer>();
@@ -137,7 +137,7 @@ namespace Nex.BilliardRogue.Editor
 
         static GameObject NewRect(string name, Transform? parent, Vector2 size)
         {
-            var go = new GameObject(name, typeof(RectTransform));
+            var go = WorldPrefabModels.NewRoot(name, typeof(RectTransform));
             go.layer = LayerMask.NameToLayer("UI");
             var rect = go.GetComponent<RectTransform>();
             if (parent != null) rect.SetParent(parent, false);
@@ -178,7 +178,7 @@ namespace Nex.BilliardRogue.Editor
 
         public static void BuildBoardPresenter(BallView ballPrefab, CatView catPrefab, Material glow, int layer)
         {
-            var root = new GameObject("BoardPresenter");
+            var root = WorldPrefabModels.NewRoot("BoardPresenter");
             root.layer = Mathf.Max(0, layer);
             var pools = new GameObject("Pools");
             pools.transform.SetParent(root.transform, false);

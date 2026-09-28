@@ -27,6 +27,19 @@ namespace Nex.BilliardRogue.Editor
         public static string Run()
         {
             WorldPrefabModels.ResetWarnings();
+            WorldPrefabModels.BeginStaging();
+            try
+            {
+                return Build();
+            }
+            finally
+            {
+                WorldPrefabModels.EndStaging();
+            }
+        }
+
+        static string Build()
+        {
             var layer = WorldPrefabModels.WorldLayer();
             var palette = WorldPrefabModels.Palette(false);
             var glow = WorldPrefabModels.Glow();
@@ -70,7 +83,7 @@ namespace Nex.BilliardRogue.Editor
         {
             var isBoss = type is EnemyType.KingSlime or EnemyType.BoneLich or EnemyType.CrystalGolem;
             var modelPath = isBoss ? $"Bosses/Boss_{type}.fbx" : $"Enemies/Enemy_{type}.fbx";
-            var root = new GameObject($"Enemy_{type}");
+            var root = WorldPrefabModels.NewRoot($"Enemy_{type}");
             root.layer = Mathf.Max(0, layer);
             var footprint = isBoss ? 2f : 1f;
             var placeholderScale = new Vector3(0.7f * footprint, type == EnemyType.Totem ? 1.3f : 0.75f * footprint, 0.7f * footprint);
@@ -119,7 +132,7 @@ namespace Nex.BilliardRogue.Editor
 
         static BallView BuildBall(Material palette, Material glow, int layer)
         {
-            var root = new GameObject("Ball");
+            var root = WorldPrefabModels.NewRoot("Ball");
             root.layer = Mathf.Max(0, layer);
             var mesh = WorldPrefabModels.InstantiateModel("Balls/Ball.fbx", root.transform, "Mesh", PrimitiveType.Sphere, Vector3.one, layer, out var placeholder);
             if (placeholder) mesh.transform.localPosition = Vector3.zero;
@@ -148,7 +161,7 @@ namespace Nex.BilliardRogue.Editor
 
         static FieldObjectView BuildFieldObject(FieldObjectType type, Material palette, Material glow, int layer)
         {
-            var root = new GameObject($"FieldObject_{type}");
+            var root = WorldPrefabModels.NewRoot($"FieldObject_{type}");
             root.layer = Mathf.Max(0, layer);
             var (primitive, scale) = type switch
             {
@@ -188,7 +201,7 @@ namespace Nex.BilliardRogue.Editor
 
         static PickupView BuildPickup(PickupType type, Material palette, int layer)
         {
-            var root = new GameObject($"Pickup_{type}");
+            var root = WorldPrefabModels.NewRoot($"Pickup_{type}");
             root.layer = Mathf.Max(0, layer);
             var model = WorldPrefabModels.InstantiateModel($"Props/Pickup_{type}.fbx", root.transform, "Model", PrimitiveType.Sphere, new Vector3(0.4f, 0.4f, 0.4f), layer, out _);
             var renderers = new List<Renderer>();

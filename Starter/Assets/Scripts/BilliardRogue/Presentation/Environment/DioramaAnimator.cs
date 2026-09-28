@@ -53,6 +53,7 @@ namespace Nex.BilliardRogue
         [SerializeField] AnimatedPart[] bobbing = Array.Empty<AnimatedPart>();
 
         EnvironmentConfig config = null!;
+        float lightScale = 1f;
 
         public int LightCount => lights.Length;
 
@@ -65,12 +66,17 @@ namespace Nex.BilliardRogue
             enabled = true;
         }
 
-        /// <summary>Act tint multiplied into every light colour (ActLightingPreset.additionalLightTint).</summary>
-        public void SetLightTint(Color tint)
+        /// <summary>
+        /// Act tint multiplied into every light colour and act multiplier on every light intensity
+        /// (ActLightingPreset.additionalLightTint / additionalLightIntensity); applied at once, flicker continues on top.
+        /// </summary>
+        public void SetLightTint(Color tint, float intensityScale)
         {
+            lightScale = intensityScale;
             for (var i = 0; i < lights.Length; i++)
             {
                 lights[i].light.color = lights[i].baseColor * tint;
+                lights[i].light.intensity = lights[i].baseIntensity * intensityScale;
             }
         }
 
@@ -103,7 +109,7 @@ namespace Nex.BilliardRogue
                     factor = 1f + config.CrystalPulseAmount * Mathf.Sin(time * crystalOmega + entry.phase);
                 }
 
-                entry.light.intensity = entry.baseIntensity * factor;
+                entry.light.intensity = entry.baseIntensity * lightScale * factor;
             }
         }
 

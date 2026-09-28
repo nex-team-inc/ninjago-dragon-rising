@@ -13,7 +13,7 @@ namespace Nex.BilliardRogue.Editor
     /// Presentation-World builder (TDD §13, §17): World/Arena.prefab, Environment/Env_Act{1,2,3}.prefab from
     /// Tools/Blender/environment/layouts.json and Environment/WorldLighting.prefab (ActEnvironmentController, sun,
     /// grading volumes). Creates EnvironmentConfig.asset when missing, seeds each act's lighting preset from the layout
-    /// once, and fills empty config slots (ArenaConfig models, ActDefinition environment / volume / ambient VFX,
+    /// plus its Unity calibration (EnvironmentLooks) once, and fills empty config slots (ArenaConfig models, ActDefinition environment / volume / ambient VFX,
     /// title volume). Missing models, materials, volumes or VFX degrade to placeholders with warnings.
     /// CLI: unity command eval 'return Nex.BilliardRogue.Editor.EnvironmentBuilder.Run();'
     /// </summary>
@@ -177,30 +177,11 @@ namespace Nex.BilliardRogue.Editor
         static EnvironmentConfig LoadOrCreateConfig(out bool created)
         {
             var config = BuilderAssets.LoadOrCreate<EnvironmentConfig>(EnvironmentConfigPath, out created);
-            if (!created) return config;
-            FillTitleLook(config.TitleLighting);
+            if (config.TitleLighting.seededFromLayout) return config;
+            EnvironmentLooks.Title(config.TitleLighting);
             config.TitleLighting.seededFromLayout = true;
             EditorUtility.SetDirty(config);
             return config;
-        }
-
-        // Cozy golden hour for the Title: the Act 1 ruins under a lower, warmer sun with stronger god rays.
-        static void FillTitleLook(ActLightingPreset look)
-        {
-            look.sunColor = new Color(1f, 0.74f, 0.46f);
-            look.sunIntensity = 1.45f;
-            look.sunEuler = new Vector3(36f, 99.2f, 0f);
-            look.shadowStrength = 0.72f;
-            look.ambientSky = new Color(0.58f, 0.5f, 0.66f);
-            look.ambientEquator = new Color(0.52f, 0.4f, 0.42f);
-            look.ambientGround = new Color(0.26f, 0.2f, 0.2f);
-            look.fogColor = new Color(1f, 0.8f, 0.55f);
-            look.fogDensity = 0.01f;
-            look.rimColor = new Color(1f, 0.82f, 0.55f);
-            look.additionalLightTint = new Color(1f, 0.78f, 0.5f);
-            look.godRayColor = new Color(1f, 0.78f, 0.45f);
-            look.godRayIntensity = 1.35f;
-            look.particleTint = new Color(1f, 0.88f, 0.7f);
         }
 
         static int SeedLighting(List<ActDefinition> acts, EnvironmentLayout? layout)
@@ -214,6 +195,7 @@ namespace Nex.BilliardRogue.Editor
                 if (preset.seededFromLayout || source is not { IsValid: true }) continue;
                 Undo.RecordObject(act, "Seed act lighting from layouts.json");
                 source.CopyTo(preset);
+                EnvironmentLooks.Calibrate(act.Rules.actIndex + 1, preset);
                 preset.seededFromLayout = true;
                 EditorUtility.SetDirty(act);
                 seeded++;

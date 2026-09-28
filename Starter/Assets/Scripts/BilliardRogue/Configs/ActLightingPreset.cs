@@ -34,6 +34,8 @@ namespace Nex.BilliardRogue
         public Color rimColor = new(1f, 0.85f, 0.6f);
         [Tooltip("Tint multiplied into every additional light of the act environment (torches, crystals).")]
         public Color additionalLightTint = Color.white;
+        [Tooltip("Multiplier on the intensity of every additional light of the act environment (calibrates the layout's torch / crystal intensities to the act's exposure).")]
+        [Range(0f, 8f)] public float additionalLightIntensity = 1f;
         [Tooltip("Feeds the HDR _Color of BilliardRogue/LightShaft (TDD §16); values above 1 bloom.")]
         [ColorUsage(false, true)] public Color godRayColor = new(1f, 0.9f, 0.7f);
         [Range(0f, 3f)] public float godRayIntensity = 0.8f;
@@ -41,7 +43,7 @@ namespace Nex.BilliardRogue
         public Color particleTint = Color.white;
 
         [Header("Authoring")]
-        [Tooltip("EnvironmentBuilder copies the art-directed preset from Tools/Blender/environment/layouts.json into this block while this is false, then sets it. Clear it to re-seed; edits are kept while it is set.")]
+        [Tooltip("EnvironmentBuilder writes the art-directed preset from Tools/Blender/environment/layouts.json plus its Unity calibration (EnvironmentLooks) into this block while this is false, then sets it. Clear it to re-seed; edits are kept while it is set.")]
         public bool seededFromLayout;
     }
 }

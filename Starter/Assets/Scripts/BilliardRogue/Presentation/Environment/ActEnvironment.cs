@@ -61,10 +61,10 @@ namespace Nex.BilliardRogue
             gameObject.SetActive(visible);
         }
 
-        /// <summary>Applies the blended act accents: light tint on every act light and the god-ray colour/intensity on every shaft.</summary>
-        public void ApplyAccents(Color lightTint, Color godRayColor, float godRayIntensity)
+        /// <summary>Applies the blended act accents: light tint and intensity on every act light and the god-ray colour/intensity on every shaft.</summary>
+        public void ApplyAccents(Color lightTint, float lightIntensity, Color godRayColor, float godRayIntensity)
         {
-            animator.SetLightTint(lightTint);
+            animator.SetLightTint(lightTint, lightIntensity);
             for (var i = 0; i < lightShafts.Length; i++)
             {
                 ref var shaft = ref lightShafts[i];

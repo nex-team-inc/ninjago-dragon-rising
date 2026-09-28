@@ -18,6 +18,7 @@ namespace Nex.BilliardRogue
         public float fogDensity;
         public Color rimColor;
         public Color lightTint;
+        public float lightIntensity;
         public Color godRayColor;
         public float godRayIntensity;
 
@@ -36,6 +37,7 @@ namespace Nex.BilliardRogue
                 fogDensity = preset.fogDensity,
                 rimColor = preset.rimColor,
                 lightTint = preset.additionalLightTint,
+                lightIntensity = preset.additionalLightIntensity,
                 godRayColor = preset.godRayColor,
                 godRayIntensity = preset.godRayIntensity,
             };
@@ -56,6 +58,7 @@ namespace Nex.BilliardRogue
                 fogDensity = Mathf.LerpUnclamped(a.fogDensity, b.fogDensity, t),
                 rimColor = Color.LerpUnclamped(a.rimColor, b.rimColor, t),
                 lightTint = Color.LerpUnclamped(a.lightTint, b.lightTint, t),
+                lightIntensity = Mathf.LerpUnclamped(a.lightIntensity, b.lightIntensity, t),
                 godRayColor = Color.LerpUnclamped(a.godRayColor, b.godRayColor, t),
                 godRayIntensity = Mathf.LerpUnclamped(a.godRayIntensity, b.godRayIntensity, t),
             };

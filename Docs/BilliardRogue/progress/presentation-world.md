@@ -13,8 +13,12 @@ usage-limit kill: read this file + `git log -- Starter/Assets/Scripts/BilliardRo
 - [x] Builder run in the Editor: Arena.prefab, Env_Act1..3.prefab, WorldLighting.prefab, EnvironmentConfig.asset, act presets seeded, ArenaConfig
       model slots, ActDefinition.environmentPrefab filled; ArenaConfig.asset camera moved to (0, 20.4, -6.947)
 - [x] Preview renders (edit mode, preview scene, stand-in rig): shots in scratchpad `modules/presentation-world/shots/v2_*.png`
-- [ ] Re-run after Rendering lands MaterialsBuilder (M_Palette, M_Surface_*, M_LightShaft, M_DangerTile), Volume_Act*/Title, WorldCameraRig
-      prefab and the World/WorldVolume layers; then iterate on the look with the real ToonLit + post stack
+- [x] Re-run after Rendering landed MaterialsBuilder / Volume_* / WorldCameraRig / layers: prefabs now use M_Palette, M_Surface_*,
+      M_LightShaft, M_DangerTile on layer World; ActDefinition.volumeProfile + EnvironmentConfig.titleVolumeProfile filled
+- [x] Look iteration with the real ToonLit + post stack (shots `v5_*`..`v7_*`): `EnvironmentLooks` (Editor) calibrates the layout presets
+      (seeded once; builder re-seed reproduces the tuned assets exactly), `ActLightingPreset.additionalLightIntensity` (blended, drives the
+      act lights through DioramaAnimator), danger idle glow 0.45 -> 0.9. EditMode tests 4/4 green.
+- [ ] Waiting on Rendering: Volume_Act2 grade crushes red to 0 (danger row invisible in Act 2) — see Requests
 
 ## Decisions
 
@@ -28,6 +32,9 @@ usage-limit kill: read this file + `git log -- Starter/Assets/Scripts/BilliardRo
 - Ground tiles pruned against the ArenaConfig camera frustum (+8° margin): 58 of 120 kept per act. Tiny decor casts no shadows.
 - Fallback materials (URP Lit / Particles Unlit) in `Prefabs/BilliardRogue/Environment/Fallback/` until MaterialsBuilder runs.
 - Runtime trilight ambient updates the SH probe automatically (verified: probe changes per act in edit-mode renders).
+- Preview renders patch the surface textures to Repeat wrap in memory only (they are still imported as Clamp sprites until
+  integration's ImportSettingsBuilder runs: ground grass shows streaks without it). View prefabs are on Default and invisible to the
+  World renderer (opaque mask = World) — preview moves them to World.
 
 ## API exposed
 
@@ -40,3 +47,10 @@ usage-limit kill: read this file + `git log -- Starter/Assets/Scripts/BilliardRo
 - Global shader colour `_WorldRimColor` (ActLightingPreset.rimColor).
 
 ## Requests (for the integrator) — see final report for exact edits
+
+- Rendering `VolumeProfilesBuilder.DeepBlueNight`: measured red crush (danger inlay (97,30,45) -> (3,0,79), floor R -> 0). Validated
+  in-memory proposal: temperature -14, tint 4, saturation 0, contrast 14, postExposure 0, lift (0.98,0.99,1.03,0), gain (1,1,1.02,0),
+  split shadows (0.3,0.36,0.72) / highlights (1,0.86,0.7) balance -15, bloom tint (0.9,0.95,1) intensity 1.3.
+- Rendering: commit generated Materials/BilliardRogue/*.mat + Settings/BilliardRogue/** (my prefabs reference their GUIDs).
+- Presentation-Core `WorldPrefabsBuilder`: put view prefabs (Enemies/Balls/Player/Board) on layer World.
+- Integration: ImportSettingsBuilder must import Textures/BilliardRogue/Surfaces/* as Default textures with Repeat wrap.

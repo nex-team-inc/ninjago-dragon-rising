@@ -165,7 +165,7 @@ namespace Nex.BilliardRogue
             RenderSettings.fogColor = look.fogColor;
             RenderSettings.fogDensity = look.fogDensity;
             Shader.SetGlobalColor(WorldRimColorId, look.rimColor);
-            if (shown != null) shown.ApplyAccents(look.lightTint, look.godRayColor, look.godRayIntensity);
+            if (shown != null) shown.ApplyAccents(look.lightTint, look.lightIntensity, look.godRayColor, look.godRayIntensity);
         }
 
         #endregion

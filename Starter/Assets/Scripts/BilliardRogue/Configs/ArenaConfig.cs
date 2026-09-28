@@ -16,7 +16,7 @@ namespace Nex.BilliardRogue
             [Tooltip("HDR emission colour of the inlays at strength 1 (multiplied by the strengths below).")]
             [ColorUsage(false, true)] public Color emissionColor = new(1.6f, 0.16f, 0.12f);
             [Tooltip("Steady emission strength while the danger row is empty.")]
-            [Range(0f, 4f)] public float idleStrength = 0.45f;
+            [Range(0f, 4f)] public float idleStrength = 0.9f;
             [Tooltip("Emission strength at the bottom of a pulse at full danger level.")]
             [Range(0f, 4f)] public float pulseMinStrength = 0.7f;
             [Tooltip("Emission strength at the top of a pulse at full danger level.")]

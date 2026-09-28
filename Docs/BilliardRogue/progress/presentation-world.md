@@ -52,11 +52,26 @@ usage-limit kill: read this file + `git log -- Starter/Assets/Scripts/BilliardRo
 - `EnvironmentBuilder.Run()`, `EnvironmentBuilder.WireScene(GameObject world)` (for MainSceneBuilder), `EnvironmentBuilder.WorldLightingPath`.
 - Global shader colour `_WorldRimColor` (ActLightingPreset.rimColor).
 
-## Requests (for the integrator) — see final report for exact edits
+## Requests (for the integrator)
 
-- Rendering `VolumeProfilesBuilder.DeepBlueNight`: measured red crush (danger inlay (97,30,45) -> (3,0,79), floor R -> 0). Validated
-  in-memory proposal: temperature -14, tint 4, saturation 0, contrast 14, postExposure 0, lift (0.98,0.99,1.03,0), gain (1,1,1.02,0),
-  split shadows (0.3,0.36,0.72) / highlights (1,0.86,0.7) balance -15, bloom tint (0.9,0.95,1) intensity 1.3.
-- Rendering: commit generated Materials/BilliardRogue/*.mat + Settings/BilliardRogue/** (my prefabs reference their GUIDs).
-- Presentation-Core `WorldPrefabsBuilder`: put view prefabs (Enemies/Balls/Player/Board) on layer World.
-- Integration: ImportSettingsBuilder must import Textures/BilliardRogue/Surfaces/* as Default textures with Repeat wrap.
+1. Flow `MainSceneBuilder` (after the Env_Act loop, before BoardPresenter/coordinator wiring):
+   `InstantiatePrefab(EnvironmentBuilder.WorldLightingPath, "Presentation-World", world.transform); EnvironmentBuilder.WireScene(world);`
+2. Flow `BilliardRogueCoordinator`: `[SerializeField] ActEnvironmentController actEnvironment` (WireCoordinator:
+   `world.GetComponentInChildren<ActEnvironmentController>(true)`); in `StartMain` after the rig init:
+   `actEnvironment.Initialize(config.Arena); actEnvironment.ApplyTitle(config.Acts[0], instant: true);`
+   `HandleReturnedToTitle`: `actEnvironment.ApplyTitle(config.Acts[0]);`
+3. Flow `GameplayView.ShowStageIntroAsync(actIndex, ...)` (via RunFlowContext/GameplayViewContext): call
+   `actEnvironment.ApplyAct(config.Acts[actIndex])` before the intro overlay (no-op inside an act; 1.6 s veil behind the overlay).
+4. Presentation-Core `BoardPresenter`: `[SerializeField] ArenaView arenaView` (wire `world.GetComponentInChildren<ArenaView>(true)`);
+   after spawns / enemy advance / kills: `arenaView.SetDangerLevel(anyEnemyInRow(rows - 1) ? 1f : anyEnemyInRow(rows - 2) ? 0.35f : 0f)`;
+   on stage end `SetDangerLevel(0f)`.
+5. Presentation-Core `WorldPrefabsBuilder`: put the view prefabs (Enemies / Balls / Player / Board) on layer World (WorldRenderer opaque
+   mask = World only; today they are invisible to the world camera).
+6. Rendering `VolumeProfilesBuilder.DeepBlueNight`: the grade crushes red (danger inlay base (97,30,45) -> (3,0,79), floor R -> 0; warm
+   torch pools turn pink). Validated in memory (`final_act2_proposedgrade.png`): temperature -14, tint 4, saturation 0, contrast 14,
+   postExposure 0, lift (0.98,0.99,1.03,0), gain (1,1,1.02,0), split shadows (0.3,0.36,0.72) / highlights (1,0.86,0.7) balance -15
+   (layouts.json act 2 grade), bloom tint (0.9,0.95,1) intensity 1.3.
+7. Rendering: commit the generated Materials/BilliardRogue/*.mat, Settings/BilliardRogue/** and World/WorldCameraRig.prefab (my
+   committed prefabs / act assets reference their GUIDs).
+8. Integration `ImportSettingsBuilder`: Textures/BilliardRogue/Surfaces/* as Default (not Sprite) with Repeat wrap — Clamp streaks the
+   4 m ground tiles (`_Tiling` 0.5 samples UV 0..2).

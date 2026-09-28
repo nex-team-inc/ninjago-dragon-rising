@@ -50,6 +50,8 @@ namespace Nex.BilliardRogue
         public Transform AmbientAnchor => ambientAnchor;
         public int LightCount => animator.LightCount;
 
+        #region Public Methods
+
         public void Initialize(EnvironmentConfig config)
         {
             shaftBlock = new MaterialPropertyBlock();
@@ -89,6 +91,10 @@ namespace Nex.BilliardRogue
             particleBuffer.Clear();
         }
 
+        #endregion
+
+        #region Helpers
+
         static ParticleSystem.MinMaxGradient Tint(ParticleSystem.MinMaxGradient gradient, Color tint)
         {
             switch (gradient.mode)
@@ -104,5 +110,7 @@ namespace Nex.BilliardRogue
 
             return gradient;
         }
+
+        #endregion
     }
 }

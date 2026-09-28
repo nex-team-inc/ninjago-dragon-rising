@@ -197,7 +197,8 @@ namespace Nex.BilliardRogue
             promptLabel.text = strings.poseTutorial;
             hintLabel.text = PlayerDataManager.Instance.PlayerPreference.leftHandedCue ? strings.leftHandedHint : strings.tutorialHint;
             hintLabel.gameObject.SetActive(true);
-            tutorialGroup.DOFade(1f, 0.3f).SetUpdate(true).SetLink(gameObject);
+            // Discarded on purpose: the tween is awaitable through UniTask's DOTween support but runs fire-and-forget.
+            _ = tutorialGroup.DOFade(1f, 0.3f).SetUpdate(true).SetLink(gameObject);
             illustration.Play();
             var seconds = tutorialSeen ? tutorialSecondsSeen : tutorialSeconds;
             await WaitOrSkipAsync(UniTask.Delay(TimeSpan.FromSeconds(seconds), DelayType.UnscaledDeltaTime, cancellationToken: ct), ct);

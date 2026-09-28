@@ -9,7 +9,7 @@ read this file + `git log -- Starter/Assets/Scripts/BilliardRogue/Flow Starter/A
 - [x] Runtime: CalibrationView (+ CalibrationTutorialIllustration), GameplayView (+ Overlays, typed against UI-Views)
 - [x] Runtime: BilliardRogueCoordinator (+ Views / Inputs / Debug partials) + RunFlow/RunFlowContext, LocKeys.Flow.cs
 - [x] Editor: FlowUiFactory, FlowPrefabsBuilder, FlowViewPrefabsBuilder, MainSceneBuilder (compile_check green)
-- [ ] Editor run (inside lock): recompile, builders, open Main.unity, hierarchy check, commit generated assets + .meta
+- [x] Editor run (inside lock): recompile OK, FlowPrefabsBuilder + MainSceneBuilder OK, Main.unity opened (7 roots, not dirty, 0 console errors), generated assets + .meta committed
 - [x] UI-Views seams filled (typed TitleView/PlayerModeView/SummaryView/SettingsView/StageIntro/Reward/TrackingLost/Pause)
 - [ ] Input seam (`BilliardRogueCoordinator.Inputs.cs`): still generic (prefab → first IShotInput, NullShotInput fallback) — Input module not landed
 
@@ -28,8 +28,9 @@ read this file + `git log -- Starter/Assets/Scripts/BilliardRogue/Flow Starter/A
   and mirrors `SetActivePlayer` into the PiP; it is a no-op HUD when the UI prefab is missing (warning).
 - PiP (`GameplayPip.prefab`) is its own Screen Space Overlay canvas root (D5), instantiated/destroyed by GameplayView.
 - Gameplay entry = transaction: pop until Title is top, then PushView(Gameplay) (handles both New Run and Continue);
-  run end = pop overlays until Gameplay, then ReplaceView(Summary). Flow owns `RunPersistence.CompleteRun` (needs
-  `newRecord` for SummaryView) — GameSession must not call it.
+  run end = pop overlays until Gameplay, then ReplaceView(Summary). `RunPersistence.CompleteRun` is called by
+  GameSession (Gameplay module); Flow only reads `newRecord` and snapshots `highestUnlockTier` at run start for the
+  summary's unlock row.
 - Camera session starts after the CalibrationView is pushed (view shows "Camera setup" while the MDK boots);
   it is stopped on Back from calibration, at run end, and on Save & Quit.
 - D1 fallback: `CameraSession.reloadSceneOnPlayerCountChange` (prefab flag, default off) → coordinator stashes a
@@ -37,4 +38,9 @@ read this file + `git log -- Starter/Assets/Scripts/BilliardRogue/Flow Starter/A
 
 ## Requests (for the integrator)
 
-(filled in the final answer)
+- Input module: replace `BilliardRogueCoordinator.Inputs.cs` body with the real PlayerShotInput initialization
+  (paw/debug/bot + router) using (playerIndex, engine, config.Control, PlayerPreference.leftHandedCue); then re-run
+  FlowPrefabsBuilder so `playerShotInputPrefab` and the hidden engine variant get wired.
+- LocalizationSeeder: add the keys from `Flow/LocKeys.Flow.cs` (Starting, TutorialHint, StrikeSuccess, AllReady, PipTitle).
+- Build All order matters: RenderPipelineBuilder (World layers) → … → UiViewsBuilder → FlowPrefabsBuilder → MainSceneBuilder
+  (the Main Camera culling mask and the UI/Input prefab slots are only filled when those assets exist).

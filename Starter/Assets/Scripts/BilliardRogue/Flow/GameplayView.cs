@@ -59,7 +59,10 @@ namespace Nex.BilliardRogue
             pip.Initialize(ctx.run.numPlayers, detection.PlayAreaController, detection.BodyPoseDetectionManager);
             pip.SetActivePlayer(ctx.run.numPlayers > 1 ? ctx.run.activePlayerIndex : -1);
 
-            var hud = new GameplayHudRelay(GetComponentInChildren<IGameplayHud>(true), pip);
+            // The HUD prefab (UI-Views) is nested by FlowPrefabsBuilder; a missing one degrades to a no-op relay.
+            var hudWidget = GetComponentInChildren<GameplayHud>(true);
+            if (hudWidget != null) hudWidget.Initialize(ctx.config.Balls, ctx.config.Pacing);
+            var hud = new GameplayHudRelay(hudWidget, pip);
             ctx.board.Initialize(ctx.config, ctx.rules, ctx.layout, ctx.display, worldLabelLayer);
             session.Initialize(new GameSessionContext
             {

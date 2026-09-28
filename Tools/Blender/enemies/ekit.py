@@ -392,10 +392,11 @@ def jitter(geo, amount, seed, keep_z_below=None):
 
 
 # ------------------------------------------------------------------ eyes
-# Eye whites use a mid-grey swatch from the palette's EMISSIVE half (~62 % value): lit albedo + this emission
-# lifts them to near-white in the night acts, yet the emission alone stays well under the bloom threshold (1.0),
-# so cute enemies do not become two full-strength bloom sources competing with the ball and the gameplay tells.
-SCLERA = ("gray", 8, True)
+# Eye whites use a dark grey swatch from the palette's EMISSIVE half: M_Palette multiplies Palette_Emission by 2.2
+# (MaterialsBuilder.PaletteEmission), so lit albedo + emission of gray 4 lands at ~1.2-1.35 in every act (game_look):
+# the whites grade to near-white and only kiss the bloom threshold (1.05). gray 8 reached ~2.0 and full white ~3.3,
+# i.e. two full bloom sources per cute enemy competing with the ball and the gameplay tells.
+SCLERA = ("gray", 4, True)
 GLINT = ("gray", 15, True)  # tiny (sub-pixel to 1 px at game scale): the only full-white emissive on an eye
 
 
@@ -410,11 +411,11 @@ def eye(center, normal, rx, ry, style="cute", up_hint=UP, sclera=None, pupil=Non
     g = Geo()
     if style == "cute":
         g.add(dome(rx, ry, d, segs, sclera or C(*SCLERA)), T(0, 0, -d * 0.35))
-        pr = 0.64
+        pr = 0.68  # big dark pupil: at ~29 px per cell the eye must read as "white ring + dark dot + glint"
         g.add(dome(rx * pr, ry * pr * 1.02, d * 0.5, max(6, segs - 2), pupil or C("indigo", 1)),
               T(look[0] * rx, look[1] * ry, d * 0.35))
-        g.add(dome(rx * 0.2, ry * 0.2, d * 0.3, 4, C(*GLINT), rings=1),
-              T(-rx * 0.26 + look[0] * rx, ry * 0.26 + look[1] * ry, d * 0.72))
+        g.add(dome(rx * 0.26, ry * 0.26, d * 0.3, 4, C(*GLINT), rings=1),
+              T(-rx * 0.27 + look[0] * rx, ry * 0.27 + look[1] * ry, d * 0.72))
     elif style == "glow":
         g.add(dome(rx, ry, d, segs, glow), T(0, 0, -d * 0.3))
     elif style == "socket":
@@ -499,6 +500,27 @@ class Model:
 
     def get(self, name):
         return next(p for p in self.parts if p.name == name)
+
+    def tilt_up(self, name, deg):
+        """Tilt a part (and every descendant part) about the part's own pivot so its front (-Y) turns `deg` degrees
+        up toward the high game camera: faces built upright read far better from the 58 deg pitch when tipped back.
+        The part's pivot stays put (animation contract); descendant pivots move with the geometry."""
+        root = self.get(name)
+        m = T(*root.pivot) @ R(Vector((1.0, 0.0, 0.0)), -deg) @ T(*(-root.pivot))
+        names = {name}
+        changed = True
+        while changed:
+            changed = False
+            for p in self.parts:
+                if p.parent in names and p.name not in names:
+                    names.add(p.name)
+                    changed = True
+        for p in self.parts:
+            if p.name in names:
+                p.geo = p.geo.copy(m)
+                if p is not root:
+                    p.pivot = m @ p.pivot
+        return self
 
     def tris(self):
         return sum(p.geo.tris() for p in self.parts)

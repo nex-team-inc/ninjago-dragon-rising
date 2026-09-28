@@ -110,6 +110,46 @@ def toon_material(name, albedo, emission_png=None, bands=BANDS4, tint=(1, 1, 1),
     return mat
 
 
+def pass_material(name, kind, albedo=None, emission_png=None):
+    """Raw data pass for the in-game look emulation (game_look.py re-shades them with the ToonLit formula).
+    kind: 'albedo' (palette / surface texel or rgb), 'emis' (emission map texel, black without one),
+          'light' (white diffuse: N.L x shadow, a face pointing at an intensity-1 sun = 1.0),
+          'normal' (world shading normal encoded n * 0.5 + 0.5)."""
+    mat = bpy.data.materials.new(name)
+    mat.use_nodes = True
+    mat.use_backface_culling = True
+    nt = mat.node_tree
+    nt.nodes.clear()
+    out = nt.nodes.new("ShaderNodeOutputMaterial")
+    em = nt.nodes.new("ShaderNodeEmission")
+    em.inputs["Strength"].default_value = 1.0
+    nt.links.new(em.outputs["Emission"], out.inputs["Surface"])
+    src = albedo if kind == "albedo" else emission_png if kind == "emis" else None
+    if kind in ("albedo", "emis"):
+        if isinstance(src, str):
+            tex = nt.nodes.new("ShaderNodeTexImage")
+            tex.image = _img(src)
+            tex.interpolation = "Closest"
+            nt.links.new(tex.outputs["Color"], em.inputs["Color"])
+        else:
+            em.inputs["Color"].default_value = tuple(src or (0.0, 0.0, 0.0)) + (1.0,)
+    elif kind == "light":
+        diffuse = nt.nodes.new("ShaderNodeBsdfDiffuse")
+        diffuse.inputs["Color"].default_value = (1, 1, 1, 1)
+        s2rgb = nt.nodes.new("ShaderNodeShaderToRGB")
+        nt.links.new(diffuse.outputs["BSDF"], s2rgb.inputs["Shader"])
+        nt.links.new(s2rgb.outputs["Color"], em.inputs["Color"])
+    else:
+        geo = nt.nodes.new("ShaderNodeNewGeometry")
+        ma = nt.nodes.new("ShaderNodeVectorMath")
+        ma.operation = "MULTIPLY_ADD"
+        ma.inputs[1].default_value = (0.5, 0.5, 0.5)
+        ma.inputs[2].default_value = (0.5, 0.5, 0.5)
+        nt.links.new(geo.outputs["Normal"], ma.inputs[0])
+        nt.links.new(ma.outputs["Vector"], em.inputs["Color"])
+    return mat
+
+
 def outline_material(name="M_Outline", rgb=(0.05, 0.047, 0.063)):
     mat = bpy.data.materials.new(name)
     mat.use_nodes = True

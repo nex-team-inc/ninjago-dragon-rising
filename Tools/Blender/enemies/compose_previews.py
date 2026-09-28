@@ -1,18 +1,23 @@
 """Compose the review sheets for the enemy/boss models (review only - nothing here is a game asset).
 
 Tools/.venv/bin/python Tools/Blender/enemies/compose_previews.py <work_dir> <out_dir> <manifest.json>
-  work_dir/preview_raw/arena_<act>_{beauty,emit}.png  (bl_preview.py)   -> arena_<act>.png (bloom, x2), arena_acts.png
+  work_dir/preview_raw/<scene>_<act>_{albedo,emis,light,normal}.png (bl_preview.py) -> game_look.py (ToonLit +
+                                                        act lighting + URP post) -> arena_<act>.png (x2), arena_acts.png
   work_dir/review/<model>_<view>.png                   (bl_build_model.py --review-dir)
                                                         -> contact_sheet.png, review_all.png
   Staging icons                                         -> icons.png
+  measure_readability.py                                -> readability.json / .txt (silhouette px, floor contrast)
 """
 import json
+import math
 import os
 import sys
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from scipy import ndimage
+
+import game_look
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(HERE)))
@@ -27,15 +32,18 @@ def font(size):
     return ImageFont.load_default(size=size)
 
 
-def bloom(beauty, emit):
-    """Heavy HD-2D style bloom from the emission-only pass (two Gaussian radii at 640x360)."""
-    b = np.asarray(beauty.convert("RGB"), np.float32) / 255.0
-    e = np.asarray(emit.convert("RGB"), np.float32) / 255.0
-    glow = np.zeros_like(e)
-    for sigma, gain in ((1.5, 0.9), (5.0, 0.8), (12.0, 0.5)):
-        glow += gain * np.stack([ndimage.gaussian_filter(e[..., c], sigma) for c in range(3)], axis=-1)
-    out = 1.0 - (1.0 - b) * (1.0 - np.clip(glow, 0, 1))  # screen blend
-    return Image.fromarray((np.clip(out, 0, 1) * 255 + 0.5).astype(np.uint8), "RGB")
+def game_frame(raw, name, act):
+    """In-game look of one rendered scene: the four raw passes re-shaded by game_look (see its docstring)."""
+    n = int(act[-1])
+    load = lambda k: np.asarray(Image.open(os.path.join(raw, f"{name}_{k}.png")).convert("RGB"), np.float32) / 255.0  # noqa: E731
+    normal = load("normal") * 2.0 - 1.0
+    normal /= np.maximum(np.linalg.norm(normal, axis=-1, keepdims=True), 1e-4)
+    info = json.load(open(os.path.join(raw, "arena_info.json")))
+    p = math.radians(info["pitch"])
+    view = np.array([0.0, -math.cos(p), math.sin(p)])
+    col = game_look.shade(load("albedo"), load("emis"), load("light")[..., 0], normal, game_look.act_lighting(n), view)
+    out = game_look.post(col, game_look.volume(n))
+    return Image.fromarray((out * 255 + 0.5).astype(np.uint8), "RGB")
 
 
 def outlined(img, px=2, rgb=(12, 12, 16)):
@@ -62,12 +70,12 @@ def arenas(work, out):
     info = json.load(open(os.path.join(raw, "arena_info.json")))
     frames = []
     for act in ("act1", "act2", "act3"):
-        img = bloom(Image.open(os.path.join(raw, f"arena_{act}_beauty.png")),
-                    Image.open(os.path.join(raw, f"arena_{act}_emit.png")))
+        img = game_frame(raw, f"arena_{act}", act)
         big = img.resize((img.width * 2, img.height * 2), Image.NEAREST)
         d = ImageDraw.Draw(big)
         label(d, (12, 10), f"{info[act]}  -  640x360 game camera (FOV {info['fov']:.0f}, pitch {info['pitch']:.0f}, "
-                           f"~{info['px_per_cell']:.0f} px/cell), x2 nearest, bloom from emissive palette half", 18)
+                           f"{info['px_per_cell']:.0f} px/cell mid-arena), x2 nearest, in-game look emulation "
+                           f"(ToonLit + act light + bloom + grading)", 18)
         big.save(os.path.join(out, f"arena_{act}.png"), optimize=True)
         frames.append(img)
     strip = Image.new("RGB", (640 * 3 + 16, 360 + 30), BG)
@@ -77,7 +85,7 @@ def arenas(work, out):
         label(d, (i * 648 + 6, 6), info[act], 16)
     strip.save(os.path.join(out, "arena_acts.png"), optimize=True)
     # x4 crop of the regular-enemy rows (true pixel density check)
-    crop = frames[0].crop((200, 90, 440, 230))
+    crop = frames[0].crop((205, 92, 435, 232))
     crop.resize((crop.width * 4, crop.height * 4), Image.NEAREST).save(os.path.join(out, "arena_act1_crop_x4.png"))
     context(raw, out, info)
 
@@ -89,12 +97,11 @@ def gray(img):
 
 def context(raw, out, info):
     """Context scene: occlusion rows, bone wall beside crate / bone pile, golem beside the Act 3 crystals."""
-    if not os.path.exists(os.path.join(raw, "context_act1_beauty.png")):
+    if not os.path.exists(os.path.join(raw, "context_act1_albedo.png")):
         return
     frames = []
     for act in ("act1", "act2", "act3"):
-        img = bloom(Image.open(os.path.join(raw, f"context_{act}_beauty.png")),
-                    Image.open(os.path.join(raw, f"context_{act}_emit.png")))
+        img = game_frame(raw, f"context_{act}", act)
         big = img.resize((img.width * 3, img.height * 3), Image.NEAREST)
         d = ImageDraw.Draw(big)
         label(d, (12, 10), f"{info[act]} - context x3: rows 2-3 occlusion (tall in front of short), row 5 bone wall "
@@ -121,8 +128,7 @@ def golem_tiles(work, scale=3):
     box = (max(0, x0 - pad), max(0, y0 - pad), min(640, x1 + pad), min(360, y1 + pad))
     tiles = []
     for face in info["golem_faces"]:
-        img = bloom(Image.open(os.path.join(raw, f"golem_{face}_beauty.png")),
-                    Image.open(os.path.join(raw, f"golem_{face}_emit.png"))).crop(box)
+        img = game_frame(raw, f"golem_{face}", "act3").crop(box)
         tiles.append((face, info["golem_yaw"][face], img.resize((img.width * scale, img.height * scale),
                                                                 Image.NEAREST)))
     return tiles
@@ -137,8 +143,9 @@ def contact_sheet(work, out, manifest):
     gh = golem[0][2].height + 60 if golem else 0
     sheet = Image.new("RGB", (cols * tile_w + 20, rows * tile_h + 70 + gh), BG)
     d = ImageDraw.Draw(sheet)
-    label(d, (14, 12), "Billiard Rogue - enemies & bosses. Big: game camera angle (58 deg pitch, cel-shaded, 4 bands). "
-                       "Top right: 3/4 view. Bottom right: 48x48 icon (x3).", 18)
+    label(d, (14, 12), "Billiard Rogue - enemies & bosses. Big: design view from the game angle (58 deg pitch, Blender "
+                       "toon, review outline). Top right: 3/4 view. Bottom right: 48x48 icon (x3). In-game look: arena_*.png",
+          18)
     for i, model in enumerate(models):
         info = manifest["models"][model]
         x0, y0 = 10 + (i % cols) * tile_w, 50 + (i // cols) * tile_h
@@ -196,6 +203,12 @@ def main():
     arenas(work, out)
     contact_sheet(work, out, manifest)
     icon_sheet(out, manifest)
+    import measure_readability as mr
+    res = mr.measure(work)
+    with open(os.path.join(out, "readability.json"), "w") as f:
+        json.dump(res, f, indent=1, sort_keys=True)
+    with open(os.path.join(out, "readability.txt"), "w") as f:
+        f.write(mr.table(res) + "\n")
     print("previews written to", out)
 
 

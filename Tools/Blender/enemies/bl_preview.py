@@ -1,9 +1,10 @@
 """Review renders of the exported enemy/boss FBX files in a mock arena seen through the game camera.
 
 Driven by build_enemies.py. Imports every staged FBX back (round-trip check: part names, hierarchy, identity
-transforms), lays them out on the 7x10 grid and renders, per act lighting preset, a 640x360 beauty pass and an
-emission-only pass (bloom is composited by compose_previews.py). Camera per GDD 4: perspective, vertical FOV 28,
-pitched 58 deg down at the arena centre, distance chosen so one cell is ~28 px wide at 640x360.
+transforms), lays them out on the 7x10 grid on the act's staged floor surface and renders, per act, four raw 640x360
+data passes (albedo, emission map, sun N.L x shadow, world normal) through the REAL game camera (ArenaConfig pose,
+vertical FOV). compose_previews.py re-shades them with game_look.py (ToonLit formula + act lighting + URP post of
+the Unity project), so the previews show the in-game brightness, warm/cool grading and bloom.
 Scenes: the roster (LAYOUT) per act; CONTEXT per act (other modules' staged props/environment pieces when present);
 the Crystal Golem at the boss spawn with its ShieldCrystal turned to each sim Face (Act 3 light).
 Blender layout: arena rows run along +Y away from the camera (row 9 = danger row nearest), models keep their
@@ -23,9 +24,27 @@ sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.dirname(HERE))
 import bl_look as look  # noqa: E402
 
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(HERE)))  # project root (Tools/Blender/enemies -> ../../..)
+ACT_SURFACES = {}  # filled in main() from the environment layouts
 COLS, ROWS, LAUNCH = 7, 10, 1.6
-FOV, PITCH, PX_PER_CELL = 28.0, 58.0, 28.0
 W, H = 640, 360
+
+
+def _arena_camera():
+    """(cameraPosition, cameraPitchDeg, cameraFov) read from the Unity ArenaConfig asset (read-only)."""
+    import re
+    path = os.path.join(ROOT, "Starter", "Assets", "Configs", "BilliardRogue", "ArenaConfig.asset")
+    txt = open(path).read()
+    pos = tuple(float(v) for v in re.findall(r"[xyz]: ([-0-9.]+)", re.search(r"cameraPosition: (.*)", txt).group(1)))
+    return pos, float(re.search(r"cameraPitchDeg: ([-0-9.]+)", txt).group(1)), \
+        float(re.search(r"cameraFov: ([-0-9.]+)", txt).group(1))
+
+
+CAMERA = _arena_camera()
+FOV, PITCH = CAMERA[2], CAMERA[1]
+_SURF = json.load(open(os.path.join(ROOT, "Tools", "Staging", "Assets", "Textures", "BilliardRogue", "Surfaces",
+                                    "surfaces.json")))["uvMapping"]
+UV_OFFSET, SURFACE_TILING = (_SURF["offset"][0], _SURF["offset"][2]), _SURF["tiling"]
 
 # (model, col, row) - col/row of the footprint's top-left cell; bosses are 2x2
 LAYOUT = [
@@ -37,19 +56,14 @@ LAYOUT = [
     ("Enemy_Bomber", 6, 6), ("Enemy_ShieldKnight", 5, 9), ("Enemy_Mage", 1, 9),
 ]
 
+# mock-arena colours only: lighting + post come from the Unity act assets via game_look.py (compose step)
 ACTS = {
-    "act1": dict(name="Act 1 Mossy Ruins (golden hour)", sun_from=(-0.55, 0.45, 0.62), intensity=1.25,
-                 tint=(1.0, 0.86, 0.66), ambient=(0.15, 0.14, 0.2), tiles=((0.47, 0.43, 0.33), (0.41, 0.4, 0.3)),
-                 danger=(0.55, 0.26, 0.22), launch=(0.33, 0.3, 0.24), wall=(0.5, 0.45, 0.36),
-                 ground=(0.2, 0.26, 0.14)),
-    "act2": dict(name="Act 2 Sunken Crypt (night)", sun_from=(0.35, 0.5, 0.75), intensity=0.95,
-                 tint=(0.62, 0.72, 1.0), ambient=(0.1, 0.11, 0.2), tiles=((0.26, 0.29, 0.36), (0.22, 0.25, 0.31)),
-                 danger=(0.4, 0.17, 0.2), launch=(0.16, 0.17, 0.22), wall=(0.3, 0.32, 0.4),
-                 ground=(0.07, 0.08, 0.13)),
-    "act3": dict(name="Act 3 Crystal Hollow (violet)", sun_from=(0.5, 0.35, 0.7), intensity=1.05,
-                 tint=(0.86, 0.74, 1.0), ambient=(0.14, 0.1, 0.24), tiles=((0.3, 0.26, 0.42), (0.25, 0.22, 0.36)),
-                 danger=(0.46, 0.18, 0.3), launch=(0.19, 0.16, 0.27), wall=(0.36, 0.3, 0.5),
-                 ground=(0.1, 0.07, 0.16)),
+    "act1": dict(name="Act 1 Mossy Ruins", tiles=((0.47, 0.43, 0.33), (0.41, 0.4, 0.3)), danger=(0.55, 0.26, 0.22),
+                 launch=(0.33, 0.3, 0.24), wall=(0.5, 0.45, 0.36), ground=(0.2, 0.26, 0.14), grout=(0.16, 0.13, 0.1)),
+    "act2": dict(name="Act 2 Sunken Crypt", tiles=((0.26, 0.29, 0.36), (0.22, 0.25, 0.31)), danger=(0.4, 0.17, 0.2),
+                 launch=(0.16, 0.17, 0.22), wall=(0.3, 0.32, 0.4), ground=(0.07, 0.08, 0.13), grout=(0.06, 0.06, 0.09)),
+    "act3": dict(name="Act 3 Crystal Hollow", tiles=((0.3, 0.26, 0.42), (0.25, 0.22, 0.36)), danger=(0.46, 0.18, 0.3),
+                 launch=(0.19, 0.16, 0.27), wall=(0.36, 0.3, 0.5), ground=(0.16, 0.12, 0.24), grout=(0.08, 0.06, 0.12)),
 }
 
 # ShieldCrystal turn per sim Face (Unity local Euler Y on the ShieldCrystal transform; valid with EnemyView's 180 deg
@@ -104,51 +118,93 @@ def cell_center(col, row, w=1, h=1):
     return Vector((x, y, 0.0))
 
 
-def build_arena(act):
+def act_surfaces():
+    """{act: (floor surface, ground surface or None)} from the environment layouts (Env_FloorTile Top_Surface and the
+    act's ground tiles), so the mock arena uses the same staged surface textures as the game."""
+    layouts = json.load(open(os.path.join(ROOT, "Tools", "Blender", "environment", "layouts.json")))
+    out = {}
+    for act in layouts["acts"]:
+        floor = next((s["surface"] for s in act["surfaces"] if s["piece"] == "Env_FloorTile"), None)
+        out[f"act{act['id']}"] = (floor, act["ground"].get("surface") or None)
+    return out
+
+
+def uv_plane(name, x0, y0, x1, y1, z, uv_offset=(0.0, 0.0), tiling=0.5):
+    """Flat quad with arena-local world-projected UVs, uv = (xz + offset) * tiling (surfaces.json uvMapping)."""
+    import bmesh
+    mesh = bpy.data.meshes.new(name)
+    bm = bmesh.new()
+    vs = [bm.verts.new((x, y, z)) for x, y in ((x0, y0), (x1, y0), (x1, y1), (x0, y1))]
+    face = bm.faces.new(vs)
+    uv = bm.loops.layers.uv.new()
+    for loop in face.loops:
+        co = loop.vert.co
+        loop[uv].uv = ((co.x + uv_offset[0]) * tiling, (co.y + uv_offset[1]) * tiling)
+    bm.to_mesh(mesh)
+    bm.free()
+    obj = bpy.data.objects.new(name, mesh)
+    bpy.context.scene.collection.objects.link(obj)
+    return obj
+
+
+def build_arena(act, surfaces_dir):
+    """Mock arena: per-cell floor tiles (0.94 m, dark grout between) textured with the act's staged floor surface,
+    danger-row tint, launch pad, stone walls, ground plane with the act's ground surface. Returns [(obj, albedo)]."""
     p = ACTS[act]
-    mats = {}
+    floor, ground = ACT_SURFACES.get(act, (None, None))
+    tex = lambda name: os.path.join(surfaces_dir, f"{name}_Albedo.png") if name else None  # noqa: E731
+    floor_tex = tex(floor) if floor and os.path.exists(tex(floor)) else None
+    ground_tex = tex(ground) if ground and os.path.exists(tex(ground)) else None
+    objs = []
 
-    def mat(key, rgb):
-        if key not in mats:
-            mats[key] = look.toon_material(f"M_{act}_{key}", rgb, None, look.BANDS4, p["tint"], p["ambient"])
-        return mats[key]
-
-    def box(name, center, size, material):
+    def box(name, center, size, albedo):
         bpy.ops.mesh.primitive_cube_add(size=1.0, location=center)
         o = bpy.context.active_object
         o.name = name
         o.scale = size
-        o.data.materials.append(material)
-        return o
+        objs.append((o, albedo))
 
-    objs = []
     for r in range(ROWS):
         for c in range(COLS):
-            key = "danger" if r == ROWS - 1 else f"tile{(r + c) % 2}"
-            rgb = p["danger"] if r == ROWS - 1 else p["tiles"][(r + c) % 2]
             cc = cell_center(c, r)
-            objs.append(box(f"Arena_Tile_{c}_{r}", (cc.x, cc.y, -0.05), (0.98, 0.98, 0.1), mat(key, rgb)))
-    objs.append(box("Arena_Launch", (0.0, LAUNCH / 2, -0.06), (COLS, LAUNCH, 0.1), mat("launch", p["launch"])))
+            o = uv_plane(f"Arena_Tile_{c}_{r}", cc.x - 0.47, cc.y - 0.47, cc.x + 0.47, cc.y + 0.47, 0.0,
+                         UV_OFFSET, SURFACE_TILING)
+            objs.append((o, (p["danger"] if r == ROWS - 1 else floor_tex or p["tiles"][(r + c) % 2])))
+    objs.append((uv_plane("Arena_Grout", -COLS / 2, LAUNCH, COLS / 2, LAUNCH + ROWS, -0.01), p["grout"]))
+    objs.append((uv_plane("Arena_Launch", -COLS / 2, 0.0, COLS / 2, LAUNCH, -0.005, UV_OFFSET, SURFACE_TILING),
+                 floor_tex or p["launch"]))
     top = LAUNCH + ROWS
     for name, center, size in (("Arena_WallL", (-COLS / 2 - 0.2, top / 2, 0.2), (0.4, top + 0.4, 0.4)),
                                ("Arena_WallR", (COLS / 2 + 0.2, top / 2, 0.2), (0.4, top + 0.4, 0.4)),
                                ("Arena_WallT", (0.0, top + 0.2, 0.2), (COLS + 0.8, 0.4, 0.4))):
-        objs.append(box(name, center, size, mat("wall", p["wall"])))
-    objs.append(box("Arena_Ground", (0.0, top / 2, -0.2), (60.0, 60.0, 0.1), mat("ground", p["ground"])))
+        box(name, center, size, p["wall"])
+    objs.append((uv_plane("Arena_Ground", -30.0, -20.0, 30.0, 40.0, -0.2, (0.0, 0.0), SURFACE_TILING),
+                 ground_tex or p["ground"]))
     return objs
 
 
 def game_camera(scene):
-    target = Vector((0.0, (LAUNCH + ROWS) / 2, 0.0))
-    tan_x = math.tan(math.radians(FOV / 2)) * W / H
-    dist = W / (PX_PER_CELL * 2 * tan_x)  # 1 m at the target distance -> PX_PER_CELL pixels
-    back = Vector((0.0, -math.cos(math.radians(PITCH)), math.sin(math.radians(PITCH))))
-    cam = look.look_camera(scene, target + back * dist, target, lens_fov_deg=FOV, name="GameCam")
-    return cam, dist
+    """The real game pose (ArenaConfig.cameraPosition relative to the ArenaLayout origin, rig Euler(pitch, 0, 0),
+    vertical FOV). Unity (x, y, z) -> Blender (x, z, y) here, because the preview keeps models unturned."""
+    pos, pitch, fov = CAMERA
+    loc = Vector((pos[0], pos[2], pos[1]))
+    fwd = Vector((0.0, math.cos(math.radians(pitch)), -math.sin(math.radians(pitch))))
+    cam = look.look_camera(scene, loc, loc + fwd, lens_fov_deg=fov, name="GameCam")
+    centre = cell_center(3, ROWS // 2 - 1)  # a mid-arena cell
+    return cam, (centre - loc).length
+
+
+def px_per_cell(scene, cam):
+    from bpy_extras.object_utils import world_to_camera_view
+    bpy.context.view_layer.update()
+    c = cell_center(3, ROWS // 2 - 1)
+    a = world_to_camera_view(scene, cam, c - Vector((0.5, 0, 0)))
+    b = world_to_camera_view(scene, cam, c + Vector((0.5, 0, 0)))
+    return (b.x - a.x) * W
 
 
 def main():
-    global REQUIRED
+    global REQUIRED, ACT_SURFACES
     argv = sys.argv[sys.argv.index("--") + 1:]
     ap = argparse.ArgumentParser()
     ap.add_argument("--staging", required=True)
@@ -158,6 +214,7 @@ def main():
     a = ap.parse_args(argv)
     import contract  # noqa: E402
     REQUIRED = contract.REQUIRED_PARTS
+    ACT_SURFACES = act_surfaces()
     os.makedirs(a.work, exist_ok=True)
     bpy.ops.wm.read_factory_settings(use_empty=True)
     scene = bpy.context.scene
@@ -190,8 +247,10 @@ def main():
             o.hide_render = True
 
     look.setup_eevee(scene, W, H, pixel=True, transparent=False)
+    scene.render.dither_intensity = 0.0  # data passes: exact texels / ids, no output dither noise
     cam, dist = game_camera(scene)
-    info = {"camera_distance": round(dist, 3), "fov": FOV, "pitch": PITCH, "px_per_cell": PX_PER_CELL,
+    info = {"camera_distance": round(dist, 3), "fov": FOV, "pitch": PITCH, "camera_position": CAMERA[0],
+            "px_per_cell": round(px_per_cell(scene, cam), 1), "act_surfaces": ACT_SURFACES,
             "layout": LAYOUT, "context_skipped": sorted({m for m, _, _ in CONTEXT if m not in prototypes})}
     for act, p in ACTS.items():
         info[act] = p["name"]
@@ -257,31 +316,54 @@ def clear(placed):
         bpy.data.objects.remove(o)
 
 
+PASSES = ("albedo", "emis", "light", "normal", "id")
+
+
 def render_act(scene, a, act, placed, name, main_png, emis_png):
-    p = ACTS[act]
+    """Raw data passes {name}_{albedo,emis,light,normal}.png of the placed models in the act's mock arena, lit by
+    the act's sun (direction from the Unity act asset). compose_previews.py shades them with game_look.py."""
+    import game_look  # noqa: E402  (numpy-only helpers; Blender bundles numpy)
     for o in list(scene.objects):
         if o.type == "LIGHT" or o.name.startswith("Arena_"):
+            data = o.data
             bpy.data.objects.remove(o)
-    arena = build_arena(act)
-    look.sun(scene, [-c for c in p["sun_from"]], p["intensity"])
-    bg = scene.world.node_tree.nodes["Background"].inputs["Color"]
-    bg.default_value = p["ground"] + (1.0,)
+            if data is not None and data.users == 0 and isinstance(data, bpy.types.Mesh):
+                bpy.data.meshes.remove(data)
+    arena = build_arena(act, os.path.join(a.staging, "Textures", "BilliardRogue", "Surfaces"))
+    lit = game_look.act_lighting(int(act[-1]))
+    look.sun(scene, [-c for c in game_look.sun_to_light(lit["euler"])], 1.0)
+    scene.world.node_tree.nodes["Background"].inputs["Color"].default_value = (0, 0, 0, 1)
     meshes = [o for o in placed if o.type == "MESH"]
-    toon = look.toon_material(f"M_{act}_Palette", main_png, emis_png, look.BANDS4, p["tint"], p["ambient"])
-    for o in meshes:
-        o.data.materials.clear()
-        o.data.materials.append(toon)
-    look.render(scene, os.path.join(a.work, f"{name}_beauty.png"))
-    emit = look.toon_material(f"M_{act}_Emit", main_png, emis_png, mode="emit", emit_gain=1.0)
-    black = look.toon_material("M_Black", (0.0, 0.0, 0.0), None, mode="flat")
-    for o in meshes:
-        o.data.materials.clear()
-        o.data.materials.append(emit)
-    for o in arena:
-        o.data.materials.clear()
-        o.data.materials.append(black)
-    bg.default_value = (0, 0, 0, 1)
-    look.render(scene, os.path.join(a.work, f"{name}_emit.png"))
+    cache = {}
+
+    def mat(kind, albedo, emission):
+        key = (kind, albedo if kind == "albedo" else None, emission if kind == "emis" else None)
+        if key not in cache:
+            cache[key] = look.pass_material(f"M_{kind}_{len(cache)}", kind, albedo, emission)
+        return cache[key]
+
+    roots = [o for o in placed if o.name.startswith("Place_")]
+    for kind in PASSES:
+        base = mat("albedo" if kind == "id" else kind, main_png, emis_png)
+        for data in {o.data for o in meshes}:  # duplicates share mesh data
+            data.materials.clear()
+            data.materials.append(base)
+        for o in meshes:
+            slot = o.material_slots[0]
+            slot.link = "DATA"
+            if kind == "id":  # placement index + 1 in red (measure_readability.py masks), 0 = arena
+                top = o
+                while top.parent is not None:
+                    top = top.parent
+                slot.link = "OBJECT"
+                slot.material = mat("albedo", ((roots.index(top) + 1) / 255.0, 0.0, 0.0), None)
+        for o, albedo in arena:
+            o.data.materials.clear()
+            if kind == "id":
+                o.data.materials.append(mat("albedo", (0.0, 0.0, 0.0), None))
+            else:
+                o.data.materials.append(mat(kind, albedo if isinstance(albedo, str) else tuple(albedo), None))
+        look.render(scene, os.path.join(a.work, f"{name}_{kind}.png"))
 
 
 def footprint_pixels(scene, cam, col, row, size, height):

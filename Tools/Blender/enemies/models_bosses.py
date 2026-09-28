@@ -20,7 +20,8 @@ def rock(color_rule, seed, subdiv=0, amount=0.08):
 
 
 def rock_rule(c, n):
-    return C("gray", 12) if n.z > 0.55 else C("indigo", 5) if n.z < -0.45 else C("gray", 9)
+    # slate rock (mid-dark): a solid mass under which the cyan eyes / core and the gold shield crystal pop
+    return C("gray", 10) if n.z > 0.55 else C("indigo", 3) if n.z < -0.45 else C("gray", 7)
 
 
 # ================================================================== King Slime
@@ -30,48 +31,50 @@ def king_slime():
     prof = [(0.66, 0.0), (0.84, 0.05), (0.92, 0.17), (0.925, 0.35), (0.87, 0.54), (0.77, 0.73), (0.63, 0.9),
             (0.46, 1.03), (0.28, 1.12), (0.11, 1.175), (0.0, 1.19)]
     segs = 22
-    g = k.lathe(prof, segs, C("green", 9), phase=math.pi / segs)
+    # same green family as Enemy_Slime at mid shades (the old lime 11-13 clipped to lemon-yellow under the warm Act 1
+    # grade); a lighter jelly cap over a deeper base so the 2x2 mass has a clear top / bottom value break
+    g = k.lathe(prof, segs, C("green", 8), phase=math.pi / segs)
 
     def layered(c, n):
         a = math.atan2(c.y, c.x)
         edge = 0.66 + 0.07 * math.sin(5 * a + 0.9)  # wavy jelly layer boundary
         if c.z > edge + 0.14:
-            return C("lime", 13 if c.z > 0.95 else 12)
+            return C("lime", 9 if c.z > 0.95 else 8)
         if c.z > edge:
-            return C("lime", 11)
+            return C("green", 10)
         if c.z < 0.06:
-            return C("green", 6)
-        return C("green", 8 if c.z < 0.22 else 10 if c.z < 0.45 else 11)
+            return C("green", 4)
+        return C("green", 6 if c.z < 0.22 else 7 if c.z < 0.45 else 8)
     g.paint(layered)
     body.add(g)
     for x, z, rx, ry in ((-0.42, 0.93, 0.13, 0.07), (-0.2, 1.06, 0.06, 0.035), (0.5, 0.95, 0.05, 0.03)):
-        body.add(on_surface(g, k.dome(rx, ry, 0.02, 6, C("lime", 15)), x, z, elevation=45, sink=0.003))
+        body.add(on_surface(g, k.dome(rx, ry, 0.02, 6, C("lime", 12)), x, z, elevation=45, sink=0.003))
     for x, z, r in ((0.62, 0.22, 0.07), (0.72, 0.4, 0.045), (-0.66, 0.28, 0.06), (-0.52, 0.12, 0.04), (0.3, 0.1, 0.05)):
-        body.add(on_surface(g, k.dome(r, r, r * 0.5, 6, C("green", 12)), x, z, elevation=0, sink=0.004, blend=0.2))
+        body.add(on_surface(g, k.dome(r, r, r * 0.5, 6, C("green", 10)), x, z, elevation=0, sink=0.004, blend=0.2))
     # face: smug brows, big grin with a tooth, blush
     for side in (-1, 1):
-        brow = k.slab([(-0.1, -0.02), (0.1, -0.02), (0.1, 0.025), (-0.1, 0.035)], 0.04, C("green", 4))
-        body.add(on_surface(g, brow.copy(R(Z, side * 12)), side * 0.28, 0.86, elevation=22, sink=0.008))
+        brow = k.slab([(-0.12, -0.025), (0.12, -0.025), (0.12, 0.03), (-0.12, 0.042)], 0.04, C("green", 1))
+        body.add(on_surface(g, brow.copy(R(Z, side * 12)), side * 0.3, 0.9, elevation=30, sink=0.008))
         body.add(on_surface(g, k.dome(0.1, 0.05, 0.012, 6, C("pink", 13)), side * 0.5, 0.47, elevation=10, sink=0.003))
     mouth = k.slab(smile(0.34, 0.15, 7), 0.03, C("red", 2))
     body.add(on_surface(g, mouth, 0.0, 0.43, elevation=18, sink=0.01))
     body.add(on_surface(g, k.dome(0.08, 0.045, 0.02, 6, C("red", 11)), 0.03, 0.34, elevation=18, sink=0.004))
-    body.add(on_surface(g, k.box(0.07, 0.065, 0.03, C("gray", 15)), -0.09, 0.405, elevation=18, sink=0.01))
-    eyes, mid = k.eye_pair(g, 0.64, 0.25, 0.15, 0.19, "cute", elevation=26, segs=10)
+    body.add(on_surface(g, k.box(0.07, 0.065, 0.03, C("gray", 13)), -0.09, 0.405, elevation=18, sink=0.01))
+    eyes, mid = k.eye_pair(g, 0.67, 0.28, 0.185, 0.225, "cute", elevation=36, segs=10)
     m.part("Eyes", mid, parent="Body").add(eyes)
 
     cz = 1.02
     crown = m.part("Crown", (0.0, 0.03, cz), parent="Body")
     cg = Geo()
     band = [(0.36, 0.0), (0.4, 0.2), (0.365, 0.2), (0.335, 0.19), (0.27, 0.27), (0.14, 0.32), (0.0, 0.335)]
-    cband = k.lathe(band, 10, C("yellow", 13), phase=math.pi / 10)
-    cband.paint(lambda c, n: C("red", 12 if c.z > 0.3 else 10) if c.z > 0.19 and math.hypot(c.x, c.y) < 0.345 else
-                C("yellow", 15 if n.z > 0.5 else 12))  # gold band + red velvet cushion
+    cband = k.lathe(band, 10, C("yellow", 11), phase=math.pi / 10)
+    cband.paint(lambda c, n: C("red", 10 if c.z > 0.3 else 8) if c.z > 0.19 and math.hypot(c.x, c.y) < 0.345 else
+                C("yellow", 12 if n.z > 0.5 else 10))  # gold band + red velvet cushion
     cg.add(cband)
     for i in range(5):
         a = math.radians(-90 + 72 * i)
         base_p = Vector((0.375 * math.cos(a), 0.375 * math.sin(a), 0.19))
-        cg.add(k.cone(0.08, 0.24, 4, top_lit("yellow", 13, 15), phase=math.pi / 4),
+        cg.add(k.cone(0.08, 0.24, 4, top_lit("yellow", 11, 12), phase=math.pi / 4),
                T(*base_p) @ R(Vector((-math.sin(a), math.cos(a), 0)), 8))
         gem = C("red", 10, True) if i % 2 == 0 else C("cyan", 11, True)
         cg.add(k.lathe([(0.0, -0.045), (0.045, 0.0), (0.0, 0.045)], 4, gem), T(*(base_p + Vector((0, 0, 0.26)))))
@@ -242,13 +245,13 @@ def crystal_golem():
                       C("cyan", 11, True), cap_color=C("cyan", 12, True))
         eye = eye.copy(S(-1, 1, 1)) if side < 0 else eye  # inner corner lower = frowning
         head.add(on_surface(hg, eye, side * 0.12, hc.z + 0.0, elevation=44, sink=0.015, blend=0.7))
-        brow = k.box(0.2, 0.075, 0.07, top_lit("gray", 6, 9, 4)).copy(R(Z, side * 14))
+        brow = k.box(0.2, 0.075, 0.07, top_lit("indigo", 2, 4, 1)).copy(R(Z, side * 14))
         head.add(on_surface(hg, brow, side * 0.12, hc.z + 0.1, elevation=30, sink=0.03, blend=0.6))
     head.add(on_surface(hg, k.box(0.26, 0.04, 0.03, C("indigo", 1)), 0.0, hc.z - 0.1, elevation=30, sink=0.012))
-    jaw = k.box(0.36, 0.16, 0.12, top_lit("gray", 8, 10, 5), top_scale=(1.06, 1.0))
+    jaw = k.box(0.36, 0.16, 0.12, top_lit("gray", 5, 7, 3), top_scale=(1.06, 1.0))
     head.add(jaw, T(0.0, hc.y - 0.2, hc.z - 0.26))
     for side in (-1, 1):
-        head.add(k.cone(0.03, 0.08, 4, top_lit("gray", 13, 15), phase=math.pi / 4),
+        head.add(k.cone(0.03, 0.08, 4, top_lit("gray", 12, 13), phase=math.pi / 4),
                  T(side * 0.12, hc.y - 0.25, hc.z - 0.15))  # tusks
     head.add(k.crystal(0.06, 0.24, 5, jade(11)), k.aim(hc + Vector((0.05, 0.06, 0.18)), (0.2, 0.25, 1.0)))
 

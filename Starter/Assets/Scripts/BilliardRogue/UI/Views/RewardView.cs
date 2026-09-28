@@ -41,6 +41,8 @@ namespace Nex.BilliardRogue
             {
                 var index = i;
                 cards[i].Button.onClick.AddListener(() => HandleChoose(index));
+                // Hidden until ChooseAsync reveals them, even when the view is pushed before ChooseAsync fills them.
+                cards[i].BodyGroup.alpha = 0f;
             }
         }
 

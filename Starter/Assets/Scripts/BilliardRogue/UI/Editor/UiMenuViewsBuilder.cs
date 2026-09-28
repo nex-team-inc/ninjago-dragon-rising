@@ -20,7 +20,7 @@ namespace Nex.BilliardRogue.Editor
             var theme = kit.Theme;
             var root = UiViewsBuilder.OpenRoot(kit, path, "TitleView");
             var view = UiViewsBuilder.ViewRoot<TitleView>(kit, root, out var content);
-            Kit.SetBool(view, "disableCanvasOnBackground", true);
+            UiFields.SetBool(view, "disableCanvasOnBackground", true);
             var c = content.transform;
             kit.StretchImage(c, "Vignette", theme.Vignette, 0f, Fill.Simple, theme.VignetteColor).preserveAspect = false;
             kit.Image(c, "Logo", theme.Logo, Kit.Top, new Vector2(0f, -32f), new Vector2(1280f, 400f));
@@ -54,14 +54,14 @@ namespace Nex.BilliardRogue.Editor
             var runs = kit.Label(record.transform, "Runs", LocKeys.Title.Runs, 32, theme.TextMuted, Kit.Center, new Vector2(0f, -22f), new Vector2(944f, 48f));
 
             var graph = kit.GraphWithControlProxy(root.transform, group, TopLevelControlPanel.ControlConfig.Exit);
-            Kit.Set(view, "continueButton", continueButton);
-            Kit.Set(view, "newRunButton", newRun);
-            Kit.Set(view, "settingsButton", settings);
-            Kit.Set(view, "continueInfo", info);
-            Kit.Set(view, "bestLabel", best);
-            Kit.Set(view, "runsLabel", runs);
-            Kit.Set(view, "keyResponder", graph);
-            Kit.Set(view, "popTarget", null);
+            UiFields.Set(view, "continueButton", continueButton);
+            UiFields.Set(view, "newRunButton", newRun);
+            UiFields.Set(view, "settingsButton", settings);
+            UiFields.Set(view, "continueInfo", info);
+            UiFields.Set(view, "bestLabel", best);
+            UiFields.Set(view, "runsLabel", runs);
+            UiFields.Set(view, "keyResponder", graph);
+            UiFields.Set(view, "popTarget", null);
             return UiViewsBuilder.SaveRoot(root, path);
         }
 
@@ -91,11 +91,11 @@ namespace Nex.BilliardRogue.Editor
             CardTexts(kit, twoFrame, LocKeys.PlayerMode.TwoPlayers, LocKeys.PlayerMode.CoopHint);
 
             var graph = kit.GraphWithControlProxy(root.transform, group, TopLevelControlPanel.ControlConfig.Back);
-            Kit.Set(view, "onePlayerButton", one);
-            Kit.Set(view, "twoPlayersButton", two);
-            Kit.Set(view, "cardsGroup", group);
-            Kit.Set(view, "keyResponder", graph);
-            Kit.Set(view, "popTarget", cards.transform);
+            UiFields.Set(view, "onePlayerButton", one);
+            UiFields.Set(view, "twoPlayersButton", two);
+            UiFields.Set(view, "cardsGroup", group);
+            UiFields.Set(view, "keyResponder", graph);
+            UiFields.Set(view, "popTarget", cards.transform);
             return UiViewsBuilder.SaveRoot(root, path);
         }
 
@@ -157,15 +157,15 @@ namespace Nex.BilliardRogue.Editor
             hint.transform.SetAsLastSibling();
 
             var graph = kit.GraphWithControlProxy(root.transform, group, TopLevelControlPanel.ControlConfig.Back);
-            Kit.Set(view, "languageRow", language);
-            Kit.Set(view, "masterRow", master);
-            Kit.Set(view, "musicRow", music);
-            Kit.Set(view, "sfxRow", sfx);
-            Kit.Set(view, "aimGuideRow", aim);
-            Kit.Set(view, "leftHandedRow", leftHanded);
-            Kit.Set(view, "screenShakeRow", shake);
-            Kit.Set(view, "keyResponder", graph);
-            Kit.Set(view, "popTarget", panel.transform);
+            UiFields.Set(view, "languageRow", language);
+            UiFields.Set(view, "masterRow", master);
+            UiFields.Set(view, "musicRow", music);
+            UiFields.Set(view, "sfxRow", sfx);
+            UiFields.Set(view, "aimGuideRow", aim);
+            UiFields.Set(view, "leftHandedRow", leftHanded);
+            UiFields.Set(view, "screenShakeRow", shake);
+            UiFields.Set(view, "keyResponder", graph);
+            UiFields.Set(view, "popTarget", panel.transform);
             UiViewsBuilder.SaveRoot(root, path);
             return AssetDatabase.LoadAssetAtPath<SettingsView>(path);
         }
@@ -201,12 +201,12 @@ namespace Nex.BilliardRogue.Editor
 
             var cursor = kit.Cursor(go.transform, width);
             var highlight = kit.Highlight(go, go.transform, frame, theme.ButtonFocused, null, cursor, left, right);
-            Kit.SetFloat(highlight, "scaleWeight", 0.4f);
+            UiFields.SetFloat(highlight, "scaleWeight", 0.4f);
             var row = go.AddComponent<SettingRow>();
-            Kit.Set(row, "highlight", highlight);
-            Kit.Set(row, "valueLabel", value);
-            Kit.Set(row, "bar", fill);
-            Kit.Set(row, "percentLabel", percent);
+            UiFields.Set(row, "highlight", highlight);
+            UiFields.Set(row, "valueLabel", value);
+            UiFields.Set(row, "bar", fill);
+            UiFields.Set(row, "percentLabel", percent);
             return row;
         }
 
@@ -233,12 +233,12 @@ namespace Nex.BilliardRogue.Editor
             ((RectTransform)saveQuit.transform).anchoredPosition = new Vector2(0f, -120f);
 
             var graph = kit.GraphWithControlProxy(root.transform, group, TopLevelControlPanel.ControlConfig.Back);
-            Kit.Set(view, "resumeButton", resume);
-            Kit.Set(view, "settingsButton", settings);
-            Kit.Set(view, "saveQuitButton", saveQuit);
-            Kit.Set(view, "settingsViewPrefab", settingsPrefab);
-            Kit.Set(view, "keyResponder", graph);
-            Kit.Set(view, "popTarget", panel.transform);
+            UiFields.Set(view, "resumeButton", resume);
+            UiFields.Set(view, "settingsButton", settings);
+            UiFields.Set(view, "saveQuitButton", saveQuit);
+            UiFields.Set(view, "settingsViewPrefab", settingsPrefab);
+            UiFields.Set(view, "keyResponder", graph);
+            UiFields.Set(view, "popTarget", panel.transform);
             return UiViewsBuilder.SaveRoot(root, path);
         }
 

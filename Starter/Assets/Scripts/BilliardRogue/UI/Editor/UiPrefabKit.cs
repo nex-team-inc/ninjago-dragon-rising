@@ -194,8 +194,8 @@ namespace Nex.BilliardRogue.Editor
             layers.Add(face);
             if (key != null) localized.Add(Bind(face, key));
             var label = go.AddComponent<TextLabel>();
-            SetArray(label, "layers", layers);
-            SetArray(label, "localized", localized);
+            UiFields.SetArray(label, "layers", layers);
+            UiFields.SetArray(label, "localized", localized);
             return label;
         }
 
@@ -319,21 +319,21 @@ namespace Nex.BilliardRogue.Editor
             RectTransform? cursor, params Graphic[] accentGraphics)
         {
             var highlight = go.AddComponent<FocusHighlight>();
-            Set(highlight, "theme", Theme);
-            Set(highlight, "pulseTarget", pulseTarget);
-            Set(highlight, "frame", frame);
-            Set(highlight, "focusedSprite", focusedSprite);
-            Set(highlight, "glow", glow);
-            Set(highlight, "cursor", cursor);
-            SetArray(highlight, "accentGraphics", new List<Object>(accentGraphics));
+            UiFields.Set(highlight, "theme", Theme);
+            UiFields.Set(highlight, "pulseTarget", pulseTarget);
+            UiFields.Set(highlight, "frame", frame);
+            UiFields.Set(highlight, "focusedSprite", focusedSprite);
+            UiFields.Set(highlight, "glow", glow);
+            UiFields.Set(highlight, "cursor", cursor);
+            UiFields.SetArray(highlight, "accentGraphics", new List<Object>(accentGraphics));
             return highlight;
         }
 
         public UiButtonKeyResponder Responder(GameObject go, Button button, FocusHighlight highlight)
         {
             var responder = go.AddComponent<UiButtonKeyResponder>();
-            Set(responder, "button", button);
-            Set(responder, "highlight", highlight);
+            UiFields.Set(responder, "button", button);
+            UiFields.Set(responder, "highlight", highlight);
             return responder;
         }
 
@@ -362,53 +362,14 @@ namespace Nex.BilliardRogue.Editor
             var proxySo = new SerializedObject(proxy);
             proxySo.FindProperty("control").intValue = (int)control;
             proxySo.ApplyModifiedPropertiesWithoutUndo();
-            Set(proxyNode, "keyResponder", proxy);
-            Set(contentNode, "keyResponder", content);
+            UiFields.Set(proxyNode, "keyResponder", proxy);
+            UiFields.Set(contentNode, "keyResponder", content);
             var graphSo = new SerializedObject(graph);
             graphSo.FindProperty("fetchChildNodes").boolValue = true;
             graphSo.FindProperty("initialGraphNode").objectReferenceValue = contentNode;
             graphSo.FindProperty("backButtonResponder").objectReferenceValue = proxy;
             graphSo.ApplyModifiedPropertiesWithoutUndo();
             return graph;
-        }
-
-        #endregion
-
-        #region Serialized fields
-
-        public static void Set(Object target, string field, Object? value)
-        {
-            var so = new SerializedObject(target);
-            var property = so.FindProperty(field) ?? throw new System.InvalidOperationException($"{target.GetType().Name}.{field} not found");
-            property.objectReferenceValue = value;
-            so.ApplyModifiedPropertiesWithoutUndo();
-        }
-
-        public static void SetBool(Object target, string field, bool value)
-        {
-            var so = new SerializedObject(target);
-            so.FindProperty(field).boolValue = value;
-            so.ApplyModifiedPropertiesWithoutUndo();
-        }
-
-        public static void SetFloat(Object target, string field, float value)
-        {
-            var so = new SerializedObject(target);
-            so.FindProperty(field).floatValue = value;
-            so.ApplyModifiedPropertiesWithoutUndo();
-        }
-
-        public static void SetArray(Object target, string field, IList<Object> values)
-        {
-            var so = new SerializedObject(target);
-            var property = so.FindProperty(field) ?? throw new System.InvalidOperationException($"{target.GetType().Name}.{field} not found");
-            property.arraySize = values.Count;
-            for (var i = 0; i < values.Count; i++)
-            {
-                property.GetArrayElementAtIndex(i).objectReferenceValue = values[i];
-            }
-
-            so.ApplyModifiedPropertiesWithoutUndo();
         }
 
         #endregion

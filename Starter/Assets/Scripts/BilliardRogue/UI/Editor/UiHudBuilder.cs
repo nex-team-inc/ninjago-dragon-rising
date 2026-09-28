@@ -29,7 +29,7 @@ namespace Nex.BilliardRogue.Editor
             var canvas = UiViewsBuilder.GetOrAdd<Canvas>(root);
             canvas.additionalShaderChannels = (AdditionalCanvasShaderChannels)27;
             var hud = UiViewsBuilder.GetOrAdd<GameplayHud>(root);
-            Kit.Set(hud, "theme", theme);
+            UiFields.Set(hud, "theme", theme);
 
             var left = kit.Ui("LeftColumn", root.transform);
             Kit.Place(left, Kit.TopLeft, new Vector2(32f, -256f), new Vector2(480f, 792f));
@@ -44,7 +44,7 @@ namespace Nex.BilliardRogue.Editor
                 Chip(kit, warnings.transform, "WarningP1", LocKeys.Hud.TrackingWarningPlayer, theme.Danger, new Vector2(480f, 64f), true),
                 Chip(kit, warnings.transform, "WarningP2", LocKeys.Hud.TrackingWarningPlayer, theme.Danger, new Vector2(480f, 64f), true),
             };
-            Kit.SetArray(hud, "trackingWarnings", warningChips);
+            UiFields.SetArray(hud, "trackingWarnings", warningChips);
 
             var right = kit.Ui("RightColumn", root.transform);
             Kit.Place(right, Kit.TopRight, new Vector2(-32f, -32f), new Vector2(480f, 1016f));
@@ -53,12 +53,12 @@ namespace Nex.BilliardRogue.Editor
             var chips = kit.Ui("Chips", right.transform);
             Kit.Place(chips, Kit.TopLeft, new Vector2(0f, -632f), new Vector2(480f, 224f));
             Column(chips);
-            Kit.Set(hud, "bonusBallsChip", Chip(kit, chips.transform, "BonusBalls", LocKeys.Hud.BonusBalls, theme.Accent, new Vector2(480f, 64f), false));
-            Kit.Set(hud, "powerChip", Chip(kit, chips.transform, "PowerReady", LocKeys.Hud.PowerArmed, theme.Accent, new Vector2(480f, 64f), true));
-            Kit.Set(hud, "fastForwardChip", Chip(kit, chips.transform, "FastForward", LocKeys.Hud.FastForward, theme.TextPrimary, new Vector2(480f, 64f), true));
+            UiFields.Set(hud, "bonusBallsChip", Chip(kit, chips.transform, "BonusBalls", LocKeys.Hud.BonusBalls, theme.Accent, new Vector2(480f, 64f), false));
+            UiFields.Set(hud, "powerChip", Chip(kit, chips.transform, "PowerReady", LocKeys.Hud.PowerArmed, theme.Accent, new Vector2(480f, 64f), true));
+            UiFields.Set(hud, "fastForwardChip", Chip(kit, chips.transform, "FastForward", LocKeys.Hud.FastForward, theme.TextPrimary, new Vector2(480f, 64f), true));
 
-            Kit.Set(hud, "turnBanner", Ribbon(kit, root.transform, "TurnBanner", LocKeys.Hud.TurnBanner, new Vector2(0f, -40f), 704f));
-            Kit.Set(hud, "shooterBanner", Ribbon(kit, root.transform, "ShooterBanner", LocKeys.Hud.ShooterBanner, new Vector2(0f, -152f), 576f));
+            UiFields.Set(hud, "turnBanner", Ribbon(kit, root.transform, "TurnBanner", LocKeys.Hud.TurnBanner, new Vector2(0f, -40f), 704f));
+            UiFields.Set(hud, "shooterBanner", Ribbon(kit, root.transform, "ShooterBanner", LocKeys.Hud.ShooterBanner, new Vector2(0f, -152f), 576f));
             return UiViewsBuilder.SaveRoot(root, path);
         }
 
@@ -68,11 +68,11 @@ namespace Nex.BilliardRogue.Editor
         {
             var theme = kit.Theme;
             var panel = kit.Image(parent, "StagePanel", theme.Panel, Kit.TopLeft, Vector2.zero, new Vector2(480f, 144f), Fill.Tiled).transform;
-            Kit.Set(hud, "stageLabel", kit.Label(panel, "Stage", LocKeys.Hud.Stage, 32, theme.TextPrimary, Kit.TopLeft, new Vector2(36f, -28f),
+            UiFields.Set(hud, "stageLabel", kit.Label(panel, "Stage", LocKeys.Hud.Stage, 32, theme.TextPrimary, Kit.TopLeft, new Vector2(36f, -28f),
                 new Vector2(320f, 48f), TextAlignmentOptions.Left));
-            Kit.Set(hud, "turnLabel", kit.Label(panel, "Turn", LocKeys.Hud.Turn, 32, theme.TextMuted, Kit.TopLeft, new Vector2(36f, -76f),
+            UiFields.Set(hud, "turnLabel", kit.Label(panel, "Turn", LocKeys.Hud.Turn, 32, theme.TextMuted, Kit.TopLeft, new Vector2(36f, -76f),
                 new Vector2(320f, 48f), TextAlignmentOptions.Left));
-            Kit.Set(hud, "bossStageChip", Chip(kit, panel, "BossChip", LocKeys.Hud.Boss, theme.Danger, new Vector2(128f, 48f), true,
+            UiFields.Set(hud, "bossStageChip", Chip(kit, panel, "BossChip", LocKeys.Hud.Boss, theme.Danger, new Vector2(128f, 48f), true,
                 Kit.TopRight, new Vector2(-24f, -28f)));
         }
 
@@ -89,13 +89,13 @@ namespace Nex.BilliardRogue.Editor
                 TextAlignmentOptions.Right, numbersPreview: "30/30");
             var (fill, ghost) = Bar(kit, s, theme.HpFill, new Vector2(32f, -100f), 416f);
             var widget = panel.gameObject.AddComponent<HpBarWidget>();
-            Kit.Set(widget, "theme", theme);
-            Kit.Set(widget, "fill", fill);
-            Kit.Set(widget, "ghostFill", ghost);
-            Kit.Set(widget, "numbers", numbers);
-            Kit.Set(widget, "shakeTarget", shake.transform);
-            Kit.Set(widget, "heart", heart.transform);
-            Kit.Set(hud, "hpBar", widget);
+            UiFields.Set(widget, "theme", theme);
+            UiFields.Set(widget, "fill", fill);
+            UiFields.Set(widget, "ghostFill", ghost);
+            UiFields.Set(widget, "numbers", numbers);
+            UiFields.Set(widget, "shakeTarget", shake.transform);
+            UiFields.Set(widget, "heart", heart.transform);
+            UiFields.Set(hud, "hpBar", widget);
         }
 
         static void BuildPlayerTags(Kit kit, Transform parent, GameplayHud hud)
@@ -118,12 +118,12 @@ namespace Nex.BilliardRogue.Editor
             }
 
             var widget = panel.gameObject.AddComponent<PlayerTagsWidget>();
-            Kit.Set(widget, "theme", theme);
-            Kit.SetArray(widget, "tags", tags);
-            Kit.SetArray(widget, "tagGroups", groups);
-            Kit.SetArray(widget, "tagTints", tints);
-            Kit.SetArray(widget, "tagLabels", labels);
-            Kit.Set(hud, "playerTags", widget);
+            UiFields.Set(widget, "theme", theme);
+            UiFields.SetArray(widget, "tags", tags);
+            UiFields.SetArray(widget, "tagGroups", groups);
+            UiFields.SetArray(widget, "tagTints", tints);
+            UiFields.SetArray(widget, "tagLabels", labels);
+            UiFields.Set(hud, "playerTags", widget);
             panel.gameObject.SetActive(false);
         }
 
@@ -146,14 +146,14 @@ namespace Nex.BilliardRogue.Editor
             var numbers = kit.Label(fill.transform.parent, "Numbers", null, 32, theme.TextPrimary, Kit.Center, new Vector2(0f, 2f), new Vector2(400f, 48f),
                 numbersPreview: "70/70");
             var widget = panel.gameObject.AddComponent<BossBarWidget>();
-            Kit.Set(widget, "theme", theme);
-            Kit.Set(widget, "group", group);
-            Kit.Set(widget, "nameLabel", name);
-            Kit.Set(widget, "fill", fill);
-            Kit.Set(widget, "ghostFill", ghost);
-            Kit.Set(widget, "numbers", numbers);
-            Kit.Set(widget, "shakeTarget", shake.transform);
-            Kit.Set(hud, "bossBar", widget);
+            UiFields.Set(widget, "theme", theme);
+            UiFields.Set(widget, "group", group);
+            UiFields.Set(widget, "nameLabel", name);
+            UiFields.Set(widget, "fill", fill);
+            UiFields.Set(widget, "ghostFill", ghost);
+            UiFields.Set(widget, "numbers", numbers);
+            UiFields.Set(widget, "shakeTarget", shake.transform);
+            UiFields.Set(hud, "bossBar", widget);
             panel.gameObject.SetActive(false);
         }
 
@@ -164,7 +164,7 @@ namespace Nex.BilliardRogue.Editor
             var p = panel.transform;
             kit.Image(p, "Icon", theme.Ball, Kit.TopLeft, new Vector2(32f, -32f), new Vector2(48f, 48f));
             kit.Label(p, "Label", LocKeys.Hud.BallsLabel, 32, theme.TextMuted, Kit.TopLeft, new Vector2(96f, -32f), new Vector2(200f, 48f), TextAlignmentOptions.Left);
-            Kit.Set(hud, "ballsCounter", kit.Label(p, "Counter", null, 48, theme.TextPrimary, Kit.TopRight, new Vector2(-32f, -24f), new Vector2(200f, 64f),
+            UiFields.Set(hud, "ballsCounter", kit.Label(p, "Counter", null, 48, theme.TextPrimary, Kit.TopRight, new Vector2(-32f, -24f), new Vector2(200f, 64f),
                 TextAlignmentOptions.Right, numbersPreview: "4/4"));
 
             var queue = kit.Ui("Queue", p);
@@ -190,13 +190,13 @@ namespace Nex.BilliardRogue.Editor
             }
 
             var widget = panel.gameObject.AddComponent<BallQueueWidget>();
-            Kit.Set(widget, "theme", theme);
-            Kit.SetArray(widget, "frames", frames);
-            Kit.SetArray(widget, "icons", icons);
-            Kit.SetArray(widget, "levels", levels);
-            Kit.SetArray(widget, "groups", groups);
-            Kit.Set(widget, "nextMarker", marker);
-            Kit.Set(hud, "ballQueue", widget);
+            UiFields.Set(widget, "theme", theme);
+            UiFields.SetArray(widget, "frames", frames);
+            UiFields.SetArray(widget, "icons", icons);
+            UiFields.SetArray(widget, "levels", levels);
+            UiFields.SetArray(widget, "groups", groups);
+            UiFields.Set(widget, "nextMarker", marker);
+            UiFields.Set(hud, "ballQueue", widget);
         }
 
         #endregion
@@ -218,10 +218,10 @@ namespace Nex.BilliardRogue.Editor
             var group = image.gameObject.AddComponent<CanvasGroup>();
             var label = kit.Label(image.transform, "Label", key, 32, color, Kit.Center, new Vector2(0f, 2f), new Vector2(size.x - 32f, 48f));
             var chip = image.gameObject.AddComponent<HudChip>();
-            Kit.Set(chip, "theme", kit.Theme);
-            Kit.Set(chip, "group", group);
-            Kit.Set(chip, "label", label);
-            Kit.SetBool(chip, "pulse", pulse);
+            UiFields.Set(chip, "theme", kit.Theme);
+            UiFields.Set(chip, "group", group);
+            UiFields.Set(chip, "label", label);
+            UiFields.SetBool(chip, "pulse", pulse);
             image.gameObject.SetActive(false);
             return chip;
         }
@@ -231,10 +231,10 @@ namespace Nex.BilliardRogue.Editor
             var banner = UiMenuViewsBuilder.Banner(kit, parent, name, key, pos, width);
             var group = banner.gameObject.AddComponent<CanvasGroup>();
             var widget = banner.gameObject.AddComponent<HudBanner>();
-            Kit.Set(widget, "theme", kit.Theme);
-            Kit.Set(widget, "banner", banner.rectTransform);
-            Kit.Set(widget, "group", group);
-            Kit.Set(widget, "label", banner.GetComponentInChildren<TextLabel>());
+            UiFields.Set(widget, "theme", kit.Theme);
+            UiFields.Set(widget, "banner", banner.rectTransform);
+            UiFields.Set(widget, "group", group);
+            UiFields.Set(widget, "label", banner.GetComponentInChildren<TextLabel>());
             banner.gameObject.SetActive(false);
             return widget;
         }

@@ -130,10 +130,10 @@ namespace Nex.BilliardRogue.Editor
             var contentGo = kit.Ui("Content", root.transform);
             UiPrefabKit.Stretch(contentGo);
             content = contentGo.AddComponent<CanvasGroup>();
-            UiPrefabKit.Set(view, "theme", kit.Theme);
-            UiPrefabKit.Set(view, "content", content);
-            UiPrefabKit.Set(view, "entryAnimator", null);
-            UiPrefabKit.Set(view, "toBackgroundAnimator", null);
+            UiFields.Set(view, "theme", kit.Theme);
+            UiFields.Set(view, "content", content);
+            UiFields.Set(view, "entryAnimator", null);
+            UiFields.Set(view, "toBackgroundAnimator", null);
             return view;
         }
 

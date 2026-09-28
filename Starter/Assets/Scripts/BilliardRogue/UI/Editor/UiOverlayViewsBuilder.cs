@@ -50,16 +50,16 @@ namespace Nex.BilliardRogue.Editor
             var bossIcon = kit.Image(boss.transform, "BossIcon", null, Kit.Center, new Vector2(0f, 232f), new Vector2(144f, 144f));
             boss.SetActive(false);
 
-            Kit.Set(view, "band", band);
-            Kit.Set(view, "bandImage", bandImage);
-            Kit.Set(view, "textGroup", text.transform);
-            Kit.Set(view, "headerLabel", header);
-            Kit.Set(view, "subtitleLabel", subtitle);
-            Kit.Set(view, "bossDecor", boss);
-            Kit.Set(view, "bossIcon", bossIcon);
-            Kit.Set(view, "normalDecor", normal);
-            Kit.Set(view, "keyResponder", null);
-            Kit.Set(view, "popTarget", null);
+            UiFields.Set(view, "band", band);
+            UiFields.Set(view, "bandImage", bandImage);
+            UiFields.Set(view, "textGroup", text.transform);
+            UiFields.Set(view, "headerLabel", header);
+            UiFields.Set(view, "subtitleLabel", subtitle);
+            UiFields.Set(view, "bossDecor", boss);
+            UiFields.Set(view, "bossIcon", bossIcon);
+            UiFields.Set(view, "normalDecor", normal);
+            UiFields.Set(view, "keyResponder", null);
+            UiFields.Set(view, "popTarget", null);
             return UiViewsBuilder.SaveRoot(root, path);
         }
 
@@ -104,10 +104,10 @@ namespace Nex.BilliardRogue.Editor
             kit.Image(c, "ArrowRight", theme.ArrowRight, Kit.Center, new Vector2(800f, -24f), new Vector2(96f, 96f));
             kit.Label(c, "Hint", LocKeys.Reward.ChooseHint, 32, theme.TextMuted, Kit.Bottom, new Vector2(0f, 40f), new Vector2(1200f, 48f));
 
-            Kit.SetArray(view, "cards", cards);
-            Kit.Set(view, "cardsGroup", group);
-            Kit.Set(view, "keyResponder", group);
-            Kit.Set(view, "popTarget", cardsGo.transform);
+            UiFields.SetArray(view, "cards", cards);
+            UiFields.Set(view, "cardsGroup", group);
+            UiFields.Set(view, "keyResponder", group);
+            UiFields.Set(view, "popTarget", cardsGo.transform);
             return UiViewsBuilder.SaveRoot(root, path);
         }
 
@@ -153,19 +153,19 @@ namespace Nex.BilliardRogue.Editor
             var highlight = kit.Highlight(go, go.transform, null, null, glow.gameObject, cursor);
             var responder = kit.Responder(go, button, highlight);
             var card = go.AddComponent<RewardCard>();
-            Kit.Set(card, "button", button);
-            Kit.Set(card, "responder", responder);
-            Kit.Set(card, "body", body);
-            Kit.Set(card, "bodyGroup", bodyGroup);
-            Kit.Set(card, "kindLabel", kind);
-            Kit.Set(card, "icon", icon);
-            Kit.Set(card, "nameLabel", name);
-            Kit.Set(card, "levelLabel", level);
-            Kit.SetArray(card, "stars", stars);
-            Kit.Set(card, "starsRow", starsRow);
-            Kit.Set(card, "descriptionLabel", description);
-            Kit.Set(card, "rarityChip", rarityChip.gameObject);
-            Kit.Set(card, "rarityLabel", rarity);
+            UiFields.Set(card, "button", button);
+            UiFields.Set(card, "responder", responder);
+            UiFields.Set(card, "body", body);
+            UiFields.Set(card, "bodyGroup", bodyGroup);
+            UiFields.Set(card, "kindLabel", kind);
+            UiFields.Set(card, "icon", icon);
+            UiFields.Set(card, "nameLabel", name);
+            UiFields.Set(card, "levelLabel", level);
+            UiFields.SetArray(card, "stars", stars);
+            UiFields.Set(card, "starsRow", starsRow);
+            UiFields.Set(card, "descriptionLabel", description);
+            UiFields.Set(card, "rarityChip", rarityChip.gameObject);
+            UiFields.Set(card, "rarityLabel", rarity);
             return card;
         }
 
@@ -196,14 +196,14 @@ namespace Nex.BilliardRogue.Editor
             kit.Label(resuming.transform, "Label", LocKeys.TrackingLost.Resuming, 48, theme.Positive, Kit.Center, new Vector2(0f, 48f), new Vector2(832f, 64f));
             resuming.SetActive(false);
 
-            Kit.Set(view, "bodyLabel", body);
-            Kit.Set(view, "playerChip", chip.gameObject);
-            Kit.Set(view, "playerChipLabel", chipLabel);
-            Kit.Set(view, "portrait", portrait);
-            Kit.Set(view, "waitingGroup", waiting);
-            Kit.Set(view, "resumingGroup", resuming);
-            Kit.Set(view, "keyResponder", null);
-            Kit.Set(view, "popTarget", panel.transform);
+            UiFields.Set(view, "bodyLabel", body);
+            UiFields.Set(view, "playerChip", chip.gameObject);
+            UiFields.Set(view, "playerChipLabel", chipLabel);
+            UiFields.Set(view, "portrait", portrait);
+            UiFields.Set(view, "waitingGroup", waiting);
+            UiFields.Set(view, "resumingGroup", resuming);
+            UiFields.Set(view, "keyResponder", null);
+            UiFields.Set(view, "popTarget", panel.transform);
             return UiViewsBuilder.SaveRoot(root, path);
         }
 
@@ -278,18 +278,18 @@ namespace Nex.BilliardRogue.Editor
             ((RectTransform)again.transform).anchoredPosition = new Vector2(-272f, 0f);
             ((RectTransform)toTitle.transform).anchoredPosition = new Vector2(272f, 0f);
 
-            Kit.Set(view, "titleLabel", title);
-            Kit.Set(view, "stageLabel", stage);
-            Kit.Set(view, "newRecordChip", record.transform);
-            Kit.SetArray(view, "statValues", values);
-            Kit.Set(view, "unlockGroup", unlocks);
-            Kit.SetArray(view, "unlockSlots", slots);
-            Kit.SetArray(view, "unlockIcons", icons);
-            Kit.SetArray(view, "unlockNames", names);
-            Kit.Set(view, "playAgainButton", again);
-            Kit.Set(view, "titleButton", toTitle);
-            Kit.Set(view, "keyResponder", group);
-            Kit.Set(view, "popTarget", panel.transform);
+            UiFields.Set(view, "titleLabel", title);
+            UiFields.Set(view, "stageLabel", stage);
+            UiFields.Set(view, "newRecordChip", record.transform);
+            UiFields.SetArray(view, "statValues", values);
+            UiFields.Set(view, "unlockGroup", unlocks);
+            UiFields.SetArray(view, "unlockSlots", slots);
+            UiFields.SetArray(view, "unlockIcons", icons);
+            UiFields.SetArray(view, "unlockNames", names);
+            UiFields.Set(view, "playAgainButton", again);
+            UiFields.Set(view, "titleButton", toTitle);
+            UiFields.Set(view, "keyResponder", group);
+            UiFields.Set(view, "popTarget", panel.transform);
             return UiViewsBuilder.SaveRoot(root, path);
         }
 

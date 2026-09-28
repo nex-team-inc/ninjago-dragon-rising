@@ -29,8 +29,6 @@ namespace Nex.BilliardRogue
         public override TopLevelControlPanel.ControlConfig Controls => TopLevelControlPanel.ControlConfig.Back;
         public override string AnalyticsScreenName => "pause";
 
-        #region Life Cycle
-
         protected override void Awake()
         {
             base.Awake();
@@ -53,10 +51,6 @@ namespace Nex.BilliardRogue
             TrackBack();
             Resume();
         }
-
-        #endregion
-
-        #region Helpers
 
         void HandleResume()
         {
@@ -93,6 +87,5 @@ namespace Nex.BilliardRogue
 
         void RelaySettingChanged(string setting) => SettingChanged?.Invoke(setting);
 
-        #endregion
     }
 }

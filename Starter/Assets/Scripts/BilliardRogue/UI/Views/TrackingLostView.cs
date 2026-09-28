@@ -31,8 +31,6 @@ namespace Nex.BilliardRogue
         public override TopLevelControlPanel.ControlConfig Controls => TopLevelControlPanel.ControlConfig.None;
         public override string AnalyticsScreenName => "tracking_lost";
 
-        #region Public Methods
-
         /// <summary>playerIndex is 0-based; isTracked is polled every frame while the view is on top.</summary>
         public void Initialize(int playerIndex, int numPlayers, Func<bool> isTracked)
         {
@@ -59,10 +57,6 @@ namespace Nex.BilliardRogue
             started = true;
             RunAsync().Forget();
         }
-
-        #endregion
-
-        #region Helpers
 
         async UniTaskVoid RunAsync()
         {
@@ -91,6 +85,5 @@ namespace Nex.BilliardRogue
                 .SetLoops(-1, LoopType.Yoyo).SetUpdate(true).SetLink(gameObject);
         }
 
-        #endregion
     }
 }

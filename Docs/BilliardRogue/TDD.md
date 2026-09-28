@@ -376,8 +376,10 @@ Shared palette: all character/prop models UV-map into `Assets/Textures/BilliardR
 | Input | `Input/**`, `ControlConfig.cs` | |
 | Rendering | `Rendering/**`, `Assets/Shaders/BilliardRogue/**`, `HD2DVisualConfig.cs`, `Editor/RenderPipelineBuilder.cs`, `Editor/MaterialsBuilder.cs`, `Editor/WorldCameraRigBuilder.cs` | |
 | Gameplay | `Gameplay/**`, `Persistence/**`, `PacingConfig.cs`, `BalanceConfig.cs` | |
-| Presentation | `Presentation/**` (except ArenaLayout contract), `JuiceConfig.cs`, `ArenaConfig.cs`, `FieldObjectCatalog.cs`, `Editor/WorldPrefabsBuilder.cs`, `Editor/EnvironmentBuilder.cs` | |
-| UI & Flow | `UI/**`, `Flow/**`, `LocKeys.UI.cs`, `Editor/UiViewsBuilder.cs`, `Editor/MainSceneBuilder.cs` | |
+| Presentation-Core | `Presentation/**` except `ArenaLayout.cs`, `ActEnvironmentController.cs`, `Environment/**`; `JuiceConfig.cs`, `FieldObjectCatalog.cs`, `Editor/WorldPrefabsBuilder.cs`, prefabs Enemies/Balls/Board/Player + `World/BoardPresenter.prefab` | |
+| Presentation-World | `Presentation/ActEnvironmentController.cs`, `Presentation/Environment/**`, `ArenaConfig.cs`, `ActLightingPreset.cs`, `Editor/EnvironmentBuilder.cs`, `World/Arena.prefab`, `Environment/**` prefabs | |
+| UI-Views | `UI/**` (Title, PlayerMode, Settings, StageIntro, Reward, Pause, TrackingLost, Summary views, widgets, `GameplayHud`), `LocKeys.UI.cs`, `Editor/UiViewsBuilder.cs` | |
+| Flow | `Flow/**` (initializer, coordinator, `CameraSession`, `CalibrationView`, `GameplayView`, DebugHooks registrations), `LocKeys.Flow.cs`, `Editor/FlowPrefabsBuilder.cs`, `Editor/MainSceneBuilder.cs`, `Main.unity` | |
 | VFX | `Editor/VfxPrefabsBuilder.cs`, `Presentation/Vfx/**` (if any runtime helper) | |
 | Models | `Tools/Blender/**`, `Assets/Models/BilliardRogue/**`, `Assets/Textures/BilliardRogue/Palette/**`, `Assets/Sprites/BilliardRogue/Icons/Enemy_*.png` | |
 | 2D art & font | `Tools/Textures/**`, `Tools/Fonts/**`, `Assets/Textures/BilliardRogue/Surfaces/**`, `Assets/Sprites/BilliardRogue/{UI,Particles}/**`, `Assets/Sprites/BilliardRogue/Icons/{Ball_,Status_,Telegraph_,Reward_}*`, `Assets/Fonts/BilliardRogue/**`, `Editor/FontAssetsBuilder.cs`, `Editor/ImportSettingsBuilder.cs` | |

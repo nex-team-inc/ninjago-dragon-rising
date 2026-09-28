@@ -75,8 +75,14 @@ namespace Nex.BilliardRogue
             switch (phase)
             {
                 case Phase.Thinking:
-                    if (run != null && planner.IsSearching) planner.Step(run, config.BotCandidatesPerFrame);
-                    if (now - phaseStart < thinkSeconds || (run != null && planner.IsSearching)) return;
+                    if (run != null && planner.IsSearching)
+                    {
+                        planner.Step(run, config.BotCandidatesPerFrame);
+                    }
+                    if (now - phaseStart < thinkSeconds || (run != null && planner.IsSearching))
+                    {
+                        return;
+                    }
                     BeginAiming(run != null, now);
                     return;
                 case Phase.Aiming:

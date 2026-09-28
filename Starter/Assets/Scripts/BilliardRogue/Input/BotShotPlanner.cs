@@ -110,7 +110,10 @@ namespace Nex.BilliardRogue
                 var index = FindEnemyContact(board.enemies, enemyCount, point, out var face);
                 if (index < 0)
                 {
-                    if (TouchesCrate(board.fieldObjects, point)) score += config.BotCrateScore;
+                    if (TouchesCrate(board.fieldObjects, point))
+                    {
+                        score += config.BotCrateScore;
+                    }
                     continue;
                 }
 
@@ -126,8 +129,14 @@ namespace Nex.BilliardRogue
                 var bottomRow = enemy.row + enemy.height - 1;
                 var depth01 = dangerRow > 0 ? Mathf.Clamp01(bottomRow / (float)dangerRow) : 1f;
                 score += config.BotHitScore + config.BotRowWeight * depth01;
-                if (bottomRow >= dangerRow) score += config.BotDangerRowBonus;
-                if (dealt[index] >= enemy.hp) score += config.BotKillBonus * (1f + depth01);
+                if (bottomRow >= dangerRow)
+                {
+                    score += config.BotDangerRowBonus;
+                }
+                if (dealt[index] >= enemy.hp)
+                {
+                    score += config.BotKillBonus * (1f + depth01);
+                }
             }
 
             return score;

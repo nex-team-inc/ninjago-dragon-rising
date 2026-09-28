@@ -76,7 +76,10 @@ namespace Nex.BilliardRogue
             UpdateMouse();
             angleDeg = Mathf.Clamp(angleDeg, arena.minAimAngleDeg, 180f - arena.minAimAngleDeg);
             AimDirection = Vector2Utils.PolarDeg(angleDeg);
-            if (DebugInput.GetKeyDown(strikeKey)) QueueStrike(DebugInput.GetKey(powerModifierKey));
+            if (DebugInput.GetKeyDown(strikeKey))
+            {
+                QueueStrike(DebugInput.GetKey(powerModifierKey));
+            }
         }
 
         #endregion
@@ -104,11 +107,23 @@ namespace Nex.BilliardRogue
         void UpdateKeys(float dt)
         {
             var launchStep = config.DebugLaunchPerSec * dt;
-            if (DebugInput.GetKey(launchLeftKey)) LaunchX01 = Mathf.Clamp01(LaunchX01 - launchStep);
-            if (DebugInput.GetKey(launchRightKey)) LaunchX01 = Mathf.Clamp01(LaunchX01 + launchStep);
+            if (DebugInput.GetKey(launchLeftKey))
+            {
+                LaunchX01 = Mathf.Clamp01(LaunchX01 - launchStep);
+            }
+            if (DebugInput.GetKey(launchRightKey))
+            {
+                LaunchX01 = Mathf.Clamp01(LaunchX01 + launchStep);
+            }
             var aimStep = config.DebugAimDegPerSec * dt;
-            if (DebugInput.GetKey(aimLeftKey)) angleDeg += aimStep;
-            if (DebugInput.GetKey(aimRightKey)) angleDeg -= aimStep;
+            if (DebugInput.GetKey(aimLeftKey))
+            {
+                angleDeg += aimStep;
+            }
+            if (DebugInput.GetKey(aimRightKey))
+            {
+                angleDeg -= aimStep;
+            }
         }
 
         void UpdateMouse()
@@ -117,7 +132,10 @@ namespace Nex.BilliardRogue
             var moved = (mouse - lastMousePosition).sqrMagnitude > MouseMoveThresholdSq;
             lastMousePosition = mouse;
             var follow = DebugInput.GetKey(followMouseKey);
-            if (!moved && !follow) return;
+            if (!moved && !follow)
+            {
+                return;
+            }
             if (!TryMouseToSim(mouse, out var sim)) return;
 
             if (follow)

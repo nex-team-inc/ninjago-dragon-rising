@@ -33,6 +33,7 @@ namespace Nex.BilliardRogue
         float lastRawFrameArrival = float.NegativeInfinity;
         float validSince;
         bool wasValid;
+        bool rawPoseDetected;
         Vector2 liveAim = Vector2.up;
         Vector2 heldAim = Vector2.up;
         bool hasPendingStrike;
@@ -72,15 +73,21 @@ namespace Nex.BilliardRogue
         // here: CameraSession may destroy it before this input.
         void Update()
         {
-            var now = Time.unscaledTime;
+            var now = Time.realtimeSinceStartup;
             var valid = now - lastPoseTime <= config.TrackingDropSeconds && now - lastRawFrameArrival <= config.StaleFrameSeconds;
-            if (valid && !wasValid) validSince = now;
+            if (valid && !wasValid)
+            {
+                validSince = now;
+            }
             wasValid = valid;
             var tracking = valid && now - validSince >= config.TrackingAcquireSeconds;
             if (tracking == IsTracking) return;
 
             IsTracking = tracking;
-            if (tracking) ResetStrike();
+            if (tracking)
+            {
+                ResetStrike();
+            }
         }
 
         #endregion
@@ -93,7 +100,7 @@ namespace Nex.BilliardRogue
             if (!hasPendingStrike) return false;
 
             hasPendingStrike = false;
-            return Time.unscaledTime - pendingStrikeTime <= config.StrikeExpirySeconds;
+            return Time.realtimeSinceStartup - pendingStrikeTime <= config.StrikeExpirySeconds;
         }
 
         public void ResetStrike()
@@ -120,29 +127,42 @@ namespace Nex.BilliardRogue
 
         #region Detection
 
+        // The smoother re-emits the last detection every Update; only a new camera frame is a new raw sample. Whether
+        // the paws are really seen comes from that raw pose: the engine's node auto-hide runs on scaled time and
+        // freezes while gameplay is paused (tracking-lost overlay).
         void HandleDetection(BodyPoseDetectionResult result)
         {
-            var now = Time.unscaledTime;
-            if (TrySamplePaws(true, out var ball, out var cue))
+            var now = Time.realtimeSinceStartup;
+            var frameTime = result.original.frameTime;
+            var newFrame = frameTime > lastRawFrameTime;
+            if (newFrame)
+            {
+                lastRawFrameTime = frameTime;
+                lastRawFrameArrival = now;
+                rawPoseDetected = ArePawsDetected(result.original);
+            }
+
+            if (rawPoseDetected && TrySamplePaws(true, out var ball, out var cue))
             {
                 // A new tracking segment starts from scratch instead of easing in from the pose before the gap.
-                if (now - lastPoseTime > config.TrackingDropSeconds) ResetFilters();
+                if (now - lastPoseTime > config.TrackingDropSeconds)
+                {
+                    ResetFilters();
+                }
                 lastPoseTime = now;
                 UpdateLaunch(ball.x, now);
                 UpdateAim(ball - cue, now);
             }
 
-            // The smoother re-emits the last detection every Update; only a new camera frame is a new raw sample.
-            var frameTime = result.original.frameTime;
-            if (frameTime <= lastRawFrameTime) return;
-            lastRawFrameTime = frameTime;
-            lastRawFrameArrival = now;
-            SampleStrike(frameTime, now);
+            if (newFrame)
+            {
+                SampleStrike(frameTime, now);
+            }
         }
 
         void SampleStrike(double frameTime, float now)
         {
-            if (!TrySamplePaws(false, out var ball, out var cue))
+            if (!rawPoseDetected || !TrySamplePaws(false, out var ball, out var cue))
             {
                 detector.MarkGap();
                 return;
@@ -153,11 +173,17 @@ namespace Nex.BilliardRogue
             var wasApproaching = detector.IsApproaching;
             if (detector.AddSample(frameTime, ball, cue, out var result))
             {
-                if (IsTracking) QueueStrike(result, now);
+                if (IsTracking)
+                {
+                    QueueStrike(result, now);
+                }
                 return;
             }
 
-            if (!wasApproaching && detector.IsApproaching) heldAim = AimBefore(detector.ApproachStartTime);
+            if (!wasApproaching && detector.IsApproaching)
+            {
+                heldAim = AimBefore(detector.ApproachStartTime);
+            }
         }
 
         void QueueStrike(StrikeResult result, float now)
@@ -175,6 +201,15 @@ namespace Nex.BilliardRogue
         #endregion
 
         #region Helpers
+
+        /// <summary>Chest, elbows and wrists (the engine derives each paw from elbow + wrist) detected in this camera frame.</summary>
+        bool ArePawsDetected(BodyPoseDetection detection)
+        {
+            var pose = detection.GetPlayerPose(PlayerIndex)?.bodyPose;
+            if (pose == null) return false;
+            return pose.Chest().isDetected && pose.LeftElbow().isDetected && pose.LeftWrist().isDetected
+                   && pose.RightElbow().isDetected && pose.RightWrist().isDetected;
+        }
 
         /// <summary>Ball and cue paw positions in inches relative to the chest (x = screen right = the player's right).</summary>
         bool TrySamplePaws(bool smoothed, out Vector2 ball, out Vector2 cue)

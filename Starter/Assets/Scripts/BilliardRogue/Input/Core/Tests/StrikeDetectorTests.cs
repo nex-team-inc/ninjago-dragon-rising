@@ -10,6 +10,8 @@ namespace Nex.BilliardRogue.InputCore.Tests
         const double FrameSeconds = 1.0 / 30.0;
         static readonly Vector2 ballPaw = new(-8f, 4f);
 
+        #region Helpers
+
         static StrikeSettings DefaultSettings() => new()
         {
             strikeSpeed = 35f,
@@ -60,6 +62,10 @@ namespace Nex.BilliardRogue.InputCore.Tests
         }
 
         static Vector2 CueStart => ballPaw + new Vector2(14f, -6f);
+
+        #endregion
+
+        #region Tests
 
         [Test]
         public void FastThrustIntoTheBallPawFiresExactlyOnce()
@@ -219,5 +225,7 @@ namespace Nex.BilliardRogue.InputCore.Tests
             Assert.AreEqual(StrikeState.Armed, feed.detector.State);
             Assert.AreEqual(0, feed.strikes);
         }
+
+        #endregion
     }
 }

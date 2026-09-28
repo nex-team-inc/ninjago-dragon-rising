@@ -29,7 +29,10 @@ namespace Nex.BilliardRogue
             newest = (newest + 1) % times.Length;
             times[newest] = time;
             aims[newest] = aim;
-            if (count < times.Length) count++;
+            if (count < times.Length)
+            {
+                count++;
+            }
         }
 
         /// <summary>

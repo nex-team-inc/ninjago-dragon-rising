@@ -16,7 +16,12 @@ namespace Nex.BilliardRogue
         /// Polled every frame so a Settings change mid-run applies at once, e.g.
         /// <c>() =&gt; PlayerDataManager.Instance.PlayerPreference.leftHandedCue</c>.
         /// </summary>
-        public Func<bool> leftHanded = RightHanded;
+        public Func<bool> leftHanded = AlwaysFalse;
+        /// <summary>
+        /// Editor / debug builds: polled every frame; true selects the mouse/keyboard input even while the paws are
+        /// tracked, e.g. <c>() =&gt; PlayerDataManager.Instance.DebugSettings.forceDebugInput</c>. Ignored in release.
+        /// </summary>
+        public Func<bool> forceDebugInput = AlwaysFalse;
         /// <summary>The run the bot aims at; null outside gameplay (calibration), where the bot shoots straight up.</summary>
         public Func<RunState?> run = NoRun;
         /// <summary>Optional: lets the debug input aim at the mouse on the arena (WorldCamera renders full screen).</summary>
@@ -26,6 +31,6 @@ namespace Nex.BilliardRogue
 
         static RunState? NoRun() => null;
 
-        static bool RightHanded() => false;
+        static bool AlwaysFalse() => false;
     }
 }

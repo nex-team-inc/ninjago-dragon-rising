@@ -95,12 +95,18 @@ namespace Nex.BilliardRogue
         public bool AddSample(double time, Vector2 ball, Vector2 cue, out StrikeResult result)
         {
             result = default;
-            if (hasPrevious && time <= previousTime) return false;
+            if (hasPrevious && time <= previousTime)
+            {
+                return false;
+            }
 
             var settings = Settings;
             if (!hasPrevious || time - previousTime > settings.maxSampleGapSeconds)
             {
-                if (State == StrikeState.Approaching) State = StrikeState.Armed;
+                if (State == StrikeState.Approaching)
+                {
+                    State = StrikeState.Armed;
+                }
                 Remember(time, ball, cue);
                 return false;
             }
@@ -119,10 +125,16 @@ namespace Nex.BilliardRogue
             switch (State)
             {
                 case StrikeState.Disarmed:
-                    if (distance >= settings.armDistance) SetState(StrikeState.Armed, time);
+                    if (distance >= settings.armDistance)
+                    {
+                        SetState(StrikeState.Armed, time);
+                    }
                     return false;
                 case StrikeState.Cooldown:
-                    if (time - stateTime >= settings.rearmSeconds && distance >= settings.armDistance) SetState(StrikeState.Armed, time);
+                    if (time - stateTime >= settings.rearmSeconds && distance >= settings.armDistance)
+                    {
+                        SetState(StrikeState.Armed, time);
+                    }
                     return false;
                 case StrikeState.Armed:
                     if (closingSpeed < settings.strikeSpeed) return false;
@@ -135,7 +147,10 @@ namespace Nex.BilliardRogue
                     peakSpeed = Mathf.Max(peakSpeed, closingSpeed);
                     if (TryLand(time, sweptDistance, out result)) return true;
                     var stalled = closingSpeed < settings.strikeSpeed * SustainSpeedFraction;
-                    if (stalled || time - approachStartTime > settings.maxStrikeSeconds) SetState(StrikeState.Armed, time);
+                    if (stalled || time - approachStartTime > settings.maxStrikeSeconds)
+                    {
+                        SetState(StrikeState.Armed, time);
+                    }
                     return false;
                 default:
                     return false;
@@ -146,7 +161,10 @@ namespace Nex.BilliardRogue
         public void MarkGap()
         {
             hasPrevious = false;
-            if (State == StrikeState.Approaching) State = StrikeState.Armed;
+            if (State == StrikeState.Approaching)
+            {
+                State = StrikeState.Armed;
+            }
         }
 
         /// <summary>Forgets everything; the paws must separate by armDistance before the next strike.</summary>

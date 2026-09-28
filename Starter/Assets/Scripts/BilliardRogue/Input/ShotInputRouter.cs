@@ -8,8 +8,9 @@ namespace Nex.BilliardRogue
     /// <summary>
     /// Per-player input selector and the IShotInput every consumer holds (root of PlayerShotInput.prefab). Paw
     /// tracking by default; the auto-aim bot while DebugSettings.autoAimBot is on (read live, so the debug panel and
-    /// DebugHooks.SetBot switch mid-run); in the Editor the mouse/keyboard input whenever the paws are not tracked
-    /// (no camera or nobody in front of it). Debug sources are never selected in release builds. Raises
+    /// DebugHooks.SetBot switch mid-run); the mouse/keyboard input while ShotInputContext.forceDebugInput says so, and
+    /// in the Editor whenever the paws are not tracked (no camera or nobody in front of it). Debug sources are never
+    /// selected in release builds. Raises
     /// TrackingLost after ControlConfig.trackingLostSeconds without tracking and TrackingRestored when it is back.
     /// </summary>
     public sealed class ShotInputRouter : MonoBehaviour, IShotInput
@@ -31,6 +32,9 @@ namespace Nex.BilliardRogue
         IShotInput active = null!;
         ControlConfig config = null!;
         Func<bool>? leftHandedSource;
+#if ENABLE_DEBUG_SETTINGS || DEVELOPMENT_BUILD || UNITY_EDITOR
+        Func<bool>? forceDebugSource;
+#endif
         float untrackedSeconds;
 
         public int PlayerIndex { get; private set; }
@@ -44,6 +48,9 @@ namespace Nex.BilliardRogue
         public void Initialize(int playerIndex, OnePlayerDetectionEngine engine, ShotInputContext ctx)
         {
             leftHandedSource = ctx.leftHanded;
+#if ENABLE_DEBUG_SETTINGS || DEVELOPMENT_BUILD || UNITY_EDITOR
+            forceDebugSource = ctx.forceDebugInput;
+#endif
             pawInput.Initialize(playerIndex, engine, ctx.control, ctx.rules.arena, leftHandedSource());
             debugInput.Initialize(playerIndex, ctx.control, ctx.rules.arena, ctx.worldCamera, ctx.layout);
             botInput.Initialize(playerIndex, ctx.rules, ctx.run, ctx.control);
@@ -85,9 +92,15 @@ namespace Nex.BilliardRogue
 
         void Update()
         {
-            if (leftHandedSource != null) pawInput.SetLeftHanded(leftHandedSource());
+            if (leftHandedSource != null)
+            {
+                pawInput.SetLeftHanded(leftHandedSource());
+            }
             var source = SelectSource();
-            if (source != ActiveSource) Select(source, announce: true);
+            if (source != ActiveSource)
+            {
+                Select(source, announce: true);
+            }
             UpdateTracking(Time.unscaledDeltaTime);
         }
 
@@ -95,6 +108,10 @@ namespace Nex.BilliardRogue
         {
 #if ENABLE_DEBUG_SETTINGS || DEVELOPMENT_BUILD || UNITY_EDITOR
             if (PlayerDataManager.Instance.DebugSettings.autoAimBot) return ShotInputSource.Bot;
+            if (forceDebugSource != null && forceDebugSource())
+            {
+                return ShotInputSource.Debug;
+            }
 #endif
 #if UNITY_EDITOR
             if (!paw.IsTracking) return ShotInputSource.Debug;
@@ -114,7 +131,10 @@ namespace Nex.BilliardRogue
             SetEnabled(debug, source == ShotInputSource.Debug);
             SetEnabled(bot, source == ShotInputSource.Bot);
             active.ResetStrike();
-            if (announce) Debug.Log($"[ShotInputRouter] P{PlayerIndex + 1} shot input: {source}");
+            if (announce)
+            {
+                Debug.Log($"[ShotInputRouter] P{PlayerIndex + 1} shot input: {source}");
+            }
         }
 
         void UpdateTracking(float unscaledDeltaTime)
@@ -129,14 +149,20 @@ namespace Nex.BilliardRogue
             }
 
             untrackedSeconds += unscaledDeltaTime;
-            if (IsTrackingLost || untrackedSeconds < config.TrackingLostSeconds) return;
+            if (IsTrackingLost || untrackedSeconds < config.TrackingLostSeconds)
+            {
+                return;
+            }
             IsTrackingLost = true;
             TrackingLost?.Invoke(PlayerIndex);
         }
 
         static void SetEnabled(IShotInput input, bool on)
         {
-            if (input is Behaviour behaviour) behaviour.enabled = on;
+            if (input is Behaviour behaviour)
+            {
+                behaviour.enabled = on;
+            }
         }
 
         #endregion

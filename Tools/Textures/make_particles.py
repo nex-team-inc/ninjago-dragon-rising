@@ -6,6 +6,8 @@ Out:  Tools/Staging/Assets/Sprites/BilliardRogue/Particles/<Name>.png + particle
 
 Colour: values are white (255) / light grey (214) / mid grey (170) / shadow grey (128) so the particle colour
 (vertex colour, HDR > 1 feeds bloom) tints them; alpha is strictly 0 or 255 (alpha-clip friendly).
+Gutter: every frame keeps a 1 px empty border (checked, the build fails otherwise), so point sampling at
+non-integer billboard sizes never picks up a column of the neighbouring frame and rays are never cut square.
 Unity: Texture Sheet Animation, Mode Grid, Tiles (8, 1), Animation Whole Sheet, 12 fps (TDD D13).
 Texel density: ~28 texels per metre at the default camera -> startSize = frameSize / 28 m (16 px = 0.57 m).
 Deterministic: fixed seeds per sheet/frame.
@@ -110,8 +112,8 @@ def shaded_poly(fr, pts_local, cx, cy, ang, light=(-0.7, -0.7), outline_value=No
 
 def spark(n=16):
     frames = []
-    arm = [3, 7, 7, 6, 4, 3, 2, 1]
-    gap = [0, 0, 1, 2, 3, 4, 5, 6]
+    arm = [3, 6, 5, 4, 3, 2, 2, 1]  # gap + arm <= 6: rays stop 1 px inside the 16 px frame (centre pixel 7)
+    gap = [0, 0, 1, 2, 3, 4, 4, 5]
     diag = [0, 3, 4, 3, 2, 1, 0, 0]
     core = [2, 1, 1, 1, 0, 0, 0, 0]
     c = 7
@@ -122,7 +124,7 @@ def spark(n=16):
             for r in range(r0, r1 + 1):
                 val = W if r < r0 + max(1, (r1 - r0) // 2) or f < 2 else L
                 fr.paint(pk.pixels(n, n, [(c + dx * r, c + dy * r)]), val)
-            if f in (1, 2) and arm[f] >= 6:  # thicker base of the rays
+            if f in (1, 2) and arm[f] >= 5:  # thicker base of the rays
                 fr.paint(pk.pixels(n, n, [(c + dx * 1 + dy, c + dy * 1 + dx), (c + dx * 1 - dy, c + dy * 1 - dx)]), L)
         for dx, dy in ((1, 1), (-1, 1), (1, -1), (-1, -1)):
             for r in range(1, diag[f] + 1):
@@ -174,7 +176,7 @@ def smoke(n=16):
 
 def leaf(n=16):
     frames = []
-    outline_pts = [(-5.5, 0), (-3.5, -2.4), (0, -3.1), (3.2, -2.2), (5.6, 0), (3.2, 2.2), (0, 3.1), (-3.5, 2.4)]
+    outline_pts = [(-4.9, 0), (-3.1, -2.2), (0, -2.8), (2.8, -2.0), (4.9, 0), (2.8, 2.0), (0, 2.8), (-3.1, 2.2)]
     for f in range(FRAMES):
         fr = Frame(n)
         ang = f / FRAMES * 2 * math.pi
@@ -190,12 +192,12 @@ def leaf(n=16):
         top_val, bot_val = (W, L) if facing else (L, M)
         fr.paint(body & (side < 0), top_val)
         fr.paint(body & (side >= 0), bot_val)
-        rib = pk.line(n, n, [(7.5 + rot(-4.5, 0, ang)[0], 7.5 + rot(-4.5, 0, ang)[1]),
-                             (7.5 + rot(4.5, 0, ang)[0], 7.5 + rot(4.5, 0, ang)[1])], 1) & body
+        rib = pk.line(n, n, [(7.5 + rot(-4.0, 0, ang)[0], 7.5 + rot(-4.0, 0, ang)[1]),
+                             (7.5 + rot(4.0, 0, ang)[0], 7.5 + rot(4.0, 0, ang)[1])], 1) & body
         if flutter > 0.5:
             fr.paint(rib, M if facing else D)
-        stem = pk.line(n, n, [(7.5 + rot(5.6, 0, ang)[0], 7.5 + rot(5.6, 0, ang)[1]),
-                              (7.5 + rot(7.4, 0, ang)[0], 7.5 + rot(7.4, 0, ang)[1])], 1)
+        stem = pk.line(n, n, [(7.5 + rot(4.9, 0, ang)[0], 7.5 + rot(4.9, 0, ang)[1]),
+                              (7.5 + rot(6.2, 0, ang)[0], 7.5 + rot(6.2, 0, ang)[1])], 1)
         fr.paint(stem & ~body, M)
         frames.append(fr)
     return frames
@@ -292,7 +294,7 @@ def mote(n=16):
 
 def star(n=16):
     frames = []
-    size = [1, 3, 5, 7, 6, 4, 2, 1]
+    size = [1, 3, 4.5, 5.4, 5.0, 3.6, 2, 1]  # astroid radius (sqrt(s) + 0.3)^2 < 7: tips stay 1 px inside
     for f in range(FRAMES):
         fr = Frame(n)
         s = size[f]
@@ -341,10 +343,10 @@ def bolt(n=32):
         rng = np.random.default_rng(500 + f)
         fr = Frame(n)
         fade = f >= 6
-        pts = [(n / 2 + rng.uniform(-2, 2), 0.5)]
-        y = 0.5
-        while y < n - 1:
-            y = min(n - 0.5, y + rng.uniform(3.5, 6))
+        pts = [(n / 2 + rng.uniform(-2, 2), 3.0)]  # 2 px core + 1 px glow ring stay inside the 1 px gutter
+        y = 3.0
+        while y < n - 4.5:
+            y = min(n - 4.0, y + rng.uniform(3.5, 6))  # 2 px lines paint below their centre line
             pts.append((n / 2 + rng.uniform(-6, 6) * (1 - abs(y / n - 0.5)), y))
         core = np.zeros((n, n), bool)
         for a, b in zip(pts[:-1], pts[1:]):
@@ -353,7 +355,7 @@ def bolt(n=32):
         for _ in range(0 if fade else 2):
             i = int(rng.integers(1, len(pts) - 1))
             bx, by = pts[i]
-            ex, ey = bx + rng.choice([-1, 1]) * rng.uniform(4, 8), by + rng.uniform(3, 7)
+            ex, ey = bx + rng.choice([-1, 1]) * rng.uniform(4, 8), min(by + rng.uniform(3, 7), n - 4.0)
             mx, my = (bx + ex) / 2 + rng.uniform(-2, 2), (by + ey) / 2
             branches |= pk.line(n, n, [(bx, by), (mx, my), (ex, ey)], 1)
         if fade:
@@ -388,7 +390,7 @@ def bubble(n=16):
     for f in range(FRAMES):
         fr = Frame(n)
         x, y = xy(n, 7.5, 8.5 - min(f, 4) * 0.5)
-        if f < 5:
+        if f < 5:  # (5.0 * 1.06 radius at centre y 6.5 keeps the 1 px gutter)
             r = radii[f]
             sx, sy = r * squash[f], r / squash[f]
             d = (x / sx) ** 2 + (y / sy) ** 2
@@ -399,10 +401,10 @@ def bubble(n=16):
             fr.paint(pk.pixels(n, n, [(hx, hy), (hx + 1, hy), (hx, hy + 1)] if r >= 3 else [(hx, hy)]), W)
         else:
             k = f - 5
-            rr = 5.5 + k * 1.6
+            rr = (4.0, 5.0, 5.9)[k]  # pop droplets fly out but stay inside the 1 px gutter
             for i in range(6):
                 ang = i / 6 * 2 * math.pi + 0.3
-                px_, py_ = 7.5 + math.cos(ang) * rr, 6.5 + math.sin(ang) * rr
+                px_, py_ = 7.5 + math.cos(ang) * rr, 7.0 + math.sin(ang) * rr
                 size = 2 if k == 0 else 1
                 fr.paint(pk.rect(n, n, int(px_), int(py_), int(px_) + size, int(py_) + size), L if k < 2 else M)
             if k == 0:
@@ -516,7 +518,7 @@ def flash(n=32):
             rng = np.random.default_rng(700 + f)
             for _ in range(7 - (f - 6) * 3):
                 a = rng.uniform(0, 2 * math.pi)
-                rr = rng.uniform(10, 14.5)
+                rr = rng.uniform(10, 13.5)
                 px_, py_ = int(c + math.cos(a) * rr), int(c + math.sin(a) * rr)
                 fr.paint(pk.pixels(n, n, [(px_, py_)]), W if f == 6 else L)
                 if f == 6:
@@ -545,6 +547,11 @@ SHEETS = {
 }
 
 
+def border_ink(alpha_mask):
+    """True when any opaque pixel sits on the outer 1 px ring of the frame."""
+    return bool(alpha_mask[0].any() or alpha_mask[-1].any() or alpha_mask[:, 0].any() or alpha_mask[:, -1].any())
+
+
 def tint(img, color):
     c = np.array(pk.rgba(color)[:3], np.float32) / 255
     out = img.copy()
@@ -557,10 +564,11 @@ def main():
     ap.add_argument("--preview-dir", default=None)
     a = ap.parse_args()
     preview_dir = a.preview_dir or pk.default_preview_dir("art2d")
-    meta, items = {}, []
+    meta, items, touching = {}, [], []
     for name, (gen, size, loop, fps, color, usage) in SHEETS.items():
         frames = gen(size)
         assert len(frames) == FRAMES
+        touching += [f"{name}[{i}]" for i, fr in enumerate(frames) if border_ink(fr.a)]
         strip = np.concatenate([fr.rgba() for fr in frames], axis=1)
         a_vals = set(np.unique(strip[..., 3]).tolist())
         assert a_vals <= {0, 255}, (name, a_vals)
@@ -570,6 +578,8 @@ def main():
                       "usage": usage}
         items.append((f"{name} {size}px {'loop' if loop else 'once'}", strip))
         items.append((name + " tinted", tint(strip, color)))
+    if touching:
+        sys.exit("particle ink touches the frame border (keep a 1 px gutter): " + ", ".join(touching))
     pk.save_json(pk.staging(*OUT_DIR, "particles.json"), {
         "note": "Generated by Tools/Textures/make_particles.py. Horizontal strips, white/grey values, alpha 0/255. "
                 "Texture Sheet Animation: Grid, tiles (columns, rows), Whole Sheet, frame rate = fps.",

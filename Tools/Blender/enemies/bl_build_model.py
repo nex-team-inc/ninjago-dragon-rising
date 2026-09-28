@@ -31,6 +31,9 @@ REQUIRED_PARTS = contract.REQUIRED_PARTS
 
 ICON_YAW, ICON_PITCH = -28.0, 30.0          # camera on the model's right-front, looking slightly down
 ICON_LIGHT_FROM = (-0.55, -0.75, 0.9)        # upper-left of the viewer
+ICON_FILL = 44.0 / 48.0                      # 2 px margin per side for the outline
+FOOTPRINT_TOLERANCE = 0.02                   # metres a part may pass the footprint edge (neighbours, ball hits)
+SPIN_PARTS = {"ShieldCrystal"}               # parts code turns in 90 deg steps about their (centred) pivot
 
 
 def extra_args(p):
@@ -57,6 +60,46 @@ def check_contract(model, objs, lenient=False):
     zmin = min((o.matrix_world @ v.co).z for o in objs.values() for v in o.data.vertices)
     if zmin < -0.02:
         raise RuntimeError(f"{model.name}: geometry below the pivot (z={zmin:.3f})")
+    check_footprint(model, objs)
+
+
+def check_footprint(model, objs):
+    """Every part stays inside its footprint (+ tolerance, + per-part whitelist): wings/fists must not poke into
+    neighbouring cells or past the hitbox the ball bounces on. Spinning parts are checked for all 4 quarter turns."""
+    hx, hy = model.footprint[0] / 2.0, model.footprint[1] / 2.0
+    issues = []
+    for o in objs.values():
+        pts = [o.matrix_world @ v.co for v in o.data.vertices]
+        if not pts:
+            continue
+        mx, my = max(abs(p.x) for p in pts), max(abs(p.y) for p in pts)
+        if o.name in SPIN_PARTS:
+            mx = my = max(mx, my)
+        extra = FOOTPRINT_TOLERANCE + model.overhang.get(o.name, 0.0)
+        if mx > hx + extra or my > hy + extra:
+            issues.append(f"{o.name} |x|={mx:.3f} |z|={my:.3f} > {hx + extra:.2f}/{hy + extra:.2f}")
+    if issues:
+        raise RuntimeError(f"{model.name}: outside the footprint: " + "; ".join(issues))
+
+
+def frame_icon(scene, objs, direction, fill, crop):
+    """Ortho icon camera. crop > 0 cuts that fraction of the projected height off at the bottom edge (the cut is
+    flush with the icon's bottom border); the other three sides keep the outline margin."""
+    if crop <= 0:
+        return look.frame_ortho(scene, objs, direction, fill=fill)
+    bpy.context.view_layer.update()
+    d = Vector(direction).normalized()
+    rot = d.to_track_quat("-Z", "Y").to_matrix()
+    right, up = rot.col[0], rot.col[1]
+    pts = [o.matrix_world @ v.co for o in objs if o.type == "MESH" for v in o.data.vertices]
+    xs, ys, zs = [p.dot(right) for p in pts], [p.dot(up) for p in pts], [p.dot(d) for p in pts]
+    y0 = min(ys) + crop * (max(ys) - min(ys))
+    w, h = max(xs) - min(xs), max(ys) - y0
+    margin = (1.0 - fill) / 2.0
+    scale = max(w / fill, h / (1.0 - margin))
+    cx, cy = (min(xs) + max(xs)) / 2.0, y0 + scale / 2.0
+    loc = right * cx + up * cy + d * (min(zs) - 5.0)
+    return look.look_camera(scene, loc, loc + d, ortho_scale=scale, name="IconCam"), (w, h)
 
 
 REVIEW_VIEWS = (("game", 0.0, 58.0), ("front", 0.0, 10.0), ("threeq", -40.0, 28.0), ("back", 150.0, 30.0))
@@ -105,7 +148,7 @@ def main():
     ordered = [objs[p.name] for p in model.parts]
 
     stats = {"model": model.name, "tris": model.tris(), "budget": model.budget, "footprint": model.footprint,
-             "parts": model.stats()}
+             "parts": model.stats(), "icon_crop": model.icon_crop}
     pts = [o.matrix_world @ v.co for o in ordered for v in o.data.vertices]
     stats["bounds_min_blender"] = [round(min(p[i] for p in pts), 4) for i in range(3)]
     stats["bounds_max_blender"] = [round(max(p[i] for p in pts), 4) for i in range(3)]
@@ -118,8 +161,8 @@ def main():
     if args.icon_raw:
         scene = bpy.context.scene
         emis_png = os.path.join(os.path.dirname(os.path.abspath(args.palette_png)), "Palette_Emission.png")
-        toon = look.toon_material("M_IconToon", args.palette_png, emis_png, bands=look.BANDS3,
-                                  ambient=(0.06, 0.06, 0.08))
+        toon = look.toon_material("M_IconToon", args.palette_png, emis_png, bands=look.BANDS4,
+                                  ambient=(0.1, 0.1, 0.12))  # same 4-band cel ramp as the game
         for o in ordered:
             o.data.materials.clear()
             o.data.materials.append(toon)
@@ -127,7 +170,7 @@ def main():
         look.sun(scene, [-c for c in ICON_LIGHT_FROM], 1.15)
         yaw, pitch = (math.radians(a) for a in (model.icon_view or (ICON_YAW, ICON_PITCH)))
         cam_from = Vector((math.sin(yaw) * math.cos(pitch), -math.cos(yaw) * math.cos(pitch), math.sin(pitch)))
-        look.frame_ortho(scene, ordered, -cam_from, fill=44.0 / 48.0)
+        frame_icon(scene, ordered, -cam_from, ICON_FILL, model.icon_crop)
         look.render(scene, args.icon_raw)
         stats["icon_raw"] = os.path.abspath(args.icon_raw)
     if args.review_dir:

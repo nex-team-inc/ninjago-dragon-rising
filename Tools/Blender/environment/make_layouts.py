@@ -19,18 +19,69 @@ import json
 import math
 import os
 import random
+import re
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+REPO = os.path.dirname(os.path.dirname(os.path.dirname(HERE)))
+ARENA_CONFIG = "Starter/Assets/Configs/BilliardRogue/ArenaConfig.asset"
+ARENA_CONFIG_CS = "Starter/Assets/Scripts/BilliardRogue/Configs/ArenaConfig.cs"
 
 FLOOR_Y = 0.0
 GROUND_Y = -0.2
 ARENA = {"xMin": -3.5, "xMax": 3.5, "zLaunch": 0.0, "launchZoneHeight": 1.6, "zGridMin": 1.6, "zTop": 11.6,
          "columns": 7, "rows": 10, "cellSize": 1.0, "launchLineZ": 0.55, "floorY": FLOOR_Y, "groundY": GROUND_Y,
          "wallThickness": 0.4, "wallHeight": 0.52}
-# ArenaConfig default pose: cameraPosition (0, 20.4, 12.7) relative to the arena centre (sim (3.5, 5.8)), pitch 58,
-# FOV 28 (vertical). In this frame the camera sits at (0, 20.4, -6.9) and looks at the arena centre (0, 0, 5.8).
-CAMERA = {"target": [0.0, 0.0, 5.8], "pitchDeg": 58.0, "fovDeg": 28.0, "distance": 24.05, "aspect": 16 / 9,
-          "note": "ArenaConfig default pose expressed in this frame; the game camera pose lives in ArenaConfig"}
+ASPECT = 16 / 9
+# Pose requested of the ArenaConfig owner (GDD §4 "pitched at the arena center"): same height / pitch / FOV, aimed at
+# the centre of grid + launch zone (z 5.8) so the launch pad and the cat stay in frame.
+REQUESTED_TARGET_Z = 5.8
+
+
+def read_camera():
+    """Game camera pose from ArenaConfig.asset (fallback: the ArenaConfig.cs field defaults). cameraPosition is
+    relative to the ArenaLayout origin = this frame's origin; the rig is Euler(pitch, 0, 0), FOV vertical."""
+    num = r"(-?[\d.]+(?:[eE][-+]?\d+)?)"
+    try:
+        txt = open(os.path.join(REPO, ARENA_CONFIG)).read()
+        pos = re.search(rf"cameraPosition: {{x: {num}, y: {num}, z: {num}}}", txt)
+        pitch, fov = re.search(rf"cameraPitchDeg: {num}", txt), re.search(rf"cameraFov: {num}", txt)
+        src = ARENA_CONFIG
+    except OSError:
+        txt = open(os.path.join(REPO, ARENA_CONFIG_CS)).read()
+        pos = re.search(rf"cameraPosition = new\({num}f, {num}f, {num}f\)", txt)
+        pitch, fov = re.search(rf"cameraPitchDeg = {num}f", txt), re.search(rf"cameraFov = {num}f", txt)
+        src = ARENA_CONFIG_CS + " (defaults; the asset is missing)"
+    position = [float(v) for v in pos.groups()]
+    return pose_from(position, float(pitch.group(1)), float(fov.group(1))), src
+
+
+def pose_from(position, pitch_deg, fov_deg):
+    """Camera block for a pose: position + the floor point it aims at (y 0) and the distance to it."""
+    p = math.radians(pitch_deg)
+    dist = position[1] / math.sin(p)
+    target = [position[0], 0.0, position[2] + dist * math.cos(p)]
+    return {"position": r3(position), "pitchDeg": pitch_deg, "fovDeg": fov_deg, "aspect": round(ASPECT, 4),
+            "target": r3(target), "distance": round(dist, 3)}
+
+
+def camera_block():
+    game, src = read_camera()
+    p = math.radians(game["pitchDeg"])
+    req_pos = [0.0, game["position"][1], REQUESTED_TARGET_Z - game["distance"] * math.cos(p)]
+    req = pose_from(req_pos, game["pitchDeg"], game["fovDeg"])
+    req["note"] = ("pose requested of the ArenaConfig owner (Foundation / Presentation-World): aim at the arena centre "
+                   f"z {REQUESTED_TARGET_Z} so the launch pad and the cat are in frame; dressing is pruned against "
+                   "both poses")
+    return {"source": src, **game, "requested": req,
+            "note": "game pose read from ArenaConfig (cameraPosition relative to the ArenaLayout origin, rig "
+                    "Euler(cameraPitchDeg, 0, 0), vertical FOV); target / distance are derived (ray to the floor)"}
+
+
+def r3(v):
+    return [round(c, 3) for c in v]
+
+
+CAMERA = camera_block()
 # keep scenery out of this rectangle (arena + walls + torches + a little air)
 KEEP_OUT = (-4.3, 4.3, -1.05, 12.35)
 
@@ -68,10 +119,6 @@ REACH = {"Env_Tree_A": 1.9, "Env_Tree_B": 1.5, "Env_RuinArch": 1.8, "Env_CryptWa
          "Env_GroundMound": 2.5, "Env_GroundPatch": 1.6, "Env_PavingPatch": 1.9, "Env_WaterPool": 1.5}
 FRAME_MARGIN = 1.06   # keep props that peek into an 6% overscan (camera shake / sub-texel snapping margin)
 PARTICLE_SPRITES = "Assets/Sprites/BilliardRogue/Particles/<type>.png"
-
-
-def r3(v):
-    return [round(c, 3) for c in v]
 
 
 def P(piece, x, z, rot=0.0, s=1.0, y=GROUND_Y, light=False, tag=None):
@@ -510,28 +557,33 @@ def act3():
 
 
 # ---------------------------------------------------------------- checks + output
-def camera_pose():
-    p = math.radians(CAMERA["pitchDeg"])
-    fwd = (0.0, -math.sin(p), math.cos(p))
-    up = (0.0, math.cos(p), math.sin(p))
-    tx, ty, tz = CAMERA["target"]
-    d = CAMERA["distance"]
-    return (tx - fwd[0] * d, ty - fwd[1] * d, tz - fwd[2] * d), fwd, up
+POSES = (CAMERA, CAMERA["requested"])
 
 
-def in_view(x, y, z, margin=1.0):
-    """Is a point inside the preview camera frame (margin > 1 = overscan)?"""
-    cam, fwd, up = camera_pose()
+def project(x, y, z, pose=CAMERA):
+    """Screen position of a point: (sx, sy) in [-1, 1] (sy up), or None behind the camera."""
+    p = math.radians(pose["pitchDeg"])
+    fwd, up = (0.0, -math.sin(p), math.cos(p)), (0.0, math.cos(p), math.sin(p))
+    cam = pose["position"]
     v = (x - cam[0], y - cam[1], z - cam[2])
     depth = sum(a * b for a, b in zip(v, fwd))
-    t = math.tan(math.radians(CAMERA["fovDeg"]) / 2)
-    sy = sum(a * b for a, b in zip(v, up)) / (depth * t)
-    sx = v[0] / (depth * t * CAMERA["aspect"])
-    return abs(sx) <= margin and abs(sy) <= margin
+    if depth <= 0.1:
+        return None
+    t = math.tan(math.radians(pose["fovDeg"]) / 2)
+    return v[0] / (depth * t * ASPECT), sum(a * b for a, b in zip(v, up)) / (depth * t)
+
+
+def in_view(x, y, z, margin=1.0, poses=POSES):
+    """Is a point inside the frame of any of the poses (margin > 1 = overscan)?"""
+    for pose in poses:
+        s = project(x, y, z, pose)
+        if s is not None and abs(s[0]) <= margin and abs(s[1]) <= margin:
+            return True
+    return False
 
 
 def prop_visible(p, margin=FRAME_MARGIN):
-    """Any corner of the prop's rough bounding box (footprint / canopy reach x height) inside the frame?"""
+    """Any corner of the prop's rough bounding box (footprint / canopy reach x height) inside a frame?"""
     if not p["piece"].startswith("Env_"):
         return True
     s = p["scale"]
@@ -539,6 +591,34 @@ def prop_visible(p, margin=FRAME_MARGIN):
     h = HEIGHT.get(p["piece"], 1.0) * s
     return any(in_view(p["x"] + dx, p["y"] + dy, p["z"] + dz, margin)
                for dx in (-r, 0.0, r) for dz in (-r, 0.0, r) for dy in (0.0, h))
+
+
+def ground_footprint(pose, y, margin=FRAME_MARGIN):
+    """Frame corners (with overscan) cast onto the plane y: the visible ground trapezoid [(x, z)] of a pose."""
+    p = math.radians(pose["pitchDeg"])
+    fwd, up = (0.0, -math.sin(p), math.cos(p)), (0.0, math.cos(p), math.sin(p))
+    t = math.tan(math.radians(pose["fovDeg"]) / 2) * margin
+    cam = pose["position"]
+    out = []
+    for sx, sy in ((-1, -1), (1, -1), (1, 1), (-1, 1)):
+        d = [fwd[i] + (1.0 if i == 0 else 0.0) * sx * t * ASPECT + up[i] * sy * t for i in range(3)]
+        k = (y - cam[1]) / d[1]
+        out.append((cam[0] + d[0] * k, cam[2] + d[2] * k))
+    return out
+
+
+def rect_meets_poly(x0, x1, z0, z1, poly):
+    """Separating-axis test: axis-aligned rectangle vs convex polygon."""
+    rect = [(x0, z0), (x1, z0), (x1, z1), (x0, z1)]
+    for shape in (rect, poly):
+        for i in range(len(shape)):
+            (ax, az), (bx, bz) = shape[i], shape[(i + 1) % len(shape)]
+            nx, nz = bz - az, ax - bx
+            pa = [nx * x + nz * z for x, z in rect]
+            pb = [nx * x + nz * z for x, z in poly]
+            if max(pa) < min(pb) or max(pb) < min(pa):
+                return False
+    return True
 
 
 def prune(act):

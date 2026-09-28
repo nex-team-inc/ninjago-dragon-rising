@@ -2,13 +2,20 @@
 
 Run:  Tools/.venv/bin/python Tools/Fonts/build_pixel_font.py [--preview-dir DIR]
 In:   Tools/Fonts/glyphs_regular.txt, Tools/Fonts/glyphs_bold.txt (edit these to change glyphs)
-Out:  Tools/Staging/Assets/Fonts/BilliardRogue/BilliardPixel.ttf        (Regular, body text)
-      Tools/Staging/Assets/Fonts/BilliardRogue/BilliardPixel-Bold.ttf   (Bold / display, headlines)
+Out:  Tools/Staging/Assets/Fonts/BilliardRogue/BilliardPixel.ttf              (Regular, body text)
+      Tools/Staging/Assets/Fonts/BilliardRogue/BilliardPixel-Bold.ttf         (Bold / display, headlines)
+      Tools/Staging/Assets/Fonts/BilliardRogue/BilliardPixel-Outline.ttf      (Regular, every glyph dilated 1 px)
+      Tools/Staging/Assets/Fonts/BilliardRogue/BilliardPixel-BoldOutline.ttf  (Bold, every glyph dilated 1 px)
       Tools/Staging/Assets/Fonts/BilliardRogue/BilliardPixel_charset.txt (every code point, for TMP static atlases)
       previews in DIR: font_<style>_{en,fr,digits}.png (1x/2x/3x = 16/32/48 px; digits right-aligned to prove
-      tabular figures), font_<style>_cjk_chain.png (Latin from this font + CJK from GlowSansJ-Normal-Bold, as the TMP
-      fallback chain built by FontAssetsBuilder), font_<style>_charset.png.
+      tabular figures; EN/FR start with a confusables line), font_<style>_outline.png (text drawn over its outline
+      font on bright backgrounds), font_<style>_cjk_chain.png (Latin from this font + CJK from GlowSansJ-Normal-Bold,
+      as the TMP fallback chain built by FontAssetsBuilder), font_<style>_charset.png.
 Tabular digits: 0-9 and U+2007 FIGURE SPACE share one advance (7 px regular, 8 px bold).
+Outline fonts: each glyph is its bitmap dilated by 1 px (8-neighbour) with the SAME advance, origin and vertical
+metrics, so a TMP text in the outline font laid out with the same size/alignment/rect sits exactly under the main
+text; draw it first in a dark colour (INK #0a0c18) to separate white/yellow numbers from torchlight, bloom and pale
+stone (GDD §10 high-contrast HP numbers). Same character set as the main fonts.
 
 Grid: 16 px em (UPM 1024, 1 design px = 64 units). Ascender 14 px, descender 4 px (line height 18 px at size 16);
 (ascender + descender) / 2 = 5 = the cap-height centre, so TMP "Middle" alignment centres capitals exactly.
@@ -211,6 +218,16 @@ def simplify(pts):
     return out[k:] + out[:k]
 
 
+def dilate8(px):
+    """1 px 8-neighbour dilation of a pixel set (outline fonts)."""
+    return {(x + dx, y + dy) for x, y in px for dx in (-1, 0, 1) for dy in (-1, 0, 1)}
+
+
+def outlined(glyphs):
+    """Outline variant: same advance ('width'), every bitmap dilated by 1 px; empty glyphs (spaces) stay empty."""
+    return {cp: (dilate8(px) if px else px, w) for cp, (px, w) in glyphs.items()}
+
+
 def ttglyph(px):
     pen = TTGlyphPen(None)
     for contour in trace(px):
@@ -236,7 +253,7 @@ def glyph_name(cp):
 # build
 # ----------------------------------------------------------------------------------------------
 
-def build(style, glyphs, path):
+def build(style, glyphs, path, outline=False):
     names = [".notdef"] + [glyph_name(cp) for cp in sorted(glyphs)]
     fb = FontBuilder(UPM, isTTF=True)
     fb.setupGlyphOrder(names)
@@ -244,22 +261,25 @@ def build(style, glyphs, path):
     glyf, hmtx = {}, {}
     nw = 7 if style == "bold" else 6
     notdef = {(x, y) for x in range(nw) for y in range(10) if x in (0, nw - 1) or y in (0, 9)}
+    if outline:
+        notdef = dilate8(notdef)
     glyf[".notdef"] = ttglyph(notdef)
     hmtx[".notdef"] = ((nw + 1) * PX, 0)
     for cp, (px, width) in sorted(glyphs.items()):
         name = glyph_name(cp)
         glyf[name] = ttglyph(px) if px else TTGlyphPen(None).glyph()
-        lsb = min(x for x, _ in px) * PX if px else 0
+        lsb = min(x for x, _ in px) * PX if px else 0  # -64 for outline glyphs (ink starts 1 px left of origin)
         hmtx[name] = ((width + 1) * PX, lsb)
     fb.setupGlyf(glyf)
     fb.setupHorizontalMetrics(hmtx)
     fb.setupHorizontalHeader(ascent=ASC * PX, descent=-DESC * PX, lineGap=0)
     bold = style == "bold"
     sub = "Bold" if bold else "Regular"
+    family, ps_family = ("Billiard Pixel Outline", "BilliardPixelOutline") if outline else ("Billiard Pixel", "BilliardPixel")
     fb.setupNameTable({
-        "familyName": "Billiard Pixel", "styleName": sub,
-        "uniqueFontIdentifier": f"Nex:BilliardPixel-{sub}:1.000",
-        "fullName": f"Billiard Pixel {sub}", "psName": f"BilliardPixel-{sub}", "version": "Version 1.000",
+        "familyName": family, "styleName": sub,
+        "uniqueFontIdentifier": f"Nex:{ps_family}-{sub}:1.000",
+        "fullName": f"{family} {sub}", "psName": f"{ps_family}-{sub}", "version": "Version 1.000",
         "copyright": "Copyright (c) 2026 Nex. Original pixel font for Billiard Rogue.",
         "designer": "Billiard Rogue art pipeline (Tools/Fonts/build_pixel_font.py)",
     })
@@ -313,6 +333,22 @@ def verify(path, glyphs):
     return bad
 
 
+def check_same_metrics(path, outline_path):
+    """The outline font must lay out exactly like the main font: same cmap, advances and vertical metrics."""
+    a, b = TTFont(path), TTFont(outline_path)
+    if a.getBestCmap() != b.getBestCmap():
+        sys.exit(f"{outline_path}: cmap differs from {path}")
+    adv_a = {n: m[0] for n, m in a["hmtx"].metrics.items()}
+    adv_b = {n: m[0] for n, m in b["hmtx"].metrics.items()}
+    if adv_a != adv_b:
+        sys.exit(f"{outline_path}: advances differ from {path}")
+    for tag, attrs in (("hhea", ("ascent", "descent", "lineGap")),
+                       ("OS/2", ("sTypoAscender", "sTypoDescender", "usWinAscent", "usWinDescent", "sCapHeight", "sxHeight"))):
+        for attr in attrs:
+            if getattr(a[tag], attr) != getattr(b[tag], attr):
+                sys.exit(f"{outline_path}: {tag}.{attr} differs from {path}")
+
+
 def charset(glyphs):
     return "".join(chr(cp) for cp in sorted(glyphs) if cp >= 0x20)
 
@@ -321,7 +357,10 @@ def charset(glyphs):
 # sample sheets
 # ----------------------------------------------------------------------------------------------
 
+# Confusable pairs checked on every build (V vs U, 0 vs O, 1 vs l vs I, 5 vs S, 8 vs B, rn vs m).
+CONFUSABLES = "UV VU OVER PV UVU vu 0O 1lI| 5S 8B rn m"
 SAMPLES_EN = [
+    CONFUSABLES,
     "BILLIARD ROGUE — Act 1 · Stage 2 — Mossy Ruins",
     "The quick brown fox jumps over the lazy dog.",
     "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG!",
@@ -330,6 +369,8 @@ SAMPLES_EN = [
     "Flame Ball: burns what it touches (3 turns).",
 ]
 SAMPLES_FR = [
+    CONFUSABLES,
+    "PV 24/30 · VOUS AVEZ VAINCU · Niveau suivant ?",
     "Épreuve réussie ! Œuvre, cœur, « À bientôt » — l’été…",
     "Ça va ? Où êtes-vous ? Noël, naïf, français, garçon, à côté.",
     "CHOISISSEZ UNE RÉCOMPENSE · À L’ATTAQUE ! ÉTÉ À ÎLE",
@@ -374,6 +415,38 @@ def render_lines(path, size, lines, fg=(255, 244, 214), bg=(22, 28, 52), pad=8, 
         for i, t in enumerate(lines[:7]):
             x = width - pad - int(font.getlength(t))
             d.text((x, label_h + pad + i * lh), t, font=font, fill=fg)
+    return img
+
+
+# HP / damage number styles: (text, fill) drawn over their outline font on backgrounds that defeat plain text.
+SAMPLES_OUTLINE = [("24/30", (255, 255, 255)), ("-12", (255, 214, 90)), ("CRIT! x3", (255, 122, 58)),
+                   ("+5", (120, 255, 140)), ("-7", (150, 230, 255)), ("888", (255, 255, 255))]
+OUTLINE_BGS = [("torchlight", (255, 196, 96), (255, 240, 200)), ("pale stone", (196, 188, 172), (232, 226, 212)),
+               ("crystal", (120, 232, 240), (220, 255, 252)), ("grass", (104, 176, 64), (170, 220, 100)),
+               ("night", (22, 28, 52), (40, 48, 80))]
+INK_RGB = (10, 12, 24)
+
+
+def render_outline(path, outline_path, size, pad=6):
+    """Each sample over each background: the outline font in INK first, the main font on top (1-bit, same origin),
+    left half of each cell without the outline for comparison."""
+    main, halo = ImageFont.truetype(path, size), ImageFont.truetype(outline_path, size)
+    asc, desc = main.getmetrics()
+    lh = asc + desc + 2
+    tw = max(int(main.getlength(t)) for t, _ in SAMPLES_OUTLINE) + 2 * pad
+    cw = 2 * tw
+    img = Image.new("RGB", (cw * len(OUTLINE_BGS), lh * len(SAMPLES_OUTLINE) + 2 * pad), (0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.fontmode = "1"
+    for b, (_, c1, c2) in enumerate(OUTLINE_BGS):
+        x0 = b * cw
+        for yy in range(img.height):  # 2-tone stripes: flat + highlight rows like bloom / lit stone
+            d.line([(x0, yy), (x0 + cw - 1, yy)], fill=c1 if (yy // 3) % 3 else c2)
+        for i, (t, fill) in enumerate(SAMPLES_OUTLINE):
+            y = pad + i * lh
+            d.text((x0 + pad, y), t, font=main, fill=fill)                  # without outline
+            d.text((x0 + tw + pad, y), t, font=halo, fill=INK_RGB)          # outline layer (drawn first in TMP)
+            d.text((x0 + tw + pad, y), t, font=main, fill=fill)             # main layer, same origin
     return img
 
 
@@ -444,7 +517,8 @@ def main():
     for cp, g in regular_src.items():  # bold falls back to regular bitmaps for rare symbols
         bold_src.setdefault(cp, g)
     report = {}
-    for style, src, fname in (("regular", regular_src, "BilliardPixel.ttf"), ("bold", bold_src, "BilliardPixel-Bold.ttf")):
+    for style, src, fname, oname in (("regular", regular_src, "BilliardPixel.ttf", "BilliardPixel-Outline.ttf"),
+                                     ("bold", bold_src, "BilliardPixel-Bold.ttf", "BilliardPixel-BoldOutline.ttf")):
         glyphs = derived(compose(src, ACCENTS[style]), ACCENTS[style], style)
         missing = [c for c in REQUIRED if ord(c) not in glyphs]
         if missing:
@@ -454,7 +528,14 @@ def main():
         bad = verify(path, glyphs)
         if bad:
             sys.exit(f"{style}: FreeType render differs from bitmap for {bad[:20]}")
-        report[style] = {"glyphs": len(glyphs) + 1, "bytes": os.path.getsize(path)}
+        outline_path = os.path.join(OUT_DIR, oname)
+        halo = outlined(glyphs)
+        build(style, halo, outline_path, outline=True)
+        bad = verify(outline_path, halo)
+        if bad:
+            sys.exit(f"{style} outline: FreeType render differs from bitmap for {bad[:20]}")
+        check_same_metrics(path, outline_path)
+        report[style] = {"glyphs": len(glyphs) + 1, "bytes": os.path.getsize(path), "outlineBytes": os.path.getsize(outline_path)}
         if style == "regular":
             with open(os.path.join(OUT_DIR, "BilliardPixel_charset.txt"), "w", encoding="utf-8") as f:
                 f.write(charset(glyphs))
@@ -465,6 +546,8 @@ def main():
         if os.path.exists(CJK_SOURCE):
             stack([render_chain(path, size, SAMPLES_CHAIN) for size in (16, 32, 48)]).save(
                 os.path.join(preview, f"font_{style}_cjk_chain.png"))
+        stack([render_outline(path, outline_path, size) for size in (16, 32, 48)]).save(
+            os.path.join(preview, f"font_{style}_outline.png"))
         grid = charset_grid(path, glyphs)
         grid.resize((grid.width * 2, grid.height * 2), Image.NEAREST).save(os.path.join(preview, f"font_{style}_charset.png"))
     print("FONTS", report)

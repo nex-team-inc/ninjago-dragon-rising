@@ -523,37 +523,42 @@ def lighten_hex(c, k=0.35):
     return (int(r + (255 - r) * k), int(g + (255 - g) * k), int(b + (255 - b) * k))
 
 
-def logo():
-    W, H = 640, 200
-    glyphs = bpf.parse(os.path.join(os.path.dirname(HERE), "Fonts", "glyphs_bold.txt"))
-    img = pk.canvas(W, H)
-    # --- cue stick (behind everything), lower-left -> upper-right
-    a, b = np.array([28.0, 186.0]), np.array([612.0, 22.0])
-    d = (b - a) / np.linalg.norm(b - a)
+def cue_stick(W, H, butt, tip):
+    """Cue from butt to tip (tapered, ebony butt with gold rings, maple shaft, ivory ferrule, blue chalk tip) +
+    its 2 px dark outline, as an RGBA layer."""
+    a, b = np.array(butt, np.float64), np.array(tip, np.float64)
+    length = np.linalg.norm(b - a)
+    d = (b - a) / length
     n = np.array([-d[1], d[0]])
     x, y = pk.grid(W, H)
     rel = np.stack([x - a[0], y - a[1]], -1)
-    along = rel @ d
-    across = rel @ n
-    length = np.linalg.norm(b - a)
-    half = 3.2 + 2.4 * np.clip(1 - along / length, 0, 1)  # tapers toward the tip
+    along, across = rel @ d, rel @ n
+    half = 2.6 + 2.8 * np.clip(1 - along / length, 0, 1)  # tapers toward the tip
     cue = (along >= 0) & (along <= length) & (np.abs(across) <= half)
     t = along / length
-    cue_img = pk.canvas(W, H)
-    # butt (ebony with gold rings), shaft (maple), ferrule (ivory), tip (blue chalk)
-    zones = [(0.0, 0.30, ["#2a140c", "#4a2616", "#6a3a20"]), (0.30, 0.315, [GOLD["dk"], GOLD["lt"], GOLD["hi"]]),
-             (0.315, 0.34, ["#2a140c", "#4a2616", "#6a3a20"]), (0.34, 0.35, [GOLD["dk"], GOLD["lt"], GOLD["hi"]]),
-             (0.35, 0.955, ["#b07a3a", "#e0b070", "#f8dca0"]), (0.955, 0.985, ["#b8bcc8", "#e8eaf0", "#ffffff"]),
-             (0.985, 1.001, ["#1c3c80", "#3a6ad0", "#7aa8ff"])]
+    layer = pk.canvas(W, H)
+    zones = [(0.0, 0.30, ["#2a140c", "#4a2616", "#6a3a20"]), (0.30, 0.325, [GOLD["dk"], GOLD["lt"], GOLD["hi"]]),
+             (0.325, 0.36, ["#2a140c", "#4a2616", "#6a3a20"]), (0.36, 0.375, [GOLD["dk"], GOLD["lt"], GOLD["hi"]]),
+             (0.375, 0.93, ["#b07a3a", "#e0b070", "#f8dca0"]), (0.93, 0.965, ["#b8bcc8", "#e8eaf0", "#ffffff"]),
+             (0.965, 1.001, ["#1c3c80", "#3a6ad0", "#7aa8ff"])]
     for z0, z1, (c_dk, c_md, c_lt) in zones:
         zone = cue & (t >= z0) & (t < z1)
-        pk.put(cue_img, zone, c_md)
-        pk.put(cue_img, zone & (across < -half * 0.35), c_lt)
-        pk.put(cue_img, zone & (across > half * 0.45), c_dk)
-    ring = pk.dilate(cue, True, 2) & ~cue
-    pk.put(cue_img, ring, "#0e1224")
-    pk.blit(img, cue_img, 0, 0)
-    # --- words
+        pk.put(layer, zone, c_md)
+        pk.put(layer, zone & (across < -half * 0.35), c_lt)
+        pk.put(layer, zone & (across > half * 0.45), c_dk)
+    pk.put(layer, pk.dilate(cue, True, 2) & ~cue, "#0e1224")
+    return layer
+
+
+def logo():
+    """Title logo: ivory BILLIARD over gold ROGUE whose O is the cue ball (paw emblem). The cue comes in from the
+    lower left (behind the R, clear of BILLIARD) and its chalk tip just touches the ball, aimed at its centre, with
+    an impact spark. The whole silhouette gets a 2 px dark stroke + a 2 px drop shadow so it holds on warm
+    golden-hour, night and violet title backdrops."""
+    W, H = 640, 200
+    glyphs = bpf.parse(os.path.join(os.path.dirname(HERE), "Fonts", "glyphs_bold.txt"))
+    img = pk.canvas(W, H)
+    # --- words (placed first: the cue and ball are positioned from them)
     top_mask, _ = word_mask("BILLIARD", glyphs, spacing=2)
     bot_mask, slot = word_mask("ROGUE", glyphs, spacing=2, ball_slot=1)
     top_s = scale_mask(top_mask, 56)
@@ -562,21 +567,27 @@ def logo():
     gold = ["#fff2b0", "#ffd65a", "#ffc23c", "#f09a24", "#d0741a"]
     top_img = style_letters(top_s, ivory, "#ffffff", "#8a92b0", "#0e1224", 5, ("#3a4470", "#232a4c"))
     bot_img = style_letters(bot_s, gold, "#fffbe6", "#8a4410", "#1a0c06", 7, ("#7a2e10", "#4a1a08"))
-    tx = (W - top_img.shape[1]) // 2 - 18
-    pk.blit(img, top_img, tx, 2)
+    tx, ty = (W - top_img.shape[1]) // 2 - 18, 2
     bx = (W - bot_img.shape[1]) // 2 + 14
-    by = H - bot_img.shape[0] - 2
-    pk.blit(img, bot_img, bx, by)
-    # --- the "O" of ROGUE is a cue ball with the paw emblem
+    by = H - bot_img.shape[0] - 4
     pad = 4 + 7
     scale = bot_s.shape[0] / 10.0
     cx = bx + pad + (slot[0] + 5) * scale
     cy = by + pad + bot_s.shape[0] / 2
     r = bot_s.shape[0] / 2 + 2
+    # --- cue: butt near the lower-left corner, axis through the ball centre, tip resting on the ball's rim
+    butt = np.array([22.0, H - 16.0])
+    axis = np.array([cx, cy]) - butt
+    axis /= np.linalg.norm(axis)
+    tip = np.array([cx, cy]) - axis * (r + 1.5)
+    pk.blit(img, cue_stick(W, H, butt, tip), 0, 0)
+    # --- letters over the cue
+    pk.blit(img, top_img, tx, ty)
+    pk.blit(img, bot_img, bx, by)
+    # --- the "O" of ROGUE is a cue ball with the paw emblem
     ball_ramp = ["#6e7690", "#9aa2ba", "#c8cedc", "#e8ebf2", "#ffffff"]
     ball, inside = mi.sphere(W, cx, cy, r, ball_ramp, outline="#0e1224", height=H)
-    # thicker outline + drop shadow toward bottom-right like the letters
-    shadow = pk.shift(inside, 3, 5) & ~inside
+    shadow = pk.shift(inside, 3, 5) & ~inside  # extrusion toward bottom-right like the letters
     pk.put(img, pk.dilate(shadow | inside, True, 2) & ~(shadow | inside), "#1a0c06")
     pk.put(img, shadow, "#4a1a08")
     pk.blit(img, ball, 0, 0)
@@ -591,18 +602,40 @@ def logo():
     pk.put(layer, pm & ~pk.shift(pm, -2, -2), "#4e64a0")
     pk.put(layer, pm & ~pk.shift(pm, 2, 2), "#98aede")
     pk.blit(img, layer, 0, 0)
-    # --- sparkles
-    for sx, sy, s in ((602, 34, 6), (590, 14, 3), (40, 30, 4), (560, 120, 3), (128, 176, 3)):
+    # --- impact spark where the tip meets the ball (4 px rays, white core, gold rays, dark rim)
+    contact = np.array([cx, cy]) - axis * r
+    sx, sy = int(round(contact[0])), int(round(contact[1]))
+    spark = pk.canvas(W, H)
+    rays = pk.pixels(W, H, [(sx + k * dx, sy + k * dy) for k in range(1, 5)
+                            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))])
+    diag = pk.pixels(W, H, [(sx + k * dx, sy + k * dy) for k in (1, 2, 3) for dx, dy in ((1, 1), (-1, -1), (1, -1), (-1, 1))])
+    core = pk.pixels(W, H, [(sx, sy), (sx + 1, sy), (sx, sy + 1), (sx - 1, sy), (sx, sy - 1)])
+    burst = rays | diag | core
+    pk.put(spark, pk.dilate(burst, False) & ~burst, "#1a0c06")
+    pk.put(spark, rays | diag, GOLD["lt"])
+    pk.put(spark, core | pk.pixels(W, H, [(sx + 2 * dx, sy + 2 * dy) for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))]), "#ffffff")
+    pk.blit(img, spark, 0, 0)
+    # --- sparkles (kept off the cue and the letters)
+    for spx, spy, sz in ((602, 34, 6), (588, 14, 3), (40, 30, 4), (566, 118, 3), (70, 112, 3)):
         star = pk.canvas(W, H)
         xx, yy = pk.grid(W, H)
-        ax, ay = np.abs(xx - sx - 0.5), np.abs(yy - sy - 0.5)
-        m = np.sqrt(ax) + np.sqrt(ay) <= math.sqrt(s) + 0.2
-        core = np.sqrt(ax) + np.sqrt(ay) <= math.sqrt(s) * 0.55
+        ax, ay = np.abs(xx - spx - 0.5), np.abs(yy - spy - 0.5)
+        m = np.sqrt(ax) + np.sqrt(ay) <= math.sqrt(sz) + 0.2
+        core = np.sqrt(ax) + np.sqrt(ay) <= math.sqrt(sz) * 0.55
         pk.put(star, pk.dilate(m, False) & ~m, "#0e1224")
         pk.put(star, m, GOLD["lt"])
         pk.put(star, core, "#ffffff")
         pk.blit(img, star, 0, 0)
-    return img, {"border": [0, 0, 0, 0], "imageType": "Simple", "note": "title logo; place at 2x (1280x400) or 3x"}
+    # --- whole-silhouette 2 px dark stroke + 2 px drop shadow (translucent, bottom-right)
+    solid = pk.alpha(img)
+    stroked = pk.dilate(solid, True, 2)
+    out = pk.canvas(W, H)
+    pk.put(out, pk.shift(stroked, 2, 2) & ~stroked, (4, 4, 10, 150))
+    pk.put(out, stroked & ~solid, "#07080f")
+    pk.blit(out, img, 0, 0)
+    assert not (pk.alpha(out)[[0, -1]].any() or pk.alpha(out)[:, [0, -1]].any()), "logo touches the canvas border"
+    return out, {"border": [0, 0, 0, 0], "imageType": "Simple",
+                 "note": "title logo; place at 2x (1280x400) or 3x; 2 px stroke + translucent drop shadow baked in"}
 
 
 # ----------------------------------------------------------------------------------------------

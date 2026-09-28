@@ -529,15 +529,19 @@ def status_freeze():
     return img
 
 
+# Telegraph hues are unique per threat at 16 px over an enemy: Spawn white + gold, Cast magenta, Heal green (the
+# only green one), Quake orange. Status hues: Burn red-orange, Poison violet, Freeze ice blue.
 def telegraph_spawn():
+    """A new enemy is coming: pale ghost-white slime silhouette + gold up-arrow (no '+', no green: that is Heal)."""
     img = small_canvas()
     m = art(SLIME, "#e")
     eyes = art(SLIME, "e")
     x0, y0 = centered(img, m, -1, 3)
     body = m & ~eyes
-    emblem(img, m, "#5ccc5a", "#0a3010", x0, y0, extra={"#b0f08c": body & pk.inner_edge(body, "top"), "#0a3010": eyes})
-    plus = art(["..##..", "..##..", "######", "######", "..##..", "..##.."])
-    emblem(img, plus, "#ffffff", "#1a1a24", 9, 1)
+    emblem(img, m, "#eeeaf6", "#1a1a2e", x0, y0, shade="#b4aecc",
+           extra={"#ffffff": body & pk.inner_edge(body, "top"), "#1a1a2e": eyes})
+    arrow = art(["..#..", ".###.", "#####", ".###.", ".###."])
+    emblem(img, arrow, "#ffd23a", "#3a2406", 10, 1, extra={"#fff4b0": art(["..#..", ".#...", ".....", ".....", "....."])})
     return img
 
 
@@ -548,15 +552,16 @@ def telegraph_cast():
     star = np.sqrt(ax) + np.sqrt(ay) <= math.sqrt(7.0) + 0.2
     core = np.sqrt(ax) + np.sqrt(ay) <= math.sqrt(3.2)
     layer = pk.canvas(16, 16)
-    pk.put(layer, star, "#c070ff")
+    pk.put(layer, star, "#ff4ec4")  # hot magenta: clearly apart from Poison's violet drop
     pk.put(layer, core, "#ffffff")
-    pk.put(layer, star & ~core & (x + y < 16) & (np.minimum(ax, ay) < 1.1), "#f0d0ff")
+    pk.put(layer, star & ~core & (x + y < 16) & (np.minimum(ax, ay) < 1.1), "#ffc8ec")
+    pk.put(layer, star & ~core & (x + y > 17) & (np.minimum(ax, ay) >= 1.1), "#d0289a")
     ring = pk.dilate(star, False) & ~star
-    pk.put(layer, ring, "#2a0848")
+    pk.put(layer, ring, "#3a0426")
     pk.blit(img, layer, 0, 0)
     for px_, py_ in ((2, 3), (13, 12)):
         pk.put(img, pk.pixels(16, 16, [(px_, py_)]), "#ffffff")
-        pk.put(img, pk.pixels(16, 16, [(px_ - 1, py_), (px_ + 1, py_), (px_, py_ - 1), (px_, py_ + 1)]) & ~pk.alpha(img), "#c070ff")
+        pk.put(img, pk.pixels(16, 16, [(px_ - 1, py_), (px_ + 1, py_), (px_, py_ - 1), (px_, py_ + 1)]) & ~pk.alpha(img), "#ff4ec4")
     return img
 
 
@@ -699,6 +704,9 @@ def main():
     # in-context check: native 1x and 3x on dark and light UI backgrounds
     strip = np.concatenate([b for _, b in balls], axis=1)
     ctx = [("1x on navy", pk.on_background(strip, bg=(26, 32, 56))), ("1x on parchment", pk.on_background(strip, bg=(236, 220, 176)))]
+    small_strip = np.concatenate([np.pad(i, ((2, 2), (2, 2), (0, 0))) for _, i in small], axis=1)
+    for label, bg in (("stone", (150, 142, 128)), ("grass", (86, 150, 60)), ("crypt", (58, 56, 92)), ("crystal", (84, 60, 140))):
+        ctx.append((f"status + telegraph 1x on {label}", pk.on_background(small_strip, bg=bg)))
     pk.save_rgb(os.path.join(preview_dir, "icons_context.png"), pk.contact_sheet(ctx, scale=3, cols=1, checker_bg=False))
     print("ICONS", {"balls": len(balls), "small": len(small), "rewards": len(rewards)})
 

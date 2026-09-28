@@ -128,9 +128,9 @@ def _trilight(nt, amb):
 
 
 def toon_material(name, albedo_img, ambient, emission_img=None, emission_strength=0.0, bands=None,
-                  cavity_img=None, world_tiling=None):
-    """Emission-only node tree: albedo * (ambient + banded(direct light)) [* cavity] + emission map * strength.
-    world_tiling != None -> albedo/cavity use world-space box mapping (surface materials)."""
+                  cavity_img=None, world_tiling=None, tint=None):
+    """Emission-only node tree: albedo [* tint] * (ambient + banded(direct light)) [* cavity] + emission * strength.
+    world_tiling != None -> albedo/cavity use world-space box mapping (surface materials); tint = _BaseColor."""
     mat = bpy.data.materials.new(name)
     mat.use_nodes = True
     mat.use_backface_culling = True     # Unity culls back faces: flipped normals must show up in previews
@@ -139,6 +139,12 @@ def toon_material(name, albedo_img, ambient, emission_img=None, emission_strengt
     N, L = nt.nodes.new, nt.links.new
     out = N("ShaderNodeOutputMaterial")
     albedo = _world_box(nt, albedo_img, world_tiling) if world_tiling else _uv_tex(nt, albedo_img)
+    if tint is not None and tuple(tint) != (1.0, 1.0, 1.0):
+        tm = N("ShaderNodeVectorMath")
+        tm.operation = "MULTIPLY"
+        L(albedo, tm.inputs[0])
+        tm.inputs[1].default_value = tuple(tint)
+        albedo = tm.outputs[0]
     diffuse = N("ShaderNodeBsdfDiffuse")
     diffuse.inputs["Color"].default_value = (1, 1, 1, 1)
     s2rgb = N("ShaderNodeShaderToRGB")
@@ -232,8 +238,8 @@ def surface_textures(name, dirs):
     raise SystemExit(f"no surface texture for {name} in {dirs}")
 
 
-def surface_material(name, albedo, ambient, cavity, tiling):
-    return toon_material(name, albedo, ambient, cavity_img=cavity, world_tiling=tiling)
+def surface_material(name, albedo, ambient, cavity, tiling, tint=None):
+    return toon_material(name, albedo, ambient, cavity_img=cavity, world_tiling=tiling, tint=tint)
 
 
 # ---------------------------------------------------------------- scene assembly

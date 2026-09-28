@@ -4,10 +4,14 @@ post_diorama.py adds bloom / tilt-shift / grade / pixel upscale.
 
     Blender -b --factory-startup --python-exit-code 1 --python Tools/Blender/environment/render_diorama.py -- \
         --act 1 --out /tmp/act1 [--layouts L.json] [--models-dir DIR] [--surfaces-dir DIR] [--preview-surfaces DIR]
-        [--width 640 --height 360] [--camera game|overview] [--actors] [--no-fx]
+        [--width 640 --height 360] [--camera game|requested|overview] [--actors] [--mask] [--no-fx]
 
---actors drops the act boss, a spread of enemies, field objects, a ball and the cat onto the grid (staging models
-from the other model areas, when present) to judge arena readability against the scenery.
+--camera game = the ArenaConfig pose recorded in layouts.json "camera"; requested = camera.requested (the pose asked
+of the ArenaConfig owner); overview = a wide review shot.
+--actors drops the act boss, every enemy type, field objects, a ball and the cat onto the grid (staging models from
+the other model areas, when present) to judge arena readability against the scenery.
+--mask renders the same actors alone as flat ID colours (R = (index + 1) / 32, G = 1) for measure_previews.py.
+Danger-row inlays render at rest (M_DangerTile emission 0: only lit albedo), like the idle game board.
 Writes <out>.exr and <out>.npy (linear RGB float32, rows top-down).
 """
 import argparse
@@ -32,12 +36,16 @@ POINT_POWER = 55.0      # Blender W per Unity point-light intensity unit (tuned 
 EMISSION_STRENGTH = 3.2
 SHAFT_GAIN = 1.4        # preview emission per LightShaft intensity unit
 BOSS = {"1": "Boss_KingSlime", "2": "Boss_BoneLich", "3": "Boss_CrystalGolem"}
-# (model, col, row, hover): a representative mid-stage board; row 0 = top row
+# (model, col, row, hover): a representative mid-stage board with every enemy type; row 0 = top row. The act boss
+# takes cols 2-3 of rows 0-1 (BOSS_CELL), where the simulation spawns it.
 ACTORS = (("Enemies/Enemy_Slime", 0, 5, 0.0), ("Enemies/Enemy_Skeleton", 2, 4, 0.0), ("Enemies/Enemy_Bat", 4, 3, 0.0),
           ("Enemies/Enemy_ShieldKnight", 5, 5, 0.0), ("Enemies/Enemy_Mage", 6, 2, 0.0),
           ("Enemies/Enemy_Bomber", 1, 7, 0.0), ("Enemies/Enemy_Healer", 3, 6, 0.0), ("Enemies/Enemy_Totem", 0, 2, 0.0),
-          ("Enemies/Enemy_Slime", 4, 9, 0.0), ("Props/Prop_Pillar", 6, 7, 0.0), ("Props/Prop_Crate", 2, 8, 0.0),
-          ("Props/Pickup_Heal", 5, 7, 0.25))
+          ("Enemies/Enemy_BoneWall", 5, 1, 0.0), ("Enemies/Enemy_Slime", 4, 9, 0.0), ("Props/Prop_Pillar", 6, 7, 0.0),
+          ("Props/Prop_Crate", 2, 8, 0.0), ("Props/Pickup_Heal", 5, 7, 0.25))
+BOSS_CELL = (2, 0, 2)
+HERO = (("Player/Cat_Hero", (0.6, 0.0, 0.55), 200.0, 1.0), ("Balls/Ball", (-0.9, 0.05, 4.1), 0.0, 0.4))
+MASK_STEP = 1.0 / 32.0
 
 
 def args():
@@ -51,11 +59,67 @@ def args():
     p.add_argument("--preview-surfaces", default="")
     p.add_argument("--width", type=int, default=640)
     p.add_argument("--height", type=int, default=360)
-    p.add_argument("--camera", default="game", choices=["game", "overview"])
+    p.add_argument("--camera", default="game", choices=["game", "requested", "overview"])
     p.add_argument("--no-props", action="store_true")
     p.add_argument("--no-fx", action="store_true", help="skip light shafts + particles")
     p.add_argument("--actors", action="store_true")
+    p.add_argument("--mask", action="store_true", help="actors only, flat ID colours (implies --actors)")
     return p.parse_args(argv)
+
+
+def roster(act):
+    """[(key, fbx path, unity position, rotY, scale)] of the actors preview, in mask-ID order."""
+    out = []
+    for m, col, row, hover in ACTORS + ((f"Bosses/{BOSS[act]}", *BOSS_CELL[:2], 0.0),):
+        size = BOSS_CELL[2] if m.startswith("Bosses/") else 1
+        x, z = cell_centre(col, row, size, size)
+        out.append((m.split("/")[1], os.path.join(MODELS, m + ".fbx"), (x, hover, z), 180.0, 1.0))
+    for m, pos, rot, s in HERO:
+        out.append((m.split("/")[1], os.path.join(MODELS, m + ".fbx"), pos, rot, s))
+    return [r for r in out if os.path.exists(r[1])]
+
+
+def flat_material(name, rgb):
+    mat = bpy.data.materials.new(name)
+    mat.use_nodes = True
+    nt = mat.node_tree
+    nt.nodes.clear()
+    emit = nt.nodes.new("ShaderNodeEmission")
+    emit.inputs["Color"].default_value = (*rgb, 1.0)
+    out = nt.nodes.new("ShaderNodeOutputMaterial")
+    nt.links.new(emit.outputs[0], out.inputs["Surface"])
+    return mat
+
+
+def render_mask(a, doc):
+    """Actors alone, one flat colour per actor instance (no lights, no environment)."""
+    rc.reset()
+    rc.setup_render(a.width, a.height)
+    ids = []
+    for i, (key, path, pos, rot, s) in enumerate(roster(a.act)):
+        coll = rc.import_piece(path, f"{key}_{i}")
+        mat = flat_material(f"M_Id{i}", ((i + 1) * MASK_STEP, 1.0, 0.0))
+        for o in coll.objects:
+            if o.type == "MESH":
+                o.data.materials.clear()
+                o.data.materials.append(mat)
+        rc.place(coll, *pos, rot, s)
+        ids.append({"id": i, "model": key, "position": list(pos)})
+    add_game_camera(a, doc)
+    rc.render_to_npy(a.out + ".exr", a.out + ".npy")
+    with open(a.out + ".json", "w") as f:
+        json.dump({"act": a.act, "camera": a.camera, "maskStep": MASK_STEP, "actors": ids}, f, indent=1)
+    print("RENDERED MASK", a.out, len(ids), "actors")
+
+
+def add_game_camera(a, doc):
+    cam = doc["camera"]
+    if a.camera == "overview":   # wide review shot of the whole dressing
+        rc.add_camera([0.0, 0.0, 5.5], 62.0, 48.0, 34.0)
+        return 62.0
+    pose = cam["requested"] if a.camera == "requested" else cam
+    rc.add_camera(pose["target"], pose["pitchDeg"], pose["fovDeg"], pose["distance"])
+    return pose["pitchDeg"]
 
 
 def cell_centre(col, row, w=1, h=1):
@@ -67,8 +131,12 @@ def main():
     a = args()
     with open(a.layouts) as f:
         doc = json.load(f)
+    if a.mask:
+        render_mask(a, doc)
+        return
     act = next(x for x in doc["acts"] if str(x["id"]) == a.act)
-    surfaces = {(m["piece"], m["part"]): m["surface"] for m in act["surfaces"]}
+    surfaces = {(m["piece"], m["part"]): (m["surface"], tuple(m.get("tint") or (1.0, 1.0, 1.0)))
+                for m in act["surfaces"]}
     light = act["lighting"]
     rc.reset()
     rc.setup_render(a.width, a.height)
@@ -77,14 +145,15 @@ def main():
     pal = rc._img(os.path.join(PAL_DIR, "Palette_Main.png"))
     emi = rc._img(os.path.join(PAL_DIR, "Palette_Emission.png"))
     m_pal = rc.toon_material("M_Palette_Preview", pal, amb, emi, EMISSION_STRENGTH)
+    m_rest = rc.toon_material("M_DangerTile_Rest", pal, amb)     # M_DangerTile at rest: emission 0
     surf_mats, used_dirs = {}, set()
 
-    def surface_mat(name):
-        if name not in surf_mats:
+    def surface_mat(name, tint=(1.0, 1.0, 1.0)):
+        if (name, tint) not in surf_mats:
             alb, cav, tiling = rc.surface_textures(name, [a.surfaces_dir, a.preview_surfaces])
-            used_dirs.add(os.path.dirname(alb.filepath) + f" tiling {tiling:g}")
-            surf_mats[name] = rc.surface_material("M_Surface_" + name, alb, amb, cav, tiling)
-        return surf_mats[name]
+            used_dirs.add(os.path.basename(os.path.dirname(alb.filepath)) + f"/{name} tiling {tiling:g}")
+            surf_mats[(name, tint)] = rc.surface_material("M_Surface_" + name, alb, amb, cav, tiling, tint)
+        return surf_mats[(name, tint)]
 
     props = [] if a.no_props else list(act["props"])
     entries = list(doc["kit"]) + [e for e in props if e["piece"].startswith("Env_")]
@@ -101,8 +170,11 @@ def main():
                 continue
             part = rc.part_name(o)
             if part.endswith("_Surface"):
-                sname = g["surface"] if key == g["piece"] else surfaces.get((key, part), "StoneFloor")
-                mat = surface_mat(sname)
+                sname, tint = (g["surface"], (1.0, 1.0, 1.0)) if key == g["piece"] else \
+                    surfaces.get((key, part), ("StoneFloor", (1.0, 1.0, 1.0)))
+                mat = surface_mat(sname, tint)
+            elif part == "DangerInlay_Emissive":
+                mat = m_rest
             else:
                 mat = m_pal
             o.data.materials.clear()
@@ -118,25 +190,11 @@ def main():
 
     if a.actors:
         placed = []
-        boss = os.path.join(MODELS, "Bosses", BOSS[a.act] + ".fbx")
-        roster = [(os.path.join(MODELS, m + ".fbx"), c, r, 1, hv) for m, c, r, hv in ACTORS]
-        roster.append((boss, 2, 0, 2, 0.0))
-        for path, col, row, size, hover in roster:
-            if not os.path.exists(path):
-                continue
-            key = os.path.basename(path)[:-4]
+        for key, path, pos, rot, s in roster(a.act):
             if key not in colls:
                 colls[key] = load(path, key)
-            x, z = cell_centre(col, row, size, size)
-            rc.place(colls[key], x, hover, z, 180.0, 1.0)
+            rc.place(colls[key], *pos, rot, s)
             placed.append(key)
-        for path, pos, rot, s in ((os.path.join(MODELS, "Player", "Cat_Hero.fbx"), (0.6, 0.0, 0.55), 200.0, 1.0),
-                                  (os.path.join(MODELS, "Balls", "Ball.fbx"), (-0.9, 0.05, 4.1), 0.0, 0.4)):
-            if os.path.exists(path):
-                key = os.path.basename(path)[:-4]
-                colls[key] = load(path, key)
-                rc.place(colls[key], *pos, rot, s)
-                placed.append(key)
         print("ACTORS", placed)
 
     sun = light["sun"]
@@ -144,13 +202,7 @@ def main():
     for i, pl in enumerate(act.get("pointLights", [])):
         rc.add_point(pl["position"], pl["color"], pl["intensity"] * POINT_POWER, name=f"Point{i}")
 
-    cam = doc["camera"]
-    if a.camera == "game":
-        rc.add_camera(cam["target"], cam["pitchDeg"], cam["fovDeg"], cam["distance"])
-        pitch = math.radians(cam["pitchDeg"])
-    else:   # wide review shot of the whole dressing
-        rc.add_camera([0.0, 0.0, 5.5], 62.0, 48.0, 34.0)
-        pitch = math.radians(62.0)
+    pitch = math.radians(add_game_camera(a, doc))
 
     preset = light["preset"]
     if shafts:

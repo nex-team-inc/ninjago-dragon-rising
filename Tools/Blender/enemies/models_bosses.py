@@ -20,13 +20,7 @@ def rock(color_rule, seed, subdiv=0, amount=0.08):
 
 
 def rock_rule(c, n):
-    return C("gray", 10) if n.z > 0.55 else C("indigo", 5) if n.z < -0.45 else C("gray", 8)
-
-
-def crystal_rule(base):
-    def rule(c, n):
-        return C("cyan", min(15, base + (2 if n.z > 0.6 else 0)), True)
-    return rule
+    return C("gray", 12) if n.z > 0.55 else C("indigo", 5) if n.z < -0.45 else C("gray", 9)
 
 
 # ================================================================== King Slime
@@ -79,13 +73,13 @@ def king_slime():
         base_p = Vector((0.375 * math.cos(a), 0.375 * math.sin(a), 0.19))
         cg.add(k.cone(0.08, 0.24, 4, top_lit("yellow", 13, 15), phase=math.pi / 4),
                T(*base_p) @ R(Vector((-math.sin(a), math.cos(a), 0)), 8))
-        gem = C("red", 13, True) if i % 2 == 0 else C("cyan", 14, True)
+        gem = C("red", 10, True) if i % 2 == 0 else C("cyan", 11, True)
         cg.add(k.lathe([(0.0, -0.045), (0.045, 0.0), (0.0, 0.045)], 4, gem), T(*(base_p + Vector((0, 0, 0.26)))))
     hit, n = k.surface(cband, (0.0, -2.0, 0.1), (0, 1, 0))
-    cg.add(k.dome(0.08, 0.08, 0.03, 6, C("red", 13, True)), k.frame(hit - n * 0.005, n))
+    cg.add(k.dome(0.08, 0.08, 0.03, 6, C("red", 10, True)), k.frame(hit - n * 0.005, n))
     for side in (-1, 1):
         hit, n = k.surface(cband, (side * 0.26, -2.0, 0.1), (0, 1, 0))
-        cg.add(k.dome(0.045, 0.045, 0.02, 5, C("cyan", 14, True)), k.frame(hit - n * 0.004, n))
+        cg.add(k.dome(0.045, 0.045, 0.02, 5, C("cyan", 11, True)), k.frame(hit - n * 0.004, n))
     crown.add(cg, T(0.0, 0.03, cz) @ R(Y, -9) @ R(X, -6) @ S(1.08))
     return m
 
@@ -119,7 +113,7 @@ def bone_lich():
         for dx, h, tilt in ((0.0, 0.3, 18), (0.14, 0.22, 34)):
             robe.add(k.cone(0.075, h, 4, top_lit(BONE, 13, 15, 11), phase=math.pi / 4),
                      T(side * (0.38 + dx), 0.05, 1.2) @ R(Y, side * tilt))
-    robe.add(on_surface(rg, k.dome(0.075, 0.09, 0.035, 6, C("green", 13, True)), 0.0, 0.9, elevation=10, sink=0.01))
+    robe.add(on_surface(rg, k.dome(0.075, 0.09, 0.035, 6, C("green", 10, True)), 0.0, 0.9, elevation=10, sink=0.01))
     robe.add(on_surface(rg, k.dome(0.12, 0.13, 0.02, 6, C("yellow", 10)), 0.0, 0.9, elevation=10, sink=0.012))
 
     sc = Vector((0, -0.12, 1.47))
@@ -131,7 +125,7 @@ def bone_lich():
     skull.add(sk)
     skull.add(k.box(0.23, 0.15, 0.08, top_lit(BONE, 12, 14, 9)), T(sc.x, sc.y - 0.06, sc.z - 0.235))
     skull.add(k.box(0.15, 0.02, 0.016, C(BONE, 3)), T(sc.x, sc.y - 0.137, sc.z - 0.185))
-    sockets, _ = k.eye_pair(sk, sc.z - 0.015, 0.088, 0.07, 0.078, "socket", elevation=28, glow=C("green", 14, True),
+    sockets, _ = k.eye_pair(sk, sc.z - 0.015, 0.088, 0.07, 0.078, "socket", elevation=28, glow=C("green", 11, True),
                             segs=6, look=(0.0, 0.0))
     skull.add(sockets)
     skull.add(on_surface(sk, k.slab([(-0.025, 0.022), (0.0, -0.022), (0.025, 0.022)], 0.02, C(BONE, 2)), 0.0,
@@ -143,7 +137,7 @@ def bone_lich():
         circlet.add(k.cone(0.035, 0.11 if i == 2 else 0.075, 4, top_lit("yellow", 10, 12), phase=math.pi / 4),
                     T(0.21 * math.cos(a), 0.21 * math.sin(a), 0.04))
     hit, n = k.surface(circlet, (0.0, -2.0, 0.025), (0, 1, 0))
-    circlet.add(k.dome(0.035, 0.035, 0.02, 5, C("green", 14, True)), k.frame(hit - n * 0.004, n))
+    circlet.add(k.dome(0.035, 0.035, 0.02, 5, C("green", 11, True)), k.frame(hit - n * 0.004, n))
     skull.add(circlet, T(sc.x, sc.y + 0.02, sc.z + 0.07) @ R(X, -8))
 
     def hand(side, pose):
@@ -161,7 +155,7 @@ def bone_lich():
                 p0 = hp + Vector((dx, -0.02, 0.06))
                 g.add(k.sweep([p0, p0 + Vector((dx * 0.4, -0.02, 0.08)), p0 + Vector((dx * 0.6, 0.0, 0.15))],
                               [0.026, 0.022, 0.0], 4, C(BONE, 14)))
-            g.add(k.cone(0.07, 0.22, 5, C("green", 13, True)), T(*(hp + Vector((0, -0.12, 0.08)))) @ R(X, -15))
+            g.add(k.cone(0.07, 0.22, 5, C("green", 10, True)), T(*(hp + Vector((0, -0.12, 0.08)))) @ R(X, -15))
         thumb0 = hp + Vector((side * 0.075, -0.02, -0.02))
         g.add(k.sweep([thumb0, thumb0 + Vector((side * 0.05, -0.05, 0.05))], [0.026, 0.0], 4, C(BONE, 14)))
         g = g.copy(T(*hp) @ S(hs) @ T(*(-hp)))
@@ -189,67 +183,107 @@ def bone_lich():
                           [0.035, 0.028, 0.0], 4, top_lit(BONE, 13, 15)))
     oc = top + Vector((0, 0, 0.17))
     orb = m.part("Orb", oc, parent="Staff")
-    orb.add(k.sphere(0.135, 8, 5, lambda c, n: C("green", 15 if n.z > 0.5 else 13, True)), T(*oc))
+    orb.add(k.sphere(0.135, 8, 5, lambda c, n: C("green", 13 if n.z > 0.5 else 10, True)), T(*oc))
     for off in (Vector((0.22, 0.0, 0.08)), Vector((-0.18, -0.1, -0.1))):
-        orb.add(k.lathe([(0.0, -0.035), (0.035, 0.0), (0.0, 0.035)], 4, C("green", 14, True)), T(*(oc + off)))
+        orb.add(k.lathe([(0.0, -0.035), (0.035, 0.0), (0.0, 0.035)], 4, C("green", 11, True)), T(*(oc + off)))
     return m
 
 
 # ================================================================== Crystal Golem
+# Colour roles (gameplay read first): gold emissive = ShieldCrystal ONLY (the shielded face), cyan-white emissive =
+# CoreCrystal + eyes (its life glow), jade/teal NON-emissive = decorative crystals (apart from the Act 3 dressing's
+# glowing cyan/violet Env_Crystal_*). Everything except ShieldCrystal stays inside |x| <= 0.8 so the shield crystal,
+# which lives in the outer 0.8..1.0 band of the footprint, is never hidden by an arm when it is turned to a side.
+SHIELD_R = 0.9  # radial centre of the shield crystal band
+
+
+def jade(base):
+    def rule(c, n):
+        return C("teal", min(15, base + (3 if n.z > 0.6 else 1 if n.z > 0.1 else -1)))
+    return rule
+
+
+def gold(base):
+    """Saturated mid-yellow emissive swatches: lit albedo + emission stays gold instead of clipping to white."""
+    def rule(c, n):
+        return C("yellow", min(15, base + (2 if n.z > 0.45 else 0)), True)
+    return rule
+
+
 def crystal_golem():
     m = k.Model("Boss_CrystalGolem", BOSS_BUDGET, footprint=(2, 2))
     body = m.part("Body", (0, 0, 0))
     for i, side in enumerate((-1, 1)):
-        leg = k.box(0.36, 0.38, 0.44, rock_rule, top_scale=(1.15, 1.1))
-        k.jitter(leg, 0.025, 11 + i, keep_z_below=0.001)
-        body.add(leg.paint(rock_rule), T(side * 0.36, 0.06, 0.0))
-    torso = rock(rock_rule, 3, subdiv=1, amount=0.07).copy(T(0, 0.08, 0.98) @ S(0.74, 0.56, 0.54))
+        leg = k.box(0.34, 0.38, 0.46, rock_rule, top_scale=(1.12, 1.08))
+        k.jitter(leg, 0.02, 11 + i, keep_z_below=0.001)
+        body.add(leg.paint(rock_rule), T(side * 0.3, 0.12, 0.0))
+    torso = rock(rock_rule, 3, subdiv=1, amount=0.07).copy(T(0, 0.12, 0.98) @ S(0.6, 0.5, 0.55))
     body.add(torso.paint(rock_rule))
     for side, seed in ((-1, 5), (1, 6)):
-        body.add(rock(rock_rule, seed).copy(T(side * 0.62, 0.06, 1.24) @ S(0.3, 0.28, 0.24)).paint(rock_rule))
-    cluster = ((-0.45, 0.22, 1.35, (-0.5, 0.35, 1.0), 0.09, 0.5), (-0.25, 0.3, 1.42, (-0.2, 0.5, 1.0), 0.11, 0.62),
-               (0.02, 0.32, 1.46, (0.0, 0.3, 1.0), 0.13, 0.72), (0.28, 0.28, 1.4, (0.3, 0.45, 1.0), 0.1, 0.56),
-               (0.5, 0.2, 1.32, (0.6, 0.3, 1.0), 0.08, 0.44), (0.75, 0.12, 1.4, (0.4, 0.1, 1.0), 0.07, 0.34),
-               (-0.76, 0.1, 1.4, (-0.4, 0.15, 1.0), 0.07, 0.36), (0.12, 0.48, 1.2, (0.2, 1.0, 0.6), 0.08, 0.4))
-    for i, (x, y, z, d, r, ln) in enumerate(cluster):
-        body.add(k.crystal(r, ln, 5, crystal_rule(12 + i % 3), phase=0.3 * i), k.aim((x, y, z), d, (0, -1, 0)))
-    hit, n = k.surface(torso, (0.0, -3.0, 0.98), (0, 1, 0))
-    body.add(k.dome(0.2, 0.22, 0.05, 6, C("indigo", 1)), k.frame(hit - n * 0.02, n))
+        body.add(rock(rock_rule, seed).copy(T(side * 0.5, 0.1, 1.3) @ S(0.24, 0.24, 0.2)).paint(rock_rule))
+    # jade crystal growths on the shoulders and upper back (kept off the centre line behind the head so the
+    # shield crystal still shows over the back when it is turned to the far face)
+    growth = ((0.52, 0.16, 1.42, (0.3, 0.25, 1.0), 0.1, 0.52), (0.64, 0.02, 1.36, (0.22, -0.05, 1.0), 0.07, 0.34),
+              (0.4, 0.34, 1.34, (0.35, 0.7, 1.0), 0.08, 0.4), (0.3, 0.46, 1.05, (0.2, 1.0, 0.45), 0.07, 0.28))
+    for i, (x, y, z, d, r, ln) in enumerate(growth):
+        for side in (-1, 1):
+            body.add(k.crystal(r, ln * (1.0 if side < 0 else 0.9), 5, jade(11 + i % 2), phase=0.3 * i + side),
+                     k.aim((side * x, y, z), (side * d[0], d[1], d[2]), (0, -1, 0)))
+    hit, n = k.surface(torso, (0.0, -3.0, 1.0), (0, 1, 0))
+    body.add(k.dome(0.2, 0.24, 0.05, 6, C("indigo", 1)), k.frame(hit - n * 0.02, n))  # dark socket round the core
 
-    hc = Vector((0.0, -0.32, 1.45))
-    head = m.part("Head", hc, parent="Body")
-    hg = rock(rock_rule, 9, amount=0.06).copy(T(*hc) @ S(0.34, 0.28, 0.25))
+    # head: sunk between the shoulders, heavy brow over big glowing eyes, underbite jaw with two tusks
+    hc = Vector((0.0, -0.38, 1.5))
+    head = m.part("Head", (0.0, -0.22, 1.36), parent="Body")
+    hg = rock(rock_rule, 9, amount=0.05).copy(T(*hc) @ S(0.3, 0.26, 0.25))
     head.add(hg.paint(rock_rule))
-    head.add(on_surface(hg, k.box(0.44, 0.06, 0.06, top_lit("gray", 6, 9, 4)), 0.0, hc.z + 0.11, elevation=10,
-                        sink=0.04))  # brow ridge (shallow: must not hide the eyes from the high camera)
     for side in (-1, 1):
-        head.add(on_surface(hg, k.box(0.14, 0.065, 0.04, C("cyan", 15, True)).copy(R(Z, side * -12)), side * 0.11,
-                            hc.z + 0.01, elevation=46, sink=0.012))  # angry glowing eye slits
-    head.add(k.crystal(0.06, 0.26, 5, crystal_rule(13)), k.aim(hc + Vector((0.06, 0.02, 0.14)), (0.25, 0.1, 1.0)))
+        eye = k.prism([(-0.06, -0.055), (0.06, -0.055), (0.06, 0.06), (-0.06, 0.02)], -0.02, 0.03,
+                      C("cyan", 11, True), cap_color=C("cyan", 12, True))
+        eye = eye.copy(S(-1, 1, 1)) if side < 0 else eye  # inner corner lower = frowning
+        head.add(on_surface(hg, eye, side * 0.12, hc.z + 0.0, elevation=44, sink=0.015, blend=0.7))
+        brow = k.box(0.2, 0.075, 0.07, top_lit("gray", 6, 9, 4)).copy(R(Z, side * 14))
+        head.add(on_surface(hg, brow, side * 0.12, hc.z + 0.1, elevation=30, sink=0.03, blend=0.6))
+    head.add(on_surface(hg, k.box(0.26, 0.04, 0.03, C("indigo", 1)), 0.0, hc.z - 0.1, elevation=30, sink=0.012))
+    jaw = k.box(0.36, 0.16, 0.12, top_lit("gray", 8, 10, 5), top_scale=(1.06, 1.0))
+    head.add(jaw, T(0.0, hc.y - 0.2, hc.z - 0.26))
+    for side in (-1, 1):
+        head.add(k.cone(0.03, 0.08, 4, top_lit("gray", 13, 15), phase=math.pi / 4),
+                 T(side * 0.12, hc.y - 0.25, hc.z - 0.15))  # tusks
+    head.add(k.crystal(0.06, 0.24, 5, jade(11)), k.aim(hc + Vector((0.05, 0.06, 0.18)), (0.2, 0.25, 1.0)))
 
     for name, side, seed in (("ArmR", -1, 21), ("ArmL", 1, 31)):
-        sh = Vector((side * 0.66, 0.05, 1.2))
+        sh = Vector((side * 0.5, 0.08, 1.28))
         arm = m.part(name, sh, parent="Body")
-        arm.add(rock(rock_rule, seed).copy(T(side * 0.74, 0.0, 0.92) @ S(0.19, 0.19, 0.27)).paint(rock_rule))
-        fist = rock(rock_rule, seed + 1, subdiv=1, amount=0.06).copy(T(side * 0.78, -0.12, 0.46) @ S(0.27, 0.27, 0.28))
+        arm.add(rock(rock_rule, seed).copy(T(side * 0.6, 0.0, 0.9) @ S(0.15, 0.16, 0.26)).paint(rock_rule))
+        fist = rock(rock_rule, seed + 1, subdiv=1, amount=0.06).copy(T(side * 0.55, -0.2, 0.44) @ S(0.2, 0.23, 0.22))
         arm.add(fist.paint(rock_rule))
-        for j, (dx, dy, dz, d, r, ln) in enumerate(((0.05, 0.05, 0.62, (side * 0.6, 0.3, 1.0), 0.07, 0.34),
-                                                    (0.12, 0.0, 0.95, (side * 1.0, 0.2, 0.6), 0.06, 0.26))):
-            arm.add(k.crystal(r, ln, 5, crystal_rule(12 + j)),
-                    k.aim((side * (0.76 + dx), dy, dz), d, (0, -1, 0)))
+        arm.add(k.crystal(0.06, 0.26, 5, jade(11)), k.aim((side * 0.6, 0.06, 0.98), (side * 0.2, 0.7, 1.0), (0, -1, 0)))
 
-    core = m.part("CoreCrystal", (0.0, -0.46, 0.98), parent="Body")
-    core.add(k.lathe([(0.0, -0.2), (0.14, -0.05), (0.14, 0.06), (0.0, 0.26)], 6,
-                     lambda c, n: C("sky", 15 if n.z > 0.3 else 14, True), phase=0.0), T(0.0, -0.46, 0.98))
+    core = m.part("CoreCrystal", (0.0, -0.5, 1.0), parent="Body")
+    core.add(k.lathe([(0.0, -0.2), (0.15, -0.05), (0.15, 0.07), (0.0, 0.28)], 6,
+                     lambda c, n: C("cyan", 13 if n.z > 0.3 else 10, True), phase=0.0), T(0.0, -0.5, 1.0))
 
+    # ShieldCrystal: gold wall of crystals in the outer band of the footprint on the shielded face. Built on the
+    # model's front (Unity +Z = sim Face.Bottom); code turns it about the model centre (see manifest shield_face_yaw).
     shield = m.part("ShieldCrystal", (0.0, 0.0, 0.85))
     sg = Geo()
-    main = k.lathe([(0.1, 0.0), (0.19, 0.12), (0.19, 0.5), (0.0, 0.78)], 6, crystal_rule(13), phase=math.pi / 6)
-    sg.add(main.copy(S(1.0, 0.42, 1.0)))
+    main = k.lathe([(0.11, 0.0), (0.18, 0.12), (0.18, 0.92), (0.0, 1.34)], 6, gold(11), phase=math.pi / 6)
+    sg.add(main.copy(T(0.0, -SHIELD_R, 0.03) @ S(1.0, 0.5, 1.0)))
     for side in (-1, 1):
-        shard = k.lathe([(0.05, 0.0), (0.09, 0.07), (0.09, 0.28), (0.0, 0.44)], 5, crystal_rule(12), phase=0.3)
-        sg.add(shard.copy(T(side * 0.2, 0.0, 0.06) @ R(Y, side * 24) @ S(1.0, 0.6, 1.0)))
-    shield.add(sg, T(0.0, -1.0, 0.42) @ R(X, -12))
+        flank = k.lathe([(0.06, 0.0), (0.11, 0.1), (0.11, 0.56), (0.0, 0.86)], 5, gold(10), phase=0.3)
+        sg.add(flank.copy(T(side * 0.3, -SHIELD_R, 0.02) @ R(Y, side * 18) @ S(1.0, 0.55, 1.0)))
+        small = k.lathe([(0.05, 0.0), (0.08, 0.07), (0.08, 0.3), (0.0, 0.46)], 5, gold(10), phase=0.7)
+        sg.add(small.copy(T(side * 0.52, -SHIELD_R + 0.02, 0.01) @ R(Y, side * 34) @ S(1.0, 0.6, 1.0)))
+    # floating aegis shard above the shielded side: clears the golem's silhouette on every face (on the far face
+    # it rises over the back; on the sides it hangs beside the head above the shoulders) and, on the front face,
+    # floats above eye level so the face stays readable
+    aegis = k.lathe([(0.0, -0.26), (0.17, -0.02), (0.15, 0.1), (0.0, 0.36)], 6, gold(10), phase=math.pi / 6)
+    sg.add(aegis.copy(T(0.0, -0.74, 2.08) @ R(X, 10) @ S(1.0, 0.7, 1.0)))
+    for side in (-1, 1):
+        sg.add(k.lathe([(0.0, -0.07), (0.05, 0.0), (0.0, 0.09)], 4, gold(11)),
+               T(side * 0.26, -0.7, 2.0 + 0.08 * side) @ R(Y, side * 25))
+    shield.add(sg)
     return m
 
 

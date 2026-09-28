@@ -392,21 +392,28 @@ def jitter(geo, amount, seed, keep_z_below=None):
 
 
 # ------------------------------------------------------------------ eyes
+# Eye whites use a mid-grey swatch from the palette's EMISSIVE half (~62 % value): lit albedo + this emission
+# lifts them to near-white in the night acts, yet the emission alone stays well under the bloom threshold (1.0),
+# so cute enemies do not become two full-strength bloom sources competing with the ball and the gameplay tells.
+SCLERA = ("gray", 8, True)
+GLINT = ("gray", 15, True)  # tiny (sub-pixel to 1 px at game scale): the only full-white emissive on an eye
+
+
 def eye(center, normal, rx, ry, style="cute", up_hint=UP, sclera=None, pupil=None, glow=None, look=(0.0, -0.12),
         depth=None, segs=8):
     """One eye built in a surface frame (local +Z = outward normal, +Y = up).
-    styles: 'cute'  white sclera + big dark pupil + glint (sclera emissive -> readable in dark acts)
+    styles: 'cute'  light sclera (SCLERA, dim emissive -> readable in dark acts) + big dark pupil + glint
             'glow'  one emissive dome (colour `glow`) - spooky / magic eyes
             'socket' dark recessed socket + small emissive pupil (colour `glow`)."""
     m = frame(center, normal, up_hint)
     d = depth if depth is not None else min(rx, ry) * 0.55
     g = Geo()
     if style == "cute":
-        g.add(dome(rx, ry, d, segs, sclera or C("gray", 15, True)), T(0, 0, -d * 0.35))
+        g.add(dome(rx, ry, d, segs, sclera or C(*SCLERA)), T(0, 0, -d * 0.35))
         pr = 0.64
         g.add(dome(rx * pr, ry * pr * 1.02, d * 0.5, max(6, segs - 2), pupil or C("indigo", 1)),
               T(look[0] * rx, look[1] * ry, d * 0.35))
-        g.add(dome(rx * 0.2, ry * 0.2, d * 0.3, 4, C("gray", 15, True), rings=1),
+        g.add(dome(rx * 0.2, ry * 0.2, d * 0.3, 4, C(*GLINT), rings=1),
               T(-rx * 0.26 + look[0] * rx, ry * 0.26 + look[1] * ry, d * 0.72))
     elif style == "glow":
         g.add(dome(rx, ry, d, segs, glow), T(0, 0, -d * 0.3))
@@ -471,6 +478,11 @@ class Model:
         self.footprint = footprint
         self.parts = []
         self.icon_view = None  # optional (yaw_deg, pitch_deg) override of the default icon camera
+        # icon framing by visual mass: icon_crop = fraction of the projected height cut off at the BOTTOM edge
+        # (tall, thin models: robe hem / staff foot) so the body fills the 48 px icon like the round enemies do
+        self.icon_crop = 0.0
+        # footprint overhang whitelist {part name: extra metres allowed past half-cell + 0.02 tolerance}
+        self.overhang = {}
 
     def part(self, name, pivot=(0, 0, 0), parent=None):
         p = Part(name, pivot, parent)

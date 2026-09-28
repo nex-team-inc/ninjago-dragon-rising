@@ -3,7 +3,8 @@
 Unity runs in Gamma colour space, so shading is emulated on raw sRGB values: palette textures are loaded as
 Non-Color and the view transform is Raw (PNG = palette colour x band multiplier, exactly like the game shader).
 Toon = Diffuse -> ShaderToRGB -> luminance -> constant ColorRamp (N bands) -> x light tint + ambient -> x albedo.
-Faces in the palette's emissive half are drawn unlit at full albedo; mode "emit" renders only them (bloom pass).
+Faces in the palette's emissive half add their emission on top of the lit albedo, like ToonLit's `color += emission`
+(emission strength 1.0 assumed); mode "emit" renders only the emission (bloom pass).
 """
 import math
 import os
@@ -103,20 +104,8 @@ def toon_material(name, albedo, emission_png=None, bands=BANDS4, tint=(1, 1, 1),
     lit = mix(light.outputs[2], alb, "MULTIPLY")
     result = lit.outputs[2]
     if emis is not None:
-        # emissive faces: unlit full albedo (Unity adds HDR emission on top; bloom comes from the 'emit' pass)
-        ebw = nt.nodes.new("ShaderNodeRGBToBW")
-        nt.links.new(emis, ebw.inputs["Color"])
-        mask = nt.nodes.new("ShaderNodeMath")
-        mask.operation = "GREATER_THAN"
-        mask.inputs[1].default_value = 0.002
-        nt.links.new(ebw.outputs["Val"], mask.inputs[0])
-        sel = nt.nodes.new("ShaderNodeMix")
-        sel.data_type = "RGBA"
-        sel.clamp_result = False
-        nt.links.new(mask.outputs["Value"], sel.inputs["Factor"])
-        nt.links.new(result, sel.inputs[6])
-        nt.links.new(alb, sel.inputs[7])
-        result = sel.outputs[2]
+        # emissive faces: lit albedo + emission (ToonLit adds HDR emission; bloom comes from the 'emit' pass)
+        result = mix(result, emis, "ADD", emit_gain).outputs[2]
     nt.links.new(result, emit_sh.inputs["Color"])
     return mat
 

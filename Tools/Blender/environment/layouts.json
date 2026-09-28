@@ -24,16 +24,39 @@
   "wallHeight": 0.52
  },
  "camera": {
-  "target": [
+  "source": "Starter/Assets/Configs/BilliardRogue/ArenaConfig.asset",
+  "position": [
    0.0,
-   0.0,
-   5.8
+   20.4,
+   -6.15
   ],
   "pitchDeg": 58.0,
   "fovDeg": 28.0,
-  "distance": 24.05,
-  "aspect": 1.7777777777777777,
-  "note": "ArenaConfig default pose expressed in this frame; the game camera pose lives in ArenaConfig"
+  "aspect": 1.7778,
+  "target": [
+   0.0,
+   0.0,
+   6.597
+  ],
+  "distance": 24.055,
+  "requested": {
+   "position": [
+    0.0,
+    20.4,
+    -6.947
+   ],
+   "pitchDeg": 58.0,
+   "fovDeg": 28.0,
+   "aspect": 1.7778,
+   "target": [
+    0.0,
+    0.0,
+    5.8
+   ],
+   "distance": 24.055,
+   "note": "pose requested of the ArenaConfig owner (Foundation / Presentation-World): aim at the arena centre z 5.8 so the launch pad and the cat are in frame; dressing is pruned against both poses"
+  },
+  "note": "game pose read from ArenaConfig (cameraPosition relative to the ArenaLayout origin, rig Euler(cameraPitchDeg, 0, 0), vertical FOV); target / distance are derived (ray to the floor)"
  },
  "pivots": [
   {

@@ -113,7 +113,8 @@ namespace Nex.BilliardRogue
 
         void OnEnemyHit(in SimEvent ev)
         {
-            var isTick = ev.ballId == 0;
+            // Status ticks carry no ball (ballId 0) and the status ball type; explosions also have no ball but show numbers.
+            var isTick = ev.ballId == 0 && (ev.ballType == BallType.Flame || ev.ballType == BallType.Venom);
             var world = Center(ev.position);
             if (views.TryGetEnemy(ev.targetId, out var view))
             {

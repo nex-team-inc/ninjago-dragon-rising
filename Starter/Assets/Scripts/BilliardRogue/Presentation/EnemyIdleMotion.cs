@@ -25,6 +25,7 @@ namespace Nex.BilliardRogue
         float blinkTimer;
         float blinkRemaining;
         bool paused;
+        bool baseCaptured;
 
         public bool Paused
         {
@@ -41,10 +42,18 @@ namespace Nex.BilliardRogue
             blinkTimer = Random.Range(settings.blinkIntervalMin, settings.blinkIntervalMax);
             blinkRemaining = 0f;
             paused = false;
-            if (bobPart != null)
+            // The authored pose is captured once; pooled reuse restores it instead of re-reading a bobbed pose.
+            if (bobPart != null && !baseCaptured)
             {
                 bobBase = bobPart.localPosition;
                 bobBaseScale = bobPart.localScale;
+                baseCaptured = true;
+            }
+
+            if (bobPart != null)
+            {
+                bobPart.localPosition = bobBase;
+                bobPart.localScale = bobBaseScale;
             }
 
             for (var i = 0; i < blinkParts.Length; i++)

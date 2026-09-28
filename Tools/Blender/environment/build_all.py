@@ -5,11 +5,15 @@
 
 Steps (all deterministic):
   1. build_env.py in parallel Blender processes -> Tools/Staging/Assets/Models/BilliardRogue/Environment/Env_*.fbx
-  2. make_layouts.py -> Tools/Blender/environment/layouts.json
-  3. previews (review only, never in the repo): stand-in surfaces (only used when the 2D-art Surfaces are missing
-     from staging), per-piece sheet, one game-camera diorama per act (+ wide overview), post-processed like the
-     HD-2D stack, contact sheets. Preview dir: --preview-dir, else $ENV_PREVIEW_DIR, else $TMPDIR/billiard_env_preview
-     (keep previews out of the repo).
+     (rewritten only when the content changed)
+  2. verify_env.py re-imports every FBX and checks the naming / emissive / UV / transform / budget contract
+  3. make_layouts.py -> Tools/Blender/environment/layouts.json (kit, per-act dressing, lights, LightShaft volumes,
+     AmbientParticles emitters, ActLightingPreset values)
+  4. previews (review only, never in the repo): stand-in surfaces (only used when the 2D-art Surfaces are missing
+     from staging), per-piece sheet, per act a game-camera diorama, the same with actors (boss, enemies, props, cat
+     from the other model areas' staging output) and a wide overview, post-processed like the HD-2D stack, contact
+     sheets. Preview dir: --preview-dir, else $ENV_PREVIEW_DIR, else $TMPDIR/billiard_env_preview (keep previews
+     out of the repo).
 """
 import argparse
 import glob
@@ -83,6 +87,8 @@ def main():
             json.dump(stats, f, indent=1, sort_keys=True)
         changed = sum(1 for s in stats.values() if s["fbx_changed"])
         print(f"models: {len(stats)} FBX ({changed} changed), max tris {max(s['tris'] for s in stats.values())}")
+        out = blender("verify_env.py", "--report", os.path.join(a.preview_dir, "env_verify.json"))
+        print(next(line for line in out.splitlines() if line.startswith("VERIFY_SUMMARY")))
     print(py("make_layouts.py", venv=False).strip())
     if a.skip_previews:
         print(f"done in {time.time() - t0:.1f}s")
@@ -93,22 +99,26 @@ def main():
     acts = [x for x in a.acts.split(",") if x]
     jobs = [("render_pieces.py", "--out-dir", os.path.join(pv, "_pieces"), "--preview-surfaces", stand_in)]
     for act in acts:
-        for cam in ("game", "overview"):
+        for cam, extra in (("game", ()), ("game", ("--actors",)), ("overview", ())):
+            tag = cam + ("_actors" if extra else "")
             jobs.append(("render_diorama.py", "--act", act, "--camera", cam, "--preview-surfaces", stand_in,
-                         "--out", os.path.join(pv, "_raw", f"act{act}_{cam}")))
+                         "--out", os.path.join(pv, "_raw", f"act{act}_{tag}"), *extra))
     os.makedirs(os.path.join(pv, "_raw"), exist_ok=True)
     with ThreadPoolExecutor(a.jobs) as pool:
         list(pool.map(lambda j: blender(*j), jobs))
-    outs = []
-    for act in acts:
-        game = os.path.join(pv, f"act{act}_diorama.png")
-        py("post_diorama.py", "--npy", os.path.join(pv, "_raw", f"act{act}_game.npy"), "--act", act, "--out", game)
-        py("post_diorama.py", "--npy", os.path.join(pv, "_raw", f"act{act}_overview.npy"), "--act", act,
-           "--out", os.path.join(pv, f"act{act}_overview.png"), "--no-tilt")
-        outs.append(game)
+    outs, labels = [], []
     layouts = json.load(open(os.path.join(HERE, "layouts.json")))
-    labels = "|".join(f"Act {k} - {layouts['acts'][k]['name']}" for k in acts)
-    py("post_diorama.py", "--sheet", os.path.join(pv, "acts_contact_sheet.png"), "--labels", labels, *outs)
+    names = {str(x["id"]): x["name"] for x in layouts["acts"]}
+    for act in acts:
+        for tag, name, extra in (("game", "diorama", ()), ("game_actors", "actors", ()), ("overview", "overview",
+                                                                                           ("--no-tilt",))):
+            out = os.path.join(pv, f"act{act}_{name}.png")
+            py("post_diorama.py", "--npy", os.path.join(pv, "_raw", f"act{act}_{tag}.npy"), "--act", act,
+               "--out", out, *extra)
+            if name != "overview":
+                outs.append(out)
+                labels.append(f"Act {act} - {names[act]}" + (" (with actors)" if name == "actors" else ""))
+    py("post_diorama.py", "--sheet", os.path.join(pv, "acts_contact_sheet.png"), "--labels", "|".join(labels), *outs)
     py("sheet_pieces.py", os.path.join(pv, "_pieces"), os.path.join(pv, "pieces_sheet.png"))
     print(f"previews -> {pv} ({time.time() - t0:.1f}s)")
 

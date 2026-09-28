@@ -12,6 +12,7 @@ rewritten when their content changed (bl_common.export_fbx_if_changed). Prints o
 piece and fails (exit 1) when a piece breaks the budget or the palette/emissive/surface UV contract.
 """
 import json
+import math
 import os
 import sys
 import time
@@ -27,10 +28,11 @@ bc = el.bc
 DEFAULT_OUT = os.path.join(REPO, "Tools", "Staging", "Assets", "Models", "BilliardRogue", "Environment")
 
 
-def check_uvs(obj, emissive):
-    """Palette parts: every UV at a texel centre of the correct half. Surface parts: skipped."""
-    if obj.name.endswith("_Surface"):
-        return None
+def check_uvs(obj, emissive, unit_uv=False):
+    """Palette parts: every UV at a texel centre of the correct half. Surface / unit-UV parts: UVs finite only."""
+    if obj.name.endswith("_Surface") or unit_uv:
+        bad = [tuple(uv.uv) for uv in obj.data.uv_layers.active.data if not all(map(math.isfinite, uv.uv))]
+        return f"{obj.name}: non-finite UVs {bad[:3]}" if bad else None
     w, h = bc._PALETTE["size"]
     half = bc._PALETTE["emissiveOffset"]
     for uv in obj.data.uv_layers.active.data:
@@ -79,7 +81,7 @@ def main():
         for p, o in zip(parts, objs):
             if not o.data.polygons:
                 errors.append(f"{name}: part {o.name} is empty")
-            err = check_uvs(o, p.emissive_name)
+            err = check_uvs(o, p.emissive_name, p.unit_uv)
             if err:
                 errors.append(f"{name}: {err}")
         if tris > ep.TRI_BUDGET:

@@ -25,7 +25,7 @@ PAL_DIR = os.path.join(REPO, "Starter", "Assets", "Textures", "BilliardRogue", "
 STAGING = os.path.join(REPO, "Tools", "Staging", "Assets")
 SURF = {"Env_FloorTile": "StoneFloor", "Env_FloorTile_Danger": "StoneFloor", "Env_LaunchPad": "StoneFloor",
         "Env_WallSegment": "MossyBrick", "Env_WallCorner": "MossyBrick", "Env_CryptWall": "CryptBrick",
-        "Env_GroundTile": "Grass", "Env_GroundMound": "Grass"}
+        "Env_GroundTile": "Grass", "Env_GroundMound": "Grass", "Env_PavingPatch": "MossyBrick"}
 
 
 def main():
@@ -55,12 +55,17 @@ def main():
         emi = rc._img(os.path.join(PAL_DIR, "Palette_Emission.png"))
         m_pal = rc.toon_material("M_Pal", pal, amb, emi, 3.0)
         coll = rc.import_piece(os.path.join(a.models_dir, name + ".fbx"), name)
+        if name == "Env_LightShaft":   # additive volume: show it over a mid-grey backdrop
+            scene.world.node_tree.nodes["Background"].inputs["Color"].default_value = (0.12, 0.11, 0.16, 1)
+            scene.world.node_tree.nodes["Background"].inputs["Strength"].default_value = 1.0
         for o in coll.objects:
             if o.type != "MESH":
                 continue
             part = rc.part_name(o)
             mat = m_pal
-            if part.endswith("_Surface"):
+            if name == "Env_LightShaft":
+                mat = rc.light_shaft_material("M_Shaft", (1.0, 0.82, 0.5), 2.0)
+            elif part.endswith("_Surface"):
                 sname = SURF.get(name, "StoneFloor")
                 alb, cav, tiling = rc.surface_textures(sname, [a.surfaces_dir, a.preview_surfaces])
                 mat = rc.surface_material("M_" + sname, alb, amb, cav, tiling)

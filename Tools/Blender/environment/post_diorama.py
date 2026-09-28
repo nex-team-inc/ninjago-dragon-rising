@@ -55,7 +55,8 @@ def grade(c, g):
     return np.clip(c, 0, 1)
 
 
-def tilt_shift(c, band=(0.2, 0.84), max_sigma=2.2):
+def tilt_shift(c, band=(0.12, 0.86), max_sigma=2.2):
+    """Horizontal focus band (screen fractions from the top). GDD §4: the whole grid (top wall at ~0.13) stays sharp."""
     h = c.shape[0]
     ys = (np.arange(h) + 0.5) / h
     t = np.where(ys < band[0], (band[0] - ys) / band[0], np.where(ys > band[1], (ys - band[1]) / (1 - band[1]), 0.0))
@@ -123,7 +124,7 @@ def main():
         print("sheet ->", a.sheet)
         return
     with open(a.layouts) as f:
-        g = json.load(f)["acts"][a.act]["lighting"]["grade"]
+        g = next(x for x in json.load(f)["acts"] if str(x["id"]) == a.act)["lighting"]["grade"]
     process(a.npy, g, a.scale, not a.no_tilt).save(a.out, optimize=True)
     print("post ->", a.out)
 

@@ -88,6 +88,45 @@ def _world_box(nt, img, tiling, offset=(0.5, 0.0, 0.4)):
     return acc
 
 
+def _trilight(nt, amb):
+    """Unity 'Gradient' ambient: sky colour for up-facing normals, equator for horizontal, ground for down.
+    amb = {"sky": rgb, "equator": rgb, "ground": rgb, "intensity": k}."""
+    N, L = nt.nodes.new, nt.links.new
+    geo = N("ShaderNodeNewGeometry")
+    sep = N("ShaderNodeSeparateXYZ")
+    L(geo.outputs["Normal"], sep.inputs[0])
+
+    def op(operation, a, b):
+        m = N("ShaderNodeMath")
+        m.operation = operation
+        for sock, arg in zip(m.inputs, (a, b)):
+            if isinstance(arg, float):
+                sock.default_value = arg
+            else:
+                L(arg, sock)
+        return m.outputs[0]
+    up = sep.outputs["Z"]                                   # Blender Z = Unity Y
+    w_sky = op("MAXIMUM", up, 0.0)
+    w_gnd = op("MAXIMUM", op("MULTIPLY", up, -1.0), 0.0)
+    w_eq = op("SUBTRACT", op("SUBTRACT", 1.0, w_sky), w_gnd)
+    k = amb.get("intensity", 1.0)
+    acc = None
+    for key, w in (("sky", w_sky), ("equator", w_eq), ("ground", w_gnd)):
+        sc = N("ShaderNodeVectorMath")
+        sc.operation = "SCALE"
+        sc.inputs[0].default_value = [c * k for c in amb[key]]
+        L(w, sc.inputs["Scale"])
+        if acc is None:
+            acc = sc.outputs[0]
+        else:
+            add = N("ShaderNodeVectorMath")
+            add.operation = "ADD"
+            L(acc, add.inputs[0])
+            L(sc.outputs[0], add.inputs[1])
+            acc = add.outputs[0]
+    return acc
+
+
 def toon_material(name, albedo_img, ambient, emission_img=None, emission_strength=0.0, bands=None,
                   cavity_img=None, world_tiling=None):
     """Emission-only node tree: albedo * (ambient + banded(direct light)) [* cavity] + emission map * strength.
@@ -135,7 +174,10 @@ def toon_material(name, albedo_img, ambient, emission_img=None, emission_strengt
     L(div.outputs[0], lit.inputs["Scale"])
     amb = N("ShaderNodeVectorMath")
     amb.operation = "ADD"
-    amb.inputs[1].default_value = ambient
+    if isinstance(ambient, dict):
+        L(_trilight(nt, ambient), amb.inputs[1])
+    else:
+        amb.inputs[1].default_value = ambient
     L(lit.outputs[0], amb.inputs[0])
     col = N("ShaderNodeVectorMath")
     col.operation = "MULTIPLY"
@@ -316,3 +358,150 @@ def render_to_npy(exr_path, npy_path):
     arr = px.reshape(h, w, 4)[::-1, :, :3]
     np.save(npy_path, arr.astype(np.float32))
     return arr
+
+
+# ---------------------------------------------------------------- effects (preview stand-ins for the Unity shaders)
+U2B = Matrix(((-1, 0, 0), (0, 0, -1), (0, 1, 0)))
+
+
+def unity_matrix(pos, rot3, scale3):
+    """Blender world matrix for a Unity TRS (rot3 = Unity 3x3 rotation, scale3 = Unity local scale)."""
+    m = U2B @ rot3 @ Matrix.Diagonal(scale3) @ U2B.inverted()
+    out = m.to_4x4()
+    out.translation = u2b(*pos)
+    return out
+
+
+def unity_euler_matrix(ex, ey, ez=0.0):
+    """Quaternion.Euler(ex, ey, ez) as a 3x3 (Unity applies z, then x, then y)."""
+    a, b, c = (math.radians(v) for v in (ex, ey, ez))
+    rx = Matrix(((1, 0, 0), (0, math.cos(a), -math.sin(a)), (0, math.sin(a), math.cos(a))))
+    ry = Matrix(((math.cos(b), 0, math.sin(b)), (0, 1, 0), (-math.sin(b), 0, math.cos(b))))
+    rz = Matrix(((math.cos(c), -math.sin(c), 0), (math.sin(c), math.cos(c), 0), (0, 0, 1)))
+    return ry @ rx @ rz
+
+
+def light_shaft_material(name, color, intensity):
+    """Additive god-ray: emission * N.V edge softness * length fade (UV v) * streak noise, no depth write."""
+    mat = bpy.data.materials.new(name)
+    mat.use_nodes = True
+    mat.use_backface_culling = False
+    if hasattr(mat, "surface_render_method"):
+        mat.surface_render_method = "BLENDED"
+    nt = mat.node_tree
+    nt.nodes.clear()
+    N, L = nt.nodes.new, nt.links.new
+
+    def op(operation, a, b=None, c=None):
+        m = N("ShaderNodeMath")
+        m.operation = operation
+        for sock, arg in zip(m.inputs, (a, b, c)):
+            if arg is None:
+                continue
+            if isinstance(arg, float):
+                sock.default_value = arg
+            else:
+                L(arg, sock)
+        return m.outputs[0]
+    out = N("ShaderNodeOutputMaterial")
+    lw = N("ShaderNodeLayerWeight")
+    lw.inputs["Blend"].default_value = 0.5
+    edge = op("POWER", op("SUBTRACT", 1.0, lw.outputs["Facing"]), 2.2)
+    uv = N("ShaderNodeUVMap")
+    sep = N("ShaderNodeSeparateXYZ")
+    L(uv.outputs["UV"], sep.inputs[0])
+    v = sep.outputs["Y"]
+    fade = op("MULTIPLY", op("SMOOTH_MIN", op("DIVIDE", v, 0.38), 1.0, 0.1),
+              op("SMOOTH_MIN", op("DIVIDE", op("SUBTRACT", 1.0, v), 0.14), 1.0, 0.1))
+    cmb = N("ShaderNodeCombineXYZ")
+    L(op("MULTIPLY", sep.outputs["X"], 5.0), cmb.inputs[0])
+    L(op("MULTIPLY", v, 0.6), cmb.inputs[1])
+    noise = N("ShaderNodeTexNoise")
+    noise.inputs["Scale"].default_value = 3.0
+    L(cmb.outputs[0], noise.inputs["Vector"])
+    streak = op("MULTIPLY_ADD", noise.outputs["Fac"], 0.9, 0.55)
+    k = op("MULTIPLY", op("MULTIPLY", edge, fade), streak)
+    emit = N("ShaderNodeEmission")
+    emit.inputs["Color"].default_value = (*color, 1.0)
+    L(op("MULTIPLY", k, float(intensity)), emit.inputs["Strength"])
+    tr = N("ShaderNodeBsdfTransparent")
+    add = N("ShaderNodeAddShader")
+    L(tr.outputs[0], add.inputs[0])
+    L(emit.outputs[0], add.inputs[1])
+    L(add.outputs[0], out.inputs["Surface"])
+    return mat
+
+
+def glow_material(name, strength=1.0, additive=False):
+    """Vertex-colour emission for particle stand-ins (colour attribute 'Col')."""
+    mat = bpy.data.materials.new(name)
+    mat.use_nodes = True
+    mat.use_backface_culling = False
+    nt = mat.node_tree
+    nt.nodes.clear()
+    N, L = nt.nodes.new, nt.links.new
+    out = N("ShaderNodeOutputMaterial")
+    attr = N("ShaderNodeVertexColor")
+    attr.layer_name = "Col"
+    emit = N("ShaderNodeEmission")
+    L(attr.outputs["Color"], emit.inputs["Color"])
+    emit.inputs["Strength"].default_value = strength
+    if additive:
+        if hasattr(mat, "surface_render_method"):
+            mat.surface_render_method = "BLENDED"
+        tr = N("ShaderNodeBsdfTransparent")
+        add = N("ShaderNodeAddShader")
+        L(tr.outputs[0], add.inputs[0])
+        L(emit.outputs[0], add.inputs[1])
+        L(add.outputs[0], out.inputs["Surface"])
+    else:
+        L(emit.outputs[0], out.inputs["Surface"])
+    return mat
+
+
+PARTICLE_SHAPES = {   # (quad aspect, shape) of the preview billboards
+    "Leaf": "diamond", "Mote": "square", "Dust": "square", "Ember": "square", "Star": "plus", "Snow": "square",
+    "Spark": "square", "Smoke": "disc", "Bubble": "square",
+}
+
+
+def particle_billboards(name, emitter, cam_right_u, cam_up_u, seed):
+    """Deterministic snapshot of an ambient emitter: steady-state alive count of camera-facing sprites in its box."""
+    import bmesh
+    import random
+    rng = random.Random(seed)
+    life = sum(emitter["lifetime"]) / 2
+    count = int(min(emitter["maxParticles"], emitter["rate"] * life))
+    cx, cy, cz = emitter["x"], emitter["y"], emitter["z"]
+    sx, sy, sz = emitter["size"]
+    shape = PARTICLE_SHAPES.get(emitter["type"], "square")
+    bm = bmesh.new()
+    col = bm.loops.layers.color.new("Col")
+    R, U = Vector(cam_right_u), Vector(cam_up_u)
+    for _ in range(count):
+        c = Vector((cx + rng.uniform(-sx, sx) / 2, cy + rng.uniform(-sy, sy) / 2, cz + rng.uniform(-sz, sz) / 2))
+        s = rng.uniform(*emitter["startSize"]) / 2
+        rgb = rng.choice(emitter["colors"])
+        if shape == "diamond":
+            rot = rng.uniform(0, math.pi)
+            a, b = R * math.cos(rot) + U * math.sin(rot), -R * math.sin(rot) + U * math.cos(rot)
+            quads = [[c + a * s, c + b * s * 0.55, c - a * s, c - b * s * 0.55]]
+        elif shape == "plus":
+            quads = [[c + R * s + U * s * 0.2, c - R * s + U * s * 0.2, c - R * s - U * s * 0.2, c + R * s - U * s * 0.2],
+                     [c + U * s + R * s * 0.2, c - U * s + R * s * 0.2, c - U * s - R * s * 0.2, c + U * s - R * s * 0.2]]
+        elif shape == "disc":
+            quads = [[c + (R * math.cos(t) + U * math.sin(t) * 0.55) * s for t in
+                      (2 * math.pi * k / 8 for k in range(8))]]
+        else:
+            quads = [[c + R * s + U * s, c - R * s + U * s, c - R * s - U * s, c + R * s - U * s]]
+        for q in quads:
+            f = bm.faces.new([bm.verts.new(u2b(*p)) for p in q])
+            for loop in f.loops:
+                loop[col] = (*rgb, 1.0)
+    me = bpy.data.meshes.new(name)
+    bm.to_mesh(me)
+    bm.free()
+    obj = bpy.data.objects.new(name, me)
+    obj.visible_shadow = False
+    bpy.context.scene.collection.objects.link(obj)
+    return obj

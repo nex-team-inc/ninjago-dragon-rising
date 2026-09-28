@@ -1,7 +1,11 @@
 {
- "version": 1,
+ "version": 2,
  "generator": "Tools/Blender/environment/make_layouts.py (edit there, not here)",
- "coordinates": "Unity world metres. x right, y up, z north/up the arena; rotY degrees about +Y (clockwise from above). Props face +Z; rotY 180 faces the camera. y is the pivot height (ground props sit on groundY -0.2, arena kit on floorY 0).",
+ "coordinates": "TDD \u00a714.1 arena frame, Unity metres: x right, y up, z north/up the arena; origin = arena centre-x on the open bottom edge of the launch zone (sim (3.5, 0)). rotY degrees about +Y (clockwise from above). Props face +Z; rotY 180 faces the camera. y is the pivot height (ground props sit on groundY -0.2, arena kit on floorY 0).",
+ "frame": {
+  "simToFrame": "frame = (simX - 3.5, height, simY)",
+  "arenaLayoutNote": "Presentation/ArenaLayout.cs (Foundation) currently centres the arena on its transform and maps sim y to local -Z (TDD \u00a714.1 says +Z). Until that is aligned, parent the whole dressing under a root at ArenaLayout-local (0, 0, 5.8) rotated rotY 180: that rigid transform lines the arena kit up exactly and mirrors the scenery left/right (harmless). Directions (sun euler Y, LightShaft euler Y, particle velocity) then rotate with the root: add 180 to world yaw values."
+ },
  "models": "Assets/Models/BilliardRogue/Environment/<piece>.fbx",
  "arena": {
   "xMin": -3.5,
@@ -23,67 +27,67 @@
   "target": [
    0.0,
    0.0,
-   5.6
+   5.8
   ],
   "pitchDeg": 58.0,
   "fovDeg": 28.0,
-  "distance": 26.0,
+  "distance": 24.05,
   "aspect": 1.7777777777777777,
-  "note": "preview camera used for the renders; the game camera pose lives in ArenaConfig"
+  "note": "ArenaConfig default pose expressed in this frame; the game camera pose lives in ArenaConfig"
  },
- "pivots": {
-  "Env_FloorTile*": "centre of the top face (top at y 0); tile 1x1x0.2",
-  "Env_LaunchPad": "centre of the top face; 7 x 1.6 x 0.2; place at z 0.8; rail groove at world z 0.55",
-  "Env_GroundTile": "centre of the top face; 4 x 4",
-  "Env_WallSegment": "bottom of the inner face, centred on the 1 m length; inner face along local +Z; 0.4 thick toward -Z; top 0.52; sinks to y -0.3",
-  "Env_WallCorner": "bottom centre of a 0.44 m post (floor level; post sinks to y -0.3)",
-  "Env_WallTorch*/Env_Banner": "wall mounting point; the prop sticks out along local +Z",
-  "default": "bottom centre, facing +Z"
- },
- "pieceLights": {
-  "Env_WallTorch": {
-   "offset": [
-    0.0,
-    0.52,
-    0.26
-   ],
-   "color": [
-    1.0,
-    0.62,
-    0.3
-   ],
-   "intensity": 1.6,
-   "range": 4.5
+ "pivots": [
+  {
+   "piece": "Env_FloorTile*",
+   "pivot": "centre of the top face (top at y 0); tile 1x1x0.2"
   },
-  "Env_WallTorch_Arcane": {
-   "offset": [
-    0.0,
-    0.52,
-    0.26
-   ],
-   "color": [
-    0.35,
-    0.85,
-    1.0
-   ],
-   "intensity": 1.6,
-   "range": 4.5
+  {
+   "piece": "Env_LaunchPad",
+   "pivot": "centre of the top face; 7 x 1.6 x 0.2; place at z 0.8; rail groove at world z 0.55"
   },
-  "Env_StoneLantern": {
-   "offset": [
-    0.0,
-    0.93,
-    0.0
-   ],
-   "color": [
-    1.0,
-    0.72,
-    0.38
-   ],
-   "intensity": 1.4,
-   "range": 4.0
+  {
+   "piece": "Env_GroundTile",
+   "pivot": "centre of the top face; 4 x 4 (surface ground)"
   },
-  "Env_Brazier": {
+  {
+   "piece": "Env_CaveFloorTile",
+   "pivot": "centre of the tile at ground level; 4 x 4 palette ground; flat border"
+  },
+  {
+   "piece": "Env_WallSegment",
+   "pivot": "bottom of the inner face, centred on the 1 m length; inner face along local +Z; 0.4 thick toward -Z; top 0.52; sinks to y -0.3"
+  },
+  {
+   "piece": "Env_WallCorner",
+   "pivot": "bottom centre of a 0.44 m post (floor level; post sinks to y -0.3)"
+  },
+  {
+   "piece": "Env_WallTorch*/Env_Banner",
+   "pivot": "wall mounting point; the prop sticks out along local +Z"
+  },
+  {
+   "piece": "Env_LightShaft",
+   "pivot": "TOP centre of the volume; 1 m long along local -Y, top diameter 1, flares to 1.7"
+  },
+  {
+   "piece": "Env_WaterPool*",
+   "pivot": "bottom centre; water surface 3 cm above the pivot plane"
+  },
+  {
+   "piece": "Env_Stairs",
+   "pivot": "bottom centre of the 3.6 x 2.1 m footprint; risers face local +Z (rotY 180 faces the camera); landing top y 0.42 over local z -1.05..0.45"
+  },
+  {
+   "piece": "Env_PavingPatch/Env_GroundPatch",
+   "pivot": "centre; flat decal 1.5-2.5 cm above the pivot plane"
+  },
+  {
+   "piece": "default",
+   "pivot": "bottom centre, facing +Z"
+  }
+ ],
+ "pieceLights": [
+  {
+   "piece": "Env_Brazier",
    "offset": [
     0.0,
     1.45,
@@ -97,7 +101,8 @@
    "intensity": 2.4,
    "range": 6.5
   },
-  "Env_Candles": {
+  {
+   "piece": "Env_Candles",
    "offset": [
     0.0,
     0.62,
@@ -111,7 +116,8 @@
    "intensity": 0.9,
    "range": 2.6
   },
-  "Env_Crystal_A": {
+  {
+   "piece": "Env_Crystal_A",
    "offset": [
     0.0,
     1.2,
@@ -125,7 +131,8 @@
    "intensity": 2.2,
    "range": 6.5
   },
-  "Env_Crystal_B": {
+  {
+   "piece": "Env_Crystal_B",
    "offset": [
     0.0,
     0.8,
@@ -139,7 +146,8 @@
    "intensity": 1.8,
    "range": 5.0
   },
-  "Env_Crystal_C": {
+  {
+   "piece": "Env_Crystal_C",
    "offset": [
     0.0,
     0.4,
@@ -153,7 +161,8 @@
    "intensity": 1.0,
    "range": 3.0
   },
-  "Env_GlowMushroom": {
+  {
+   "piece": "Env_GlowMushroom",
    "offset": [
     0.0,
     0.62,
@@ -167,7 +176,8 @@
    "intensity": 1.1,
    "range": 3.2
   },
-  "Env_RuneStone": {
+  {
+   "piece": "Env_RuneStone",
    "offset": [
     0.0,
     0.95,
@@ -180,13 +190,70 @@
    ],
    "intensity": 1.0,
    "range": 3.0
+  },
+  {
+   "piece": "Env_StoneLantern",
+   "offset": [
+    0.0,
+    0.93,
+    0.0
+   ],
+   "color": [
+    1.0,
+    0.72,
+    0.38
+   ],
+   "intensity": 1.4,
+   "range": 4.0
+  },
+  {
+   "piece": "Env_WallTorch",
+   "offset": [
+    0.0,
+    0.52,
+    0.26
+   ],
+   "color": [
+    1.0,
+    0.62,
+    0.3
+   ],
+   "intensity": 1.6,
+   "range": 4.5
+  },
+  {
+   "piece": "Env_WallTorch_Arcane",
+   "offset": [
+    0.0,
+    0.52,
+    0.26
+   ],
+   "color": [
+    0.35,
+    0.85,
+    1.0
+   ],
+   "intensity": 1.6,
+   "range": 4.5
   }
- },
+ ],
+ "effects": [
+  {
+   "piece": "LightShaft",
+   "doc": "Fake god-ray volume. Instance Env_LightShaft.fbx (or any cone) at (x, y, z) = TOP of the shaft with Quaternion.Euler(euler) (turns local -Y onto `direction`) and localScale = size [top width, length, top width]; material M_LightShaft (BilliardRogue/LightShaft, additive, Cull Off, ZWrite Off, no shadows) with _Color = color (a relative tint; white in Acts 1-2, violet / cyan per shaft in Act 3) * lighting.preset.godRayColor, _Intensity = intensity * preset.godRayIntensity. UV0.v = 1 at the top -> 0 at the bottom: fade the bottom ~35% and the top ~10%; soften edges with N.V. The volume is sunk below the ground so the fade hides the ground intersection."
+  },
+  {
+   "piece": "AmbientParticles",
+   "doc": "Box-shaped looping emitter (ParticleSystem, world space, prewarmed): centre (x, y, z), size = box extents, maxParticles, rate (per second), lifetime [min, max] s, velocity (start velocity, world frame) + noise strength, startSize [min, max] m, start colour random between colorA and colorB (multiply with preset.particleTint), shader = particle material family, sprite = flipbook sheet (12 fps). Built by the VFX module into ActDefinition.ambientParticlesPrefab. Keep total alive particles per act <= 200."
+  }
+ ],
  "unityNotes": [
   "Forward renderer, 4 per-object lights: each act flags at most 8 props with light=true (pointLights); every other emissive part just glows through the Palette_Emission map + bloom.",
-  "Parts named *_Surface take M_Surface_<name> from the act's 'surfaces' map (key '<piece>/<part>'); all other parts take M_Palette.",
+  "Parts named *_Surface take M_Surface_<surface> from the act's 'surfaces' list (piece + part); every other part takes M_Palette (Env_LightShaft/Shaft takes M_LightShaft). The ground tiles take M_Surface_<ground.surface> (ground.surface empty = palette ground piece, e.g. Env_CaveFloorTile).",
+  "*_Surface UVs are local box projections in metres (1 UV = 1 m) that start at each 1 m cell edge. Surfaces.json tiles are 2 m (_Tiling 0.5): ToonLit should sample *_Surface parts with world-space box mapping (what the previews do) so neighbouring pieces continue the pattern; with mesh UVs every 1 m cell repeats the same half tile.",
   "Env_FloorTile_Danger/DangerInlay_Emissive is the red danger-row inlay (emissive palette red): give it M_DangerTile to pulse it when the danger row is occupied.",
-  "Env_Tree_*/Canopy, Env_Banner/Cloth, */Flame and Env_IronGate/Gate have their own pivots for DOTween sway / flicker / raise."
+  "Env_Tree_*/Canopy, Env_Banner/Cloth, */Flame, Env_IronGate/Gate and Env_WaterPool/Water have their own pivots for DOTween sway / flicker / raise / bob.",
+  "lighting.preset uses ActLightingPreset field names; sunEuler = lighting.sun.euler (x = elevation, y = yaw in this frame). lighting.grade is the preview grade, a starting point for the act Volume."
  ],
  "kit": [
   {
@@ -1143,528 +1210,711 @@
    "tag": "post bottom"
   }
  ],
- "acts": {
-  "1": {
+ "acts": [
+  {
+   "id": 1,
    "name": "Mossy Ruins",
-   "mood": "golden hour: low warm sun from the front-left, long shadows, cool violet shade",
-   "surfaces": {
-    "Env_FloorTile/Top_Surface": "StoneFloor",
-    "Env_FloorTile_Danger/Top_Surface": "StoneFloor",
-    "Env_LaunchPad/Top_Surface": "StoneFloor",
-    "Env_WallSegment/Side_Surface": "MossyBrick",
-    "Env_WallSegment/Top_Surface": "StoneFloor",
-    "Env_WallCorner/Side_Surface": "MossyBrick",
-    "Env_GroundMound/Top_Surface": "Grass",
-    "Env_GroundPatch/Top_Surface": "Dirt"
-   },
+   "surfaces": [
+    {
+     "piece": "Env_FloorTile",
+     "part": "Top_Surface",
+     "surface": "StoneFloor"
+    },
+    {
+     "piece": "Env_FloorTile_Danger",
+     "part": "Top_Surface",
+     "surface": "StoneFloor"
+    },
+    {
+     "piece": "Env_GroundMound",
+     "part": "Top_Surface",
+     "surface": "Grass"
+    },
+    {
+     "piece": "Env_GroundPatch",
+     "part": "Top_Surface",
+     "surface": "Dirt"
+    },
+    {
+     "piece": "Env_LaunchPad",
+     "part": "Top_Surface",
+     "surface": "StoneFloor"
+    },
+    {
+     "piece": "Env_PavingPatch",
+     "part": "Top_Surface",
+     "surface": "MossyBrick"
+    },
+    {
+     "piece": "Env_WallCorner",
+     "part": "Side_Surface",
+     "surface": "MossyBrick"
+    },
+    {
+     "piece": "Env_WallSegment",
+     "part": "Side_Surface",
+     "surface": "MossyBrick"
+    },
+    {
+     "piece": "Env_WallSegment",
+     "part": "Top_Surface",
+     "surface": "StoneFloor"
+    }
+   ],
    "ground": {
     "piece": "Env_GroundTile",
     "y": -0.2,
     "tileSize": 4.0,
     "surface": "Grass",
     "tiles": [
-     [
-      -22,
-      -10
-     ],
-     [
-      -22,
-      -6
-     ],
-     [
-      -22,
-      -2
-     ],
-     [
-      -22,
-      2
-     ],
-     [
-      -22,
-      6
-     ],
-     [
-      -22,
-      10
-     ],
-     [
-      -22,
-      14
-     ],
-     [
-      -22,
-      18
-     ],
-     [
-      -22,
-      22
-     ],
-     [
-      -22,
-      26
-     ],
-     [
-      -18,
-      -10
-     ],
-     [
-      -18,
-      -6
-     ],
-     [
-      -18,
-      -2
-     ],
-     [
-      -18,
-      2
-     ],
-     [
-      -18,
-      6
-     ],
-     [
-      -18,
-      10
-     ],
-     [
-      -18,
-      14
-     ],
-     [
-      -18,
-      18
-     ],
-     [
-      -18,
-      22
-     ],
-     [
-      -18,
-      26
-     ],
-     [
-      -14,
-      -10
-     ],
-     [
-      -14,
-      -6
-     ],
-     [
-      -14,
-      -2
-     ],
-     [
-      -14,
-      2
-     ],
-     [
-      -14,
-      6
-     ],
-     [
-      -14,
-      10
-     ],
-     [
-      -14,
-      14
-     ],
-     [
-      -14,
-      18
-     ],
-     [
-      -14,
-      22
-     ],
-     [
-      -14,
-      26
-     ],
-     [
-      -10,
-      -10
-     ],
-     [
-      -10,
-      -6
-     ],
-     [
-      -10,
-      -2
-     ],
-     [
-      -10,
-      2
-     ],
-     [
-      -10,
-      6
-     ],
-     [
-      -10,
-      10
-     ],
-     [
-      -10,
-      14
-     ],
-     [
-      -10,
-      18
-     ],
-     [
-      -10,
-      22
-     ],
-     [
-      -10,
-      26
-     ],
-     [
-      -6,
-      -10
-     ],
-     [
-      -6,
-      -6
-     ],
-     [
-      -6,
-      -2
-     ],
-     [
-      -6,
-      2
-     ],
-     [
-      -6,
-      6
-     ],
-     [
-      -6,
-      10
-     ],
-     [
-      -6,
-      14
-     ],
-     [
-      -6,
-      18
-     ],
-     [
-      -6,
-      22
-     ],
-     [
-      -6,
-      26
-     ],
-     [
-      -2,
-      -10
-     ],
-     [
-      -2,
-      -6
-     ],
-     [
-      -2,
-      -2
-     ],
-     [
-      -2,
-      2
-     ],
-     [
-      -2,
-      6
-     ],
-     [
-      -2,
-      10
-     ],
-     [
-      -2,
-      14
-     ],
-     [
-      -2,
-      18
-     ],
-     [
-      -2,
-      22
-     ],
-     [
-      -2,
-      26
-     ],
-     [
-      2,
-      -10
-     ],
-     [
-      2,
-      -6
-     ],
-     [
-      2,
-      -2
-     ],
-     [
-      2,
-      2
-     ],
-     [
-      2,
-      6
-     ],
-     [
-      2,
-      10
-     ],
-     [
-      2,
-      14
-     ],
-     [
-      2,
-      18
-     ],
-     [
-      2,
-      22
-     ],
-     [
-      2,
-      26
-     ],
-     [
-      6,
-      -10
-     ],
-     [
-      6,
-      -6
-     ],
-     [
-      6,
-      -2
-     ],
-     [
-      6,
-      2
-     ],
-     [
-      6,
-      6
-     ],
-     [
-      6,
-      10
-     ],
-     [
-      6,
-      14
-     ],
-     [
-      6,
-      18
-     ],
-     [
-      6,
-      22
-     ],
-     [
-      6,
-      26
-     ],
-     [
-      10,
-      -10
-     ],
-     [
-      10,
-      -6
-     ],
-     [
-      10,
-      -2
-     ],
-     [
-      10,
-      2
-     ],
-     [
-      10,
-      6
-     ],
-     [
-      10,
-      10
-     ],
-     [
-      10,
-      14
-     ],
-     [
-      10,
-      18
-     ],
-     [
-      10,
-      22
-     ],
-     [
-      10,
-      26
-     ],
-     [
-      14,
-      -10
-     ],
-     [
-      14,
-      -6
-     ],
-     [
-      14,
-      -2
-     ],
-     [
-      14,
-      2
-     ],
-     [
-      14,
-      6
-     ],
-     [
-      14,
-      10
-     ],
-     [
-      14,
-      14
-     ],
-     [
-      14,
-      18
-     ],
-     [
-      14,
-      22
-     ],
-     [
-      14,
-      26
-     ],
-     [
-      18,
-      -10
-     ],
-     [
-      18,
-      -6
-     ],
-     [
-      18,
-      -2
-     ],
-     [
-      18,
-      2
-     ],
-     [
-      18,
-      6
-     ],
-     [
-      18,
-      10
-     ],
-     [
-      18,
-      14
-     ],
-     [
-      18,
-      18
-     ],
-     [
-      18,
-      22
-     ],
-     [
-      18,
-      26
-     ],
-     [
-      22,
-      -10
-     ],
-     [
-      22,
-      -6
-     ],
-     [
-      22,
-      -2
-     ],
-     [
-      22,
-      2
-     ],
-     [
-      22,
-      6
-     ],
-     [
-      22,
-      10
-     ],
-     [
-      22,
-      14
-     ],
-     [
-      22,
-      18
-     ],
-     [
-      22,
-      22
-     ],
-     [
-      22,
-      26
-     ]
+     {
+      "x": -22,
+      "z": -10,
+      "rotY": 0
+     },
+     {
+      "x": -22,
+      "z": -6,
+      "rotY": 0
+     },
+     {
+      "x": -22,
+      "z": -2,
+      "rotY": 0
+     },
+     {
+      "x": -22,
+      "z": 2,
+      "rotY": 0
+     },
+     {
+      "x": -22,
+      "z": 6,
+      "rotY": 0
+     },
+     {
+      "x": -22,
+      "z": 10,
+      "rotY": 0
+     },
+     {
+      "x": -22,
+      "z": 14,
+      "rotY": 0
+     },
+     {
+      "x": -22,
+      "z": 18,
+      "rotY": 0
+     },
+     {
+      "x": -22,
+      "z": 22,
+      "rotY": 0
+     },
+     {
+      "x": -22,
+      "z": 26,
+      "rotY": 0
+     },
+     {
+      "x": -18,
+      "z": -10,
+      "rotY": 0
+     },
+     {
+      "x": -18,
+      "z": -6,
+      "rotY": 0
+     },
+     {
+      "x": -18,
+      "z": -2,
+      "rotY": 0
+     },
+     {
+      "x": -18,
+      "z": 2,
+      "rotY": 0
+     },
+     {
+      "x": -18,
+      "z": 6,
+      "rotY": 0
+     },
+     {
+      "x": -18,
+      "z": 10,
+      "rotY": 0
+     },
+     {
+      "x": -18,
+      "z": 14,
+      "rotY": 0
+     },
+     {
+      "x": -18,
+      "z": 18,
+      "rotY": 0
+     },
+     {
+      "x": -18,
+      "z": 22,
+      "rotY": 0
+     },
+     {
+      "x": -18,
+      "z": 26,
+      "rotY": 0
+     },
+     {
+      "x": -14,
+      "z": -10,
+      "rotY": 0
+     },
+     {
+      "x": -14,
+      "z": -6,
+      "rotY": 0
+     },
+     {
+      "x": -14,
+      "z": -2,
+      "rotY": 0
+     },
+     {
+      "x": -14,
+      "z": 2,
+      "rotY": 0
+     },
+     {
+      "x": -14,
+      "z": 6,
+      "rotY": 0
+     },
+     {
+      "x": -14,
+      "z": 10,
+      "rotY": 0
+     },
+     {
+      "x": -14,
+      "z": 14,
+      "rotY": 0
+     },
+     {
+      "x": -14,
+      "z": 18,
+      "rotY": 0
+     },
+     {
+      "x": -14,
+      "z": 22,
+      "rotY": 0
+     },
+     {
+      "x": -14,
+      "z": 26,
+      "rotY": 0
+     },
+     {
+      "x": -10,
+      "z": -10,
+      "rotY": 0
+     },
+     {
+      "x": -10,
+      "z": -6,
+      "rotY": 0
+     },
+     {
+      "x": -10,
+      "z": -2,
+      "rotY": 0
+     },
+     {
+      "x": -10,
+      "z": 2,
+      "rotY": 0
+     },
+     {
+      "x": -10,
+      "z": 6,
+      "rotY": 0
+     },
+     {
+      "x": -10,
+      "z": 10,
+      "rotY": 0
+     },
+     {
+      "x": -10,
+      "z": 14,
+      "rotY": 0
+     },
+     {
+      "x": -10,
+      "z": 18,
+      "rotY": 0
+     },
+     {
+      "x": -10,
+      "z": 22,
+      "rotY": 0
+     },
+     {
+      "x": -10,
+      "z": 26,
+      "rotY": 0
+     },
+     {
+      "x": -6,
+      "z": -10,
+      "rotY": 0
+     },
+     {
+      "x": -6,
+      "z": -6,
+      "rotY": 0
+     },
+     {
+      "x": -6,
+      "z": -2,
+      "rotY": 0
+     },
+     {
+      "x": -6,
+      "z": 2,
+      "rotY": 0
+     },
+     {
+      "x": -6,
+      "z": 6,
+      "rotY": 0
+     },
+     {
+      "x": -6,
+      "z": 10,
+      "rotY": 0
+     },
+     {
+      "x": -6,
+      "z": 14,
+      "rotY": 0
+     },
+     {
+      "x": -6,
+      "z": 18,
+      "rotY": 0
+     },
+     {
+      "x": -6,
+      "z": 22,
+      "rotY": 0
+     },
+     {
+      "x": -6,
+      "z": 26,
+      "rotY": 0
+     },
+     {
+      "x": -2,
+      "z": -10,
+      "rotY": 0
+     },
+     {
+      "x": -2,
+      "z": -6,
+      "rotY": 0
+     },
+     {
+      "x": -2,
+      "z": -2,
+      "rotY": 0
+     },
+     {
+      "x": -2,
+      "z": 2,
+      "rotY": 0
+     },
+     {
+      "x": -2,
+      "z": 6,
+      "rotY": 0
+     },
+     {
+      "x": -2,
+      "z": 10,
+      "rotY": 0
+     },
+     {
+      "x": -2,
+      "z": 14,
+      "rotY": 0
+     },
+     {
+      "x": -2,
+      "z": 18,
+      "rotY": 0
+     },
+     {
+      "x": -2,
+      "z": 22,
+      "rotY": 0
+     },
+     {
+      "x": -2,
+      "z": 26,
+      "rotY": 0
+     },
+     {
+      "x": 2,
+      "z": -10,
+      "rotY": 0
+     },
+     {
+      "x": 2,
+      "z": -6,
+      "rotY": 0
+     },
+     {
+      "x": 2,
+      "z": -2,
+      "rotY": 0
+     },
+     {
+      "x": 2,
+      "z": 2,
+      "rotY": 0
+     },
+     {
+      "x": 2,
+      "z": 6,
+      "rotY": 0
+     },
+     {
+      "x": 2,
+      "z": 10,
+      "rotY": 0
+     },
+     {
+      "x": 2,
+      "z": 14,
+      "rotY": 0
+     },
+     {
+      "x": 2,
+      "z": 18,
+      "rotY": 0
+     },
+     {
+      "x": 2,
+      "z": 22,
+      "rotY": 0
+     },
+     {
+      "x": 2,
+      "z": 26,
+      "rotY": 0
+     },
+     {
+      "x": 6,
+      "z": -10,
+      "rotY": 0
+     },
+     {
+      "x": 6,
+      "z": -6,
+      "rotY": 0
+     },
+     {
+      "x": 6,
+      "z": -2,
+      "rotY": 0
+     },
+     {
+      "x": 6,
+      "z": 2,
+      "rotY": 0
+     },
+     {
+      "x": 6,
+      "z": 6,
+      "rotY": 0
+     },
+     {
+      "x": 6,
+      "z": 10,
+      "rotY": 0
+     },
+     {
+      "x": 6,
+      "z": 14,
+      "rotY": 0
+     },
+     {
+      "x": 6,
+      "z": 18,
+      "rotY": 0
+     },
+     {
+      "x": 6,
+      "z": 22,
+      "rotY": 0
+     },
+     {
+      "x": 6,
+      "z": 26,
+      "rotY": 0
+     },
+     {
+      "x": 10,
+      "z": -10,
+      "rotY": 0
+     },
+     {
+      "x": 10,
+      "z": -6,
+      "rotY": 0
+     },
+     {
+      "x": 10,
+      "z": -2,
+      "rotY": 0
+     },
+     {
+      "x": 10,
+      "z": 2,
+      "rotY": 0
+     },
+     {
+      "x": 10,
+      "z": 6,
+      "rotY": 0
+     },
+     {
+      "x": 10,
+      "z": 10,
+      "rotY": 0
+     },
+     {
+      "x": 10,
+      "z": 14,
+      "rotY": 0
+     },
+     {
+      "x": 10,
+      "z": 18,
+      "rotY": 0
+     },
+     {
+      "x": 10,
+      "z": 22,
+      "rotY": 0
+     },
+     {
+      "x": 10,
+      "z": 26,
+      "rotY": 0
+     },
+     {
+      "x": 14,
+      "z": -10,
+      "rotY": 0
+     },
+     {
+      "x": 14,
+      "z": -6,
+      "rotY": 0
+     },
+     {
+      "x": 14,
+      "z": -2,
+      "rotY": 0
+     },
+     {
+      "x": 14,
+      "z": 2,
+      "rotY": 0
+     },
+     {
+      "x": 14,
+      "z": 6,
+      "rotY": 0
+     },
+     {
+      "x": 14,
+      "z": 10,
+      "rotY": 0
+     },
+     {
+      "x": 14,
+      "z": 14,
+      "rotY": 0
+     },
+     {
+      "x": 14,
+      "z": 18,
+      "rotY": 0
+     },
+     {
+      "x": 14,
+      "z": 22,
+      "rotY": 0
+     },
+     {
+      "x": 14,
+      "z": 26,
+      "rotY": 0
+     },
+     {
+      "x": 18,
+      "z": -10,
+      "rotY": 0
+     },
+     {
+      "x": 18,
+      "z": -6,
+      "rotY": 0
+     },
+     {
+      "x": 18,
+      "z": -2,
+      "rotY": 0
+     },
+     {
+      "x": 18,
+      "z": 2,
+      "rotY": 0
+     },
+     {
+      "x": 18,
+      "z": 6,
+      "rotY": 0
+     },
+     {
+      "x": 18,
+      "z": 10,
+      "rotY": 0
+     },
+     {
+      "x": 18,
+      "z": 14,
+      "rotY": 0
+     },
+     {
+      "x": 18,
+      "z": 18,
+      "rotY": 0
+     },
+     {
+      "x": 18,
+      "z": 22,
+      "rotY": 0
+     },
+     {
+      "x": 18,
+      "z": 26,
+      "rotY": 0
+     },
+     {
+      "x": 22,
+      "z": -10,
+      "rotY": 0
+     },
+     {
+      "x": 22,
+      "z": -6,
+      "rotY": 0
+     },
+     {
+      "x": 22,
+      "z": -2,
+      "rotY": 0
+     },
+     {
+      "x": 22,
+      "z": 2,
+      "rotY": 0
+     },
+     {
+      "x": 22,
+      "z": 6,
+      "rotY": 0
+     },
+     {
+      "x": 22,
+      "z": 10,
+      "rotY": 0
+     },
+     {
+      "x": 22,
+      "z": 14,
+      "rotY": 0
+     },
+     {
+      "x": 22,
+      "z": 18,
+      "rotY": 0
+     },
+     {
+      "x": 22,
+      "z": 22,
+      "rotY": 0
+     },
+     {
+      "x": 22,
+      "z": 26,
+      "rotY": 0
+     }
     ]
    },
    "lighting": {
+    "mood": "golden hour: low warm sun from the left through the canopy, long violet shade, god rays + pollen + falling leaves",
     "sun": {
      "direction": [
-      0.6,
-      -0.55,
-      0.58
+      0.649,
+      -0.754,
+      -0.105
+     ],
+     "euler": [
+      48.9,
+      99.2,
+      0.0
      ],
      "color": [
       1.0,
-      0.74,
-      0.46
+      0.78,
+      0.5
      ],
      "intensity": 1.35
     },
-    "ambient": [
-     0.36,
-     0.34,
-     0.6
-    ],
-    "ambientIntensity": 0.5,
+    "ambient": {
+     "mode": "Trilight",
+     "sky": [
+      0.5,
+      0.52,
+      0.78
+     ],
+     "equator": [
+      0.42,
+      0.36,
+      0.5
+     ],
+     "ground": [
+      0.22,
+      0.2,
+      0.24
+     ]
+    },
+    "fog": {
+     "color": [
+      0.95,
+      0.78,
+      0.55
+     ],
+     "density": 0.008
+    },
     "grade": {
      "shadows": [
       0.42,
@@ -1678,7 +1928,62 @@
      ],
      "saturation": 1.08,
      "contrast": 1.08,
-     "vignette": 0.3
+     "vignette": 0.32
+    },
+    "preset": {
+     "sunColor": [
+      1.0,
+      0.78,
+      0.5
+     ],
+     "sunIntensity": 1.35,
+     "sunEuler": [
+      48.9,
+      99.2,
+      0.0
+     ],
+     "ambientSky": [
+      0.5,
+      0.52,
+      0.78
+     ],
+     "ambientEquator": [
+      0.42,
+      0.36,
+      0.5
+     ],
+     "ambientGround": [
+      0.22,
+      0.2,
+      0.24
+     ],
+     "fogColor": [
+      0.95,
+      0.78,
+      0.55
+     ],
+     "fogDensity": 0.008,
+     "rimColor": [
+      1.0,
+      0.85,
+      0.6
+     ],
+     "additionalLightTint": [
+      1.0,
+      0.82,
+      0.55
+     ],
+     "godRayColor": [
+      1.0,
+      0.8,
+      0.5
+     ],
+     "godRayIntensity": 1.0,
+     "particleTint": [
+      1.0,
+      0.9,
+      0.75
+     ]
     }
    },
    "props": [
@@ -1716,498 +2021,562 @@
     },
     {
      "piece": "Env_GroundPatch",
+     "x": -5.6,
+     "y": -0.2,
+     "z": -0.6,
+     "rotY": 0.0,
+     "scale": 0.594
+    },
+    {
+     "piece": "Env_GroundPatch",
+     "x": -5.75,
+     "y": -0.2,
+     "z": 0.4,
+     "rotY": 47.0,
+     "scale": 0.66
+    },
+    {
+     "piece": "Env_GroundPatch",
+     "x": -5.9,
+     "y": -0.2,
+     "z": 1.4,
+     "rotY": 94.0,
+     "scale": 0.726
+    },
+    {
+     "piece": "Env_GroundPatch",
      "x": -6.1,
      "y": -0.2,
-     "z": -0.7,
-     "rotY": 0.0,
-     "scale": 0.558
+     "z": 2.35,
+     "rotY": 141.0,
+     "scale": 0.594
+    },
+    {
+     "piece": "Env_GroundPatch",
+     "x": -6.3,
+     "y": -0.2,
+     "z": 3.3,
+     "rotY": 188.0,
+     "scale": 0.66
     },
     {
      "piece": "Env_GroundPatch",
      "x": -6.6,
      "y": -0.2,
-     "z": 1.1,
-     "rotY": 47.0,
-     "scale": 0.62
+     "z": 4.25,
+     "rotY": 235.0,
+     "scale": 0.726
     },
     {
      "piece": "Env_GroundPatch",
-     "x": -7.1,
+     "x": -6.9,
      "y": -0.2,
-     "z": 2.9,
-     "rotY": 94.0,
-     "scale": 0.682
+     "z": 5.2,
+     "rotY": 282.0,
+     "scale": 0.594
     },
     {
      "piece": "Env_GroundPatch",
-     "x": -7.2,
+     "x": -7.4,
      "y": -0.2,
-     "z": 4.8,
-     "rotY": 141.0,
-     "scale": 0.558
+     "z": 6.9,
+     "rotY": 329.0,
+     "scale": 0.66
     },
     {
      "piece": "Env_GroundPatch",
-     "x": -7.3,
+     "x": -7.5,
      "y": -0.2,
-     "z": 6.6,
-     "rotY": 188.0,
-     "scale": 0.62
+     "z": 8.3,
+     "rotY": 16.0,
+     "scale": 0.726
     },
     {
      "piece": "Env_GroundPatch",
-     "x": -7.3,
+     "x": -7.6,
      "y": -0.2,
-     "z": 8.2,
+     "z": 9.1,
      "rotY": 20,
-     "scale": 1.15
+     "scale": 1.2
     },
     {
      "piece": "Env_Tree_A",
-     "x": -11.1,
+     "x": -11.4,
      "y": -0.2,
-     "z": 10.4,
+     "z": 12.6,
      "rotY": 30,
+     "scale": 1.3
+    },
+    {
+     "piece": "Env_Tree_B",
+     "x": -9.3,
+     "y": -0.2,
+     "z": 14.2,
+     "rotY": 0,
+     "scale": 1.1
+    },
+    {
+     "piece": "Env_Tree_A",
+     "x": -12.4,
+     "y": -0.2,
+     "z": 8.4,
+     "rotY": 200,
      "scale": 1.25
     },
     {
      "piece": "Env_Tree_B",
-     "x": -8.2,
+     "x": -10.3,
      "y": -0.2,
-     "z": 12.9,
-     "rotY": 0,
-     "scale": 1.05
+     "z": 5.9,
+     "rotY": 60,
+     "scale": 1.15
     },
     {
      "piece": "Env_Tree_A",
-     "x": -11.5,
+     "x": -12.1,
      "y": -0.2,
-     "z": 4.2,
-     "rotY": 200,
-     "scale": 1.1
+     "z": 3.0,
+     "rotY": 120,
+     "scale": 1.2
     },
     {
      "piece": "Env_Tree_B",
-     "x": -12.6,
+     "x": -9.9,
      "y": -0.2,
-     "z": 7.4,
-     "rotY": 60,
+     "z": 0.3,
+     "rotY": 20,
      "scale": 1.0
     },
     {
      "piece": "Env_Tree_A",
-     "x": -9.0,
+     "x": -8.0,
      "y": -0.2,
-     "z": -1.4,
-     "rotY": 120,
+     "z": -1.9,
+     "rotY": 80,
      "scale": 0.95
     },
     {
-     "piece": "Env_StoneLantern",
-     "x": -6.2,
+     "piece": "Env_Tree_B",
+     "x": -13.2,
      "y": -0.2,
-     "z": 8.1,
+     "z": 11.0,
+     "rotY": 150,
+     "scale": 1.2
+    },
+    {
+     "piece": "Env_StoneLantern",
+     "x": -6.3,
+     "y": -0.2,
+     "z": 9.3,
      "rotY": 180,
      "scale": 1.0,
      "light": true
     },
     {
      "piece": "Env_StoneLantern",
-     "x": -8.5,
+     "x": -8.8,
      "y": -0.2,
-     "z": 8.3,
+     "z": 9.5,
      "rotY": 180,
      "scale": 1.0,
      "light": true
     },
     {
      "piece": "Env_RuinColumn_Broken",
-     "x": -7.4,
+     "x": -7.6,
      "y": -0.2,
-     "z": 9.7,
+     "z": 11.1,
      "rotY": 210,
-     "scale": 0.9
+     "scale": 0.85
     },
     {
      "piece": "Env_MossyRock_A",
-     "x": -9.3,
+     "x": -9.6,
      "y": -0.2,
-     "z": 2.2,
+     "z": 5.2,
      "rotY": 60,
      "scale": 1.0
     },
     {
      "piece": "Env_MossyRock_B",
-     "x": -5.4,
+     "x": -5.2,
      "y": -0.2,
-     "z": 3.6,
+     "z": 4.3,
      "rotY": 110,
-     "scale": 0.8
+     "scale": 0.75
     },
     {
      "piece": "Env_MossyRock_B",
-     "x": -10.1,
+     "x": -8.9,
      "y": -0.2,
-     "z": 6.1,
+     "z": 7.0,
      "rotY": 20,
+     "scale": 0.9
+    },
+    {
+     "piece": "Env_Stump",
+     "x": -6.0,
+     "y": -0.2,
+     "z": 6.2,
+     "rotY": 30,
      "scale": 1.0
     },
     {
-     "piece": "Env_Bush",
-     "x": -5.0,
+     "piece": "Env_Log",
+     "x": -8.2,
      "y": -0.2,
-     "z": 10.9,
-     "rotY": 20,
-     "scale": 0.9
+     "z": 0.9,
+     "rotY": 70,
+     "scale": 1.0
     },
     {
      "piece": "Env_Bush",
      "x": -4.95,
      "y": -0.2,
-     "z": 6.1,
-     "rotY": 140,
-     "scale": 0.75
-    },
-    {
-     "piece": "Env_Bush",
-     "x": -5.1,
-     "y": -0.2,
-     "z": 1.1,
-     "rotY": 80,
+     "z": 11.4,
+     "rotY": 20,
      "scale": 0.85
     },
     {
      "piece": "Env_Bush",
-     "x": -8.6,
+     "x": -5.0,
      "y": -0.2,
-     "z": 5.3,
+     "z": 7.4,
+     "rotY": 140,
+     "scale": 0.7
+    },
+    {
+     "piece": "Env_Bush",
+     "x": -5.05,
+     "y": -0.2,
+     "z": 1.9,
+     "rotY": 80,
+     "scale": 0.8
+    },
+    {
+     "piece": "Env_Bush",
+     "x": -9.4,
+     "y": -0.2,
+     "z": 10.2,
      "rotY": 200,
      "scale": 0.9
     },
     {
      "piece": "Env_Bush",
-     "x": -6.9,
+     "x": -6.8,
      "y": -0.2,
-     "z": -1.4,
+     "z": -1.2,
      "rotY": 10,
      "scale": 1.0
     },
     {
-     "piece": "Env_GroundMound",
+     "piece": "Env_Bush",
      "x": -10.4,
      "y": -0.2,
-     "z": 6.8,
+     "z": 7.6,
+     "rotY": 90,
+     "scale": 0.95
+    },
+    {
+     "piece": "Env_WaterPool",
+     "x": -8.5,
+     "y": -0.2,
+     "z": 3.0,
+     "rotY": 15,
+     "scale": 0.85
+    },
+    {
+     "piece": "Env_GroundMound",
+     "x": -11.0,
+     "y": -0.2,
+     "z": 7.0,
      "rotY": 20,
      "scale": 1.3
     },
     {
      "piece": "Env_GroundMound",
-     "x": -10.0,
+     "x": -10.8,
      "y": -0.2,
-     "z": 0.6,
+     "z": 1.6,
      "rotY": 330,
      "scale": 1.0
     },
     {
-     "piece": "Env_FloorTile",
-     "x": 5.063,
-     "y": -0.186,
-     "z": 1.656,
-     "rotY": 5.9,
-     "scale": 1.0
-    },
-    {
-     "piece": "Env_FloorTile",
-     "x": 5.067,
-     "y": -0.194,
-     "z": 3.615,
-     "rotY": 2.7,
-     "scale": 1.0
-    },
-    {
-     "piece": "Env_FloorTile",
-     "x": 5.063,
-     "y": -0.189,
-     "z": 5.631,
-     "rotY": 3.8,
-     "scale": 1.0
-    },
-    {
-     "piece": "Env_FloorTile",
-     "x": 5.079,
-     "y": -0.194,
-     "z": 6.716,
-     "rotY": 358.7,
-     "scale": 1.0
-    },
-    {
-     "piece": "Env_FloorTile",
-     "x": 5.077,
-     "y": -0.18,
-     "z": 7.673,
-     "rotY": 4.5,
-     "scale": 1.0
-    },
-    {
-     "piece": "Env_FloorTile",
-     "x": 5.086,
-     "y": -0.18,
-     "z": 10.771,
-     "rotY": 358.7,
-     "scale": 1.0
-    },
-    {
-     "piece": "Env_FloorTile",
-     "x": 6.116,
-     "y": -0.199,
-     "z": 1.604,
-     "rotY": 357.8,
-     "scale": 1.0
-    },
-    {
-     "piece": "Env_FloorTile",
-     "x": 6.128,
-     "y": -0.195,
-     "z": 3.598,
-     "rotY": 353.5,
-     "scale": 1.0
-    },
-    {
-     "piece": "Env_FloorTile",
-     "x": 6.078,
-     "y": -0.189,
-     "z": 4.682,
-     "rotY": 3.2,
-     "scale": 1.0
-    },
-    {
-     "piece": "Env_FloorTile",
-     "x": 6.12,
-     "y": -0.174,
-     "z": 6.745,
-     "rotY": 357.4,
-     "scale": 1.0
-    },
-    {
-     "piece": "Env_FloorTile",
-     "x": 6.07,
-     "y": -0.172,
-     "z": 9.704,
-     "rotY": 357.8,
-     "scale": 1.0
-    },
-    {
-     "piece": "Env_FloorTile",
-     "x": 7.165,
-     "y": -0.176,
-     "z": 2.653,
-     "rotY": 4.3,
-     "scale": 1.0
-    },
-    {
-     "piece": "Env_FloorTile",
-     "x": 7.101,
-     "y": -0.173,
-     "z": 3.675,
-     "rotY": 3.3,
-     "scale": 1.0
-    },
-    {
-     "piece": "Env_FloorTile",
-     "x": 7.187,
-     "y": -0.173,
-     "z": 4.617,
-     "rotY": 6.4,
-     "scale": 1.0
-    },
-    {
-     "piece": "Env_FloorTile",
-     "x": 7.088,
-     "y": -0.189,
-     "z": 5.686,
-     "rotY": 2.6,
-     "scale": 1.0
-    },
-    {
-     "piece": "Env_FloorTile",
-     "x": 7.113,
-     "y": -0.172,
-     "z": 6.739,
-     "rotY": 354.3,
-     "scale": 1.0
-    },
-    {
-     "piece": "Env_FloorTile",
-     "x": 7.105,
-     "y": -0.173,
-     "z": 7.673,
-     "rotY": 6.7,
-     "scale": 1.0
-    },
-    {
-     "piece": "Env_FloorTile",
-     "x": 7.091,
+     "piece": "Env_Mushrooms",
+     "x": -8.2,
      "y": -0.2,
-     "z": 8.758,
-     "rotY": 5.4,
-     "scale": 1.0
-    },
-    {
-     "piece": "Env_FloorTile",
-     "x": 8.168,
-     "y": -0.192,
-     "z": 1.637,
-     "rotY": 356.3,
-     "scale": 1.0
-    },
-    {
-     "piece": "Env_FloorTile",
-     "x": 8.164,
-     "y": -0.191,
-     "z": 3.62,
-     "rotY": 6.1,
-     "scale": 1.0
-    },
-    {
-     "piece": "Env_FloorTile",
-     "x": 8.107,
-     "y": -0.196,
-     "z": 6.666,
-     "rotY": 353.9,
-     "scale": 1.0
-    },
-    {
-     "piece": "Env_FloorTile",
-     "x": 8.141,
-     "y": -0.18,
-     "z": 7.704,
-     "rotY": 359.3,
-     "scale": 1.0
-    },
-    {
-     "piece": "Env_FloorTile",
-     "x": 8.18,
-     "y": -0.184,
-     "z": 10.786,
-     "rotY": 354.8,
-     "scale": 1.0
-    },
-    {
-     "piece": "Env_RuinColumn",
-     "x": 5.9,
-     "y": -0.2,
-     "z": 2.9,
+     "z": 2.6,
      "rotY": 0,
      "scale": 1.0
     },
     {
-     "piece": "Env_RuinColumn_Broken",
-     "x": 5.9,
+     "piece": "Env_Mushrooms",
+     "x": -6.9,
      "y": -0.2,
-     "z": 6.3,
+     "z": 10.4,
+     "rotY": 90,
+     "scale": 0.9
+    },
+    {
+     "piece": "Env_Mushrooms",
+     "x": -10.1,
+     "y": -0.2,
+     "z": 9.1,
      "rotY": 40,
      "scale": 1.0
     },
     {
-     "piece": "Env_RuinColumn",
-     "x": 5.9,
+     "piece": "Env_PavingPatch",
+     "x": 6.3,
      "y": -0.2,
-     "z": 9.7,
+     "z": 1.3,
+     "rotY": 80,
+     "scale": 1.0
+    },
+    {
+     "piece": "Env_PavingPatch",
+     "x": 6.3,
+     "y": -0.2,
+     "z": 3.6,
+     "rotY": 95,
+     "scale": 1.0
+    },
+    {
+     "piece": "Env_PavingPatch",
+     "x": 6.3,
+     "y": -0.2,
+     "z": 6.0,
+     "rotY": 85,
+     "scale": 1.0
+    },
+    {
+     "piece": "Env_PavingPatch",
+     "x": 6.3,
+     "y": -0.2,
+     "z": 8.4,
+     "rotY": 100,
+     "scale": 1.0
+    },
+    {
+     "piece": "Env_PavingPatch",
+     "x": 6.3,
+     "y": -0.2,
+     "z": 10.6,
+     "rotY": 90,
+     "scale": 1.0
+    },
+    {
+     "piece": "Env_PavingPatch",
+     "x": 8.9,
+     "y": -0.2,
+     "z": 5.2,
+     "rotY": 10,
+     "scale": 0.9
+    },
+    {
+     "piece": "Env_PavingPatch",
+     "x": 8.9,
+     "y": -0.2,
+     "z": 9.6,
+     "rotY": 170,
+     "scale": 0.95
+    },
+    {
+     "piece": "Env_FloorTile",
+     "x": 7.6,
+     "y": -0.18,
+     "z": 2.4,
+     "rotY": 12,
+     "scale": 1.0
+    },
+    {
+     "piece": "Env_FloorTile",
+     "x": 4.9,
+     "y": -0.18,
+     "z": 11.9,
+     "rotY": 352,
+     "scale": 1.0
+    },
+    {
+     "piece": "Env_RuinColumn_Broken",
+     "x": 5.4,
+     "y": -0.2,
+     "z": 1.5,
+     "rotY": 40,
+     "scale": 0.95
+    },
+    {
+     "piece": "Env_RuinColumn",
+     "x": 5.4,
+     "y": -0.2,
+     "z": 4.4,
+     "rotY": 0,
+     "scale": 1.0
+    },
+    {
+     "piece": "Env_RuinColumn",
+     "x": 5.4,
+     "y": -0.2,
+     "z": 7.3,
      "rotY": 10,
      "scale": 1.0
     },
     {
      "piece": "Env_RuinColumn_Broken",
-     "x": 8.6,
+     "x": 5.4,
      "y": -0.2,
-     "z": 4.4,
+     "z": 10.2,
      "rotY": 160,
-     "scale": 0.95
+     "scale": 1.0
+    },
+    {
+     "piece": "Env_RuinColumn_Broken",
+     "x": 8.4,
+     "y": -0.2,
+     "z": 4.0,
+     "rotY": 250,
+     "scale": 0.9
+    },
+    {
+     "piece": "Env_Stairs",
+     "x": 8.9,
+     "y": -0.2,
+     "z": 7.3,
+     "rotY": 180,
+     "scale": 1.0
     },
     {
      "piece": "Env_RuinArch",
      "x": 8.9,
-     "y": -0.2,
-     "z": 8.6,
+     "y": 0.22,
+     "z": 7.6,
      "rotY": 180,
      "scale": 1.0
     },
     {
      "piece": "Env_MossyRock_A",
-     "x": 10.6,
+     "x": 10.7,
      "y": -0.2,
-     "z": 3.0,
+     "z": 2.6,
      "rotY": 250,
      "scale": 0.9
     },
     {
      "piece": "Env_MossyRock_B",
-     "x": 7.3,
+     "x": 7.2,
      "y": -0.2,
-     "z": 1.1,
+     "z": 0.4,
      "rotY": 20,
      "scale": 0.8
     },
     {
-     "piece": "Env_Tree_A",
-     "x": 12.0,
+     "piece": "Env_Log",
+     "x": 10.0,
      "y": -0.2,
-     "z": 5.8,
-     "rotY": 300,
-     "scale": 1.15
-    },
-    {
-     "piece": "Env_Tree_B",
-     "x": 11.9,
-     "y": -0.2,
-     "z": 11.9,
-     "rotY": 45,
-     "scale": 1.05
-    },
-    {
-     "piece": "Env_Tree_A",
-     "x": 10.3,
-     "y": -0.2,
-     "z": -0.6,
-     "rotY": 80,
+     "z": 5.0,
+     "rotY": 160,
      "scale": 0.9
     },
     {
-     "piece": "Env_Bush",
-     "x": 10.7,
+     "piece": "Env_Tree_A",
+     "x": 11.4,
+     "y": -0.2,
+     "z": 11.9,
+     "rotY": 300,
+     "scale": 1.25
+    },
+    {
+     "piece": "Env_Tree_B",
+     "x": 11.6,
      "y": -0.2,
      "z": 8.3,
+     "rotY": 45,
+     "scale": 1.2
+    },
+    {
+     "piece": "Env_Tree_A",
+     "x": 11.3,
+     "y": -0.2,
+     "z": 3.6,
+     "rotY": 80,
+     "scale": 1.15
+    },
+    {
+     "piece": "Env_Tree_A",
+     "x": 13.0,
+     "y": -0.2,
+     "z": 6.2,
+     "rotY": 20,
+     "scale": 1.3
+    },
+    {
+     "piece": "Env_Tree_B",
+     "x": 10.4,
+     "y": -0.2,
+     "z": -0.9,
+     "rotY": 20,
+     "scale": 1.0
+    },
+    {
+     "piece": "Env_Tree_B",
+     "x": 10.2,
+     "y": -0.2,
+     "z": 14.2,
+     "rotY": 110,
+     "scale": 1.05
+    },
+    {
+     "piece": "Env_Bush",
+     "x": 10.2,
+     "y": -0.2,
+     "z": 9.8,
      "rotY": 70,
      "scale": 0.95
     },
     {
      "piece": "Env_Bush",
-     "x": 7.3,
+     "x": 7.4,
      "y": -0.2,
-     "z": 12.1,
+     "z": 12.5,
      "rotY": 30,
      "scale": 0.9
     },
     {
      "piece": "Env_Bush",
-     "x": 5.0,
+     "x": 5.2,
      "y": -0.2,
      "z": -0.8,
      "rotY": 200,
      "scale": 0.8
     },
     {
+     "piece": "Env_Bush",
+     "x": 10.4,
+     "y": -0.2,
+     "z": 5.9,
+     "rotY": 250,
+     "scale": 0.8
+    },
+    {
      "piece": "Env_StoneLantern",
      "x": 5.1,
      "y": -0.2,
-     "z": 11.2,
+     "z": 12.6,
      "rotY": 180,
      "scale": 1.0,
      "light": true
     },
     {
+     "piece": "Env_Stump",
+     "x": 9.5,
+     "y": -0.2,
+     "z": 1.3,
+     "rotY": 0,
+     "scale": 0.9
+    },
+    {
      "piece": "Env_Fence",
-     "x": 6.6,
+     "x": 6.4,
      "y": -0.2,
      "z": -0.35,
      "rotY": 8,
@@ -2215,7 +2584,7 @@
     },
     {
      "piece": "Env_Fence",
-     "x": 8.6,
+     "x": 8.4,
      "y": -0.2,
      "z": -0.6,
      "rotY": 355,
@@ -2223,17 +2592,25 @@
     },
     {
      "piece": "Env_GroundMound",
-     "x": 10.8,
+     "x": 11.3,
      "y": -0.2,
-     "z": 9.8,
+     "z": 9.4,
      "rotY": 10,
      "scale": 1.1
     },
     {
-     "piece": "Env_Bush",
-     "x": -2.4,
+     "piece": "Env_Mushrooms",
+     "x": 9.2,
      "y": -0.2,
-     "z": 13.0,
+     "z": 8.6,
+     "rotY": 70,
+     "scale": 0.8
+    },
+    {
+     "piece": "Env_Bush",
+     "x": -2.5,
+     "y": -0.2,
+     "z": 13.2,
      "rotY": 0,
      "scale": 0.9
     },
@@ -2241,7 +2618,7 @@
      "piece": "Env_Bush",
      "x": 1.9,
      "y": -0.2,
-     "z": 13.3,
+     "z": 13.4,
      "rotY": 90,
      "scale": 1.0
     },
@@ -2249,7 +2626,7 @@
      "piece": "Env_MossyRock_B",
      "x": -0.3,
      "y": -0.2,
-     "z": 12.8,
+     "z": 12.9,
      "rotY": 30,
      "scale": 0.9
     },
@@ -2257,491 +2634,919 @@
      "piece": "Env_RuinColumn_Broken",
      "x": 3.4,
      "y": -0.2,
-     "z": 12.9,
+     "z": 13.0,
      "rotY": 300,
-     "scale": 0.85
+     "scale": 0.8
     },
     {
      "piece": "Env_Fence",
      "x": -4.9,
      "y": -0.2,
-     "z": 12.9,
+     "z": 13.0,
      "rotY": 95,
      "scale": 0.9
     },
     {
-     "piece": "Env_Flowers",
-     "x": -5.637,
+     "piece": "Env_Mushrooms",
+     "x": 0.8,
      "y": -0.2,
-     "z": 7.009,
-     "rotY": 156.6,
-     "scale": 0.959
+     "z": 12.7,
+     "rotY": 0,
+     "scale": 0.9
     },
     {
      "piece": "Env_Flowers",
-     "x": -4.841,
+     "x": -5.808,
      "y": -0.2,
-     "z": 7.644,
-     "rotY": 266.4,
-     "scale": 0.954
+     "z": 8.228,
+     "rotY": 347.5,
+     "scale": 1.123
     },
     {
      "piece": "Env_Flowers",
-     "x": -8.207,
+     "x": -5.315,
      "y": -0.2,
-     "z": 6.541,
-     "rotY": 255.7,
-     "scale": 1.133
+     "z": 9.166,
+     "rotY": 25.3,
+     "scale": 0.868
     },
     {
      "piece": "Env_Flowers",
-     "x": -8.064,
+     "x": -7.605,
      "y": -0.2,
-     "z": 7.536,
-     "rotY": 248.8,
-     "scale": 1.142
+     "z": 8.372,
+     "rotY": 131.9,
+     "scale": 0.965
     },
     {
      "piece": "Env_Flowers",
-     "x": -6.037,
+     "x": -8.494,
      "y": -0.2,
-     "z": 4.589,
-     "rotY": 78.0,
-     "scale": 1.079
+     "z": 8.567,
+     "rotY": 145.4,
+     "scale": 0.873
     },
     {
      "piece": "Env_Flowers",
-     "x": -6.387,
+     "x": -6.499,
      "y": -0.2,
-     "z": 3.547,
-     "rotY": 161.5,
-     "scale": 0.813
+     "z": 5.088,
+     "rotY": 39.9,
+     "scale": 1.088
     },
     {
      "piece": "Env_Flowers",
-     "x": -5.78,
+     "x": -6.377,
      "y": -0.2,
-     "z": -0.027,
-     "rotY": 213.4,
-     "scale": 1.127
+     "z": 4.31,
+     "rotY": 317.7,
+     "scale": 0.938
     },
     {
      "piece": "Env_Flowers",
-     "x": -4.9,
+     "x": -5.778,
      "y": -0.2,
-     "z": -0.345,
-     "rotY": 173.2,
-     "scale": 0.845
+     "z": 0.658,
+     "rotY": 145.6,
+     "scale": 1.034
     },
     {
      "piece": "Env_Flowers",
-     "x": 10.203,
+     "x": -4.855,
      "y": -0.2,
-     "z": 1.232,
-     "rotY": 257.8,
-     "scale": 0.985
+     "z": 0.322,
+     "rotY": 192.6,
+     "scale": 0.921
     },
     {
      "piece": "Env_Flowers",
-     "x": 9.404,
+     "x": 10.416,
      "y": -0.2,
-     "z": 1.036,
-     "rotY": 204.1,
-     "scale": 1.108
+     "z": 0.651,
+     "rotY": 95.8,
+     "scale": 1.023
     },
     {
      "piece": "Env_Flowers",
-     "x": -1.157,
+     "x": 9.762,
      "y": -0.2,
-     "z": 13.058,
-     "rotY": 61.5,
-     "scale": 1.141
+     "z": 0.096,
+     "rotY": 256.9,
+     "scale": 0.946
     },
     {
      "piece": "Env_Flowers",
-     "x": 0.477,
+     "x": -1.186,
      "y": -0.2,
-     "z": 13.256,
-     "rotY": 63.3,
-     "scale": 1.136
+     "z": 13.095,
+     "rotY": 159.4,
+     "scale": 0.822
     },
     {
      "piece": "Env_Flowers",
-     "x": 9.406,
+     "x": 0.677,
      "y": -0.2,
-     "z": 6.574,
-     "rotY": 281.4,
-     "scale": 0.846
+     "z": 13.768,
+     "rotY": 157.8,
+     "scale": 1.045
     },
     {
      "piece": "Env_Flowers",
-     "x": 10.538,
+     "x": -7.906,
      "y": -0.2,
-     "z": 6.599,
-     "rotY": 44.0,
-     "scale": 0.853
+     "z": 5.373,
+     "rotY": 91.6,
+     "scale": 0.998
+    },
+    {
+     "piece": "Env_Flowers",
+     "x": -8.57,
+     "y": -0.2,
+     "z": 5.977,
+     "rotY": 38.0,
+     "scale": 0.958
+    },
+    {
+     "piece": "Env_Flowers",
+     "x": -9.975,
+     "y": -0.2,
+     "z": 3.957,
+     "rotY": 20.1,
+     "scale": 1.121
+    },
+    {
+     "piece": "Env_Flowers",
+     "x": -10.698,
+     "y": -0.2,
+     "z": 3.586,
+     "rotY": 2.3,
+     "scale": 0.909
+    },
+    {
+     "piece": "Env_Flowers",
+     "x": -7.279,
+     "y": -0.2,
+     "z": 12.881,
+     "rotY": 44.2,
+     "scale": 1.02
+    },
+    {
+     "piece": "Env_Flowers",
+     "x": -6.449,
+     "y": -0.2,
+     "z": 12.875,
+     "rotY": 312.5,
+     "scale": 1.098
     },
     {
      "piece": "Env_GrassTuft",
-     "x": -4.995,
+     "x": -5.255,
      "y": -0.2,
-     "z": 8.257,
-     "rotY": 333.9,
+     "z": 10.096,
+     "rotY": 282.8,
      "scale": 1.101
     },
     {
      "piece": "Env_GrassTuft",
-     "x": -5.755,
+     "x": -5.862,
      "y": -0.2,
-     "z": 8.723,
-     "rotY": 274.3,
-     "scale": 1.142
+     "z": 10.407,
+     "rotY": 102.6,
+     "scale": 0.819
     },
     {
      "piece": "Env_GrassTuft",
-     "x": -5.426,
+     "x": -4.717,
      "y": -0.2,
-     "z": 9.508,
-     "rotY": 42.6,
-     "scale": 0.815
+     "z": 9.736,
+     "rotY": 53.3,
+     "scale": 1.019
     },
     {
      "piece": "Env_GrassTuft",
-     "x": -7.389,
+     "x": -7.018,
      "y": -0.2,
-     "z": 2.007,
-     "rotY": 222.3,
-     "scale": 1.102
+     "z": 2.293,
+     "rotY": 289.3,
+     "scale": 0.888
     },
     {
      "piece": "Env_GrassTuft",
-     "x": -7.899,
+     "x": -7.383,
      "y": -0.2,
-     "z": 0.916,
-     "rotY": 91.8,
-     "scale": 1.099
+     "z": 1.817,
+     "rotY": 122.8,
+     "scale": 1.133
     },
     {
      "piece": "Env_GrassTuft",
-     "x": -8.112,
+     "x": -6.871,
      "y": -0.2,
-     "z": 1.848,
-     "rotY": 131.9,
-     "scale": 0.999
-    },
-    {
-     "piece": "Env_GrassTuft",
-     "x": -6.344,
-     "y": -0.2,
-     "z": 5.278,
-     "rotY": 102.4,
-     "scale": 0.858
-    },
-    {
-     "piece": "Env_GrassTuft",
-     "x": -6.469,
-     "y": -0.2,
-     "z": 6.182,
-     "rotY": 271.2,
-     "scale": 1.016
-    },
-    {
-     "piece": "Env_GrassTuft",
-     "x": -5.949,
-     "y": -0.2,
-     "z": 5.723,
-     "rotY": 173.0,
-     "scale": 0.914
-    },
-    {
-     "piece": "Env_GrassTuft",
-     "x": -8.976,
-     "y": -0.2,
-     "z": 9.173,
-     "rotY": 283.4,
-     "scale": 0.82
-    },
-    {
-     "piece": "Env_GrassTuft",
-     "x": -9.6,
-     "y": -0.2,
-     "z": 8.45,
-     "rotY": 90.8,
-     "scale": 1.006
-    },
-    {
-     "piece": "Env_GrassTuft",
-     "x": -9.819,
-     "y": -0.2,
-     "z": 9.132,
-     "rotY": 353.3,
+     "z": 6.121,
+     "rotY": 107.4,
      "scale": 1.093
     },
     {
      "piece": "Env_GrassTuft",
-     "x": -5.337,
+     "x": -5.436,
      "y": -0.2,
-     "z": -0.885,
-     "rotY": 100.6,
-     "scale": 0.895
+     "z": 5.278,
+     "rotY": 9.7,
+     "scale": 0.88
     },
     {
      "piece": "Env_GrassTuft",
-     "x": -4.558,
+     "x": -7.177,
      "y": -0.2,
-     "z": -1.019,
-     "rotY": 180.4,
-     "scale": 0.967
+     "z": 5.383,
+     "rotY": 220.6,
+     "scale": 0.958
+    },
+    {
+     "piece": "Env_GrassTuft",
+     "x": -8.65,
+     "y": -0.2,
+     "z": 11.865,
+     "rotY": 266.6,
+     "scale": 0.926
+    },
+    {
+     "piece": "Env_GrassTuft",
+     "x": -8.792,
+     "y": -0.2,
+     "z": 11.103,
+     "rotY": 28.6,
+     "scale": 1.047
+    },
+    {
+     "piece": "Env_GrassTuft",
+     "x": -9.673,
+     "y": -0.2,
+     "z": 11.596,
+     "rotY": 38.0,
+     "scale": 0.993
     },
     {
      "piece": "Env_GrassTuft",
      "x": -4.613,
      "y": -0.2,
-     "z": 0.201,
+     "z": 1.001,
      "rotY": 305.4,
      "scale": 1.076
     },
     {
      "piece": "Env_GrassTuft",
-     "x": 6.84,
+     "x": -5.331,
      "y": -0.2,
-     "z": 1.943,
-     "rotY": 284.3,
-     "scale": 0.85
+     "z": -0.112,
+     "rotY": 228.0,
+     "scale": 1.086
     },
     {
      "piece": "Env_GrassTuft",
-     "x": 7.861,
+     "x": 6.897,
      "y": -0.2,
-     "z": 5.406,
+     "z": 2.155,
+     "rotY": 39.0,
+     "scale": 0.808
+    },
+    {
+     "piece": "Env_GrassTuft",
+     "x": 6.837,
+     "y": -0.2,
+     "z": 3.058,
+     "rotY": 75.0,
+     "scale": 1.007
+    },
+    {
+     "piece": "Env_GrassTuft",
+     "x": 7.435,
+     "y": -0.2,
+     "z": 2.301,
+     "rotY": 99.8,
+     "scale": 0.821
+    },
+    {
+     "piece": "Env_GrassTuft",
+     "x": 6.727,
+     "y": -0.2,
+     "z": 6.458,
+     "rotY": 122.4,
+     "scale": 0.956
+    },
+    {
+     "piece": "Env_GrassTuft",
+     "x": 5.845,
+     "y": -0.2,
+     "z": 5.716,
+     "rotY": 127.4,
+     "scale": 0.943
+    },
+    {
+     "piece": "Env_GrassTuft",
+     "x": 6.671,
+     "y": -0.2,
+     "z": 5.839,
+     "rotY": 260.5,
+     "scale": 1.045
+    },
+    {
+     "piece": "Env_GrassTuft",
+     "x": 6.8,
+     "y": -0.2,
+     "z": 10.754,
+     "rotY": 309.2,
+     "scale": 1.07
+    },
+    {
+     "piece": "Env_GrassTuft",
+     "x": 6.54,
+     "y": -0.2,
+     "z": 11.569,
+     "rotY": 243.3,
+     "scale": 0.835
+    },
+    {
+     "piece": "Env_GrassTuft",
+     "x": 7.461,
+     "y": -0.2,
+     "z": 11.006,
      "rotY": 259.3,
      "scale": 0.932
     },
     {
      "piece": "Env_GrassTuft",
-     "x": 7.291,
+     "x": 9.26,
      "y": -0.2,
-     "z": 10.135,
-     "rotY": 284.1,
-     "scale": 1.051
+     "z": 2.981,
+     "rotY": 151.0,
+     "scale": 1.132
     },
     {
      "piece": "Env_GrassTuft",
-     "x": 7.192,
+     "x": 10.024,
      "y": -0.2,
-     "z": 10.948,
-     "rotY": 169.2,
-     "scale": 0.977
+     "z": 3.845,
+     "rotY": 307.7,
+     "scale": 0.88
     },
     {
      "piece": "Env_GrassTuft",
-     "x": 6.08,
+     "x": 10.267,
      "y": -0.2,
-     "z": 11.111,
-     "rotY": 104.8,
-     "scale": 0.932
+     "z": 11.216,
+     "rotY": 315.4,
+     "scale": 1.064
     },
     {
      "piece": "Env_GrassTuft",
-     "x": 9.882,
+     "x": 8.812,
      "y": -0.2,
-     "z": 5.862,
-     "rotY": 52.7,
-     "scale": 1.015
+     "z": 11.674,
+     "rotY": 46.4,
+     "scale": 1.133
     },
     {
      "piece": "Env_GrassTuft",
-     "x": 9.227,
+     "x": 9.509,
      "y": -0.2,
-     "z": 5.426,
-     "rotY": 94.7,
-     "scale": 1.006
-    },
-    {
-     "piece": "Env_GrassTuft",
-     "x": 10.151,
-     "y": -0.2,
-     "z": 5.185,
-     "rotY": 249.0,
-     "scale": 0.887
-    },
-    {
-     "piece": "Env_GrassTuft",
-     "x": 9.568,
-     "y": -0.2,
-     "z": 11.906,
-     "rotY": 336.4,
-     "scale": 0.885
-    },
-    {
-     "piece": "Env_GrassTuft",
-     "x": 8.956,
-     "y": -0.2,
-     "z": 11.87,
-     "rotY": 54.7,
-     "scale": 0.873
-    },
-    {
-     "piece": "Env_GrassTuft",
-     "x": 8.636,
-     "y": -0.2,
-     "z": 11.427,
-     "rotY": 348.0,
-     "scale": 1.139
-    },
-    {
-     "piece": "Env_GrassTuft",
-     "x": 4.909,
-     "y": -0.2,
-     "z": 4.817,
+     "z": 11.617,
      "rotY": 225.0,
      "scale": 0.837
     },
     {
      "piece": "Env_GrassTuft",
-     "x": 5.139,
+     "x": 4.783,
      "y": -0.2,
-     "z": 8.539,
-     "rotY": 194.5,
-     "scale": 1.006
+     "z": 2.503,
+     "rotY": 265.9,
+     "scale": 0.992
     },
     {
      "piece": "Env_GrassTuft",
-     "x": -3.468,
+     "x": 5.23,
      "y": -0.2,
-     "z": 12.69,
-     "rotY": 228.6,
-     "scale": 1.084
+     "z": 3.483,
+     "rotY": 240.0,
+     "scale": 0.801
     },
     {
      "piece": "Env_GrassTuft",
-     "x": 7.446,
+     "x": 4.6,
      "y": -0.2,
-     "z": -1.474,
-     "rotY": 199.6,
-     "scale": 0.951
+     "z": 3.137,
+     "rotY": 82.8,
+     "scale": 0.982
     },
     {
      "piece": "Env_GrassTuft",
-     "x": 9.126,
+     "x": 5.514,
      "y": -0.2,
-     "z": 13.421,
-     "rotY": 287.6,
-     "scale": 1.008
+     "z": 8.59,
+     "rotY": 191.8,
+     "scale": 0.883
     },
     {
      "piece": "Env_GrassTuft",
-     "x": -7.638,
+     "x": 4.73,
      "y": -0.2,
-     "z": 3.863,
-     "rotY": 118.7,
-     "scale": 0.947
+     "z": 8.226,
+     "rotY": 85.2,
+     "scale": 0.929
     },
     {
      "piece": "Env_GrassTuft",
-     "x": 10.647,
+     "x": 4.967,
      "y": -0.2,
-     "z": 4.869,
-     "rotY": 304.1,
-     "scale": 0.979
+     "z": 8.778,
+     "rotY": 274.4,
+     "scale": 0.855
     },
     {
      "piece": "Env_GrassTuft",
-     "x": 5.227,
+     "x": -3.632,
      "y": -0.2,
-     "z": 12.678,
-     "rotY": 204.5,
-     "scale": 1.172
+     "z": 13.091,
+     "rotY": 56.2,
+     "scale": 1.036
     },
     {
      "piece": "Env_GrassTuft",
-     "x": 9.357,
+     "x": -10.02,
      "y": -0.2,
-     "z": 10.82,
-     "rotY": 35.5,
-     "scale": 0.913
+     "z": 3.171,
+     "rotY": 205.4,
+     "scale": 0.829
     },
     {
      "piece": "Env_GrassTuft",
-     "x": 9.991,
+     "x": -7.754,
      "y": -0.2,
-     "z": 0.508,
-     "rotY": 30.5,
-     "scale": 1.032
+     "z": 4.529,
+     "rotY": 259.6,
+     "scale": 0.823
     },
     {
      "piece": "Env_GrassTuft",
-     "x": -6.966,
+     "x": -8.313,
      "y": -0.2,
-     "z": 13.128,
-     "rotY": 180.0,
-     "scale": 0.884
+     "z": 4.602,
+     "rotY": 226.3,
+     "scale": 0.862
     },
     {
      "piece": "Env_GrassTuft",
-     "x": 6.014,
+     "x": -8.476,
      "y": -0.2,
-     "z": 12.86,
-     "rotY": 189.9,
-     "scale": 1.014
+     "z": -0.379,
+     "rotY": 245.2,
+     "scale": 0.939
     },
     {
      "piece": "Env_GrassTuft",
-     "x": 4.793,
+     "x": -9.584,
      "y": -0.2,
-     "z": 13.57,
-     "rotY": 295.8,
-     "scale": 0.968
+     "z": 1.394,
+     "rotY": 214.3,
+     "scale": 1.038
     },
     {
      "piece": "Env_GrassTuft",
-     "x": -10.516,
+     "x": -10.276,
      "y": -0.2,
-     "z": 3.773,
-     "rotY": 51.1,
-     "scale": 1.147
-    },
-    {
-     "piece": "Env_GrassTuft",
-     "x": -10.253,
-     "y": -0.2,
-     "z": 1.455,
+     "z": 1.55,
      "rotY": 335.0,
      "scale": 0.926
     },
     {
      "piece": "Env_GrassTuft",
-     "x": -10.308,
+     "x": 11.517,
      "y": -0.2,
-     "z": 8.645,
-     "rotY": 253.8,
-     "scale": 0.932
+     "z": 13.084,
+     "rotY": 239.8,
+     "scale": 0.905
     },
     {
      "piece": "Env_GrassTuft",
-     "x": -6.606,
+     "x": -6.677,
      "y": -0.2,
-     "z": 11.372,
+     "z": 11.787,
      "rotY": 100.6,
      "scale": 1.129
     },
     {
      "piece": "Env_GrassTuft",
-     "x": -11.339,
+     "x": -11.347,
      "y": -0.2,
-     "z": 6.47,
+     "z": 6.728,
      "rotY": 182.4,
      "scale": 1.143
+    },
+    {
+     "piece": "Env_GrassTuft",
+     "x": -6.225,
+     "y": -0.2,
+     "z": 2.345,
+     "rotY": 90.2,
+     "scale": 0.848
+    },
+    {
+     "piece": "Env_GrassTuft",
+     "x": 7.493,
+     "y": -0.2,
+     "z": 13.849,
+     "rotY": 46.5,
+     "scale": 0.97
+    },
+    {
+     "piece": "Env_GrassTuft",
+     "x": 6.982,
+     "y": -0.2,
+     "z": 4.435,
+     "rotY": 220.2,
+     "scale": 1.074
+    },
+    {
+     "piece": "Env_GrassTuft",
+     "x": 4.651,
+     "y": -0.2,
+     "z": 5.853,
+     "rotY": 245.4,
+     "scale": 0.848
+    },
+    {
+     "piece": "Env_GrassTuft",
+     "x": -10.136,
+     "y": -0.2,
+     "z": 11.207,
+     "rotY": 265.6,
+     "scale": 0.934
+    },
+    {
+     "piece": "Env_GrassTuft",
+     "x": 8.343,
+     "y": -0.2,
+     "z": 10.379,
+     "rotY": 159.2,
+     "scale": 1.042
+    },
+    {
+     "piece": "Env_GrassTuft",
+     "x": -4.891,
+     "y": -0.2,
+     "z": 5.661,
+     "rotY": 94.4,
+     "scale": 1.148
+    },
+    {
+     "piece": "Env_GrassTuft",
+     "x": -10.816,
+     "y": -0.2,
+     "z": 2.199,
+     "rotY": 299.4,
+     "scale": 0.916
+    },
+    {
+     "piece": "Env_GrassTuft",
+     "x": 11.803,
+     "y": -0.2,
+     "z": 10.509,
+     "rotY": 210.3,
+     "scale": 0.818
+    },
+    {
+     "piece": "Env_GrassTuft",
+     "x": -6.963,
+     "y": -0.2,
+     "z": 8.51,
+     "rotY": 151.1,
+     "scale": 0.979
+    },
+    {
+     "piece": "Env_GrassTuft",
+     "x": -8.518,
+     "y": -0.2,
+     "z": 12.909,
+     "rotY": 17.2,
+     "scale": 1.145
+    },
+    {
+     "piece": "Env_Pebbles",
+     "x": 6.821,
+     "y": -0.2,
+     "z": 7.905,
+     "rotY": 41.7,
+     "scale": 0.651
+    },
+    {
+     "piece": "Env_Pebbles",
+     "x": 7.774,
+     "y": -0.2,
+     "z": 1.33,
+     "rotY": 37.5,
+     "scale": 0.678
+    },
+    {
+     "piece": "Env_Pebbles",
+     "x": 6.598,
+     "y": -0.2,
+     "z": 9.129,
+     "rotY": 8.1,
+     "scale": 0.812
+    },
+    {
+     "piece": "Env_Pebbles",
+     "x": -5.899,
+     "y": -0.2,
+     "z": 2.934,
+     "rotY": 259.2,
+     "scale": 0.808
+    },
+    {
+     "piece": "Env_Pebbles",
+     "x": 5.162,
+     "y": -0.2,
+     "z": 11.564,
+     "rotY": 148.8,
+     "scale": 0.848
+    },
+    {
+     "piece": "LightShaft",
+     "mesh": "Env_LightShaft",
+     "x": -13.173,
+     "y": 6.736,
+     "z": 10.663,
+     "direction": [
+      0.649,
+      -0.754,
+      -0.105
+     ],
+     "euler": [
+      41.1,
+      279.16,
+      0.0
+     ],
+     "size": [
+      0.85,
+      10.0,
+      0.85
+     ],
+     "color": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "intensity": 0.34
+    },
+    {
+     "piece": "LightShaft",
+     "mesh": "Env_LightShaft",
+     "x": -12.273,
+     "y": 6.736,
+     "z": 6.763,
+     "direction": [
+      0.649,
+      -0.754,
+      -0.105
+     ],
+     "euler": [
+      41.1,
+      279.16,
+      0.0
+     ],
+     "size": [
+      0.75,
+      10.0,
+      0.75
+     ],
+     "color": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "intensity": 0.3
+    },
+    {
+     "piece": "LightShaft",
+     "mesh": "Env_LightShaft",
+     "x": -14.248,
+     "y": 6.359,
+     "z": 13.811,
+     "direction": [
+      0.649,
+      -0.754,
+      -0.105
+     ],
+     "euler": [
+      41.1,
+      279.16,
+      0.0
+     ],
+     "size": [
+      0.7,
+      9.5,
+      0.7
+     ],
+     "color": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "intensity": 0.26
+    },
+    {
+     "piece": "LightShaft",
+     "mesh": "Env_LightShaft",
+     "x": -11.148,
+     "y": 6.359,
+     "z": 2.811,
+     "direction": [
+      0.649,
+      -0.754,
+      -0.105
+     ],
+     "euler": [
+      41.1,
+      279.16,
+      0.0
+     ],
+     "size": [
+      0.65,
+      9.5,
+      0.65
+     ],
+     "color": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "intensity": 0.24
+    },
+    {
+     "piece": "LightShaft",
+     "mesh": "Env_LightShaft",
+     "x": -14.724,
+     "y": 5.982,
+     "z": 8.459,
+     "direction": [
+      0.649,
+      -0.754,
+      -0.105
+     ],
+     "euler": [
+      41.1,
+      279.16,
+      0.0
+     ],
+     "size": [
+      0.6,
+      9.0,
+      0.6
+     ],
+     "color": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "intensity": 0.22
+    },
+    {
+     "piece": "AmbientParticles",
+     "type": "Leaf",
+     "sprite": "Assets/Sprites/BilliardRogue/Particles/Leaf.png",
+     "x": 0.0,
+     "y": 3.2,
+     "z": 6.8,
+     "size": [
+      24.0,
+      5.5,
+      16.0
+     ],
+     "maxParticles": 46,
+     "rate": 6.0,
+     "lifetime": [
+      6.0,
+      9.0
+     ],
+     "velocity": [
+      0.35,
+      -0.42,
+      -0.08
+     ],
+     "noise": 0.6,
+     "startSize": [
+      0.1,
+      0.16
+     ],
+     "colorA": [
+      0.98,
+      0.62,
+      0.22
+     ],
+     "colorB": [
+      0.55,
+      0.72,
+      0.25
+     ],
+     "shader": "BilliardRogue/LitParticle",
+     "prewarm": true,
+     "lightInfluence": 0.85,
+     "tag": "falling leaves over the whole diorama (sparse over the arena)"
+    },
+    {
+     "piece": "AmbientParticles",
+     "type": "Mote",
+     "sprite": "Assets/Sprites/BilliardRogue/Particles/Mote.png",
+     "x": -7.4,
+     "y": 1.4,
+     "z": 6.5,
+     "size": [
+      6.0,
+      2.4,
+      13.0
+     ],
+     "maxParticles": 40,
+     "rate": 6.0,
+     "lifetime": [
+      4.0,
+      7.0
+     ],
+     "velocity": [
+      0.05,
+      0.12,
+      0.0
+     ],
+     "noise": 0.35,
+     "startSize": [
+      0.05,
+      0.09
+     ],
+     "colorA": [
+      1.0,
+      0.86,
+      0.45
+     ],
+     "colorB": [
+      1.0,
+      0.7,
+      0.35
+     ],
+     "shader": "BilliardRogue/GlowParticle",
+     "prewarm": true,
+     "tag": "golden pollen / fireflies in the forest shafts"
+    },
+    {
+     "piece": "AmbientParticles",
+     "type": "Mote",
+     "sprite": "Assets/Sprites/BilliardRogue/Particles/Mote.png",
+     "x": 7.8,
+     "y": 1.4,
+     "z": 6.5,
+     "size": [
+      6.0,
+      2.4,
+      13.0
+     ],
+     "maxParticles": 26,
+     "rate": 4.0,
+     "lifetime": [
+      4.0,
+      7.0
+     ],
+     "velocity": [
+      0.05,
+      0.12,
+      0.0
+     ],
+     "noise": 0.35,
+     "startSize": [
+      0.05,
+      0.08
+     ],
+     "colorA": [
+      1.0,
+      0.86,
+      0.45
+     ],
+     "colorB": [
+      1.0,
+      0.86,
+      0.45
+     ],
+     "shader": "BilliardRogue/GlowParticle",
+     "prewarm": true,
+     "tag": "pollen over the temple terrace"
     }
    ],
+   "pruned": 6,
    "pointLights": [
     {
-     "prop": 15,
+     "prop": 22,
      "piece": "Env_StoneLantern",
      "position": [
-      -6.2,
+      -6.3,
       0.73,
-      8.1
+      9.3
      ],
      "color": [
       1.0,
@@ -2752,12 +3557,12 @@
      "range": 4.0
     },
     {
-     "prop": 16,
+     "prop": 23,
      "piece": "Env_StoneLantern",
      "position": [
-      -8.5,
+      -8.8,
       0.73,
-      8.3
+      9.5
      ],
      "color": [
       1.0,
@@ -2768,12 +3573,12 @@
      "range": 4.0
     },
     {
-     "prop": 64,
+     "prop": 71,
      "piece": "Env_StoneLantern",
      "position": [
       5.1,
       0.73,
-      11.2
+      12.6
      ],
      "color": [
       1.0,
@@ -2785,528 +3590,715 @@
     }
    ]
   },
-  "2": {
+  {
+   "id": 2,
    "name": "Sunken Crypt",
-   "mood": "deep blue moonlight from above-right, warm brazier and candle pools",
-   "surfaces": {
-    "Env_FloorTile/Top_Surface": "CryptFloor",
-    "Env_FloorTile_Danger/Top_Surface": "CryptFloor",
-    "Env_LaunchPad/Top_Surface": "CryptFloor",
-    "Env_WallSegment/Side_Surface": "CryptBrick",
-    "Env_WallSegment/Top_Surface": "CryptFloor",
-    "Env_WallCorner/Side_Surface": "CryptBrick",
-    "Env_CryptWall/Side_Surface": "CryptBrick",
-    "Env_GroundMound/Top_Surface": "Dirt",
-    "Env_GroundPatch/Top_Surface": "Dirt"
-   },
+   "surfaces": [
+    {
+     "piece": "Env_CryptWall",
+     "part": "Side_Surface",
+     "surface": "CryptBrick"
+    },
+    {
+     "piece": "Env_FloorTile",
+     "part": "Top_Surface",
+     "surface": "CryptFloor"
+    },
+    {
+     "piece": "Env_FloorTile_Danger",
+     "part": "Top_Surface",
+     "surface": "CryptFloor"
+    },
+    {
+     "piece": "Env_GroundMound",
+     "part": "Top_Surface",
+     "surface": "Dirt"
+    },
+    {
+     "piece": "Env_GroundPatch",
+     "part": "Top_Surface",
+     "surface": "Dirt"
+    },
+    {
+     "piece": "Env_LaunchPad",
+     "part": "Top_Surface",
+     "surface": "CryptFloor"
+    },
+    {
+     "piece": "Env_PavingPatch",
+     "part": "Top_Surface",
+     "surface": "CryptFloor"
+    },
+    {
+     "piece": "Env_WallCorner",
+     "part": "Side_Surface",
+     "surface": "CryptBrick"
+    },
+    {
+     "piece": "Env_WallSegment",
+     "part": "Side_Surface",
+     "surface": "CryptBrick"
+    },
+    {
+     "piece": "Env_WallSegment",
+     "part": "Top_Surface",
+     "surface": "CryptFloor"
+    }
+   ],
    "ground": {
     "piece": "Env_GroundTile",
     "y": -0.2,
     "tileSize": 4.0,
-    "surface": "CryptFloor",
+    "surface": "CryptBrick",
     "tiles": [
-     [
-      -22,
-      -10
-     ],
-     [
-      -22,
-      -6
-     ],
-     [
-      -22,
-      -2
-     ],
-     [
-      -22,
-      2
-     ],
-     [
-      -22,
-      6
-     ],
-     [
-      -22,
-      10
-     ],
-     [
-      -22,
-      14
-     ],
-     [
-      -22,
-      18
-     ],
-     [
-      -22,
-      22
-     ],
-     [
-      -22,
-      26
-     ],
-     [
-      -18,
-      -10
-     ],
-     [
-      -18,
-      -6
-     ],
-     [
-      -18,
-      -2
-     ],
-     [
-      -18,
-      2
-     ],
-     [
-      -18,
-      6
-     ],
-     [
-      -18,
-      10
-     ],
-     [
-      -18,
-      14
-     ],
-     [
-      -18,
-      18
-     ],
-     [
-      -18,
-      22
-     ],
-     [
-      -18,
-      26
-     ],
-     [
-      -14,
-      -10
-     ],
-     [
-      -14,
-      -6
-     ],
-     [
-      -14,
-      -2
-     ],
-     [
-      -14,
-      2
-     ],
-     [
-      -14,
-      6
-     ],
-     [
-      -14,
-      10
-     ],
-     [
-      -14,
-      14
-     ],
-     [
-      -14,
-      18
-     ],
-     [
-      -14,
-      22
-     ],
-     [
-      -14,
-      26
-     ],
-     [
-      -10,
-      -10
-     ],
-     [
-      -10,
-      -6
-     ],
-     [
-      -10,
-      -2
-     ],
-     [
-      -10,
-      2
-     ],
-     [
-      -10,
-      6
-     ],
-     [
-      -10,
-      10
-     ],
-     [
-      -10,
-      14
-     ],
-     [
-      -10,
-      18
-     ],
-     [
-      -10,
-      22
-     ],
-     [
-      -10,
-      26
-     ],
-     [
-      -6,
-      -10
-     ],
-     [
-      -6,
-      -6
-     ],
-     [
-      -6,
-      -2
-     ],
-     [
-      -6,
-      2
-     ],
-     [
-      -6,
-      6
-     ],
-     [
-      -6,
-      10
-     ],
-     [
-      -6,
-      14
-     ],
-     [
-      -6,
-      18
-     ],
-     [
-      -6,
-      22
-     ],
-     [
-      -6,
-      26
-     ],
-     [
-      -2,
-      -10
-     ],
-     [
-      -2,
-      -6
-     ],
-     [
-      -2,
-      -2
-     ],
-     [
-      -2,
-      2
-     ],
-     [
-      -2,
-      6
-     ],
-     [
-      -2,
-      10
-     ],
-     [
-      -2,
-      14
-     ],
-     [
-      -2,
-      18
-     ],
-     [
-      -2,
-      22
-     ],
-     [
-      -2,
-      26
-     ],
-     [
-      2,
-      -10
-     ],
-     [
-      2,
-      -6
-     ],
-     [
-      2,
-      -2
-     ],
-     [
-      2,
-      2
-     ],
-     [
-      2,
-      6
-     ],
-     [
-      2,
-      10
-     ],
-     [
-      2,
-      14
-     ],
-     [
-      2,
-      18
-     ],
-     [
-      2,
-      22
-     ],
-     [
-      2,
-      26
-     ],
-     [
-      6,
-      -10
-     ],
-     [
-      6,
-      -6
-     ],
-     [
-      6,
-      -2
-     ],
-     [
-      6,
-      2
-     ],
-     [
-      6,
-      6
-     ],
-     [
-      6,
-      10
-     ],
-     [
-      6,
-      14
-     ],
-     [
-      6,
-      18
-     ],
-     [
-      6,
-      22
-     ],
-     [
-      6,
-      26
-     ],
-     [
-      10,
-      -10
-     ],
-     [
-      10,
-      -6
-     ],
-     [
-      10,
-      -2
-     ],
-     [
-      10,
-      2
-     ],
-     [
-      10,
-      6
-     ],
-     [
-      10,
-      10
-     ],
-     [
-      10,
-      14
-     ],
-     [
-      10,
-      18
-     ],
-     [
-      10,
-      22
-     ],
-     [
-      10,
-      26
-     ],
-     [
-      14,
-      -10
-     ],
-     [
-      14,
-      -6
-     ],
-     [
-      14,
-      -2
-     ],
-     [
-      14,
-      2
-     ],
-     [
-      14,
-      6
-     ],
-     [
-      14,
-      10
-     ],
-     [
-      14,
-      14
-     ],
-     [
-      14,
-      18
-     ],
-     [
-      14,
-      22
-     ],
-     [
-      14,
-      26
-     ],
-     [
-      18,
-      -10
-     ],
-     [
-      18,
-      -6
-     ],
-     [
-      18,
-      -2
-     ],
-     [
-      18,
-      2
-     ],
-     [
-      18,
-      6
-     ],
-     [
-      18,
-      10
-     ],
-     [
-      18,
-      14
-     ],
-     [
-      18,
-      18
-     ],
-     [
-      18,
-      22
-     ],
-     [
-      18,
-      26
-     ],
-     [
-      22,
-      -10
-     ],
-     [
-      22,
-      -6
-     ],
-     [
-      22,
-      -2
-     ],
-     [
-      22,
-      2
-     ],
-     [
-      22,
-      6
-     ],
-     [
-      22,
-      10
-     ],
-     [
-      22,
-      14
-     ],
-     [
-      22,
-      18
-     ],
-     [
-      22,
-      22
-     ],
-     [
-      22,
-      26
-     ]
+     {
+      "x": -22,
+      "z": -10,
+      "rotY": 0
+     },
+     {
+      "x": -22,
+      "z": -6,
+      "rotY": 0
+     },
+     {
+      "x": -22,
+      "z": -2,
+      "rotY": 0
+     },
+     {
+      "x": -22,
+      "z": 2,
+      "rotY": 0
+     },
+     {
+      "x": -22,
+      "z": 6,
+      "rotY": 0
+     },
+     {
+      "x": -22,
+      "z": 10,
+      "rotY": 0
+     },
+     {
+      "x": -22,
+      "z": 14,
+      "rotY": 0
+     },
+     {
+      "x": -22,
+      "z": 18,
+      "rotY": 0
+     },
+     {
+      "x": -22,
+      "z": 22,
+      "rotY": 0
+     },
+     {
+      "x": -22,
+      "z": 26,
+      "rotY": 0
+     },
+     {
+      "x": -18,
+      "z": -10,
+      "rotY": 0
+     },
+     {
+      "x": -18,
+      "z": -6,
+      "rotY": 0
+     },
+     {
+      "x": -18,
+      "z": -2,
+      "rotY": 0
+     },
+     {
+      "x": -18,
+      "z": 2,
+      "rotY": 0
+     },
+     {
+      "x": -18,
+      "z": 6,
+      "rotY": 0
+     },
+     {
+      "x": -18,
+      "z": 10,
+      "rotY": 0
+     },
+     {
+      "x": -18,
+      "z": 14,
+      "rotY": 0
+     },
+     {
+      "x": -18,
+      "z": 18,
+      "rotY": 0
+     },
+     {
+      "x": -18,
+      "z": 22,
+      "rotY": 0
+     },
+     {
+      "x": -18,
+      "z": 26,
+      "rotY": 0
+     },
+     {
+      "x": -14,
+      "z": -10,
+      "rotY": 0
+     },
+     {
+      "x": -14,
+      "z": -6,
+      "rotY": 0
+     },
+     {
+      "x": -14,
+      "z": -2,
+      "rotY": 0
+     },
+     {
+      "x": -14,
+      "z": 2,
+      "rotY": 0
+     },
+     {
+      "x": -14,
+      "z": 6,
+      "rotY": 0
+     },
+     {
+      "x": -14,
+      "z": 10,
+      "rotY": 0
+     },
+     {
+      "x": -14,
+      "z": 14,
+      "rotY": 0
+     },
+     {
+      "x": -14,
+      "z": 18,
+      "rotY": 0
+     },
+     {
+      "x": -14,
+      "z": 22,
+      "rotY": 0
+     },
+     {
+      "x": -14,
+      "z": 26,
+      "rotY": 0
+     },
+     {
+      "x": -10,
+      "z": -10,
+      "rotY": 0
+     },
+     {
+      "x": -10,
+      "z": -6,
+      "rotY": 0
+     },
+     {
+      "x": -10,
+      "z": -2,
+      "rotY": 0
+     },
+     {
+      "x": -10,
+      "z": 2,
+      "rotY": 0
+     },
+     {
+      "x": -10,
+      "z": 6,
+      "rotY": 0
+     },
+     {
+      "x": -10,
+      "z": 10,
+      "rotY": 0
+     },
+     {
+      "x": -10,
+      "z": 14,
+      "rotY": 0
+     },
+     {
+      "x": -10,
+      "z": 18,
+      "rotY": 0
+     },
+     {
+      "x": -10,
+      "z": 22,
+      "rotY": 0
+     },
+     {
+      "x": -10,
+      "z": 26,
+      "rotY": 0
+     },
+     {
+      "x": -6,
+      "z": -10,
+      "rotY": 0
+     },
+     {
+      "x": -6,
+      "z": -6,
+      "rotY": 0
+     },
+     {
+      "x": -6,
+      "z": -2,
+      "rotY": 0
+     },
+     {
+      "x": -6,
+      "z": 2,
+      "rotY": 0
+     },
+     {
+      "x": -6,
+      "z": 6,
+      "rotY": 0
+     },
+     {
+      "x": -6,
+      "z": 10,
+      "rotY": 0
+     },
+     {
+      "x": -6,
+      "z": 14,
+      "rotY": 0
+     },
+     {
+      "x": -6,
+      "z": 18,
+      "rotY": 0
+     },
+     {
+      "x": -6,
+      "z": 22,
+      "rotY": 0
+     },
+     {
+      "x": -6,
+      "z": 26,
+      "rotY": 0
+     },
+     {
+      "x": -2,
+      "z": -10,
+      "rotY": 0
+     },
+     {
+      "x": -2,
+      "z": -6,
+      "rotY": 0
+     },
+     {
+      "x": -2,
+      "z": -2,
+      "rotY": 0
+     },
+     {
+      "x": -2,
+      "z": 2,
+      "rotY": 0
+     },
+     {
+      "x": -2,
+      "z": 6,
+      "rotY": 0
+     },
+     {
+      "x": -2,
+      "z": 10,
+      "rotY": 0
+     },
+     {
+      "x": -2,
+      "z": 14,
+      "rotY": 0
+     },
+     {
+      "x": -2,
+      "z": 18,
+      "rotY": 0
+     },
+     {
+      "x": -2,
+      "z": 22,
+      "rotY": 0
+     },
+     {
+      "x": -2,
+      "z": 26,
+      "rotY": 0
+     },
+     {
+      "x": 2,
+      "z": -10,
+      "rotY": 0
+     },
+     {
+      "x": 2,
+      "z": -6,
+      "rotY": 0
+     },
+     {
+      "x": 2,
+      "z": -2,
+      "rotY": 0
+     },
+     {
+      "x": 2,
+      "z": 2,
+      "rotY": 0
+     },
+     {
+      "x": 2,
+      "z": 6,
+      "rotY": 0
+     },
+     {
+      "x": 2,
+      "z": 10,
+      "rotY": 0
+     },
+     {
+      "x": 2,
+      "z": 14,
+      "rotY": 0
+     },
+     {
+      "x": 2,
+      "z": 18,
+      "rotY": 0
+     },
+     {
+      "x": 2,
+      "z": 22,
+      "rotY": 0
+     },
+     {
+      "x": 2,
+      "z": 26,
+      "rotY": 0
+     },
+     {
+      "x": 6,
+      "z": -10,
+      "rotY": 0
+     },
+     {
+      "x": 6,
+      "z": -6,
+      "rotY": 0
+     },
+     {
+      "x": 6,
+      "z": -2,
+      "rotY": 0
+     },
+     {
+      "x": 6,
+      "z": 2,
+      "rotY": 0
+     },
+     {
+      "x": 6,
+      "z": 6,
+      "rotY": 0
+     },
+     {
+      "x": 6,
+      "z": 10,
+      "rotY": 0
+     },
+     {
+      "x": 6,
+      "z": 14,
+      "rotY": 0
+     },
+     {
+      "x": 6,
+      "z": 18,
+      "rotY": 0
+     },
+     {
+      "x": 6,
+      "z": 22,
+      "rotY": 0
+     },
+     {
+      "x": 6,
+      "z": 26,
+      "rotY": 0
+     },
+     {
+      "x": 10,
+      "z": -10,
+      "rotY": 0
+     },
+     {
+      "x": 10,
+      "z": -6,
+      "rotY": 0
+     },
+     {
+      "x": 10,
+      "z": -2,
+      "rotY": 0
+     },
+     {
+      "x": 10,
+      "z": 2,
+      "rotY": 0
+     },
+     {
+      "x": 10,
+      "z": 6,
+      "rotY": 0
+     },
+     {
+      "x": 10,
+      "z": 10,
+      "rotY": 0
+     },
+     {
+      "x": 10,
+      "z": 14,
+      "rotY": 0
+     },
+     {
+      "x": 10,
+      "z": 18,
+      "rotY": 0
+     },
+     {
+      "x": 10,
+      "z": 22,
+      "rotY": 0
+     },
+     {
+      "x": 10,
+      "z": 26,
+      "rotY": 0
+     },
+     {
+      "x": 14,
+      "z": -10,
+      "rotY": 0
+     },
+     {
+      "x": 14,
+      "z": -6,
+      "rotY": 0
+     },
+     {
+      "x": 14,
+      "z": -2,
+      "rotY": 0
+     },
+     {
+      "x": 14,
+      "z": 2,
+      "rotY": 0
+     },
+     {
+      "x": 14,
+      "z": 6,
+      "rotY": 0
+     },
+     {
+      "x": 14,
+      "z": 10,
+      "rotY": 0
+     },
+     {
+      "x": 14,
+      "z": 14,
+      "rotY": 0
+     },
+     {
+      "x": 14,
+      "z": 18,
+      "rotY": 0
+     },
+     {
+      "x": 14,
+      "z": 22,
+      "rotY": 0
+     },
+     {
+      "x": 14,
+      "z": 26,
+      "rotY": 0
+     },
+     {
+      "x": 18,
+      "z": -10,
+      "rotY": 0
+     },
+     {
+      "x": 18,
+      "z": -6,
+      "rotY": 0
+     },
+     {
+      "x": 18,
+      "z": -2,
+      "rotY": 0
+     },
+     {
+      "x": 18,
+      "z": 2,
+      "rotY": 0
+     },
+     {
+      "x": 18,
+      "z": 6,
+      "rotY": 0
+     },
+     {
+      "x": 18,
+      "z": 10,
+      "rotY": 0
+     },
+     {
+      "x": 18,
+      "z": 14,
+      "rotY": 0
+     },
+     {
+      "x": 18,
+      "z": 18,
+      "rotY": 0
+     },
+     {
+      "x": 18,
+      "z": 22,
+      "rotY": 0
+     },
+     {
+      "x": 18,
+      "z": 26,
+      "rotY": 0
+     },
+     {
+      "x": 22,
+      "z": -10,
+      "rotY": 0
+     },
+     {
+      "x": 22,
+      "z": -6,
+      "rotY": 0
+     },
+     {
+      "x": 22,
+      "z": -2,
+      "rotY": 0
+     },
+     {
+      "x": 22,
+      "z": 2,
+      "rotY": 0
+     },
+     {
+      "x": 22,
+      "z": 6,
+      "rotY": 0
+     },
+     {
+      "x": 22,
+      "z": 10,
+      "rotY": 0
+     },
+     {
+      "x": 22,
+      "z": 14,
+      "rotY": 0
+     },
+     {
+      "x": 22,
+      "z": 18,
+      "rotY": 0
+     },
+     {
+      "x": 22,
+      "z": 22,
+      "rotY": 0
+     },
+     {
+      "x": 22,
+      "z": 26,
+      "rotY": 0
+     }
     ]
    },
    "lighting": {
+    "mood": "deep blue moonlight from the upper right, warm brazier and candle pools, flooded hall",
     "sun": {
      "direction": [
-      -0.42,
-      -0.8,
-      0.42
+      -0.43,
+      -0.88,
+      -0.205
+     ],
+     "euler": [
+      61.6,
+      -115.5,
+      0.0
      ],
      "color": [
       0.55,
-      0.68,
+      0.66,
       1.0
      ],
-     "intensity": 0.7
+     "intensity": 0.75
     },
-    "ambient": [
-     0.13,
-     0.15,
-     0.32
-    ],
-    "ambientIntensity": 0.85,
+    "ambient": {
+     "mode": "Trilight",
+     "sky": [
+      0.2,
+      0.24,
+      0.48
+     ],
+     "equator": [
+      0.14,
+      0.15,
+      0.3
+     ],
+     "ground": [
+      0.06,
+      0.06,
+      0.1
+     ]
+    },
+    "fog": {
+     "color": [
+      0.08,
+      0.1,
+      0.2
+     ],
+     "density": 0.02
+    },
     "grade": {
      "shadows": [
       0.3,
@@ -3320,7 +4312,62 @@
      ],
      "saturation": 1.05,
      "contrast": 1.1,
-     "vignette": 0.36
+     "vignette": 0.38
+    },
+    "preset": {
+     "sunColor": [
+      0.55,
+      0.66,
+      1.0
+     ],
+     "sunIntensity": 0.75,
+     "sunEuler": [
+      61.6,
+      -115.5,
+      0.0
+     ],
+     "ambientSky": [
+      0.2,
+      0.24,
+      0.48
+     ],
+     "ambientEquator": [
+      0.14,
+      0.15,
+      0.3
+     ],
+     "ambientGround": [
+      0.06,
+      0.06,
+      0.1
+     ],
+     "fogColor": [
+      0.08,
+      0.1,
+      0.2
+     ],
+     "fogDensity": 0.02,
+     "rimColor": [
+      0.5,
+      0.6,
+      1.0
+     ],
+     "additionalLightTint": [
+      1.0,
+      0.7,
+      0.45
+     ],
+     "godRayColor": [
+      0.55,
+      0.68,
+      1.0
+     ],
+     "godRayIntensity": 0.6,
+     "particleTint": [
+      0.9,
+      0.92,
+      1.0
+     ]
     }
    },
    "props": [
@@ -3362,7 +4409,7 @@
      "piece": "Env_CryptWall",
      "x": -3.0,
      "y": -0.2,
-     "z": 13.3,
+     "z": 13.4,
      "rotY": 180,
      "scale": 1.0
     },
@@ -3370,7 +4417,7 @@
      "piece": "Env_CryptWall",
      "x": -1.0,
      "y": -0.2,
-     "z": 13.3,
+     "z": 13.4,
      "rotY": 180,
      "scale": 1.0
     },
@@ -3378,7 +4425,7 @@
      "piece": "Env_CryptWall",
      "x": 1.0,
      "y": -0.2,
-     "z": 13.3,
+     "z": 13.4,
      "rotY": 180,
      "scale": 1.0
     },
@@ -3386,200 +4433,200 @@
      "piece": "Env_CryptWall",
      "x": 3.0,
      "y": -0.2,
-     "z": 13.3,
+     "z": 13.4,
      "rotY": 180,
      "scale": 1.0
     },
     {
      "piece": "Env_CryptWall",
-     "x": -5.2,
+     "x": -5.3,
      "y": -0.2,
-     "z": 11.3,
+     "z": 11.4,
      "rotY": 180,
      "scale": 1.0
     },
     {
      "piece": "Env_IronGate",
-     "x": -7.75,
+     "x": -7.85,
      "y": -0.2,
-     "z": 11.3,
+     "z": 11.4,
      "rotY": 180,
      "scale": 1.0
     },
     {
      "piece": "Env_CryptWall",
-     "x": -10.3,
+     "x": -10.4,
      "y": -0.2,
-     "z": 11.3,
+     "z": 11.4,
      "rotY": 180,
      "scale": 1.0
     },
     {
      "piece": "Env_CryptWall",
-     "x": 5.2,
+     "x": -12.4,
      "y": -0.2,
-     "z": 11.3,
+     "z": 11.4,
      "rotY": 180,
      "scale": 1.0
     },
     {
      "piece": "Env_CryptWall",
-     "x": 7.2,
+     "x": 5.3,
      "y": -0.2,
-     "z": 11.3,
+     "z": 11.4,
      "rotY": 180,
      "scale": 1.0
     },
     {
      "piece": "Env_CryptWall",
-     "x": 9.2,
+     "x": 7.3,
      "y": -0.2,
-     "z": 11.3,
+     "z": 11.4,
      "rotY": 180,
+     "scale": 1.0
+    },
+    {
+     "piece": "Env_CryptWall",
+     "x": 9.3,
+     "y": -0.2,
+     "z": 11.4,
+     "rotY": 180,
+     "scale": 1.0
+    },
+    {
+     "piece": "Env_CryptWall",
+     "x": 11.3,
+     "y": -0.2,
+     "z": 11.4,
+     "rotY": 180,
+     "scale": 1.0
+    },
+    {
+     "piece": "Env_CryptWall",
+     "x": -11.2,
+     "y": -0.2,
+     "z": 0.4,
+     "rotY": 90,
+     "scale": 1.0
+    },
+    {
+     "piece": "Env_CryptWall",
+     "x": -11.2,
+     "y": -0.2,
+     "z": 2.4,
+     "rotY": 90,
+     "scale": 1.0
+    },
+    {
+     "piece": "Env_CryptWall",
+     "x": -11.2,
+     "y": -0.2,
+     "z": 4.4,
+     "rotY": 90,
+     "scale": 1.0
+    },
+    {
+     "piece": "Env_CryptWall",
+     "x": -11.2,
+     "y": -0.2,
+     "z": 6.4,
+     "rotY": 90,
+     "scale": 1.0
+    },
+    {
+     "piece": "Env_CryptWall",
+     "x": -11.2,
+     "y": -0.2,
+     "z": 8.4,
+     "rotY": 90,
      "scale": 1.0
     },
     {
      "piece": "Env_CryptWall",
      "x": 11.2,
      "y": -0.2,
-     "z": 11.3,
-     "rotY": 180,
-     "scale": 1.0
-    },
-    {
-     "piece": "Env_CryptWall",
-     "x": -10.9,
-     "y": -0.2,
-     "z": 0.2,
-     "rotY": 90,
-     "scale": 1.0
-    },
-    {
-     "piece": "Env_CryptWall",
-     "x": -10.9,
-     "y": -0.2,
-     "z": 2.2,
-     "rotY": 90,
-     "scale": 1.0
-    },
-    {
-     "piece": "Env_CryptWall",
-     "x": -10.9,
-     "y": -0.2,
-     "z": 4.2,
-     "rotY": 90,
-     "scale": 1.0
-    },
-    {
-     "piece": "Env_CryptWall",
-     "x": -10.9,
-     "y": -0.2,
-     "z": 6.2,
-     "rotY": 90,
-     "scale": 1.0
-    },
-    {
-     "piece": "Env_CryptWall",
-     "x": -10.9,
-     "y": -0.2,
-     "z": 8.2,
-     "rotY": 90,
-     "scale": 1.0
-    },
-    {
-     "piece": "Env_CryptWall",
-     "x": 10.9,
-     "y": -0.2,
-     "z": 0.2,
+     "z": 0.4,
      "rotY": 270,
      "scale": 1.0
     },
     {
      "piece": "Env_CryptWall",
-     "x": 10.9,
+     "x": 11.2,
      "y": -0.2,
-     "z": 2.2,
+     "z": 2.4,
      "rotY": 270,
      "scale": 1.0
     },
     {
      "piece": "Env_CryptWall",
-     "x": 10.9,
+     "x": 11.2,
      "y": -0.2,
-     "z": 4.2,
+     "z": 4.4,
      "rotY": 270,
      "scale": 1.0
     },
     {
      "piece": "Env_CryptWall",
-     "x": 10.9,
+     "x": 11.2,
      "y": -0.2,
-     "z": 6.2,
+     "z": 6.4,
      "rotY": 270,
      "scale": 1.0
     },
     {
      "piece": "Env_CryptWall",
-     "x": 10.9,
+     "x": 11.2,
      "y": -0.2,
-     "z": 8.2,
+     "z": 8.4,
      "rotY": 270,
      "scale": 1.0
     },
     {
      "piece": "Env_Banner",
-     "x": -5.2,
+     "x": -5.3,
      "y": 2.25,
-     "z": 11.0,
+     "z": 11.1,
      "rotY": 180,
      "scale": 1.0
     },
     {
      "piece": "Env_Banner",
-     "x": -10.3,
+     "x": -10.4,
      "y": 2.25,
-     "z": 11.0,
+     "z": 11.1,
      "rotY": 180,
      "scale": 1.0
     },
     {
      "piece": "Env_Banner",
-     "x": 5.2,
+     "x": 5.3,
      "y": 2.25,
-     "z": 11.0,
+     "z": 11.1,
      "rotY": 180,
      "scale": 1.0
     },
     {
      "piece": "Env_Banner",
-     "x": 7.2,
+     "x": 9.3,
      "y": 2.25,
-     "z": 11.0,
-     "rotY": 180,
-     "scale": 1.0
-    },
-    {
-     "piece": "Env_Banner",
-     "x": 9.2,
-     "y": 2.25,
-     "z": 11.0,
+     "z": 11.1,
      "rotY": 180,
      "scale": 1.0
     },
     {
      "piece": "Env_Brazier",
-     "x": -4.95,
+     "x": -5.0,
      "y": -0.2,
-     "z": 10.1,
+     "z": 10.2,
      "rotY": 0,
      "scale": 1.0,
      "light": true
     },
     {
      "piece": "Env_Brazier",
-     "x": 4.95,
+     "x": 5.0,
      "y": -0.2,
-     "z": 10.1,
+     "z": 10.2,
      "rotY": 0,
      "scale": 1.0,
      "light": true
@@ -3588,7 +4635,7 @@
      "piece": "Env_Brazier",
      "x": -5.1,
      "y": -0.2,
-     "z": 0.2,
+     "z": 0.3,
      "rotY": 0,
      "scale": 0.95,
      "light": true
@@ -3597,89 +4644,89 @@
      "piece": "Env_Brazier",
      "x": 5.1,
      "y": -0.2,
-     "z": 0.2,
+     "z": 0.3,
      "rotY": 0,
      "scale": 0.95,
      "light": true
     },
     {
      "piece": "Env_Tombstone_A",
-     "x": -6.0,
+     "x": -6.2,
      "y": -0.2,
-     "z": 8.1,
+     "z": 8.4,
      "rotY": 180,
      "scale": 1.0
     },
     {
      "piece": "Env_Tombstone_B",
-     "x": -7.8,
+     "x": -9.4,
      "y": -0.2,
-     "z": 8.3,
+     "z": 8.6,
      "rotY": 172,
      "scale": 1.0
     },
     {
      "piece": "Env_Tombstone_A",
-     "x": -9.5,
+     "x": -6.3,
      "y": -0.2,
-     "z": 8.0,
-     "rotY": 188,
-     "scale": 0.95
-    },
-    {
-     "piece": "Env_Tombstone_B",
-     "x": -6.1,
-     "y": -0.2,
-     "z": 5.2,
+     "z": 5.6,
      "rotY": 185,
      "scale": 0.95
     },
     {
-     "piece": "Env_Tombstone_A",
-     "x": -7.9,
+     "piece": "Env_Tombstone_B",
+     "x": -9.5,
      "y": -0.2,
-     "z": 5.4,
+     "z": 5.5,
      "rotY": 176,
      "scale": 1.05
     },
     {
      "piece": "Env_Tombstone_A",
-     "x": -9.6,
-     "y": -0.2,
-     "z": 5.1,
-     "rotY": 182,
-     "scale": 0.9
-    },
-    {
-     "piece": "Env_Tombstone_A",
      "x": -6.2,
      "y": -0.2,
-     "z": 2.4,
+     "z": 2.8,
      "rotY": 190,
      "scale": 0.95
     },
     {
-     "piece": "Env_Tombstone_B",
-     "x": -8.0,
+     "piece": "Env_Tombstone_A",
+     "x": -9.4,
      "y": -0.2,
-     "z": 2.2,
+     "z": 2.6,
      "rotY": 178,
      "scale": 1.0
     },
     {
-     "piece": "Env_Candles",
-     "x": -6.9,
+     "piece": "Env_Tombstone_B",
+     "x": -10.2,
      "y": -0.2,
      "z": 9.9,
+     "rotY": 186,
+     "scale": 0.9
+    },
+    {
+     "piece": "Env_Tombstone_A",
+     "x": -8.9,
+     "y": -0.2,
+     "z": 0.4,
+     "rotY": 170,
+     "scale": 0.9
+    },
+    {
+     "piece": "Env_Candles",
+     "x": -7.0,
+     "y": -0.2,
+     "z": 10.1,
      "rotY": 0,
      "scale": 1.0,
      "light": true
     },
     {
      "piece": "Env_Candles",
-     "x": -8.6,
+     "x": -8.8,
      "y": -0.2,
-     "z": 6.5,
+     "z": 7.0,
      "rotY": 50,
      "scale": 0.85
     },
@@ -3687,112 +4734,160 @@
      "piece": "Env_Candles",
      "x": -5.3,
      "y": -0.2,
-     "z": 3.9,
+     "z": 4.2,
      "rotY": 0,
      "scale": 0.8
     },
     {
      "piece": "Env_BonePile",
-     "x": -9.3,
+     "x": -10.0,
      "y": -0.2,
-     "z": 1.1,
+     "z": 1.6,
      "rotY": 100,
      "scale": 1.1
     },
     {
      "piece": "Env_BonePile",
-     "x": -4.8,
+     "x": -5.1,
      "y": -0.2,
-     "z": 6.9,
+     "z": 7.1,
      "rotY": 20,
      "scale": 0.8
     },
     {
-     "piece": "Env_Coffin",
-     "x": 6.5,
+     "piece": "Env_Urn",
+     "x": -5.6,
      "y": -0.2,
-     "z": 8.3,
+     "z": 9.6,
+     "rotY": 0,
+     "scale": 1.0
+    },
+    {
+     "piece": "Env_Urn",
+     "x": -10.2,
+     "y": -0.2,
+     "z": 4.1,
+     "rotY": 40,
+     "scale": 0.9
+    },
+    {
+     "piece": "Env_WaterPool",
+     "x": 8.0,
+     "y": -0.2,
+     "z": 6.6,
+     "rotY": 90,
+     "scale": 1.6
+    },
+    {
+     "piece": "Env_WaterPool",
+     "x": 6.3,
+     "y": -0.2,
+     "z": 1.7,
+     "rotY": 30,
+     "scale": 1.0
+    },
+    {
+     "piece": "Env_Coffin",
+     "x": 6.3,
+     "y": -0.2,
+     "z": 8.6,
      "rotY": 90,
      "scale": 1.0
     },
     {
      "piece": "Env_Coffin",
-     "x": 6.5,
+     "x": 6.3,
      "y": -0.2,
-     "z": 5.3,
+     "z": 4.6,
      "rotY": 90,
      "scale": 1.0
     },
     {
      "piece": "Env_Coffin",
-     "x": 9.3,
+     "x": 9.7,
      "y": -0.2,
-     "z": 6.8,
+     "z": 9.3,
      "rotY": 90,
      "scale": 1.0
     },
     {
-     "piece": "Env_RuinColumn",
-     "x": 8.1,
+     "piece": "Env_CryptPillar",
+     "x": 5.4,
      "y": -0.2,
-     "z": 9.9,
-     "rotY": 20,
-     "scale": 0.95
+     "z": 1.6,
+     "rotY": 0,
+     "scale": 1.0
     },
     {
-     "piece": "Env_RuinColumn_Broken",
-     "x": 8.1,
+     "piece": "Env_CryptPillar",
+     "x": 5.4,
      "y": -0.2,
-     "z": 3.6,
-     "rotY": 120,
+     "z": 5.6,
+     "rotY": 0,
+     "scale": 1.0
+    },
+    {
+     "piece": "Env_CryptPillar",
+     "x": 5.4,
+     "y": -0.2,
+     "z": 9.6,
+     "rotY": 0,
+     "scale": 1.0
+    },
+    {
+     "piece": "Env_CryptPillar",
+     "x": -5.4,
+     "y": -0.2,
+     "z": 11.9,
+     "rotY": 0,
+     "scale": 1.0
+    },
+    {
+     "piece": "Env_Coffin",
+     "x": 9.6,
+     "y": -0.2,
+     "z": 3.2,
+     "rotY": 90,
      "scale": 0.9
     },
     {
      "piece": "Env_Candles",
-     "x": 5.3,
+     "x": 5.1,
      "y": -0.2,
-     "z": 9.5,
+     "z": 9.9,
      "rotY": 30,
      "scale": 0.9,
      "light": true
     },
     {
      "piece": "Env_Candles",
-     "x": 9.4,
+     "x": 9.6,
      "y": -0.2,
-     "z": 8.6,
+     "z": 7.8,
      "rotY": 0,
      "scale": 0.8
     },
     {
      "piece": "Env_Candles",
-     "x": 5.2,
+     "x": 5.1,
      "y": -0.2,
-     "z": 4.0,
+     "z": 3.1,
      "rotY": 90,
      "scale": 0.8
     },
     {
      "piece": "Env_Tombstone_B",
-     "x": 6.2,
+     "x": 9.6,
      "y": -0.2,
-     "z": 1.9,
+     "z": 1.0,
      "rotY": 190,
      "scale": 1.0
     },
     {
-     "piece": "Env_Tombstone_A",
-     "x": 9.2,
-     "y": -0.2,
-     "z": 2.4,
-     "rotY": 175,
-     "scale": 1.0
-    },
-    {
      "piece": "Env_BonePile",
-     "x": 9.6,
+     "x": 10.1,
      "y": -0.2,
-     "z": 4.6,
+     "z": 5.2,
      "rotY": 300,
      "scale": 1.0
     },
@@ -3800,15 +4895,71 @@
      "piece": "Env_BonePile",
      "x": 5.0,
      "y": -0.2,
-     "z": 7.0,
+     "z": 6.6,
      "rotY": 200,
-     "scale": 0.8
+     "scale": 0.75
+    },
+    {
+     "piece": "Env_Urn",
+     "x": 7.3,
+     "y": -0.2,
+     "z": 10.3,
+     "rotY": 0,
+     "scale": 1.0
+    },
+    {
+     "piece": "Env_Urn",
+     "x": 10.0,
+     "y": -0.2,
+     "z": 6.4,
+     "rotY": 120,
+     "scale": 0.85
+    },
+    {
+     "piece": "Env_Candles",
+     "x": -9.9,
+     "y": -0.2,
+     "z": 5.4,
+     "rotY": 120,
+     "scale": 0.7
+    },
+    {
+     "piece": "Env_Candles",
+     "x": -6.8,
+     "y": -0.2,
+     "z": 1.6,
+     "rotY": 200,
+     "scale": 0.75
+    },
+    {
+     "piece": "Env_Candles",
+     "x": 7.3,
+     "y": -0.2,
+     "z": 3.4,
+     "rotY": 60,
+     "scale": 0.7
+    },
+    {
+     "piece": "Env_Candles",
+     "x": 7.0,
+     "y": -0.2,
+     "z": 9.9,
+     "rotY": 10,
+     "scale": 0.75
+    },
+    {
+     "piece": "Env_Candles",
+     "x": 10.0,
+     "y": -0.2,
+     "z": 2.0,
+     "rotY": 0,
+     "scale": 0.7
     },
     {
      "piece": "Env_Candles",
      "x": -1.4,
      "y": -0.2,
-     "z": 12.55,
+     "z": 12.6,
      "rotY": 0,
      "scale": 0.9
     },
@@ -3816,7 +4967,7 @@
      "piece": "Env_Candles",
      "x": 2.1,
      "y": -0.2,
-     "z": 12.5,
+     "z": 12.55,
      "rotY": 40,
      "scale": 0.85
     },
@@ -3824,7 +4975,7 @@
      "piece": "Env_BonePile",
      "x": -2.9,
      "y": -0.2,
-     "z": 12.7,
+     "z": 12.8,
      "rotY": 150,
      "scale": 0.9
     },
@@ -3832,239 +4983,239 @@
      "piece": "Env_BonePile",
      "x": 0.4,
      "y": -0.2,
-     "z": 12.8,
+     "z": 12.9,
      "rotY": 20,
      "scale": 0.8
     },
     {
-     "piece": "Env_GroundPatch",
-     "x": -7.75,
+     "piece": "Env_Urn",
+     "x": 3.3,
      "y": -0.2,
-     "z": 10.3,
-     "rotY": 0.0,
-     "scale": 0.45
-    },
-    {
-     "piece": "Env_GroundPatch",
-     "x": -7.2,
-     "y": -0.2,
-     "z": 8.9,
-     "rotY": 47.0,
-     "scale": 0.5
-    },
-    {
-     "piece": "Env_GroundPatch",
-     "x": -7.0,
-     "y": -0.2,
-     "z": 7.0,
-     "rotY": 94.0,
-     "scale": 0.55
-    },
-    {
-     "piece": "Env_GroundPatch",
-     "x": -7.1,
-     "y": -0.2,
-     "z": 4.9,
-     "rotY": 141.0,
-     "scale": 0.45
-    },
-    {
-     "piece": "Env_GroundPatch",
-     "x": -7.0,
-     "y": -0.2,
-     "z": 2.9,
-     "rotY": 188.0,
-     "scale": 0.5
-    },
-    {
-     "piece": "Env_GroundPatch",
-     "x": -7.3,
-     "y": -0.2,
-     "z": 0.9,
-     "rotY": 235.0,
-     "scale": 0.55
-    },
-    {
-     "piece": "Env_GroundPatch",
-     "x": -7.6,
-     "y": -0.2,
-     "z": -1.0,
-     "rotY": 282.0,
-     "scale": 0.45
-    },
-    {
-     "piece": "Env_GroundPatch",
-     "x": 7.9,
-     "y": -0.2,
-     "z": 6.8,
-     "rotY": 30,
-     "scale": 1.3
-    },
-    {
-     "piece": "Env_GroundPatch",
-     "x": 4.9,
-     "y": -0.2,
-     "z": -1.0,
-     "rotY": 80,
+     "z": 12.7,
+     "rotY": 0,
      "scale": 0.9
     },
     {
-     "piece": "Env_GroundMound",
-     "x": 11.0,
+     "piece": "Env_PavingPatch",
+     "x": -7.85,
      "y": -0.2,
-     "z": 1.0,
-     "rotY": 180,
-     "scale": 0.7
+     "z": 10.3,
+     "rotY": 90,
+     "scale": 0.62
+    },
+    {
+     "piece": "Env_PavingPatch",
+     "x": -7.85,
+     "y": -0.2,
+     "z": 8.3,
+     "rotY": 97,
+     "scale": 0.62
+    },
+    {
+     "piece": "Env_PavingPatch",
+     "x": -7.85,
+     "y": -0.2,
+     "z": 6.3,
+     "rotY": 104,
+     "scale": 0.62
+    },
+    {
+     "piece": "Env_PavingPatch",
+     "x": -7.85,
+     "y": -0.2,
+     "z": 4.3,
+     "rotY": 111,
+     "scale": 0.62
+    },
+    {
+     "piece": "Env_PavingPatch",
+     "x": -7.85,
+     "y": -0.2,
+     "z": 2.3,
+     "rotY": 118,
+     "scale": 0.62
+    },
+    {
+     "piece": "Env_PavingPatch",
+     "x": -7.85,
+     "y": -0.2,
+     "z": 0.3,
+     "rotY": 125,
+     "scale": 0.62
+    },
+    {
+     "piece": "Env_GroundPatch",
+     "x": -6.2,
+     "y": -0.2,
+     "z": 8.9,
+     "rotY": 0,
+     "scale": 0.9
+    },
+    {
+     "piece": "Env_GroundPatch",
+     "x": -6.3,
+     "y": -0.2,
+     "z": 5.9,
+     "rotY": 35,
+     "scale": 0.9
+    },
+    {
+     "piece": "Env_GroundPatch",
+     "x": -6.2,
+     "y": -0.2,
+     "z": 3.1,
+     "rotY": 70,
+     "scale": 0.9
+    },
+    {
+     "piece": "Env_GroundPatch",
+     "x": -9.5,
+     "y": -0.2,
+     "z": 9.1,
+     "rotY": 105,
+     "scale": 0.9
+    },
+    {
+     "piece": "Env_GroundPatch",
+     "x": -9.5,
+     "y": -0.2,
+     "z": 6.0,
+     "rotY": 140,
+     "scale": 0.9
+    },
+    {
+     "piece": "Env_GroundPatch",
+     "x": -9.4,
+     "y": -0.2,
+     "z": 3.0,
+     "rotY": 175,
+     "scale": 0.9
+    },
+    {
+     "piece": "Env_GroundPatch",
+     "x": -9.0,
+     "y": -0.2,
+     "z": 0.6,
+     "rotY": 210,
+     "scale": 0.9
+    },
+    {
+     "piece": "Env_PavingPatch",
+     "x": 7.9,
+     "y": -0.2,
+     "z": 2.4,
+     "rotY": 90,
+     "scale": 1.0
+    },
+    {
+     "piece": "Env_PavingPatch",
+     "x": 7.9,
+     "y": -0.2,
+     "z": 5.2,
+     "rotY": 90,
+     "scale": 1.0
+    },
+    {
+     "piece": "Env_PavingPatch",
+     "x": 7.9,
+     "y": -0.2,
+     "z": 8.0,
+     "rotY": 90,
+     "scale": 1.0
+    },
+    {
+     "piece": "Env_PavingPatch",
+     "x": 7.9,
+     "y": -0.2,
+     "z": 10.3,
+     "rotY": 90,
+     "scale": 1.0
     },
     {
      "piece": "Env_Pebbles",
-     "x": -8.903,
+     "x": -9.324,
      "y": -0.2,
-     "z": 4.072,
+     "z": 4.191,
      "rotY": 20.2,
-     "scale": 0.977
+     "scale": 0.711
     },
     {
      "piece": "Env_Pebbles",
-     "x": -8.67,
+     "x": -5.287,
      "y": -0.2,
-     "z": 7.317,
-     "rotY": 271.7,
-     "scale": 1.057
-    },
-    {
-     "piece": "Env_Pebbles",
-     "x": -5.135,
-     "y": -0.2,
-     "z": 3.075,
+     "z": 3.173,
      "rotY": 46.2,
-     "scale": 0.986
+     "scale": 0.716
     },
     {
      "piece": "Env_Pebbles",
-     "x": 5.475,
+     "x": -7.366,
      "y": -0.2,
-     "z": 2.589,
-     "rotY": 311.5,
-     "scale": 1.199
+     "z": 9.266,
+     "rotY": 160.9,
+     "scale": 0.818
     },
     {
      "piece": "Env_Pebbles",
-     "x": 6.357,
+     "x": 6.125,
      "y": -0.2,
-     "z": 0.713,
-     "rotY": 200.1,
-     "scale": 0.94
+     "z": -0.844,
+     "rotY": 323.3,
+     "scale": 0.817
     },
     {
      "piece": "Env_Pebbles",
-     "x": 5.022,
+     "x": -7.886,
      "y": -0.2,
-     "z": 1.274,
-     "rotY": 116.8,
-     "scale": 0.832
-    },
-    {
-     "piece": "Env_Pebbles",
-     "x": 9.545,
-     "y": -0.2,
-     "z": 0.864,
-     "rotY": 311.1,
-     "scale": 1.071
-    },
-    {
-     "piece": "Env_Pebbles",
-     "x": -4.796,
-     "y": -0.2,
-     "z": 2.057,
-     "rotY": 153.9,
-     "scale": 0.897
-    },
-    {
-     "piece": "Env_Pebbles",
-     "x": 7.862,
-     "y": -0.2,
-     "z": 0.579,
-     "rotY": 347.9,
-     "scale": 1.103
-    },
-    {
-     "piece": "Env_Pebbles",
-     "x": -5.863,
-     "y": -0.2,
-     "z": 6.604,
-     "rotY": 81.9,
-     "scale": 1.174
-    },
-    {
-     "piece": "Env_Pebbles",
-     "x": -8.311,
-     "y": -0.2,
-     "z": 0.707,
-     "rotY": 335.7,
-     "scale": 0.808
-    },
-    {
-     "piece": "Env_Pebbles",
-     "x": -6.126,
-     "y": -0.2,
-     "z": 9.871,
-     "rotY": 104.0,
-     "scale": 0.881
+     "z": 1.9,
+     "rotY": 322.2,
+     "scale": 0.688
     },
     {
      "piece": "Env_GrassTuft",
-     "x": -9.381,
+     "x": -9.446,
      "y": -0.2,
-     "z": 9.548,
-     "rotY": 359.9,
-     "scale": 0.649
+     "z": 9.753,
+     "rotY": 60.8,
+     "scale": 0.766
     },
     {
      "piece": "Env_GrassTuft",
-     "x": -9.931,
+     "x": -10.141,
      "y": -0.2,
-     "z": 9.967,
-     "rotY": 45.3,
-     "scale": 0.621
+     "z": 9.069,
+     "rotY": 217.5,
+     "scale": 0.557
     },
     {
      "piece": "Env_GrassTuft",
-     "x": -5.223,
+     "x": -4.862,
      "y": -0.2,
-     "z": 8.887,
-     "rotY": 249.9,
-     "scale": 0.615
+     "z": 9.057,
+     "rotY": 22.2,
+     "scale": 0.713
     },
     {
      "piece": "Env_GrassTuft",
-     "x": -4.898,
+     "x": -5.124,
      "y": -0.2,
-     "z": 8.511,
-     "rotY": 148.5,
-     "scale": 0.726
+     "z": 8.515,
+     "rotY": 74.2,
+     "scale": 0.667
     },
     {
      "piece": "Env_GrassTuft",
-     "x": 9.883,
+     "x": 10.579,
      "y": -0.2,
-     "z": 9.68,
-     "rotY": 306.1,
-     "scale": 0.707
-    },
-    {
-     "piece": "Env_GrassTuft",
-     "x": 10.35,
-     "y": -0.2,
-     "z": 9.901,
-     "rotY": 194.6,
-     "scale": 0.598
+     "z": 10.372,
+     "rotY": 124.0,
+     "scale": 0.734
     },
     {
      "piece": "Env_GrassTuft",
      "x": 4.677,
      "y": -0.2,
-     "z": 2.327,
+     "z": 1.727,
      "rotY": 299.4,
      "scale": 0.605
     },
@@ -4072,27 +5223,438 @@
      "piece": "Env_GrassTuft",
      "x": 4.857,
      "y": -0.2,
-     "z": 3.012,
+     "z": 2.412,
      "rotY": 89.2,
      "scale": 0.696
     },
     {
      "piece": "Env_GrassTuft",
-     "x": -9.84,
+     "x": -10.04,
      "y": -0.2,
-     "z": 3.404,
+     "z": 3.204,
      "rotY": 341.6,
      "scale": 0.567
     },
     {
      "piece": "Env_GrassTuft",
-     "x": -9.577,
+     "x": -9.653,
      "y": -0.2,
-     "z": 3.041,
-     "rotY": 287.7,
-     "scale": 0.752
+     "z": 3.519,
+     "rotY": 309.1,
+     "scale": 0.77
+    },
+    {
+     "piece": "Env_GrassTuft",
+     "x": -6.366,
+     "y": -0.2,
+     "z": 0.722,
+     "rotY": 222.9,
+     "scale": 0.716
+    },
+    {
+     "piece": "Env_GrassTuft",
+     "x": -6.371,
+     "y": -0.2,
+     "z": 1.359,
+     "rotY": 131.7,
+     "scale": 0.789
+    },
+    {
+     "piece": "LightShaft",
+     "mesh": "Env_LightShaft",
+     "x": -3.797,
+     "y": 7.996,
+     "z": 9.306,
+     "direction": [
+      -0.43,
+      -0.88,
+      -0.205
+     ],
+     "euler": [
+      28.41,
+      64.54,
+      0.0
+     ],
+     "size": [
+      1.2,
+      10.0,
+      1.2
+     ],
+     "color": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "intensity": 0.5
+    },
+    {
+     "piece": "LightShaft",
+     "mesh": "Env_LightShaft",
+     "x": -3.597,
+     "y": 7.996,
+     "z": 5.106,
+     "direction": [
+      -0.43,
+      -0.88,
+      -0.205
+     ],
+     "euler": [
+      28.41,
+      64.54,
+      0.0
+     ],
+     "size": [
+      1.0,
+      10.0,
+      1.0
+     ],
+     "color": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "intensity": 0.4
+    },
+    {
+     "piece": "LightShaft",
+     "mesh": "Env_LightShaft",
+     "x": 12.217,
+     "y": 8.435,
+     "z": 8.608,
+     "direction": [
+      -0.43,
+      -0.88,
+      -0.205
+     ],
+     "euler": [
+      28.41,
+      64.54,
+      0.0
+     ],
+     "size": [
+      1.3,
+      10.5,
+      1.3
+     ],
+     "color": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "intensity": 0.5
+    },
+    {
+     "piece": "LightShaft",
+     "mesh": "Env_LightShaft",
+     "x": 11.288,
+     "y": 7.556,
+     "z": 3.704,
+     "direction": [
+      -0.43,
+      -0.88,
+      -0.205
+     ],
+     "euler": [
+      28.41,
+      64.54,
+      0.0
+     ],
+     "size": [
+      0.9,
+      9.5,
+      0.9
+     ],
+     "color": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "intensity": 0.35
+    },
+    {
+     "piece": "LightShaft",
+     "mesh": "Env_LightShaft",
+     "x": -6.027,
+     "y": 7.116,
+     "z": 12.301,
+     "direction": [
+      -0.43,
+      -0.88,
+      -0.205
+     ],
+     "euler": [
+      28.41,
+      64.54,
+      0.0
+     ],
+     "size": [
+      0.9,
+      9.0,
+      0.9
+     ],
+     "color": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "intensity": 0.3
+    },
+    {
+     "piece": "AmbientParticles",
+     "type": "Ember",
+     "sprite": "Assets/Sprites/BilliardRogue/Particles/Ember.png",
+     "x": -5.0,
+     "y": 2.2,
+     "z": 10.2,
+     "size": [
+      0.5,
+      0.4,
+      0.5
+     ],
+     "maxParticles": 14,
+     "rate": 5.0,
+     "lifetime": [
+      1.2,
+      2.2
+     ],
+     "velocity": [
+      0.0,
+      0.9,
+      0.05
+     ],
+     "noise": 0.5,
+     "startSize": [
+      0.04,
+      0.07
+     ],
+     "colorA": [
+      1.0,
+      0.62,
+      0.22
+     ],
+     "colorB": [
+      1.0,
+      0.42,
+      0.14
+     ],
+     "shader": "BilliardRogue/GlowParticle",
+     "prewarm": true,
+     "tag": "embers rising from the brazier"
+    },
+    {
+     "piece": "AmbientParticles",
+     "type": "Ember",
+     "sprite": "Assets/Sprites/BilliardRogue/Particles/Ember.png",
+     "x": 5.0,
+     "y": 2.2,
+     "z": 10.2,
+     "size": [
+      0.5,
+      0.4,
+      0.5
+     ],
+     "maxParticles": 14,
+     "rate": 5.0,
+     "lifetime": [
+      1.2,
+      2.2
+     ],
+     "velocity": [
+      0.0,
+      0.9,
+      0.05
+     ],
+     "noise": 0.5,
+     "startSize": [
+      0.04,
+      0.07
+     ],
+     "colorA": [
+      1.0,
+      0.62,
+      0.22
+     ],
+     "colorB": [
+      1.0,
+      0.42,
+      0.14
+     ],
+     "shader": "BilliardRogue/GlowParticle",
+     "prewarm": true,
+     "tag": "embers rising from the brazier"
+    },
+    {
+     "piece": "AmbientParticles",
+     "type": "Ember",
+     "sprite": "Assets/Sprites/BilliardRogue/Particles/Ember.png",
+     "x": -5.1,
+     "y": 2.2,
+     "z": 0.3,
+     "size": [
+      0.5,
+      0.4,
+      0.5
+     ],
+     "maxParticles": 14,
+     "rate": 5.0,
+     "lifetime": [
+      1.2,
+      2.2
+     ],
+     "velocity": [
+      0.0,
+      0.9,
+      0.05
+     ],
+     "noise": 0.5,
+     "startSize": [
+      0.04,
+      0.07
+     ],
+     "colorA": [
+      1.0,
+      0.62,
+      0.22
+     ],
+     "colorB": [
+      1.0,
+      0.42,
+      0.14
+     ],
+     "shader": "BilliardRogue/GlowParticle",
+     "prewarm": true,
+     "tag": "embers rising from the brazier"
+    },
+    {
+     "piece": "AmbientParticles",
+     "type": "Ember",
+     "sprite": "Assets/Sprites/BilliardRogue/Particles/Ember.png",
+     "x": 5.1,
+     "y": 2.2,
+     "z": 0.3,
+     "size": [
+      0.5,
+      0.4,
+      0.5
+     ],
+     "maxParticles": 14,
+     "rate": 5.0,
+     "lifetime": [
+      1.2,
+      2.2
+     ],
+     "velocity": [
+      0.0,
+      0.9,
+      0.05
+     ],
+     "noise": 0.5,
+     "startSize": [
+      0.04,
+      0.07
+     ],
+     "colorA": [
+      1.0,
+      0.62,
+      0.22
+     ],
+     "colorB": [
+      1.0,
+      0.42,
+      0.14
+     ],
+     "shader": "BilliardRogue/GlowParticle",
+     "prewarm": true,
+     "tag": "embers rising from the brazier"
+    },
+    {
+     "piece": "AmbientParticles",
+     "type": "Dust",
+     "sprite": "Assets/Sprites/BilliardRogue/Particles/Dust.png",
+     "x": 0.0,
+     "y": 2.5,
+     "z": 6.4,
+     "size": [
+      22.0,
+      4.0,
+      15.0
+     ],
+     "maxParticles": 50,
+     "rate": 6.0,
+     "lifetime": [
+      6.0,
+      10.0
+     ],
+     "velocity": [
+      0.06,
+      -0.03,
+      0.04
+     ],
+     "noise": 0.2,
+     "startSize": [
+      0.04,
+      0.07
+     ],
+     "colorA": [
+      0.7,
+      0.78,
+      1.0
+     ],
+     "colorB": [
+      0.7,
+      0.78,
+      1.0
+     ],
+     "shader": "BilliardRogue/LitParticle",
+     "prewarm": true,
+     "lightInfluence": 1.0,
+     "tag": "dust motes, visible in the moonbeams"
+    },
+    {
+     "piece": "AmbientParticles",
+     "type": "Smoke",
+     "sprite": "Assets/Sprites/BilliardRogue/Particles/Smoke.png",
+     "x": -7.8,
+     "y": 0.15,
+     "z": 5.6,
+     "size": [
+      4.5,
+      0.3,
+      11.0
+     ],
+     "maxParticles": 16,
+     "rate": 2.0,
+     "lifetime": [
+      6.0,
+      9.0
+     ],
+     "velocity": [
+      0.08,
+      0.02,
+      0.0
+     ],
+     "noise": 0.1,
+     "startSize": [
+      0.9,
+      1.5
+     ],
+     "colorA": [
+      0.35,
+      0.42,
+      0.7
+     ],
+     "colorB": [
+      0.35,
+      0.42,
+      0.7
+     ],
+     "shader": "BilliardRogue/LitParticle",
+     "prewarm": true,
+     "lightInfluence": 0.6,
+     "tag": "ground mist over the graveyard (low alpha, keep overdraw small)"
     }
    ],
+   "pruned": 5,
    "pointLights": [
     {
      "prop": 2,
@@ -4130,9 +5692,9 @@
      "prop": 30,
      "piece": "Env_Brazier",
      "position": [
-      -4.95,
+      -5.0,
       1.25,
-      10.1
+      10.2
      ],
      "color": [
       1.0,
@@ -4146,9 +5708,9 @@
      "prop": 31,
      "piece": "Env_Brazier",
      "position": [
-      4.95,
+      5.0,
       1.25,
-      10.1
+      10.2
      ],
      "color": [
       1.0,
@@ -4164,7 +5726,7 @@
      "position": [
       -5.1,
       1.177,
-      0.2
+      0.3
      ],
      "color": [
       1.0,
@@ -4180,7 +5742,7 @@
      "position": [
       5.1,
       1.177,
-      0.2
+      0.3
      ],
      "color": [
       1.0,
@@ -4194,9 +5756,9 @@
      "prop": 42,
      "piece": "Env_Candles",
      "position": [
-      -6.9,
+      -7.0,
       0.42,
-      9.9
+      10.1
      ],
      "color": [
       1.0,
@@ -4207,12 +5769,12 @@
      "range": 2.6
     },
     {
-     "prop": 52,
+     "prop": 59,
      "piece": "Env_Candles",
      "position": [
-      5.3,
+      5.1,
       0.358,
-      9.5
+      9.9
      ],
      "color": [
       1.0,
@@ -4224,527 +5786,705 @@
     }
    ]
   },
-  "3": {
+  {
+   "id": 3,
    "name": "Crystal Hollow",
-   "mood": "violet cave gloom, cyan and magenta crystal glow",
-   "surfaces": {
-    "Env_FloorTile/Top_Surface": "StoneFloor",
-    "Env_FloorTile_Danger/Top_Surface": "StoneFloor",
-    "Env_LaunchPad/Top_Surface": "StoneFloor",
-    "Env_WallSegment/Side_Surface": "CrystalRock",
-    "Env_WallSegment/Top_Surface": "CrystalRock",
-    "Env_WallCorner/Side_Surface": "CrystalRock",
-    "Env_GroundMound/Top_Surface": "CrystalRock",
-    "Env_GroundPatch/Top_Surface": "CrystalRock"
-   },
+   "surfaces": [
+    {
+     "piece": "Env_FloorTile",
+     "part": "Top_Surface",
+     "surface": "StoneFloor"
+    },
+    {
+     "piece": "Env_FloorTile_Danger",
+     "part": "Top_Surface",
+     "surface": "StoneFloor"
+    },
+    {
+     "piece": "Env_GroundMound",
+     "part": "Top_Surface",
+     "surface": "CrystalRock"
+    },
+    {
+     "piece": "Env_GroundPatch",
+     "part": "Top_Surface",
+     "surface": "CrystalRock"
+    },
+    {
+     "piece": "Env_LaunchPad",
+     "part": "Top_Surface",
+     "surface": "StoneFloor"
+    },
+    {
+     "piece": "Env_WallCorner",
+     "part": "Side_Surface",
+     "surface": "CrystalRock"
+    },
+    {
+     "piece": "Env_WallSegment",
+     "part": "Side_Surface",
+     "surface": "CrystalRock"
+    },
+    {
+     "piece": "Env_WallSegment",
+     "part": "Top_Surface",
+     "surface": "CrystalRock"
+    }
+   ],
    "ground": {
-    "piece": "Env_GroundTile",
+    "piece": "Env_CaveFloorTile",
     "y": -0.2,
     "tileSize": 4.0,
-    "surface": "Dirt",
+    "surface": "",
     "tiles": [
-     [
-      -22,
-      -10
-     ],
-     [
-      -22,
-      -6
-     ],
-     [
-      -22,
-      -2
-     ],
-     [
-      -22,
-      2
-     ],
-     [
-      -22,
-      6
-     ],
-     [
-      -22,
-      10
-     ],
-     [
-      -22,
-      14
-     ],
-     [
-      -22,
-      18
-     ],
-     [
-      -22,
-      22
-     ],
-     [
-      -22,
-      26
-     ],
-     [
-      -18,
-      -10
-     ],
-     [
-      -18,
-      -6
-     ],
-     [
-      -18,
-      -2
-     ],
-     [
-      -18,
-      2
-     ],
-     [
-      -18,
-      6
-     ],
-     [
-      -18,
-      10
-     ],
-     [
-      -18,
-      14
-     ],
-     [
-      -18,
-      18
-     ],
-     [
-      -18,
-      22
-     ],
-     [
-      -18,
-      26
-     ],
-     [
-      -14,
-      -10
-     ],
-     [
-      -14,
-      -6
-     ],
-     [
-      -14,
-      -2
-     ],
-     [
-      -14,
-      2
-     ],
-     [
-      -14,
-      6
-     ],
-     [
-      -14,
-      10
-     ],
-     [
-      -14,
-      14
-     ],
-     [
-      -14,
-      18
-     ],
-     [
-      -14,
-      22
-     ],
-     [
-      -14,
-      26
-     ],
-     [
-      -10,
-      -10
-     ],
-     [
-      -10,
-      -6
-     ],
-     [
-      -10,
-      -2
-     ],
-     [
-      -10,
-      2
-     ],
-     [
-      -10,
-      6
-     ],
-     [
-      -10,
-      10
-     ],
-     [
-      -10,
-      14
-     ],
-     [
-      -10,
-      18
-     ],
-     [
-      -10,
-      22
-     ],
-     [
-      -10,
-      26
-     ],
-     [
-      -6,
-      -10
-     ],
-     [
-      -6,
-      -6
-     ],
-     [
-      -6,
-      -2
-     ],
-     [
-      -6,
-      2
-     ],
-     [
-      -6,
-      6
-     ],
-     [
-      -6,
-      10
-     ],
-     [
-      -6,
-      14
-     ],
-     [
-      -6,
-      18
-     ],
-     [
-      -6,
-      22
-     ],
-     [
-      -6,
-      26
-     ],
-     [
-      -2,
-      -10
-     ],
-     [
-      -2,
-      -6
-     ],
-     [
-      -2,
-      -2
-     ],
-     [
-      -2,
-      2
-     ],
-     [
-      -2,
-      6
-     ],
-     [
-      -2,
-      10
-     ],
-     [
-      -2,
-      14
-     ],
-     [
-      -2,
-      18
-     ],
-     [
-      -2,
-      22
-     ],
-     [
-      -2,
-      26
-     ],
-     [
-      2,
-      -10
-     ],
-     [
-      2,
-      -6
-     ],
-     [
-      2,
-      -2
-     ],
-     [
-      2,
-      2
-     ],
-     [
-      2,
-      6
-     ],
-     [
-      2,
-      10
-     ],
-     [
-      2,
-      14
-     ],
-     [
-      2,
-      18
-     ],
-     [
-      2,
-      22
-     ],
-     [
-      2,
-      26
-     ],
-     [
-      6,
-      -10
-     ],
-     [
-      6,
-      -6
-     ],
-     [
-      6,
-      -2
-     ],
-     [
-      6,
-      2
-     ],
-     [
-      6,
-      6
-     ],
-     [
-      6,
-      10
-     ],
-     [
-      6,
-      14
-     ],
-     [
-      6,
-      18
-     ],
-     [
-      6,
-      22
-     ],
-     [
-      6,
-      26
-     ],
-     [
-      10,
-      -10
-     ],
-     [
-      10,
-      -6
-     ],
-     [
-      10,
-      -2
-     ],
-     [
-      10,
-      2
-     ],
-     [
-      10,
-      6
-     ],
-     [
-      10,
-      10
-     ],
-     [
-      10,
-      14
-     ],
-     [
-      10,
-      18
-     ],
-     [
-      10,
-      22
-     ],
-     [
-      10,
-      26
-     ],
-     [
-      14,
-      -10
-     ],
-     [
-      14,
-      -6
-     ],
-     [
-      14,
-      -2
-     ],
-     [
-      14,
-      2
-     ],
-     [
-      14,
-      6
-     ],
-     [
-      14,
-      10
-     ],
-     [
-      14,
-      14
-     ],
-     [
-      14,
-      18
-     ],
-     [
-      14,
-      22
-     ],
-     [
-      14,
-      26
-     ],
-     [
-      18,
-      -10
-     ],
-     [
-      18,
-      -6
-     ],
-     [
-      18,
-      -2
-     ],
-     [
-      18,
-      2
-     ],
-     [
-      18,
-      6
-     ],
-     [
-      18,
-      10
-     ],
-     [
-      18,
-      14
-     ],
-     [
-      18,
-      18
-     ],
-     [
-      18,
-      22
-     ],
-     [
-      18,
-      26
-     ],
-     [
-      22,
-      -10
-     ],
-     [
-      22,
-      -6
-     ],
-     [
-      22,
-      -2
-     ],
-     [
-      22,
-      2
-     ],
-     [
-      22,
-      6
-     ],
-     [
-      22,
-      10
-     ],
-     [
-      22,
-      14
-     ],
-     [
-      22,
-      18
-     ],
-     [
-      22,
-      22
-     ],
-     [
-      22,
-      26
-     ]
+     {
+      "x": -22,
+      "z": -10,
+      "rotY": 180
+     },
+     {
+      "x": -22,
+      "z": -6,
+      "rotY": 90
+     },
+     {
+      "x": -22,
+      "z": -2,
+      "rotY": 0
+     },
+     {
+      "x": -22,
+      "z": 2,
+      "rotY": 270
+     },
+     {
+      "x": -22,
+      "z": 6,
+      "rotY": 180
+     },
+     {
+      "x": -22,
+      "z": 10,
+      "rotY": 90
+     },
+     {
+      "x": -22,
+      "z": 14,
+      "rotY": 0
+     },
+     {
+      "x": -22,
+      "z": 18,
+      "rotY": 270
+     },
+     {
+      "x": -22,
+      "z": 22,
+      "rotY": 180
+     },
+     {
+      "x": -22,
+      "z": 26,
+      "rotY": 90
+     },
+     {
+      "x": -18,
+      "z": -10,
+      "rotY": 90
+     },
+     {
+      "x": -18,
+      "z": -6,
+      "rotY": 0
+     },
+     {
+      "x": -18,
+      "z": -2,
+      "rotY": 270
+     },
+     {
+      "x": -18,
+      "z": 2,
+      "rotY": 180
+     },
+     {
+      "x": -18,
+      "z": 6,
+      "rotY": 90
+     },
+     {
+      "x": -18,
+      "z": 10,
+      "rotY": 0
+     },
+     {
+      "x": -18,
+      "z": 14,
+      "rotY": 270
+     },
+     {
+      "x": -18,
+      "z": 18,
+      "rotY": 180
+     },
+     {
+      "x": -18,
+      "z": 22,
+      "rotY": 90
+     },
+     {
+      "x": -18,
+      "z": 26,
+      "rotY": 0
+     },
+     {
+      "x": -14,
+      "z": -10,
+      "rotY": 0
+     },
+     {
+      "x": -14,
+      "z": -6,
+      "rotY": 270
+     },
+     {
+      "x": -14,
+      "z": -2,
+      "rotY": 180
+     },
+     {
+      "x": -14,
+      "z": 2,
+      "rotY": 90
+     },
+     {
+      "x": -14,
+      "z": 6,
+      "rotY": 0
+     },
+     {
+      "x": -14,
+      "z": 10,
+      "rotY": 270
+     },
+     {
+      "x": -14,
+      "z": 14,
+      "rotY": 180
+     },
+     {
+      "x": -14,
+      "z": 18,
+      "rotY": 90
+     },
+     {
+      "x": -14,
+      "z": 22,
+      "rotY": 0
+     },
+     {
+      "x": -14,
+      "z": 26,
+      "rotY": 270
+     },
+     {
+      "x": -10,
+      "z": -10,
+      "rotY": 270
+     },
+     {
+      "x": -10,
+      "z": -6,
+      "rotY": 180
+     },
+     {
+      "x": -10,
+      "z": -2,
+      "rotY": 90
+     },
+     {
+      "x": -10,
+      "z": 2,
+      "rotY": 0
+     },
+     {
+      "x": -10,
+      "z": 6,
+      "rotY": 270
+     },
+     {
+      "x": -10,
+      "z": 10,
+      "rotY": 180
+     },
+     {
+      "x": -10,
+      "z": 14,
+      "rotY": 90
+     },
+     {
+      "x": -10,
+      "z": 18,
+      "rotY": 0
+     },
+     {
+      "x": -10,
+      "z": 22,
+      "rotY": 270
+     },
+     {
+      "x": -10,
+      "z": 26,
+      "rotY": 180
+     },
+     {
+      "x": -6,
+      "z": -10,
+      "rotY": 180
+     },
+     {
+      "x": -6,
+      "z": -6,
+      "rotY": 90
+     },
+     {
+      "x": -6,
+      "z": -2,
+      "rotY": 0
+     },
+     {
+      "x": -6,
+      "z": 2,
+      "rotY": 270
+     },
+     {
+      "x": -6,
+      "z": 6,
+      "rotY": 180
+     },
+     {
+      "x": -6,
+      "z": 10,
+      "rotY": 90
+     },
+     {
+      "x": -6,
+      "z": 14,
+      "rotY": 0
+     },
+     {
+      "x": -6,
+      "z": 18,
+      "rotY": 270
+     },
+     {
+      "x": -6,
+      "z": 22,
+      "rotY": 180
+     },
+     {
+      "x": -6,
+      "z": 26,
+      "rotY": 90
+     },
+     {
+      "x": -2,
+      "z": -10,
+      "rotY": 90
+     },
+     {
+      "x": -2,
+      "z": -6,
+      "rotY": 0
+     },
+     {
+      "x": -2,
+      "z": -2,
+      "rotY": 270
+     },
+     {
+      "x": -2,
+      "z": 2,
+      "rotY": 180
+     },
+     {
+      "x": -2,
+      "z": 6,
+      "rotY": 90
+     },
+     {
+      "x": -2,
+      "z": 10,
+      "rotY": 0
+     },
+     {
+      "x": -2,
+      "z": 14,
+      "rotY": 270
+     },
+     {
+      "x": -2,
+      "z": 18,
+      "rotY": 180
+     },
+     {
+      "x": -2,
+      "z": 22,
+      "rotY": 90
+     },
+     {
+      "x": -2,
+      "z": 26,
+      "rotY": 0
+     },
+     {
+      "x": 2,
+      "z": -10,
+      "rotY": 0
+     },
+     {
+      "x": 2,
+      "z": -6,
+      "rotY": 270
+     },
+     {
+      "x": 2,
+      "z": -2,
+      "rotY": 180
+     },
+     {
+      "x": 2,
+      "z": 2,
+      "rotY": 90
+     },
+     {
+      "x": 2,
+      "z": 6,
+      "rotY": 0
+     },
+     {
+      "x": 2,
+      "z": 10,
+      "rotY": 270
+     },
+     {
+      "x": 2,
+      "z": 14,
+      "rotY": 180
+     },
+     {
+      "x": 2,
+      "z": 18,
+      "rotY": 90
+     },
+     {
+      "x": 2,
+      "z": 22,
+      "rotY": 0
+     },
+     {
+      "x": 2,
+      "z": 26,
+      "rotY": 270
+     },
+     {
+      "x": 6,
+      "z": -10,
+      "rotY": 270
+     },
+     {
+      "x": 6,
+      "z": -6,
+      "rotY": 180
+     },
+     {
+      "x": 6,
+      "z": -2,
+      "rotY": 90
+     },
+     {
+      "x": 6,
+      "z": 2,
+      "rotY": 0
+     },
+     {
+      "x": 6,
+      "z": 6,
+      "rotY": 270
+     },
+     {
+      "x": 6,
+      "z": 10,
+      "rotY": 180
+     },
+     {
+      "x": 6,
+      "z": 14,
+      "rotY": 90
+     },
+     {
+      "x": 6,
+      "z": 18,
+      "rotY": 0
+     },
+     {
+      "x": 6,
+      "z": 22,
+      "rotY": 270
+     },
+     {
+      "x": 6,
+      "z": 26,
+      "rotY": 180
+     },
+     {
+      "x": 10,
+      "z": -10,
+      "rotY": 180
+     },
+     {
+      "x": 10,
+      "z": -6,
+      "rotY": 90
+     },
+     {
+      "x": 10,
+      "z": -2,
+      "rotY": 0
+     },
+     {
+      "x": 10,
+      "z": 2,
+      "rotY": 270
+     },
+     {
+      "x": 10,
+      "z": 6,
+      "rotY": 180
+     },
+     {
+      "x": 10,
+      "z": 10,
+      "rotY": 90
+     },
+     {
+      "x": 10,
+      "z": 14,
+      "rotY": 0
+     },
+     {
+      "x": 10,
+      "z": 18,
+      "rotY": 270
+     },
+     {
+      "x": 10,
+      "z": 22,
+      "rotY": 180
+     },
+     {
+      "x": 10,
+      "z": 26,
+      "rotY": 90
+     },
+     {
+      "x": 14,
+      "z": -10,
+      "rotY": 90
+     },
+     {
+      "x": 14,
+      "z": -6,
+      "rotY": 0
+     },
+     {
+      "x": 14,
+      "z": -2,
+      "rotY": 270
+     },
+     {
+      "x": 14,
+      "z": 2,
+      "rotY": 180
+     },
+     {
+      "x": 14,
+      "z": 6,
+      "rotY": 90
+     },
+     {
+      "x": 14,
+      "z": 10,
+      "rotY": 0
+     },
+     {
+      "x": 14,
+      "z": 14,
+      "rotY": 270
+     },
+     {
+      "x": 14,
+      "z": 18,
+      "rotY": 180
+     },
+     {
+      "x": 14,
+      "z": 22,
+      "rotY": 90
+     },
+     {
+      "x": 14,
+      "z": 26,
+      "rotY": 0
+     },
+     {
+      "x": 18,
+      "z": -10,
+      "rotY": 0
+     },
+     {
+      "x": 18,
+      "z": -6,
+      "rotY": 270
+     },
+     {
+      "x": 18,
+      "z": -2,
+      "rotY": 180
+     },
+     {
+      "x": 18,
+      "z": 2,
+      "rotY": 90
+     },
+     {
+      "x": 18,
+      "z": 6,
+      "rotY": 0
+     },
+     {
+      "x": 18,
+      "z": 10,
+      "rotY": 270
+     },
+     {
+      "x": 18,
+      "z": 14,
+      "rotY": 180
+     },
+     {
+      "x": 18,
+      "z": 18,
+      "rotY": 90
+     },
+     {
+      "x": 18,
+      "z": 22,
+      "rotY": 0
+     },
+     {
+      "x": 18,
+      "z": 26,
+      "rotY": 270
+     },
+     {
+      "x": 22,
+      "z": -10,
+      "rotY": 270
+     },
+     {
+      "x": 22,
+      "z": -6,
+      "rotY": 180
+     },
+     {
+      "x": 22,
+      "z": -2,
+      "rotY": 90
+     },
+     {
+      "x": 22,
+      "z": 2,
+      "rotY": 0
+     },
+     {
+      "x": 22,
+      "z": 6,
+      "rotY": 270
+     },
+     {
+      "x": 22,
+      "z": 10,
+      "rotY": 180
+     },
+     {
+      "x": 22,
+      "z": 14,
+      "rotY": 90
+     },
+     {
+      "x": 22,
+      "z": 18,
+      "rotY": 0
+     },
+     {
+      "x": 22,
+      "z": 22,
+      "rotY": 270
+     },
+     {
+      "x": 22,
+      "z": 26,
+      "rotY": 180
+     }
     ]
    },
    "lighting": {
+    "mood": "violet cave gloom lit from ceiling cracks, cyan and magenta crystal glow, floating motes",
     "sun": {
      "direction": [
-      0.25,
-      -0.93,
-      0.28
+      0.183,
+      -0.976,
+      -0.122
+     ],
+     "euler": [
+      77.3,
+      123.7,
+      0.0
      ],
      "color": [
       0.72,
       0.55,
       1.0
      ],
-     "intensity": 0.55
+     "intensity": 0.6
     },
-    "ambient": [
-     0.15,
-     0.1,
-     0.28
-    ],
-    "ambientIntensity": 0.85,
+    "ambient": {
+     "mode": "Trilight",
+     "sky": [
+      0.3,
+      0.2,
+      0.52
+     ],
+     "equator": [
+      0.18,
+      0.14,
+      0.34
+     ],
+     "ground": [
+      0.08,
+      0.06,
+      0.14
+     ]
+    },
+    "fog": {
+     "color": [
+      0.2,
+      0.12,
+      0.34
+     ],
+     "density": 0.018
+    },
     "grade": {
      "shadows": [
       0.36,
@@ -4758,7 +6498,62 @@
      ],
      "saturation": 1.1,
      "contrast": 1.1,
-     "vignette": 0.36
+     "vignette": 0.38
+    },
+    "preset": {
+     "sunColor": [
+      0.72,
+      0.55,
+      1.0
+     ],
+     "sunIntensity": 0.6,
+     "sunEuler": [
+      77.3,
+      123.7,
+      0.0
+     ],
+     "ambientSky": [
+      0.3,
+      0.2,
+      0.52
+     ],
+     "ambientEquator": [
+      0.18,
+      0.14,
+      0.34
+     ],
+     "ambientGround": [
+      0.08,
+      0.06,
+      0.14
+     ],
+     "fogColor": [
+      0.2,
+      0.12,
+      0.34
+     ],
+     "fogDensity": 0.018,
+     "rimColor": [
+      0.5,
+      1.0,
+      1.0
+     ],
+     "additionalLightTint": [
+      0.7,
+      0.9,
+      1.0
+     ],
+     "godRayColor": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "godRayIntensity": 0.9,
+     "particleTint": [
+      0.85,
+      0.9,
+      1.0
+     ]
     }
    },
    "props": [
@@ -4796,71 +6591,87 @@
     },
     {
      "piece": "Env_CaveRock_A",
-     "x": -11.2,
+     "x": -11.4,
+     "y": -0.2,
+     "z": 11.6,
+     "rotY": 30,
+     "scale": 1.7
+    },
+    {
+     "piece": "Env_CaveRock_A",
+     "x": -12.4,
+     "y": -0.2,
+     "z": 6.0,
+     "rotY": 100,
+     "scale": 1.6
+    },
+    {
+     "piece": "Env_CaveRock_A",
+     "x": -10.6,
+     "y": -0.2,
+     "z": 0.2,
+     "rotY": 250,
+     "scale": 1.3
+    },
+    {
+     "piece": "Env_CaveRock_A",
+     "x": 11.6,
      "y": -0.2,
      "z": 11.0,
-     "rotY": 30,
-     "scale": 1.6
+     "rotY": 200,
+     "scale": 1.7
     },
     {
      "piece": "Env_CaveRock_A",
-     "x": -12.0,
+     "x": 12.4,
      "y": -0.2,
      "z": 5.2,
-     "rotY": 100,
-     "scale": 1.5
-    },
-    {
-     "piece": "Env_CaveRock_A",
-     "x": -10.2,
-     "y": -0.2,
-     "z": -0.9,
-     "rotY": 250,
-     "scale": 1.2
-    },
-    {
-     "piece": "Env_CaveRock_A",
-     "x": 11.4,
-     "y": -0.2,
-     "z": 10.2,
-     "rotY": 200,
+     "rotY": 300,
      "scale": 1.6
     },
     {
      "piece": "Env_CaveRock_A",
-     "x": 12.1,
+     "x": 10.8,
      "y": -0.2,
-     "z": 4.4,
-     "rotY": 300,
-     "scale": 1.5
+     "z": -0.6,
+     "rotY": 20,
+     "scale": 1.3
     },
     {
      "piece": "Env_CaveRock_A",
-     "x": 10.4,
+     "x": -7.8,
      "y": -0.2,
-     "z": -1.0,
-     "rotY": 20,
-     "scale": 1.2
+     "z": 14.2,
+     "rotY": 150,
+     "scale": 1.3
+    },
+    {
+     "piece": "Env_CaveRock_A",
+     "x": 7.6,
+     "y": -0.2,
+     "z": 14.6,
+     "rotY": 60,
+     "scale": 1.3
     },
     {
      "piece": "Env_CaveRock_B",
-     "x": -6.2,
+     "x": -5.9,
      "y": -0.2,
      "z": 13.1,
      "rotY": 0,
-     "scale": 1.2
-    },
-    {
-     "piece": "Env_CaveRock_B",
-     "x": 6.4,
-     "y": -0.2,
-     "z": 13.2,
-     "rotY": 150,
      "scale": 1.1
     },
     {
      "piece": "Env_CaveRock_B",
-     "x": -5.3,
+     "x": 6.1,
+     "y": -0.2,
+     "z": 13.2,
+     "rotY": 150,
+     "scale": 1.0
+    },
+    {
+     "piece": "Env_CaveRock_B",
+     "x": -5.4,
      "y": -0.2,
      "z": -1.0,
      "rotY": 60,
@@ -4868,100 +6679,116 @@
     },
     {
      "piece": "Env_CaveRock_B",
-     "x": 10.0,
+     "x": 10.2,
      "y": -0.2,
-     "z": 7.3,
+     "z": 7.9,
      "rotY": 10,
      "scale": 0.9
     },
     {
-     "piece": "Env_Stalagmite",
-     "x": -8.9,
+     "piece": "Env_CaveRock_B",
+     "x": -9.9,
      "y": -0.2,
-     "z": 12.3,
+     "z": 3.2,
+     "rotY": 200,
+     "scale": 0.9
+    },
+    {
+     "piece": "Env_Stalagmite",
+     "x": -9.1,
+     "y": -0.2,
+     "z": 12.6,
      "rotY": 0,
      "scale": 1.3
     },
     {
      "piece": "Env_Stalagmite",
-     "x": 9.1,
+     "x": 9.4,
      "y": -0.2,
      "z": 12.4,
      "rotY": 90,
-     "scale": 1.2
+     "scale": 1.25
     },
     {
      "piece": "Env_Stalagmite",
-     "x": -9.7,
+     "x": -10.1,
      "y": -0.2,
-     "z": 8.0,
+     "z": 8.4,
      "rotY": 40,
-     "scale": 1.0
-    },
-    {
-     "piece": "Env_Stalagmite",
-     "x": 9.9,
-     "y": -0.2,
-     "z": 1.9,
-     "rotY": 200,
      "scale": 1.05
     },
     {
      "piece": "Env_Stalagmite",
-     "x": -7.0,
+     "x": 10.1,
      "y": -0.2,
-     "z": 0.3,
+     "z": 2.3,
+     "rotY": 200,
+     "scale": 1.1
+    },
+    {
+     "piece": "Env_Stalagmite",
+     "x": -7.2,
+     "y": -0.2,
+     "z": 0.0,
      "rotY": 130,
      "scale": 0.8
     },
     {
      "piece": "Env_Stalagmite",
-     "x": 7.5,
+     "x": 7.8,
      "y": -0.2,
-     "z": -0.4,
+     "z": -0.6,
      "rotY": 20,
      "scale": 0.8
     },
     {
-     "piece": "Env_Crystal_A",
-     "x": -6.9,
+     "piece": "Env_Stalagmite",
+     "x": 11.2,
      "y": -0.2,
-     "z": 9.4,
+     "z": 8.6,
+     "rotY": 300,
+     "scale": 0.95
+    },
+    {
+     "piece": "Env_Crystal_A",
+     "x": -7.0,
+     "y": -0.2,
+     "z": 9.7,
      "rotY": 20,
-     "scale": 1.2,
+     "scale": 1.25,
      "light": true
     },
     {
      "piece": "Env_Crystal_B",
      "x": -5.3,
      "y": -0.2,
-     "z": 10.9,
+     "z": 11.1,
      "rotY": 200,
      "scale": 0.9
     },
     {
      "piece": "Env_Crystal_C",
-     "x": -8.1,
+     "x": -8.2,
      "y": -0.2,
-     "z": 10.4,
+     "z": 10.8,
      "rotY": 60,
      "scale": 1.0
     },
     {
      "piece": "Env_Crystal_C",
-     "x": -5.4,
+     "x": -5.3,
      "y": -0.2,
-     "z": 8.2,
+     "z": 8.5,
      "rotY": 300,
      "scale": 0.7
     },
     {
      "piece": "Env_Crystal_A",
-     "x": 7.0,
+     "x": 7.2,
      "y": -0.2,
-     "z": 4.9,
+     "z": 5.0,
      "rotY": 170,
-     "scale": 1.1,
+     "scale": 1.15,
      "light": true
     },
     {
@@ -4975,9 +6802,9 @@
     },
     {
      "piece": "Env_Crystal_C",
-     "x": 8.3,
+     "x": 8.5,
      "y": -0.2,
-     "z": 6.1,
+     "z": 6.3,
      "rotY": 110,
      "scale": 1.1
     },
@@ -4985,7 +6812,7 @@
      "piece": "Env_Crystal_C",
      "x": 5.3,
      "y": -0.2,
-     "z": 5.7,
+     "z": 5.9,
      "rotY": 240,
      "scale": 0.7
     },
@@ -5000,9 +6827,9 @@
     },
     {
      "piece": "Env_Crystal_C",
-     "x": -4.9,
+     "x": -4.95,
      "y": -0.2,
-     "z": 3.4,
+     "z": 3.5,
      "rotY": 0,
      "scale": 0.8
     },
@@ -5010,7 +6837,7 @@
      "piece": "Env_Crystal_B",
      "x": -1.7,
      "y": -0.2,
-     "z": 12.8,
+     "z": 12.9,
      "rotY": 0,
      "scale": 0.9,
      "light": true
@@ -5019,7 +6846,7 @@
      "piece": "Env_Crystal_C",
      "x": -0.3,
      "y": -0.2,
-     "z": 12.6,
+     "z": 12.7,
      "rotY": 90,
      "scale": 0.85
     },
@@ -5027,15 +6854,15 @@
      "piece": "Env_Crystal_C",
      "x": 2.2,
      "y": -0.2,
-     "z": 12.7,
+     "z": 12.8,
      "rotY": 200,
      "scale": 0.95
     },
     {
      "piece": "Env_Crystal_B",
-     "x": 8.4,
+     "x": 8.6,
      "y": -0.2,
-     "z": 9.6,
+     "z": 9.8,
      "rotY": 60,
      "scale": 1.05
     },
@@ -5043,32 +6870,40 @@
      "piece": "Env_Crystal_C",
      "x": 5.1,
      "y": -0.2,
-     "z": 11.6,
+     "z": 11.4,
      "rotY": 30,
      "scale": 0.8
     },
     {
-     "piece": "Env_RuneStone",
-     "x": -7.6,
+     "piece": "Env_WaterPool_Glow",
+     "x": -8.2,
      "y": -0.2,
-     "z": 4.0,
+     "z": 5.5,
+     "rotY": 0,
+     "scale": 1.0
+    },
+    {
+     "piece": "Env_RuneStone",
+     "x": -7.0,
+     "y": -0.2,
+     "z": 4.3,
      "rotY": 150,
      "scale": 1.0,
      "light": true
     },
     {
      "piece": "Env_RuneStone",
-     "x": -9.4,
+     "x": -9.5,
      "y": -0.2,
-     "z": 4.4,
+     "z": 4.5,
      "rotY": 205,
      "scale": 0.9
     },
     {
      "piece": "Env_RuneStone",
-     "x": -8.5,
+     "x": -8.3,
      "y": -0.2,
-     "z": 5.9,
+     "z": 6.9,
      "rotY": 180,
      "scale": 0.95
     },
@@ -5076,7 +6911,7 @@
      "piece": "Env_GlowMushroom",
      "x": -5.3,
      "y": -0.2,
-     "z": 6.5,
+     "z": 6.6,
      "rotY": 0,
      "scale": 1.1,
      "light": true
@@ -5091,9 +6926,9 @@
     },
     {
      "piece": "Env_GlowMushroom",
-     "x": 8.6,
+     "x": 8.8,
      "y": -0.2,
-     "z": 1.5,
+     "z": 1.4,
      "rotY": 40,
      "scale": 1.2
     },
@@ -5101,7 +6936,7 @@
      "piece": "Env_GlowMushroom",
      "x": -8.9,
      "y": -0.2,
-     "z": 1.9,
+     "z": 1.8,
      "rotY": 200,
      "scale": 1.0
     },
@@ -5115,87 +6950,63 @@
     },
     {
      "piece": "Env_GlowMushroom",
-     "x": -10.1,
+     "x": -10.2,
      "y": -0.2,
-     "z": 9.2,
+     "z": 9.5,
      "rotY": 120,
      "scale": 0.9
     },
     {
      "piece": "Env_GroundMound",
-     "x": -9.3,
+     "x": -9.6,
      "y": -0.2,
-     "z": 10.2,
+     "z": 10.6,
      "rotY": 30,
      "scale": 1.2
     },
     {
      "piece": "Env_GroundMound",
-     "x": 9.8,
-     "y": -0.2,
-     "z": 4.6,
-     "rotY": 0,
-     "scale": 1.1
-    },
-    {
-     "piece": "Env_GroundPatch",
-     "x": -8.5,
+     "x": 10.1,
      "y": -0.2,
      "z": 4.9,
      "rotY": 0,
-     "scale": 1.2
-    },
-    {
-     "piece": "Env_GroundPatch",
-     "x": 6.8,
-     "y": -0.2,
-     "z": 4.4,
-     "rotY": 60,
      "scale": 1.1
     },
     {
      "piece": "Env_GroundPatch",
-     "x": -6.6,
+     "x": -6.8,
      "y": -0.2,
-     "z": 9.8,
+     "z": 9.9,
      "rotY": 20,
-     "scale": 1.0
+     "scale": 0.8
     },
     {
      "piece": "Env_GroundPatch",
-     "x": 0.3,
+     "x": 7.1,
      "y": -0.2,
-     "z": 12.9,
-     "rotY": 0,
-     "scale": 1.1
+     "z": 4.8,
+     "rotY": 60,
+     "scale": 0.85
     },
     {
      "piece": "Env_Pebbles",
-     "x": -8.77,
+     "x": 7.916,
      "y": -0.2,
-     "z": 0.776,
-     "rotY": 212.0,
-     "scale": 1.118
+     "z": 2.115,
+     "rotY": 289.1,
+     "scale": 1.15
     },
     {
      "piece": "Env_Pebbles",
-     "x": 9.758,
+     "x": -6.816,
      "y": -0.2,
-     "z": 8.52,
-     "rotY": 45.9,
-     "scale": 1.135
+     "z": 11.54,
+     "rotY": 177.6,
+     "scale": 0.908
     },
     {
      "piece": "Env_Pebbles",
-     "x": 4.875,
-     "y": -0.2,
-     "z": 12.65,
-     "rotY": 317.2,
-     "scale": 0.867
-    },
-    {
-     "piece": "Env_Pebbles",
-     "x": -7.8,
+     "x": -7.848,
      "y": -0.2,
      "z": 1.149,
      "rotY": 335.8,
@@ -5203,23 +7014,15 @@
     },
     {
      "piece": "Env_Pebbles",
-     "x": -4.847,
+     "x": 5.377,
      "y": -0.2,
-     "z": 12.462,
-     "rotY": 225.3,
-     "scale": 1.082
+     "z": 2.146,
+     "rotY": 235.0,
+     "scale": 0.811
     },
     {
      "piece": "Env_Pebbles",
-     "x": 5.666,
-     "y": -0.2,
-     "z": 8.409,
-     "rotY": 224.1,
-     "scale": 1.005
-    },
-    {
-     "piece": "Env_Pebbles",
-     "x": -6.544,
+     "x": -6.611,
      "y": -0.2,
      "z": -0.924,
      "rotY": 345.2,
@@ -5227,7 +7030,7 @@
     },
     {
      "piece": "Env_Pebbles",
-     "x": 7.112,
+     "x": 7.171,
      "y": -0.2,
      "z": 1.567,
      "rotY": 162.2,
@@ -5235,7 +7038,7 @@
     },
     {
      "piece": "Env_Pebbles",
-     "x": 6.09,
+     "x": 6.165,
      "y": -0.2,
      "z": 6.225,
      "rotY": 295.9,
@@ -5243,77 +7046,368 @@
     },
     {
      "piece": "Env_Pebbles",
-     "x": 9.908,
+     "x": -8.382,
      "y": -0.2,
-     "z": 3.438,
-     "rotY": 66.6,
-     "scale": 1.029
+     "z": 0.273,
+     "rotY": 240.1,
+     "scale": 0.989
     },
     {
-     "piece": "Env_Crystal_C",
-     "x": 8.649,
+     "piece": "Env_Pebbles",
+     "x": 9.451,
      "y": -0.2,
-     "z": 5.048,
-     "rotY": 182.8,
-     "scale": 0.477
+     "z": 9.11,
+     "rotY": 79.1,
+     "scale": 1.109
     },
     {
-     "piece": "Env_Crystal_C",
-     "x": -7.549,
+     "piece": "Env_Pebbles",
+     "x": 7.801,
      "y": -0.2,
-     "z": 6.398,
-     "rotY": 150.9,
-     "scale": 0.451
+     "z": 0.456,
+     "rotY": 313.2,
+     "scale": 0.857
     },
     {
-     "piece": "Env_Crystal_C",
-     "x": 4.762,
+     "piece": "Env_Pebbles",
+     "x": 6.255,
      "y": -0.2,
-     "z": 7.669,
-     "rotY": 90.0,
-     "scale": 0.575
-    },
-    {
-     "piece": "Env_Crystal_C",
-     "x": 8.08,
-     "y": -0.2,
-     "z": 7.102,
-     "rotY": 8.0,
-     "scale": 0.628
-    },
-    {
-     "piece": "Env_Crystal_C",
-     "x": 6.058,
-     "y": -0.2,
-     "z": 7.119,
+     "z": 7.556,
      "rotY": 203.6,
-     "scale": 0.646
-    }
-   ],
-   "pointLights": [
+     "scale": 1.193
+    },
     {
-     "prop": 20,
-     "piece": "Env_Crystal_A",
-     "position": [
-      -6.9,
-      1.24,
-      9.4
+     "piece": "Env_Pebbles",
+     "x": -8.121,
+     "y": -0.2,
+     "z": 3.771,
+     "rotY": 129.0,
+     "scale": 1.101
+    },
+    {
+     "piece": "Env_Crystal_C",
+     "x": 9.346,
+     "y": -0.2,
+     "z": 5.936,
+     "rotY": 227.7,
+     "scale": 0.568
+    },
+    {
+     "piece": "Env_Crystal_C",
+     "x": 6.267,
+     "y": -0.2,
+     "z": 0.948,
+     "rotY": 65.4,
+     "scale": 0.46
+    },
+    {
+     "piece": "Env_Crystal_C",
+     "x": -5.483,
+     "y": -0.2,
+     "z": 4.644,
+     "rotY": 13.4,
+     "scale": 0.534
+    },
+    {
+     "piece": "Env_Crystal_C",
+     "x": 6.029,
+     "y": -0.2,
+     "z": 0.034,
+     "rotY": 11.0,
+     "scale": 0.536
+    },
+    {
+     "piece": "Env_Crystal_C",
+     "x": -6.094,
+     "y": -0.2,
+     "z": 3.491,
+     "rotY": 352.2,
+     "scale": 0.624
+    },
+    {
+     "piece": "Env_Crystal_C",
+     "x": 8.659,
+     "y": -0.2,
+     "z": 7.538,
+     "rotY": 275.9,
+     "scale": 0.462
+    },
+    {
+     "piece": "LightShaft",
+     "mesh": "Env_LightShaft",
+     "x": -8.9,
+     "y": 9.931,
+     "z": 10.666,
+     "direction": [
+      0.183,
+      -0.976,
+      -0.122
+     ],
+     "euler": [
+      12.7,
+      303.69,
+      0.0
+     ],
+     "size": [
+      1.1,
+      11.0,
+      1.1
      ],
      "color": [
-      0.35,
-      0.9,
+      0.75,
+      0.55,
       1.0
      ],
-     "intensity": 2.2,
-     "range": 6.5
+     "intensity": 0.55
     },
+    {
+     "piece": "LightShaft",
+     "mesh": "Env_LightShaft",
+     "x": 5.3,
+     "y": 9.931,
+     "z": 6.266,
+     "direction": [
+      0.183,
+      -0.976,
+      -0.122
+     ],
+     "euler": [
+      12.7,
+      303.69,
+      0.0
+     ],
+     "size": [
+      1.2,
+      11.0,
+      1.2
+     ],
+     "color": [
+      0.55,
+      0.85,
+      1.0
+     ],
+     "intensity": 0.5
+    },
+    {
+     "piece": "LightShaft",
+     "mesh": "Env_LightShaft",
+     "x": -10.291,
+     "y": 10.419,
+     "z": 6.727,
+     "direction": [
+      0.183,
+      -0.976,
+      -0.122
+     ],
+     "euler": [
+      12.7,
+      303.69,
+      0.0
+     ],
+     "size": [
+      0.9,
+      11.5,
+      0.9
+     ],
+     "color": [
+      0.8,
+      0.6,
+      1.0
+     ],
+     "intensity": 0.45
+    },
+    {
+     "piece": "LightShaft",
+     "mesh": "Env_LightShaft",
+     "x": 6.592,
+     "y": 9.443,
+     "z": 11.805,
+     "direction": [
+      0.183,
+      -0.976,
+      -0.122
+     ],
+     "euler": [
+      12.7,
+      303.69,
+      0.0
+     ],
+     "size": [
+      0.8,
+      10.5,
+      0.8
+     ],
+     "color": [
+      0.75,
+      0.55,
+      1.0
+     ],
+     "intensity": 0.35
+    },
+    {
+     "piece": "LightShaft",
+     "mesh": "Env_LightShaft",
+     "x": -7.917,
+     "y": 8.955,
+     "z": 2.444,
+     "direction": [
+      0.183,
+      -0.976,
+      -0.122
+     ],
+     "euler": [
+      12.7,
+      303.69,
+      0.0
+     ],
+     "size": [
+      0.8,
+      10.0,
+      0.8
+     ],
+     "color": [
+      0.55,
+      0.85,
+      1.0
+     ],
+     "intensity": 0.3
+    },
+    {
+     "piece": "AmbientParticles",
+     "type": "Mote",
+     "sprite": "Assets/Sprites/BilliardRogue/Particles/Mote.png",
+     "x": 0.0,
+     "y": 2.2,
+     "z": 6.4,
+     "size": [
+      22.0,
+      3.6,
+      15.0
+     ],
+     "maxParticles": 70,
+     "rate": 10.0,
+     "lifetime": [
+      4.0,
+      8.0
+     ],
+     "velocity": [
+      0.0,
+      0.14,
+      0.0
+     ],
+     "noise": 0.4,
+     "startSize": [
+      0.05,
+      0.09
+     ],
+     "colorA": [
+      0.45,
+      0.95,
+      1.0
+     ],
+     "colorB": [
+      1.0,
+      0.6,
+      0.95
+     ],
+     "shader": "BilliardRogue/GlowParticle",
+     "prewarm": true,
+     "tag": "floating magic motes (sparse over the arena)"
+    },
+    {
+     "piece": "AmbientParticles",
+     "type": "Star",
+     "sprite": "Assets/Sprites/BilliardRogue/Particles/Star.png",
+     "x": -6.6,
+     "y": 1.0,
+     "z": 9.8,
+     "size": [
+      3.0,
+      1.6,
+      3.0
+     ],
+     "maxParticles": 10,
+     "rate": 3.0,
+     "lifetime": [
+      0.6,
+      1.2
+     ],
+     "velocity": [
+      0.0,
+      0.05,
+      0.0
+     ],
+     "noise": 0.0,
+     "startSize": [
+      0.08,
+      0.14
+     ],
+     "colorA": [
+      0.6,
+      1.0,
+      1.0
+     ],
+     "colorB": [
+      0.6,
+      1.0,
+      1.0
+     ],
+     "shader": "BilliardRogue/GlowParticle",
+     "prewarm": true,
+     "tag": "sparkles on the big cyan grove"
+    },
+    {
+     "piece": "AmbientParticles",
+     "type": "Star",
+     "sprite": "Assets/Sprites/BilliardRogue/Particles/Star.png",
+     "x": 7.0,
+     "y": 1.0,
+     "z": 4.6,
+     "size": [
+      3.0,
+      1.6,
+      3.0
+     ],
+     "maxParticles": 10,
+     "rate": 3.0,
+     "lifetime": [
+      0.6,
+      1.2
+     ],
+     "velocity": [
+      0.0,
+      0.05,
+      0.0
+     ],
+     "noise": 0.0,
+     "startSize": [
+      0.08,
+      0.14
+     ],
+     "colorA": [
+      0.6,
+      1.0,
+      1.0
+     ],
+     "colorB": [
+      0.85,
+      0.6,
+      1.0
+     ],
+     "shader": "BilliardRogue/GlowParticle",
+     "prewarm": true,
+     "tag": "sparkles on the right grove"
+    }
+   ],
+   "pruned": 1,
+   "pointLights": [
     {
      "prop": 24,
      "piece": "Env_Crystal_A",
      "position": [
-      7.0,
-      1.12,
-      4.9
+      -7.0,
+      1.3,
+      9.7
      ],
      "color": [
       0.35,
@@ -5324,7 +7418,23 @@
      "range": 6.5
     },
     {
-     "prop": 25,
+     "prop": 28,
+     "piece": "Env_Crystal_A",
+     "position": [
+      7.2,
+      1.18,
+      5.0
+     ],
+     "color": [
+      0.35,
+      0.9,
+      1.0
+     ],
+     "intensity": 2.2,
+     "range": 6.5
+    },
+    {
+     "prop": 29,
      "piece": "Env_Crystal_B",
      "position": [
       5.5,
@@ -5340,7 +7450,7 @@
      "range": 5.0
     },
     {
-     "prop": 28,
+     "prop": 32,
      "piece": "Env_Crystal_B",
      "position": [
       -5.6,
@@ -5356,12 +7466,12 @@
      "range": 5.0
     },
     {
-     "prop": 30,
+     "prop": 34,
      "piece": "Env_Crystal_B",
      "position": [
       -1.7,
       0.52,
-      12.8
+      12.9
      ],
      "color": [
       0.78,
@@ -5372,12 +7482,12 @@
      "range": 5.0
     },
     {
-     "prop": 35,
+     "prop": 40,
      "piece": "Env_RuneStone",
      "position": [
-      -7.4,
+      -6.8,
       0.75,
-      3.654
+      3.954
      ],
      "color": [
       0.35,
@@ -5388,12 +7498,12 @@
      "range": 3.0
     },
     {
-     "prop": 38,
+     "prop": 43,
      "piece": "Env_GlowMushroom",
      "position": [
       -5.3,
       0.482,
-      6.5
+      6.6
      ],
      "color": [
       0.3,
@@ -5405,5 +7515,5 @@
     }
    ]
   }
- }
+ ]
 }

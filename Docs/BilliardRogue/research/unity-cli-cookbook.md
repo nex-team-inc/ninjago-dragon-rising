@@ -383,6 +383,11 @@ ustop 30        # editor_stop + wait ready
 - **Frame rate while the Editor is unfocused is ~10 fps** (39 frames in ~4 s), and `set_autotick --interval_ms 0` did not change it
   (macOS background throttling). Game time still advances correctly, but anything tied to wall-clock or frame count is slower.
   `editor_focus` would fix it but steals the user's foreground window, so ask before using it.
+- **Verified (playable pass):** Main.unity did not tick at all unfocused (frame count stuck at 2, `APP_PAUSE` after 1 s) because
+  `Application.runInBackground` was false at runtime even though the Player Setting is on. `BilliardRogueInitializer.Start` now sets it
+  in the Editor (as the starter examples do); in another scene, `ueval 'UnityEngine.Application.runInBackground = true; return 0;'`
+  right after `uplay`. `editor_focus` ("focused via DockArea"), `osascript … set frontmost` and `open -a Unity.app` all left
+  `InternalEditorUtility.isApplicationActive == false` and the rate at ~10 fps: a real focused measurement needs a human click.
 - Changing a `.cs` during play mode: don't. Stop, recompile, play again.
 - `simulate_key`/`simulate_pointer` → soft failure: `Input simulation requires the com.unity.inputsystem package, which is not installed…`.
   To drive UI/keyboard navigation from the CLI, call game code directly (e.g. a `[CliCommand]` or public static debug hook, see §13).
@@ -468,6 +473,10 @@ unity command test_status --project-path $UPP --json      # {"status":"running"}
   **Exit 0 even with failures.** The package skill's "opaque result on failure" caveat did not reproduce: failure details were complete.
 - Key casing differs: sync = `Summary.Failed`, async `test_status` = `summary.failed`.
 - Overhead ~5–6 s per run even for 1 test. `filter` is a case-insensitive substring of the full name. `filter_type` ∈ `testName|assembly|category`.
+  **Verified (playable pass):** a namespace prefix such as `Nex.BilliardRogue` matched 0 of the 82 BilliardRogue tests as a `testName`
+  filter; run a module's tests by assembly instead:
+  `unity command run_tests editor Nex.BilliardRogue.Simulation.Tests assembly false false 600 --timeout 630 --project-path $UPP --json`
+  (assemblies: `Nex.BilliardRogue.Simulation.Tests` 52, `Nex.BilliardRogue.InputCore.Tests` 16, `Assembly-CSharp-Editor` 14).
 - **Test placement (verified):** NUnit tests in an `Editor/` folder without an asmdef compile into **Assembly-CSharp-Editor** and are
   discovered, and they can reference game code in Assembly-CSharp. A test **asmdef cannot reference Assembly-CSharp**, so the project rule
   "tests live in an asmdef" only works for code that already lives in its own asmdef. Decide this before writing tests (see §14).

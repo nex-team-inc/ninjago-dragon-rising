@@ -38,6 +38,12 @@ run_end.
 5. Play mode did not tick in the unfocused Editor (`Application.runInBackground` false at runtime): initializer sets it
    under `UNITY_EDITOR`.
 
+### Checks after the fixes
+- `compile_check.py --warnings --filter BilliardRogue`: 0 errors, 0 warnings. Console after the full flow: no errors of
+  ours (only the MDK camera timeouts and the package `[SerializeReference]` warnings).
+- EditMode tests 82/82 (`run_tests editor <assembly> assembly`: Simulation 52, InputCore 16, Assembly-CSharp-Editor 14;
+  the `testName` filter does not match namespace prefixes, so `utests Nex.BilliardRogue` finds nothing).
+
 ### Observations for the polish wave (not fixed)
 - Cat knight stands below the launch line and is cut off by the bottom screen edge during gameplay (only ears/head
   visible; crop `crop_11_bottom.png`) — camera pitch / `JuiceConfig.Cat.standOffset`.

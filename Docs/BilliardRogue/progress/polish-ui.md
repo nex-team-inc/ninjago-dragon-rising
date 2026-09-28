@@ -40,8 +40,17 @@ KeyboardNavigationController.OnKey, top), `sess_*.sh` = locked Editor sessions, 
 - Locale pass (en, fr-CA, zh-Hans, zh-Hant, ja) on Title / Calibration / HUD / Reward / Summary: no truncation; fixed the
   French NEXT name touching the frame (hero slot 120 → 104).
 
+## Screenshots (1920x1080, play mode, unfocused Editor)
+- Before: `polish-ui/before/{01_title,02_playermode,03_calibration,04_stageintro,05_playerturn,09_reward,12_pause,
+  13_title_continue,16_summary,18_calibration_2p,19_2p_p1_turn}.png` (copies of the playable pass).
+- After (same names, driven with simulated keys): `polish-ui/final/` + `03b_calibration_strike`, `14_continued`,
+  `17_title_after_summary`, `18b_calibration_2p_strike`, `20_2p_p2_turn`. Side by side: `polish-ui/small/ba1.png`, `ba2.png`.
+- Extra: `after/k_calib_2p_p1ready.png` (2P ready/waiting cards), `after/v2_hud_bag.png` (12-ball bag, 2 rows),
+  `after/b_title_noruns.png` / `b_title_norecord.png` (record states), `small/b_boss_sheet.png` (boss intro → HUD slide-in),
+  `small/g_burst_sheet.png`, `small/c_burst_sheet.png` (calibration → curtain → band → board), `small/loc_*.png` (5 locales).
+
 ## Next
-- Final before/after capture set with the playable-pass names; screenshot index below.
+- Nothing pending in scope.
 
 ## Findings (not fixed / for others)
 - EditMode `run_tests` leaves an Untitled scene open (Main.unity must be reopened: `ucmd open_scene --path Scenes/BilliardRogue/Main`).

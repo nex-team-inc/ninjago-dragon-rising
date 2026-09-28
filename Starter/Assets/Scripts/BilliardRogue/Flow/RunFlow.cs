@@ -101,7 +101,8 @@ namespace Nex.BilliardRogue
 
             // Title stays the root below Gameplay: PlayerMode and Calibration go without activating in between, and
             // the views they reveal stay faded out (KeepHidden) so neither PlayerMode nor the title flashes. The
-            // gameplay push is a cut too: the stage intro overlay right after it is the visible transition.
+            // whole swap happens under the curtain: calibration faded to it, GameplayView raised the same colour at
+            // Initialize and fades it out once the stage intro band is on top.
             var covered = UnityEngine.Object.FindObjectsByType<RogueView>(FindObjectsSortMode.None);
             foreach (var view in covered) view.KeepHidden = true;
             try

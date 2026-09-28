@@ -214,7 +214,6 @@ namespace Nex.BilliardRogue
             var run = services.Run;
             await services.FlowHost.ShowStageIntroAsync(run.actIndex, run.stageInAct, run.stage.isBoss, ct);
             if (!run.stage.isBoss) return;
-            services.Audio.Stinger(BgmManager.StingerType.BossAppear);
             await services.Board.PlayBossIntroAsync(services.Sim.Act.bossType, ct);
         }
 
@@ -229,7 +228,6 @@ namespace Nex.BilliardRogue
             services.Hud.RefreshHp();
             services.Hud.RefreshBoss();
             services.Analytics.StageClear(run.actIndex, run.stageInAct, run.turnInStage, run.playerHp);
-            services.Audio.Stinger(BgmManager.StingerType.StageClear);
             pendingStep = services.Board.PlayStageClearAsync(ct);
             Phase = TurnPhase.StageClear;
         }
@@ -298,16 +296,15 @@ namespace Nex.BilliardRogue
 
         #region Run End
 
+        // The presenter's sequences play the Defeat / Victory / StageClear / BossAppear stingers in sync with their visuals.
         void EnterDefeat()
         {
-            services.Audio.Stinger(BgmManager.StingerType.Defeat);
             pendingStep = services.Board.PlayDefeatAsync(ct);
             Phase = TurnPhase.Defeat;
         }
 
         void EnterVictory()
         {
-            services.Audio.Stinger(BgmManager.StingerType.Victory);
             pendingStep = services.Board.PlayVictoryAsync(ct);
             Phase = TurnPhase.Victory;
         }

@@ -124,7 +124,6 @@ namespace Nex.BilliardRogue
         public static partial class Reward
         {
             public const string Header = "br.ui.reward.header";               // en: Choose a reward
-            public const string Hint = "br.ui.reward.hint";                   // en: ◀ ▶ choose · Enter confirm
             public const string KindNewBall = "br.reward.kind.newBall";       // en: New ball
             public const string KindUpgrade = "br.reward.kind.upgrade";       // en: Level up
             public const string KindHeal = "br.reward.kind.heal";             // en: Heal

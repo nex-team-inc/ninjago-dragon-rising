@@ -96,22 +96,24 @@ namespace Nex.BilliardRogue.Editor
             vignetteColor = new Color(0.12f, 0.06f, 0.04f),
         };
 
+        // Calibrated on the real Act 2 diorama (Presentation-World): the first pass drove the red channel to zero,
+        // which drained the warm torch pools and the danger-row inlay; this keeps the night cool but readable.
         static Look DeepBlueNight() => new()
         {
-            bloomIntensity = 0.9f,
+            bloomIntensity = 1.3f,
             bloomThreshold = 0.95f,
             bloomScatter = 0.7f,
-            bloomTint = new Color(0.8f, 0.9f, 1f),
-            contrast = 16f,
-            saturation = -4f,
-            postExposure = -0.15f,
-            temperature = -28f,
-            tint = 6f,
-            splitShadows = new Color(0.12f, 0.18f, 0.5f),
-            splitHighlights = new Color(0.8f, 0.86f, 1f),
-            splitBalance = -10f,
-            lift = new Vector4(0.92f, 0.95f, 1.12f, 0f),
-            gain = new Vector4(0.95f, 1f, 1.08f, 0f),
+            bloomTint = new Color(0.9f, 0.95f, 1f),
+            contrast = 14f,
+            saturation = 0f,
+            postExposure = 0f,
+            temperature = -14f,
+            tint = 4f,
+            splitShadows = new Color(0.3f, 0.36f, 0.72f),
+            splitHighlights = new Color(1f, 0.86f, 0.7f),
+            splitBalance = -15f,
+            lift = new Vector4(0.98f, 0.99f, 1.03f, 0f),
+            gain = new Vector4(1f, 1f, 1.02f, 0f),
             vignette = 0.38f,
             vignetteColor = new Color(0.01f, 0.02f, 0.08f),
         };

@@ -5,9 +5,9 @@ using Cysharp.Threading.Tasks;
 namespace Nex.BilliardRogue
 {
     /// <summary>
-    /// The session's music and non-board SFX: act/boss/reward BGM crossfades, stingers, turn start, enemy step
-    /// batches, player hurt and the low-HP warning. Board hit sounds belong to BoardPresenter. Disabled in
-    /// headless smoke runs (no BgmManager / SfxManager).
+    /// The session's music and non-board SFX: act/boss/reward BGM crossfades, turn start and the low-HP warning.
+    /// Board sounds and the sequence stingers (stage clear, boss intro, defeat, victory) belong to BoardPresenter.
+    /// Disabled in headless smoke runs (no BgmManager / SfxManager).
     /// </summary>
     public sealed class SessionAudio
     {

@@ -22,6 +22,7 @@ namespace Nex
         [DebugOrder(20), Description("Flow: Auto Aim Bot")] public bool autoAimBot;
         [DebugOrder(21), Description("Flow: Skip Calibration (Editor only)")] public bool skipCalibration;
         [DebugOrder(22), Description("Flow: Fast Enemy Phase")] public bool fastEnemyPhase;
+        [DebugOrder(23), Description("Input: Force Mouse/Keyboard")] public bool forceDebugInput;
 
         [DebugOrder(30), Description("Run: Force Start Stage (-1 = off, 0..11)"), NumericSteps(IntSteps = 1, IntMin = -1, IntMax = 11)]
         public int forceStartStage = -1;

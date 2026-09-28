@@ -48,7 +48,7 @@ namespace Nex.BilliardRogue
         [Tooltip("Without a paw input source the test strike auto-passes after this delay.")]
         [SerializeField, Range(0f, 5f)] float autoPassSeconds = 0.5f;
 
-        CameraSession camera = null!;
+        CameraSession cameraSession = null!;
         CalibrationShotInputFactory shotInputFactory = null!;
         int numPlayers;
         bool tutorialSeen;
@@ -72,7 +72,7 @@ namespace Nex.BilliardRogue
 
         public void Initialize(CameraSession aCamera, int aNumPlayers, bool aTutorialSeen, CalibrationShotInputFactory aShotInputFactory)
         {
-            camera = aCamera;
+            cameraSession = aCamera;
             numPlayers = aNumPlayers;
             tutorialSeen = aTutorialSeen;
             shotInputFactory = aShotInputFactory;
@@ -156,9 +156,9 @@ namespace Nex.BilliardRogue
 
             BeginStep(Step.Starting);
             promptLabel.text = strings.starting;
-            await camera.StartAsync(numPlayers, ct);
+            await cameraSession.StartAsync(numPlayers, ct);
             promptLabel.text = "";
-            var detection = camera.Detection;
+            var detection = cameraSession.Detection;
             var setup = detection.SetupStateManager;
 
             if (!skipAll)
@@ -213,7 +213,7 @@ namespace Nex.BilliardRogue
             for (var i = 0; i < numPlayers; i++)
             {
                 playerReady[i] = false;
-                inputs[i] = shotInputFactory(i, camera.GetEngine(i), inputRoot);
+                inputs[i] = shotInputFactory(i, cameraSession.GetEngine(i), inputRoot);
                 if (inputs[i] == null) hasInput = false;
                 SetPlayerStatus(i, false);
             }

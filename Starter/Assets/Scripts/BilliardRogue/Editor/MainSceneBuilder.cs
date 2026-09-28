@@ -135,13 +135,16 @@ namespace Nex.BilliardRogue.Editor
                 if (env != null) env.SetActive(false);
             }
 
-            InstantiatePrefab(BoardPresenterPath, "Presentation-Core", world.transform);
+            InstantiatePrefab(EnvironmentBuilder.WorldLightingPath, "Presentation-World", world.transform);
+            EnvironmentBuilder.WireScene(world);
+            var board = InstantiatePrefab(BoardPresenterPath, "Presentation-Core", world.transform);
+            if (board != null) WireBoardPresenter(board.GetComponent<BoardPresenter>(), world);
 
             var coordinatorInstance = InstantiatePrefab(FlowPrefabsBuilder.CoordinatorPath, "Flow", null);
             if (coordinatorInstance != null)
             {
                 var coordinator = coordinatorInstance.GetComponent<BilliardRogueCoordinator>();
-                WireCoordinator(coordinator, viewManager, world);
+                WireCoordinator(coordinator, viewManager, rootCamera, world);
                 FlowUiFactory.SetReference(initializer, "coordinator", coordinator);
             }
 
@@ -247,13 +250,23 @@ namespace Nex.BilliardRogue.Editor
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        static void WireCoordinator(BilliardRogueCoordinator coordinator, ViewManager? viewManager, GameObject world)
+        static void WireCoordinator(BilliardRogueCoordinator coordinator, ViewManager? viewManager, Camera? rootCamera, GameObject world)
         {
             var so = new SerializedObject(coordinator);
             so.FindProperty("viewManager").objectReferenceValue = viewManager;
+            so.FindProperty("rootCamera").objectReferenceValue = rootCamera;
             so.FindProperty("boardPresenter").objectReferenceValue = world.GetComponentInChildren<BoardPresenter>(true);
             so.FindProperty("arenaLayout").objectReferenceValue = world.GetComponentInChildren<ArenaLayout>(true);
-            so.FindProperty("worldDisplay").objectReferenceValue = world.GetComponentInChildren<PixelWorldDisplay>(true);
+            so.FindProperty("worldCameraRig").objectReferenceValue = world.GetComponentInChildren<WorldCameraRig>(true);
+            so.FindProperty("actEnvironment").objectReferenceValue = world.GetComponentInChildren<ActEnvironmentController>(true);
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        // The danger-row glow lives on the Arena instance; the presenter drives it from the enemy rows.
+        static void WireBoardPresenter(BoardPresenter presenter, GameObject world)
+        {
+            var so = new SerializedObject(presenter);
+            so.FindProperty("arenaView").objectReferenceValue = world.GetComponentInChildren<ArenaView>(true);
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 

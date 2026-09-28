@@ -9,8 +9,9 @@ namespace Nex.BilliardRogue
 {
     /// <summary>
     /// One enemy phase: resolves it through the simulation (god mode gives the player an unreachable HP for the
-    /// resolve and strips the hurt events afterwards, HANDOFF §5.6), plays the batch SFX, hands the events to
-    /// BoardPresenter for staged playback and, once played, pushes HP/boss HUD values and the turn_end analytics.
+    /// resolve and strips the hurt events afterwards, HANDOFF §5.6), hands the events to BoardPresenter for staged
+    /// playback (which plays the step / hurt SFX in sync) and, once played, pushes HP/boss HUD values and the
+    /// turn_end analytics.
     /// </summary>
     public sealed class EnemyPhaseRunner
     {
@@ -71,16 +72,12 @@ namespace Nex.BilliardRogue
         void Summarize(List<SimEvent> events, int hpBefore)
         {
             enemiesAdvanced = 0;
-            var hurt = false;
             for (var i = 0; i < events.Count; i++)
             {
                 var ev = events[i];
                 if (ev.kind == SimEventKind.EnemyMoved && !ev.flag) enemiesAdvanced++;
-                else if (ev.kind == SimEventKind.PlayerDamaged) hurt = true;
             }
 
-            if (enemiesAdvanced > 0) services.Audio.Sfx(SfxManager.SoundEffect.EnemyStep);
-            if (hurt) services.Audio.Sfx(SfxManager.SoundEffect.PlayerHurt);
             damageTaken = hpBefore - services.Run.playerHp;
         }
 

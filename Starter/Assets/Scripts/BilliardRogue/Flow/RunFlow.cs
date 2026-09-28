@@ -89,6 +89,7 @@ namespace Nex.BilliardRogue
                 board = ctx.board,
                 layout = ctx.layout,
                 display = ctx.display,
+                environment = ctx.environment,
                 inputs = ctx.shotInputs(run.numPlayers, gameplay.InputRoot),
                 persistence = ctx.persistence,
                 analytics = new RunAnalytics(),

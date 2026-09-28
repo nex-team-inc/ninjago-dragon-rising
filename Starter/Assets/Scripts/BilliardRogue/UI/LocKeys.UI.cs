@@ -25,7 +25,7 @@ namespace Nex.BilliardRogue
             public const string HealName = "br.reward.healName";              // en: Hearty Meal
             public const string MaxHpName = "br.reward.maxHpName";            // en: Vitality Charm
             public const string LevelUp = "br.reward.levelUp";                // en: Lv {0} → Lv {1} (smart)
-            // Arrows the pixel font has (Reward.Hint uses ◀ ▶, which it lacks).
+            // Uses arrows the pixel font has (it lacks ◀ ▶).
             public const string ChooseHint = "br.ui.reward.chooseHint";       // en: ← → choose · OK to confirm
         }
 

@@ -32,6 +32,10 @@ namespace Nex.BilliardRogue
         [SerializeField] CatView[] cats = System.Array.Empty<CatView>();
         [SerializeField] CameraShaker cameraShaker = null!;
 
+        [Header("Arena (scene instance, wired by MainSceneBuilder)")]
+        [Tooltip("Its danger-row glow follows the enemies closest to the cat.")]
+        [SerializeField] ArenaView arenaView = null!;
+
         [Header("Labels (instantiated under the GameplayView label layer)")]
         [SerializeField] WorldLabelLayer labelLayerPrefab = null!;
         [SerializeField] WorldLabel labelPrefab = null!;
@@ -91,16 +95,21 @@ namespace Nex.BilliardRogue
             views.Rebuild(run);
             sequences.ResetCats();
             cameraShaker.CaptureBase();
+            RefreshDangerLevel(run);
         }
 
         /// <summary>Plays the immediate feedback for a frame's worth of player-turn events (hits, bounces, numbers).</summary>
         public void Consume(List<SimEvent> events, RunState run)
         {
+            var enemyRemoved = false;
             for (var i = 0; i < events.Count; i++)
             {
                 var ev = events[i];
                 eventPlayer.Play(ev, run);
+                enemyRemoved |= ev.kind == SimEventKind.EnemyKilled;
             }
+
+            if (enemyRemoved) RefreshDangerLevel(run);
         }
 
         /// <summary>Syncs ball views with the simulator (positions, trails, spawn/despawn).</summary>
@@ -112,9 +121,10 @@ namespace Nex.BilliardRogue
         }
 
         /// <summary>Animates one resolved enemy phase step by step (events carry step 0..4) with PacingConfig timings.</summary>
-        public UniTask PlayEnemyPhaseAsync(List<SimEvent> events, RunState run, CancellationToken ct)
+        public async UniTask PlayEnemyPhaseAsync(List<SimEvent> events, RunState run, CancellationToken ct)
         {
-            return phasePlayer.PlayAsync(events, run, config.Pacing, ct);
+            await phasePlayer.PlayAsync(events, run, config.Pacing, ct);
+            RefreshDangerLevel(run);
         }
 
         /// <summary>Releases every pooled view (stage transition, leaving gameplay).</summary>
@@ -122,6 +132,28 @@ namespace Nex.BilliardRogue
         {
             views.ClearAll();
             aimGuide.SetVisible(false);
+            arenaView.SetDangerLevel(0f);
+        }
+
+        // 1 = an enemy stands in the danger row, 0.35 = one row above it, 0 = nothing close to the cat.
+        void RefreshDangerLevel(RunState run)
+        {
+            var dangerRow = ArenaGeometry.DangerRow(rules.arena);
+            var level = 0f;
+            var enemies = run.board.enemies;
+            for (var i = 0; i < enemies.Count; i++)
+            {
+                var bottom = enemies[i].row + enemies[i].height - 1;
+                if (bottom >= dangerRow)
+                {
+                    level = 1f;
+                    break;
+                }
+
+                if (bottom == dangerRow - 1) level = 0.35f;
+            }
+
+            arenaView.SetDangerLevel(level);
         }
 
         #endregion

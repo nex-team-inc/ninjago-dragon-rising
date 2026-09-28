@@ -26,6 +26,7 @@ namespace Nex.BilliardRogue
         public BoardPresenter board = null!;
         public ArenaLayout layout = null!;
         public PixelWorldDisplay display = null!;
+        public ActEnvironmentController environment = null!;
         public CalibrationShotInputFactory calibrationShotInput = null!;
         public ShotInputsFactory shotInputs = null!;
         public SummaryViewFactory summaryView = null!;

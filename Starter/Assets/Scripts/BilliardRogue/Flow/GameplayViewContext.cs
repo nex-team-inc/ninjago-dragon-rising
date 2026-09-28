@@ -16,6 +16,8 @@ namespace Nex.BilliardRogue
         public BoardPresenter board = null!;
         public ArenaLayout layout = null!;
         public PixelWorldDisplay display = null!;
+        /// <summary>Act dioramas, lighting and grading; the view applies the act behind each stage intro.</summary>
+        public ActEnvironmentController environment = null!;
         /// <summary>One input per player, index = player index (built by the coordinator from the Input prefab).</summary>
         public IShotInput[] inputs = Array.Empty<IShotInput>();
         public RunPersistence persistence = null!;

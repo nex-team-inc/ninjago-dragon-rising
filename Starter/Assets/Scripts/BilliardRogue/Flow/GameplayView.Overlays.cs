@@ -25,6 +25,8 @@ namespace Nex.BilliardRogue
 
         public async UniTask ShowStageIntroAsync(int actIndex, int stageInAct, bool isBoss, CancellationToken ct)
         {
+            // The act look fades in behind the intro overlay (a no-op for every stage after the act's first).
+            context.environment.ApplyAct(context.config.Acts[actIndex]);
             await UniTask.WaitWhile(managerInTransition, cancellationToken: ct);
             var view = Instantiate(stageIntroViewPrefab);
             view.Initialize(context.config.Pacing, context.config.Enemies, context.config.Acts);

@@ -1,6 +1,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using UnityEditor;
 using UnityEngine;
@@ -12,19 +13,21 @@ namespace Nex.BilliardRogue.Editor
     {
         const string Menu = "Nex/Billiard Rogue/";
 
-        // TDD §17 order: RenderPipeline creates the World/WorldVolume layers before any builder assigns them,
-        // and LocalizationSeeder runs before the views that bind its keys.
+        // TDD §17 order plus the module dependencies: RenderPipeline creates the World/WorldVolume layers and the
+        // World renderer before any builder assigns them, VolumeProfiles precede the rig that ships Volume_Default,
+        // and LocalizationSeeder runs before FontAssetsBuilder so the CJK atlas covers every seeded string.
         static readonly string[] BuildOrder =
         {
             "ImportSettingsBuilder",
             "ConfigAssetsBuilder",
             "Es3SettingsRepair",
             "EnumDictionaryRepair",
-            "MaterialsBuilder",
             "RenderPipelineBuilder",
+            "MaterialsBuilder",
+            "VolumeProfilesBuilder",
             "WorldCameraRigBuilder",
-            "FontAssetsBuilder",
             "LocalizationSeeder",
+            "FontAssetsBuilder",
             "DetectionPrefabsBuilder",
             "InputPrefabsBuilder",
             "WorldPrefabsBuilder",
@@ -37,15 +40,30 @@ namespace Nex.BilliardRogue.Editor
         };
 
         [MenuItem(Menu + "Build All", priority = 0)]
-        public static void BuildAll()
+        public static void BuildAll() => Debug.Log(RunAll());
+
+        /// <summary>Runs every builder in order; a builder that throws is logged and skipped so the rest still run.</summary>
+        public static string RunAll()
         {
             var ran = 0;
+            var failed = new List<string>();
             foreach (var name in BuildOrder)
             {
-                if (RunBuilder(name)) ran++;
+                try
+                {
+                    if (RunBuilder(name)) ran++;
+                }
+                catch (Exception e)
+                {
+                    failed.Add(name);
+                    Debug.LogError($"[BilliardRogue] {name} failed: {e}");
+                }
             }
 
-            Debug.Log($"[BilliardRogue] Build All finished: {ran}/{BuildOrder.Length} builders ran.");
+            var summary = $"[BilliardRogue] Build All finished: {ran}/{BuildOrder.Length} builders ran"
+                          + (failed.Count > 0 ? $", FAILED: {string.Join(", ", failed)}" : "") + ".";
+            Debug.Log(summary);
+            return summary;
         }
 
         [MenuItem(Menu + "Config Assets", priority = 20)]

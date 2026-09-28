@@ -1,18 +1,20 @@
 #nullable enable
 
+using Nex.BilliardRogue.Simulation;
 using UnityEngine;
 
 namespace Nex.BilliardRogue
 {
-    // Integration seam: PlayerShotInput.prefab (PawShotInput + DebugShotInput + AutoAimBot + ShotInputRouter) is built
-    // by the Input module. Until its Initialize signatures exist this partial instantiates the prefab and takes its
-    // first IShotInput, or falls back to NullShotInput. Replace once the Input module lands:
-    //   paw.Initialize(playerIndex, engine, config.Control, preference.leftHandedCue); router.Initialize(...)
+    // Shot inputs (Input module): one PlayerShotInput.prefab instance per player whose ShotInputRouter picks between
+    // the paw, mouse/keyboard and bot inputs. Every instance shares one ShotInputContext; its providers are polled,
+    // so preference and debug changes apply mid-run.
     public sealed partial class BilliardRogueCoordinator
     {
         [Header("Input (Input module prefab, wired by FlowPrefabsBuilder)")]
         [Tooltip("One instance per player: PawShotInput + DebugShotInput + AutoAimBot + ShotInputRouter.")]
         [SerializeField] GameObject? playerShotInputPrefab;
+
+        ShotInputContext? shotInputContext;
 
         IShotInput? CreateCalibrationShotInput(int playerIndex, OnePlayerDetectionEngine engine, Transform parent)
         {
@@ -40,9 +42,30 @@ namespace Nex.BilliardRogue
 
             var instance = Instantiate(playerShotInputPrefab, parent);
             instance.name = $"{playerShotInputPrefab.name}_P{playerIndex + 1}";
-            // TODO(integration): initialize the paw / debug / bot inputs and the router with (playerIndex, engine,
-            // config.Control, PlayerDataManager.Instance.PlayerPreference.leftHandedCue).
-            return instance.GetComponent<IShotInput>();
+            var router = instance.GetComponent<ShotInputRouter>();
+            router.Initialize(playerIndex, engine, shotInputContext ??= CreateShotInputContext());
+            return router;
+        }
+
+        ShotInputContext CreateShotInputContext()
+        {
+            return new ShotInputContext
+            {
+                control = config.Control,
+                rules = rules,
+                leftHanded = () => PlayerDataManager.Instance.PlayerPreference.leftHandedCue,
+                forceDebugInput = () => PlayerDataManager.Instance.DebugSettings.forceDebugInput,
+                run = ActiveRun,
+                worldCamera = worldCameraRig.WorldCamera,
+                layout = arenaLayout,
+            };
+        }
+
+        /// <summary>The run being played, for the bot; null during calibration and on the title.</summary>
+        RunState? ActiveRun()
+        {
+            var gameplay = runFlow.ActiveGameplay;
+            return gameplay != null ? gameplay.Run : null;
         }
     }
 }

@@ -31,9 +31,13 @@ namespace Nex.BilliardRogue
         [Header("World (scene instances, wired by MainSceneBuilder)")]
         [SerializeField] BoardPresenter boardPresenter = null!;
         [SerializeField] ArenaLayout arenaLayout = null!;
-        [SerializeField] PixelWorldDisplay worldDisplay = null!;
+        [SerializeField] WorldCameraRig worldCameraRig = null!;
+        [SerializeField] ActEnvironmentController actEnvironment = null!;
+        [Tooltip("The view manager's RootCamera: the UI camera the world display canvas renders on.")]
+        [SerializeField] Camera rootCamera = null!;
 
         RunPersistence persistence = null!;
+        GameRules rules = null!;
         RunFlow runFlow = null!;
         bool prepared;
         UniTaskCompletionSource? preparationSource;
@@ -67,19 +71,26 @@ namespace Nex.BilliardRogue
         public async UniTask StartMain()
         {
             persistence = new RunPersistence(PlayerDataManager.Instance);
+            rules = RulesFactory.Build(config);
             cameraSession.Initialize(detectionManagerPrefab, detectionEnginePrefab, detectionRoot);
+            // The world display sits behind every view, so the rig and the Title look exist before the first push.
+            worldCameraRig.Initialize(rootCamera);
+            worldCameraRig.SetPose(config.Arena.CameraPosition, config.Arena.CameraPitchDeg, config.Arena.CameraFov);
+            actEnvironment.Initialize(config.Arena);
+            actEnvironment.ApplyTitle(config.Acts[0], instant: true);
             runFlow = new RunFlow(new RunFlowContext
             {
                 viewManager = viewManager,
                 config = config,
-                rules = RulesFactory.Build(config),
+                rules = rules,
                 persistence = persistence,
                 camera = cameraSession,
                 calibrationViewPrefab = calibrationViewPrefab,
                 gameplayViewPrefab = gameplayViewPrefab,
                 board = boardPresenter,
                 layout = arenaLayout,
-                display = worldDisplay,
+                display = worldCameraRig.Display,
+                environment = actEnvironment,
                 calibrationShotInput = CreateCalibrationShotInput,
                 shotInputs = CreateShotInputs,
                 summaryView = CreateSummaryView,
@@ -121,6 +132,7 @@ namespace Nex.BilliardRogue
         {
             RefreshTitle();
             PlayTitleBgm();
+            actEnvironment.ApplyTitle(config.Acts[0]);
         }
 
         void HandleNewRunRequested()

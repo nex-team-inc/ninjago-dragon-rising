@@ -296,7 +296,7 @@ All subclass `SimpleCanvasView`, override `Identifier`, `Controls`, `AnalyticsSc
 | `GameplayView` | Gameplay | Pause (via Back→Pause) | `gameplay` | hosts HUD widgets, PiP preview frame + PlayerIndicatorsManager; `Initialize(GameSessionContext)`; raises `RunEnded` |
 | `StageIntroView` | StageIntro | None | `stage_intro` | `Show(act, stage, isBoss)`; auto pops after PacingConfig time |
 | `RewardView` | Reward | None | `reward` | `UniTask<int> ChooseAsync(IReadOnlyList<RewardOption>, BallCatalog, RunState)` |
-| `PauseView` | Pause | None | `pause` | Resume / Settings / Save & Quit, uses ViewManager pause announcements |
+| `PauseView` | Pause | Back (= Resume) | `pause` | Resume / Settings / Save & Quit, uses ViewManager pause announcements |
 | `TrackingLostView` | TrackingLost | None | `tracking_lost` | auto-dismiss when tracked |
 | `SummaryView` | Summary | None | `summary` | `Show(RunState, MetaProgressData, bool newRecord)`; PlayAgain / Title |
 | `SettingsView` | Settings | Back | `settings` | language (Locales), volumes (PlayerDataManager properties), aim guide, left-handed, screen shake |
@@ -429,4 +429,4 @@ Layers (created by `RenderPipelineBuilder`): `World` (every 3D object the WorldC
 | `Assets/Scenes/BilliardRogue/Main.unity` | Flow (`MainSceneBuilder`) | SingletonSpawner (as GameUIExample), initializer, coordinator, view manager, WorldCameraRig, Arena, Env_Act1..3 (inactive), EventSystem; build index 0 |
 | TMP fonts `Assets/Fonts/BilliardRogue/BilliardPixel_TMP.asset`, `BilliardPixelBold_TMP.asset`, `BilliardPixel_CJK_TMP.asset` | 2D art (`FontAssetsBuilder`) | UI code loads these by path in builders; fallback chain Latin → CJK |
 
-Builders reference assets of other modules **by these paths**, and degrade gracefully (placeholder + warning) when an asset is not built yet. `BilliardRogueMenu` Build All order: ImportSettings → ConfigAssets → Materials → RenderPipeline → WorldCameraRig → FontAssets → LocalizationSeeder → DetectionPrefabs → InputPrefabs → WorldPrefabs → Environment → VfxPrefabs → AudioRegistry → UiViews → FlowPrefabs → MainScene.
+Builders reference assets of other modules **by these paths**, and degrade gracefully (placeholder + warning) when an asset is not built yet. `BilliardRogueMenu` Build All order: ImportSettings → ConfigAssets → RenderPipeline (layers, World renderer) → Materials → VolumeProfiles → WorldCameraRig → LocalizationSeeder → FontAssets (the CJK atlas covers the seeded strings) → DetectionPrefabs → InputPrefabs → WorldPrefabs → Environment → VfxPrefabs → AudioRegistry → UiViews → FlowPrefabs → MainScene.

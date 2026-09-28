@@ -112,6 +112,7 @@ namespace Nex.BilliardRogue
                 diorama.SetVisible(true);
                 shown = diorama;
                 arena.ApplySurfaces(diorama.ArenaSurfaces);
+                ApplyLook(current);
             }
 
             diorama.EnsureAmbientParticles(act.AmbientParticlesPrefab, lighting.particleTint);

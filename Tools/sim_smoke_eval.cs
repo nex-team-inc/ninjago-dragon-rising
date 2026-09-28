@@ -1,12 +1,15 @@
 // Whole-run smoke test for the Billiard Rogue simulation (statements only: runs inside the eval wrapper).
-// Usage: unity command eval_file /Users/simonbut/project/VibeProject3/Tools/sim_smoke_eval.cs 90000 --timeout 100 --project-path /Users/simonbut/project/VibeProject3/Starter --json
-// Drives 3 seeded runs with a random-angle bot through launch -> step -> enemy phase -> stage clear -> reward -> next stage
-// using the real config assets, and reports outcome, progress, longest flight and stuck balls per seed.
+// Usage: unity command eval_file /Users/simonbut/project/VibeProject3/Tools/sim_smoke_eval.cs 240000 --timeout 250 --project-path /Users/simonbut/project/VibeProject3/Starter --json
+// Drives seeded runs with an aiming bot through launch -> step -> enemy phase -> stage clear -> reward -> next stage
+// using the real config assets. The bot samples launch positions x angles plus straight lines at the lowest enemies
+// and scores every candidate's PredictPath by the enemy contacts it makes (danger-row and boss contacts weigh more).
+// Reports outcome, act/stage reached, turns per stage, worst flight, hits per shot and enemies on board per seed.
 var report = new System.Text.StringBuilder();
 try
 {
     var cfg = AssetDatabase.LoadAssetAtPath<Nex.BilliardRogue.BilliardRogueConfig>("Assets/Configs/BilliardRogue/BilliardRogueConfig.asset");
     var rules = Nex.BilliardRogue.RulesFactory.Build(cfg);
+    var arena = rules.arena;
     var factory = new Nex.BilliardRogue.Simulation.RunFactory();
     var ops = new Nex.BilliardRogue.Simulation.BoardOps(rules);
     var sim = new Nex.BilliardRogue.Simulation.BallSimulator(rules, ops);
@@ -14,56 +17,138 @@ try
     var rewards = new Nex.BilliardRogue.Simulation.RewardGenerator();
     var events = new List<Nex.BilliardRogue.Simulation.SimEvent>();
     var options = new List<Nex.BilliardRogue.Simulation.RewardOption>();
-    var path = new Vector2[16];
+    var path = new Vector2[12];
+    var seeds = new[] { 1, 2, 3, 4, 5, 6 };
+    var angleSamples = 12;
+    var launchXs = new[] { 0.12f, 0.38f, 0.62f, 0.88f };
+    var topY = Nex.BilliardRogue.Simulation.ArenaGeometry.TopWallY(arena);
     var watch = System.Diagnostics.Stopwatch.StartNew();
-    foreach (var seed in new[] { 1, 2, 3 })
+    var globalWorstFrames = 0; var globalMaxHits = 0; var globalOver7 = 0; var globalOver8 = 0; var globalShots = 0;
+
+    bool OnWall(Vector2 p) => p.x <= arena.ballRadius + 0.01f || p.x >= arena.columns - arena.ballRadius - 0.01f || p.y >= topY - arena.ballRadius - 0.01f;
+
+    float Score(Nex.BilliardRogue.Simulation.RunState run, Vector2 origin, Vector2 dir)
+    {
+        var n = sim.PredictPath(run, origin, dir, 24f, 4, path);
+        var score = 0f;
+        for (var i = 1; i < n; i++)
+        {
+            var p = path[i];
+            if (p.y < 0f || OnWall(p)) continue;
+            foreach (var e in run.board.enemies)
+            {
+                var r = Nex.BilliardRogue.Simulation.BallCollision.EnemyRect(arena, e);
+                var pad = arena.ballRadius + 0.06f;
+                if (p.x < r.xMin - pad || p.x > r.xMax + pad || p.y < r.yMin - pad || p.y > r.yMax + pad) continue;
+                var shielded = e.shieldFace == Nex.BilliardRogue.Simulation.Face.Bottom && p.y < r.yMin;
+                var rowBottom = e.row + e.height - 1;
+                score += (shielded ? 0.1f : 1f) + 0.12f * rowBottom + (rules.enemies[(int)e.type].isBoss ? 0.4f : 0f) + (i == 1 ? 0.3f : 0f);
+                break;
+            }
+        }
+        return score;
+    }
+
+    (Vector2 origin, Vector2 dir) Aim(Nex.BilliardRogue.Simulation.RunState run, System.Random bot)
+    {
+        var bestScore = -1f; var bestOrigin = Vector2.zero; var bestDir = Vector2.up;
+        void Consider(Vector2 origin, Vector2 dir)
+        {
+            dir = Nex.BilliardRogue.Simulation.ArenaGeometry.ClampAim(arena, dir);
+            var s = Score(run, origin, dir) + (float)bot.NextDouble() * 0.01f;
+            if (s <= bestScore) return;
+            bestScore = s; bestOrigin = origin; bestDir = dir;
+        }
+        foreach (var x01 in launchXs)
+        {
+            var origin = Nex.BilliardRogue.Simulation.ArenaGeometry.LaunchOrigin(arena, x01);
+            for (var a = 0; a < angleSamples; a++)
+            {
+                var angle = (arena.minAimAngleDeg + (180f - 2f * arena.minAimAngleDeg) * (a + 0.5f) / angleSamples) * Mathf.Deg2Rad;
+                Consider(origin, new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)));
+            }
+        }
+        var lowest = run.board.enemies.OrderByDescending(e => e.row + e.height).ThenBy(e => rules.enemies[(int)e.type].isBoss ? 0 : 1).Take(4);
+        foreach (var e in lowest)
+        {
+            var center = Nex.BilliardRogue.Simulation.ArenaGeometry.FootprintCenter(arena, e.col, e.row, e.width, e.height);
+            foreach (var dx in new[] { 0f, -1.5f, 1.5f })
+            {
+                var origin = Nex.BilliardRogue.Simulation.ArenaGeometry.LaunchOrigin(arena, Mathf.Clamp01((center.x + dx) / arena.columns));
+                Consider(origin, center - origin);
+            }
+        }
+        return (bestOrigin, bestDir);
+    }
+
+    foreach (var seed in seeds)
     {
         var run = factory.NewRun(rules, seed, 1);
         var rng = new Nex.BilliardRogue.Simulation.SimRandom(run.rngState);
         factory.BeginStage(rules, run, rng, events);
         events.Clear();
         var bot = new System.Random(seed);
-        var turns = 0; var maxSteps = 0; var stuck = 0; var eventCount = 0;
+        var turns = 0; var maxSteps = 0; var stuck = 0; var maxHits = 0; var over7 = 0; var over8 = 0; var shots = 0;
+        var turnsPerStage = new List<int>(); var stageTurns = 0; var maxEnemies = 0;
         while (run.outcome == Nex.BilliardRogue.Simulation.RunOutcome.None && turns < 400)
         {
-            turns++;
+            turns++; stageTurns++;
+            if (run.board.enemies.Count > maxEnemies) maxEnemies = run.board.enemies.Count;
             for (var s = 0; s < run.bag.Count + run.extraBalls; s++)
             {
                 var ball = s < run.bag.Count ? run.bag[s] : new Nex.BilliardRogue.Simulation.BallInstance { type = Nex.BilliardRogue.Simulation.BallType.Basic, level = 1 };
-                var angle = (float)(15 + bot.NextDouble() * 150) * Mathf.Deg2Rad;
-                var dir = Nex.BilliardRogue.Simulation.ArenaGeometry.ClampAim(rules.arena, new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)));
-                var origin = Nex.BilliardRogue.Simulation.ArenaGeometry.LaunchOrigin(rules.arena, (float)bot.NextDouble());
-                sim.PredictPath(run, origin, dir, 20f, 3, path);
+                var (origin, dir) = Aim(run, bot);
                 sim.Launch(run, ball, origin, dir, bot.NextDouble() < 0.2, 0, events);
-                var steps = 0;
-                while (sim.ActiveCount > 0 && steps < 3600) { sim.Step(run, 1f / 60f, events); steps++; eventCount += events.Count; events.Clear(); }
+                events.Clear();
+                var steps = 0; var hits = 0;
+                while (sim.ActiveCount > 0 && steps < 3600)
+                {
+                    sim.Step(run, 1f / 60f, events); steps++;
+                    foreach (var ev in events) { if (ev.kind == Nex.BilliardRogue.Simulation.SimEventKind.EnemyHit) hits++; }
+                    events.Clear();
+                }
+                shots++;
                 if (sim.ActiveCount > 0) { stuck++; sim.Clear(); }
                 if (steps > maxSteps) maxSteps = steps;
+                if (hits > maxHits) maxHits = hits;
+                if (steps > 7 * 60) over7++;
+                if (steps > 8 * 60) over8++;
                 if (factory.IsStageCleared(run)) break;
             }
             run.extraBalls = 0;
             if (!factory.IsStageCleared(run))
             {
                 resolver.Resolve(run, rng, events);
-                eventCount += events.Count; events.Clear();
+                events.Clear();
                 if (run.outcome != Nex.BilliardRogue.Simulation.RunOutcome.None) break;
                 if (!factory.IsStageCleared(run)) continue;
             }
+            turnsPerStage.Add(stageTurns); stageTurns = 0;
             factory.CompleteStage(rules, run, events);
             events.Clear();
             if (run.awaitingReward)
             {
                 options.Clear();
                 rewards.Roll(rules, run, 3, rng, options);
-                rewards.Apply(rules, run, options[bot.Next(options.Count)]);
+                // Grow the bag to 8 balls first, then level up; heal when at or below half HP.
+                var newBall = options.FirstOrDefault(o => o.kind == Nex.BilliardRogue.Simulation.RewardKind.NewBall);
+                var upgrade = options.FirstOrDefault(o => o.kind == Nex.BilliardRogue.Simulation.RewardKind.UpgradeBall);
+                var pick = (run.bag.Count < 8 ? newBall ?? upgrade : upgrade ?? newBall) ?? options[0];
+                if (run.playerHp * 2 <= run.playerMaxHp) pick = options.FirstOrDefault(o => o.kind == Nex.BilliardRogue.Simulation.RewardKind.Heal) ?? pick;
+                rewards.Apply(rules, run, pick);
             }
             if (!factory.AdvanceToNextStage(rules, run)) break;
             factory.BeginStage(rules, run, rng, events);
             events.Clear();
         }
-        report.AppendLine($"seed {seed}: outcome={run.outcome} stageNumber={run.stageNumber} turns={turns} hp={run.playerHp}/{run.playerMaxHp} bag={run.bag.Count} kills={run.stats.kills} shots={run.stats.shots} bestCombo={run.stats.bestCombo} maxFlightFrames={maxSteps} stuckBalls={stuck} events={eventCount} enemiesLeft={run.board.enemies.Count}");
+        if (stageTurns > 0) turnsPerStage.Add(stageTurns);
+        globalShots += shots; globalOver7 += over7; globalOver8 += over8;
+        if (maxSteps > globalWorstFrames) globalWorstFrames = maxSteps;
+        if (maxHits > globalMaxHits) globalMaxHits = maxHits;
+        var bag = string.Join(",", run.bag.Select(b => b.type.ToString().Substring(0, 2) + b.level));
+        report.AppendLine($"seed {seed}: outcome={run.outcome} act={run.actIndex + 1} stageInAct={run.stageInAct} stageNumber={run.stageNumber} turns={turns} turnsPerStage=[{string.Join(",", turnsPerStage)}] hp={run.playerHp}/{run.playerMaxHp} bag=[{bag}] kills={run.stats.kills} shots={shots} bestCombo={run.stats.bestCombo} maxHitsPerShot={maxHits} worstFlight={maxSteps}f({maxSteps / 60f:F1}s) flightsOver7s={over7} flightsOver8s={over8} stuck={stuck} enemiesAtEnd={run.board.enemies.Count} maxEnemiesOnBoard={maxEnemies}");
     }
-    report.AppendLine($"elapsed {watch.ElapsedMilliseconds} ms");
+    report.AppendLine($"all seeds: shots={globalShots} worstFlight={globalWorstFrames / 60f:F2}s maxHitsPerShot={globalMaxHits} flightsOver7s={globalOver7} flightsOver8s={globalOver8} elapsed={watch.ElapsedMilliseconds} ms");
 }
 catch (Exception ex)
 {

@@ -1,0 +1,273 @@
+# Billiard Rogue string table source (designers edit this file; LocalizationSeeder upserts it into the LocalizationTable collection).
+# Run: menu Nex/Billiard Rogue/Localization Seeder (or Build All). Rows whose first cell starts with # are comments. Blank lines are ignored.
+# Columns: key | en | fr-CA | zh-Hans | zh-Hant | ja | isSmart. Every value must be non-empty (the seeder rejects the whole file otherwise).
+# isSmart = true for rows with {0} {1} {2} placeholders (positional arguments from code). Keep every placeholder in every locale.
+# Only br.* keys are owned here. Deleting a row deletes the key from the table on the next seed (bindings by key name then show No translation found).
+#
+# TYPOGRAPHY
+# fr-CA: tutoiement; Quebec usage = no space before ! ? ; type a normal space before : and % and inside « » (the seeder turns it into a no-break space).
+# fr-CA: apostrophe is the typographic ’ (U+2019). zh/ja: full-width punctuation ！？：，。（） ; ja uses 、 and 。
+# All locales: separator is space-middle-dot-space ( · ) and arrows are ← → (the pixel font has no ◀ ▶). Keep × for areas and multipliers.
+# Glyph budget: the Latin pixel font covers ASCII + Latin-1 + Œœ ’ “ ” « » … – — · × ← ↑ → ↓ ★ ♥. CJK glyphs are baked from these tables by FontAssetsBuilder (re-run it after edits).
+#
+# GLOSSARY (term | en | fr-CA | zh-Hans | zh-Hant | ja)
+# run | run | partie | 冒险 | 冒險 | (はじめから / つづきから) 挑戦
+# act | Act {0} | Acte {0} | 第{0}幕 | 第{0}幕 | 第{0}章
+# stage | Stage {1} | Étape {1} | 第{1}关 | 第{1}關 | ステージ{1}
+# turn | Turn | Tour | 回合 | 回合 | ターン
+# boss | BOSS / Boss | BOSS / boss | 首领 | 首領 | ボス
+# HP | HP | PV | 生命 | 生命 | HP
+# max HP | Max HP | PV max | 生命上限 | 生命上限 | 最大HP
+# ball | ball | boule (fem.) | 球 | 球 | ボール
+# bag | bag | sac | 球袋 | 球袋 | バッグ
+# cue | cue | queue | 球杆 | 球桿 | キュー
+# shot / shoot | shot | tir / tirer | 出杆 | 出桿 | ショット
+# paw (the player's hand) | paw | patte | 手 | 手 | 手
+# player tag | P{0} | J{0} | P{0} | P{0} | {0}P
+# level (ball) | Lv {0} | Niv. {0} | Lv.{0} | Lv.{0} | Lv.{0}
+# damage | damage | dégât(s) | 伤害 | 傷害 | ダメージ
+# rarity | Common / Uncommon / Rare | Commune / Peu commune / Rare | 普通 / 罕见 / 稀有 | 普通 / 罕見 / 稀有 | コモン / アンコモン / レア
+# status Burn N | Burn | Brûlure | 灼烧 | 灼燒 | やけど
+# status Poison N | Poison | Poison | 中毒 | 中毒 | どく
+# status Freeze | Freeze / Frozen | geler / gelé | 冰冻 | 冰凍 | こおり / こおらせる
+# crit | crit | critique | 暴击 | 暴擊 | 会心
+# float BLOCK | BLOCK | BLOQUÉ | 格挡 | 格擋 | ブロック
+# float CRIT! | CRIT! | CRITIQUE! | 暴击！ | 暴擊！ | 会心！
+# float POWER! | POWER! | PUISSANCE! | 强力！ | 強力！ | パワー！
+# float COMBO | x{0} COMBO | COMBO x{0} | {0}连击 | {0}連擊 | {0}コンボ
+# settings | Settings | Réglages | 设置 | 設定 | 設定
+# camera | camera | caméra | 摄像头 | 攝影機 | カメラ
+# Ball names: Cue Ball / Ember / Frost / Volt / Boom / Twin / Lance / Iron / Venom / Fang / Bouncy / Lucky
+#   fr-CA: Boule blanche / Braise / Givre / Volt / Boum / Jumelle / Lance / Fer / Venin / Croc / Rebond / Chanceuse
+#   zh-Hans: 母球 / 烈焰 / 冰霜 / 雷霆 / 炸弹 / 双子 / 长枪 / 铁球 / 剧毒 / 獠牙 / 弹弹 / 幸运
+#   zh-Hant: 母球 / 烈焰 / 冰霜 / 雷霆 / 炸彈 / 雙子 / 長槍 / 鐵球 / 劇毒 / 獠牙 / 彈彈 / 幸運
+#   ja: 手球 / 火種 / フロスト / ボルト / ボム / ツイン / ランス / アイアン / ベノム / キバ / バウンド / ラッキー
+#
+key,en,fr-CA,zh-Hans,zh-Hant,ja,isSmart
+# ---- Common
+br.ui.common.ok,"OK","OK","确定","確定","OK",false
+br.ui.common.back,"Back","Retour","返回","返回","戻る",false
+br.ui.common.yes,"Yes","Oui","是","是","はい",false
+br.ui.common.no,"No","Non","否","否","いいえ",false
+br.ui.common.player,"Player {0}","Joueur {0}","玩家{0}","玩家{0}","プレイヤー{0}",true
+br.ui.common.exitConfirm,"Leave the game?","Quitter le jeu?","要退出游戏吗？","要離開遊戲嗎？","ゲームを終了しますか？",false
+# ---- Title
+br.ui.title.tagline,"A cat, a cue, a dungeon.","Un chat, une queue, un donjon.","一只猫，一根球杆，一座地牢。","一隻貓，一根球桿，一座地牢。","ネコと、キューと、ダンジョン。",false
+br.ui.title.continue,"Continue","Continuer","继续冒险","繼續冒險","つづきから",false
+br.ui.title.continueInfo,"Act {0} · Stage {1} · {2} HP","Acte {0} · Étape {1} · {2} PV","第{0}幕 · 第{1}关 · 生命{2}","第{0}幕 · 第{1}關 · 生命{2}","第{0}章 · ステージ{1} · HP{2}",true
+br.ui.title.newRun,"New Run","Nouvelle partie","新的冒险","新的冒險","はじめから",false
+br.ui.title.settings,"Settings","Réglages","设置","設定","設定",false
+br.ui.title.best,"Best run: Act {0} · Stage {1}","Record : Acte {0} · Étape {1}","最佳纪录：第{0}幕 · 第{1}关","最佳紀錄：第{0}幕 · 第{1}關","最高記録：第{0}章 · ステージ{1}",true
+br.ui.title.bestVictory,"Best run: Dungeon cleared!","Record : donjon vaincu!","最佳纪录：地牢已通关！","最佳紀錄：地牢已通關！","最高記録：ダンジョン制覇！",false
+br.ui.title.noBest,"No runs yet","Aucune partie jouée","尚无冒险纪录","尚無冒險紀錄","まだ記録がありません",false
+br.ui.title.runs,"Runs {0} · Wins {1}","Parties {0} · Victoires {1}","冒险 {0} · 通关 {1}","冒險 {0} · 通關 {1}","挑戦 {0} · クリア {1}",true
+# ---- Player mode
+br.ui.playerMode.prompt,"How many players?","Combien de joueurs?","几位玩家？","幾位玩家？","何人で遊ぶ？",false
+br.ui.playerMode.onePlayer,"1 Player","1 joueur","单人游戏","單人遊戲","1人プレイ",false
+br.ui.playerMode.twoPlayers,"2 Players","2 joueurs","双人游戏","雙人遊戲","2人プレイ",false
+br.ui.playerMode.coopHint,"Co-op: shared HP, alternating shots","Coop : PV partagés, tirs en alternance","合作：共享生命，轮流出杆","合作：共享生命，輪流出桿","協力：HP共有、交代でショット",false
+br.ui.playerMode.soloHint,"Solo: one cat, one cue","Solo : un chat, une queue","单人：一只猫，一根球杆","單人：一隻貓，一根球桿","ソロ：ネコ1匹、キュー1本",false
+# ---- Calibration
+br.ui.calibration.header,"Camera setup","Réglage de la caméra","摄像头设置","攝影機設定","カメラ設定",false
+br.ui.calibration.moveIn,"Move into the frame","Place-toi dans le cadre","请走进画面","請走進畫面","画面の中に入ろう",false
+br.ui.calibration.raiseHand,"Raise your hand","Lève la main","请举起一只手","請舉起一隻手","手を挙げよう",false
+br.ui.calibration.poseTutorial,"Hold your left paw up: that's the ball. Your right paw is the cue.","Lève ta patte gauche : c’est la boule. Ta patte droite, c’est la queue.","举起左手，那就是球。右手就是球杆。","舉起左手，那就是球。右手就是球桿。","左手を上げよう。それがボール。右手はキューだよ。",false
+br.ui.calibration.testStrike,"Snap your right paw into your left paw!","Frappe ta patte gauche avec ta patte droite!","用右手快速拍向左手！","用右手快速拍向左手！","右手で左手をパシッとたたこう！",false
+br.ui.calibration.ready,"Ready!","C’est prêt!","准备就绪！","準備就緒！","準備OK！",false
+br.ui.calibration.playerReady,"Player {0} ready","Joueur {0} : prêt","玩家{0}已就绪","玩家{0}已就緒","プレイヤー{0} 準備OK",true
+br.ui.calibration.waiting,"Waiting for player {0}…","En attente du joueur {0}…","等待玩家{0}…","等待玩家{0}…","プレイヤー{0}を待っています…",true
+br.ui.calibration.leftHandedHint,"Left-handed cue is on: paws are swapped.","Mode gaucher activé : les pattes sont inversées.","左手模式已开启：左右手互换。","左手模式已開啟：左右手互換。","左きき設定オン：左右の手が入れ替わります。",false
+br.ui.calibration.starting,"Starting the camera…","Démarrage de la caméra…","正在启动摄像头…","正在啟動攝影機…","カメラを起動中…",false
+br.ui.calibration.tutorialHint,"Left paw = ball · Right paw = cue","Patte gauche = boule · Patte droite = queue","左手 = 球 · 右手 = 球杆","左手 = 球 · 右手 = 球桿","左手 = ボール · 右手 = キュー",false
+br.ui.calibration.strikeSuccess,"Nice strike!","Beau coup!","漂亮的一击！","漂亮的一擊！","ナイスショット！",false
+br.ui.calibration.allReady,"Everyone's ready. Let's go!","Tout le monde est prêt. C’est parti!","全员就绪，出发！","全員就緒，出發！","みんな準備OK。さあ行こう！",false
+# Proposed (not yet in LocKeys): paw tags drawn in the calibration tutorial illustration (FlowViewPrefabsBuilder hard-codes L and R).
+br.ui.calibration.leftPawTag,"L","G","左","左","左",false
+br.ui.calibration.rightPawTag,"R","D","右","右","右",false
+# ---- Setup hints (SetupWarningMessage)
+br.setup.noPlayer,"No player","Aucun joueur","未检测到玩家","未偵測到玩家","プレイヤーがいません",false
+br.setup.stepBack,"Step back","Recule","请后退","請後退","うしろに下がって",false
+br.setup.moveCloser,"Move closer","Approche-toi","请靠近一点","請靠近一點","もっと近づいて",false
+br.setup.moveToCenter,"Move to center","Va au centre","请站到中间","請站到中間","まん中に移動して",false
+br.setup.holdStill,"Hold still","Ne bouge plus","请保持不动","請保持不動","そのまま動かないで",false
+br.setup.good,"Good!","Parfait!","很好！","很好！","いいね！",false
+br.setup.showBothPaws,"Show both paws","Montre tes deux pattes","请露出双手","請露出雙手","両手を見せて",false
+# ---- HUD
+br.hud.hp,"HP","PV","生命","生命","HP",false
+br.hud.balls,"Balls {0}/{1}","Boules {0}/{1}","球 {0}/{1}","球 {0}/{1}","ボール {0}/{1}",true
+br.hud.stage,"Act {0} · Stage {1}","Acte {0} · Étape {1}","第{0}幕 · 第{1}关","第{0}幕 · 第{1}關","第{0}章 · ステージ{1}",true
+br.hud.boss,"BOSS","BOSS","首领","首領","ボス",false
+br.hud.turn,"Turn {0}","Tour {0}","第{0}回合","第{0}回合","ターン{0}",true
+br.hud.turnBanner,"Turn {0} — shoot!","Tour {0} — à toi!","第{0}回合 — 出杆！","第{0}回合 — 出桿！","ターン{0} — ショット！",true
+br.hud.shooterBanner,"P{0}'s shot!","Au tour de J{0}!","轮到P{0}出杆！","輪到P{0}出桿！","{0}Pのショット！",true
+br.hud.playerTag,"P{0}","J{0}","P{0}","P{0}","{0}P",true
+br.hud.fastForward,"Fast-forward »","Avance rapide »","快进 »","快轉 »","早送り »",false
+br.hud.extraBall,"+1 Ball","+1 boule","+1 球","+1 球","+1 ボール",false
+br.hud.powerArmed,"Power ready!","Puissance prête!","强力一击就绪！","強力一擊就緒！","パワー充填！",false
+br.hud.trackingWarning,"Show both paws","Montre tes deux pattes","请露出双手","請露出雙手","両手を見せて",false
+br.hud.pause,"Pause","Pause","暂停","暫停","ポーズ",false
+br.hud.enemiesLeft,"Enemies {0}","Ennemis {0}","敌人 {0}","敵人 {0}","敵 {0}",true
+br.hud.wavesLeft,"Waves {0}","Vagues {0}","波次 {0}","波次 {0}","ウェーブ {0}",true
+br.hud.ballsLabel,"Balls","Boules","球袋","球袋","ボール",false
+br.hud.next,"NEXT","SUIVANTE","下一颗","下一顆","つぎ",false
+br.hud.bonusBalls,"Bonus +{0}","Bonus +{0}","额外 +{0}","額外 +{0}","ボーナス +{0}",true
+br.hud.shooter,"Shooter","Au tir","出杆","出桿","ショット",false
+br.hud.trackingWarningPlayer,"P{0}: show both paws","J{0} : montre tes deux pattes","P{0}：请露出双手","P{0}：請露出雙手","{0}P：両手を見せて",true
+br.hud.pip.title,"Camera","Caméra","摄像头","攝影機","カメラ",false
+# ---- Floating texts
+br.float.block,"BLOCK","BLOQUÉ","格挡","格擋","ブロック",false
+br.float.crit,"CRIT!","CRITIQUE!","暴击！","暴擊！","会心！",false
+br.float.power,"POWER!","PUISSANCE!","强力！","強力！","パワー！",false
+br.float.combo,"x{0} COMBO","COMBO x{0}","{0}连击","{0}連擊","{0}コンボ",true
+br.float.fastForward,"FAST-FORWARD »","AVANCE RAPIDE »","快进 »","快轉 »","早送り »",false
+br.float.frozen,"FROZEN","GELÉ","冰冻","冰凍","こおり",false
+br.float.heal,"+{0}","+{0}","+{0}","+{0}","+{0}",true
+br.float.miss,"MISS","RATÉ","未命中","未命中","ミス",false
+br.float.split,"SPLIT!","DIVISION!","分裂！","分裂！","分裂！",false
+br.float.enraged,"ENRAGED!","ENRAGÉ!","狂暴！","狂暴！","激怒！",false
+br.float.quake,"QUAKE!","SÉISME!","地震！","地震！","地震！",false
+br.float.shield,"SHIELD","BOUCLIER","护盾","護盾","シールド",false
+br.float.summon,"SUMMON!","INVOCATION!","召唤！","召喚！","召喚！",false
+br.float.warp,"WARP!","TÉLÉPORT!","传送！","傳送！","ワープ！",false
+br.float.extraBall,"+1 BALL","+1 BOULE","+1 球","+1 球","+1 ボール",false
+br.float.powerUp,"POWER UP","PUISSANCE +","强化","強化","パワーアップ",false
+# ---- Stage intro
+br.ui.stageIntro.header,"Act {0} · Stage {1}","Acte {0} · Étape {1}","第{0}幕 · 第{1}关","第{0}幕 · 第{1}關","第{0}章 · ステージ{1}",true
+br.ui.stageIntro.bossStage,"Boss Stage","Étape du boss","首领关卡","首領關卡","ボスステージ",false
+br.ui.stageIntro.bossAppears,"{0} appears!","{0} apparaît!","{0}出现了！","{0}出現了！","{0}があらわれた！",true
+br.ui.stageIntro.stageClear,"STAGE CLEAR","ÉTAPE RÉUSSIE","过关！","過關！","ステージクリア",false
+# ---- Reward
+br.ui.reward.header,"Choose a reward","Choisis une récompense","选择奖励","選擇獎勵","報酬を選ぼう",false
+br.ui.reward.chooseHint,"← → choose · OK to confirm","← → choisir · OK pour confirmer","← → 选择 · OK 确认","← → 選擇 · OK 確認","← → えらぶ · OK で決定",false
+br.reward.kind.newBall,"New ball","Nouvelle boule","新球","新球","新しいボール",false
+br.reward.kind.upgrade,"Level up","Amélioration","升级","升級","レベルアップ",false
+br.reward.kind.heal,"Heal","Soins","治疗","治療","回復",false
+br.reward.kind.maxHp,"Max HP","PV max","生命上限","生命上限","最大HP",false
+br.reward.healDesc,"Restore {0} HP","Rend {0} PV","恢复{0}点生命","恢復{0}點生命","HPを{0}回復",true
+br.reward.maxHpDesc,"+{0} Max HP","+{0} PV max","生命上限+{0}","生命上限+{0}","最大HP+{0}",true
+br.reward.upgradeDesc,"{0} → Lv {1}","{0} → Niv. {1}","{0} → Lv.{1}","{0} → Lv.{1}","{0} → Lv.{1}",true
+br.reward.level,"Lv {0}","Niv. {0}","Lv.{0}","Lv.{0}","Lv.{0}",true
+br.reward.levelUp,"Lv {0} → Lv {1}","Niv. {0} → Niv. {1}","Lv.{0} → Lv.{1}","Lv.{0} → Lv.{1}","Lv.{0} → Lv.{1}",true
+br.reward.rarity.common,"Common","Commune","普通","普通","コモン",false
+br.reward.rarity.uncommon,"Uncommon","Peu commune","罕见","罕見","アンコモン",false
+br.reward.rarity.rare,"Rare","Rare","稀有","稀有","レア",false
+br.reward.bagFull,"Bag full","Sac plein","球袋已满","球袋已滿","バッグがいっぱい",false
+br.reward.unlocked,"New ball unlocked: {0}!","Nouvelle boule débloquée : {0}!","解锁新球：{0}！","解鎖新球：{0}！","新ボール解放：{0}！",true
+br.reward.healName,"Hearty Meal","Repas copieux","丰盛大餐","豐盛大餐","ごちそう",false
+br.reward.maxHpName,"Vitality Charm","Charme de vitalité","活力护符","活力護符","活力のお守り",false
+# ---- Pause
+br.ui.pause.header,"Paused","En pause","已暂停","已暫停","ポーズ中",false
+br.ui.pause.resume,"Resume","Reprendre","继续","繼續","再開",false
+br.ui.pause.settings,"Settings","Réglages","设置","設定","設定",false
+br.ui.pause.saveQuit,"Save & Quit","Enregistrer et quitter","保存并退出","儲存並離開","セーブして終了",false
+# ---- Tracking lost
+br.ui.trackingLost.header,"Step back into view","Reviens dans le champ","请回到画面中","請回到畫面中","画面に戻ってきて",false
+br.ui.trackingLost.body,"Waiting for player {0}…","En attente du joueur {0}…","等待玩家{0}…","等待玩家{0}…","プレイヤー{0}を待っています…",true
+br.ui.trackingLost.resuming,"Found you! Resuming…","Te revoilà! On reprend…","找到你了！即将继续…","找到你了！即將繼續…","見つけた！再開するよ…",false
+br.ui.trackingLost.hint,"Stand in front of the camera with both paws visible.","Place-toi devant la caméra, les deux pattes bien visibles.","请站在摄像头前，并露出双手。","請站在攝影機前，並露出雙手。","両手が見えるように、カメラの前に立ってね。",false
+# ---- Summary
+br.summary.victory,"Victory!","Victoire!","胜利！","勝利！","勝利！",false
+br.summary.defeat,"Defeat","Défaite","失败","失敗","敗北",false
+br.summary.newRecord,"New record!","Nouveau record!","新纪录！","新紀錄！","新記録！",false
+br.summary.stageReached,"Reached Act {0} · Stage {1}","Atteint : Acte {0} · Étape {1}","到达第{0}幕 · 第{1}关","到達第{0}幕 · 第{1}關","到達：第{0}章 · ステージ{1}",true
+br.summary.turns,"Turns","Tours","回合数","回合數","ターン数",false
+br.summary.shots,"Shots","Tirs","出杆数","出桿數","ショット数",false
+br.summary.hits,"Hits","Touches","命中数","命中數","ヒット数",false
+br.summary.kills,"Enemies defeated","Ennemis vaincus","击败敌人","擊敗敵人","倒した敵",false
+br.summary.damageDealt,"Damage dealt","Dégâts infligés","造成伤害","造成傷害","与ダメージ",false
+br.summary.damageTaken,"Damage taken","Dégâts subis","受到伤害","受到傷害","被ダメージ",false
+br.summary.bestCombo,"Best combo","Meilleur combo","最高连击","最高連擊","最大コンボ",false
+br.summary.bosses,"Bosses defeated","Boss vaincus","击败首领","擊敗首領","倒したボス",false
+br.summary.time,"Time","Temps","用时","用時","タイム",false
+br.summary.playAgain,"Play again","Rejouer","再来一局","再來一局","もう一度",false
+br.summary.toTitle,"Title","Écran titre","返回标题","返回標題","タイトルへ",false
+br.summary.unlocked,"New balls unlocked!","Nouvelles boules débloquées!","解锁了新球！","解鎖了新球！","新しいボールを解放！",false
+br.summary.statsHeader,"Run stats","Statistiques de la partie","本局数据","本局數據","今回の記録",false
+# ---- Settings
+br.ui.settings.header,"Settings","Réglages","设置","設定","設定",false
+br.ui.settings.language,"Language","Langue","语言","語言","言語",false
+br.ui.settings.masterVolume,"Master volume","Volume général","主音量","主音量","マスター音量",false
+br.ui.settings.musicVolume,"Music volume","Volume de la musique","音乐音量","音樂音量","BGM音量",false
+br.ui.settings.sfxVolume,"Sound effects","Effets sonores","音效","音效","効果音",false
+br.ui.settings.aimGuide,"Aim guide","Guide de visée","瞄准线","瞄準線","照準ガイド",false
+br.ui.settings.aimGuide.short,"Short","Court","短","短","短い",false
+br.ui.settings.aimGuide.normal,"Normal","Normal","标准","標準","ふつう",false
+br.ui.settings.aimGuide.long,"Long","Long","长","長","長い",false
+br.ui.settings.leftHanded,"Left-handed cue","Mode gaucher","左手模式","左手模式","左きき",false
+br.ui.settings.screenShake,"Screen shake","Tremblement d’écran","画面震动","畫面震動","画面の揺れ",false
+br.ui.settings.on,"On","Activé","开","開","オン",false
+br.ui.settings.off,"Off","Désactivé","关","關","オフ",false
+# Language names are endonyms: identical in every locale.
+br.ui.settings.language.en,"English","English","English","English","English",false
+br.ui.settings.language.fr-CA,"Français","Français","Français","Français","Français",false
+br.ui.settings.language.zh-Hans,"简体中文","简体中文","简体中文","简体中文","简体中文",false
+br.ui.settings.language.zh-Hant,"繁體中文","繁體中文","繁體中文","繁體中文","繁體中文",false
+br.ui.settings.language.ja,"日本語","日本語","日本語","日本語","日本語",false
+br.ui.settings.hint,"← → adjust · Back to return","← → régler · Retour pour revenir","← → 调整 · 返回键退出","← → 調整 · 返回鍵離開","← → 調整 · 戻るで閉じる",false
+# ---- Ball names
+br.ball.basic.name,"Cue Ball","Boule blanche","母球","母球","手球",false
+br.ball.flame.name,"Ember","Braise","烈焰","烈焰","火種",false
+br.ball.frost.name,"Frost","Givre","冰霜","冰霜","フロスト",false
+br.ball.thunder.name,"Volt","Volt","雷霆","雷霆","ボルト",false
+br.ball.bomb.name,"Boom","Boum","炸弹","炸彈","ボム",false
+br.ball.splitter.name,"Twin","Jumelle","双子","雙子","ツイン",false
+br.ball.piercer.name,"Lance","Lance","长枪","長槍","ランス",false
+br.ball.iron.name,"Iron","Fer","铁球","鐵球","アイアン",false
+br.ball.venom.name,"Venom","Venin","剧毒","劇毒","ベノム",false
+br.ball.vampire.name,"Fang","Croc","獠牙","獠牙","キバ",false
+br.ball.rubber.name,"Bouncy","Rebond","弹弹","彈彈","バウンド",false
+br.ball.lucky.name,"Lucky","Chanceuse","幸运","幸運","ラッキー",false
+# ---- Ball descriptions (reward card: ~26 Latin / 11 CJK characters per line, 3 lines)
+br.ball.basic.desc.1,"1 damage.","1 dégât.","1点伤害。","1點傷害。","1ダメージ。",false
+br.ball.basic.desc.2,"2 damage.","2 dégâts.","2点伤害。","2點傷害。","2ダメージ。",false
+br.ball.basic.desc.3,"3 damage.","3 dégâts.","3点伤害。","3點傷害。","3ダメージ。",false
+br.ball.flame.desc.1,"1 damage. Burns for 2.","1 dégât + Brûlure 2.","1点伤害，附加灼烧2。","1點傷害，附加灼燒2。","1ダメージ、やけど2。",false
+br.ball.flame.desc.2,"1 damage. Burns for 3.","1 dégât + Brûlure 3.","1点伤害，附加灼烧3。","1點傷害，附加灼燒3。","1ダメージ、やけど3。",false
+br.ball.flame.desc.3,"1 damage. Burns for 4. Burn spreads to a neighbour on kill.","1 dégât + Brûlure 4. Se propage à un voisin à la mort.","1点伤害，附加灼烧4。击杀时灼烧扩散至相邻敌人。","1點傷害，附加灼燒4。擊殺時灼燒擴散至相鄰敵人。","1ダメージ、やけど4。倒すと隣の敵にやけどが広がる。",false
+br.ball.frost.desc.1,"1 damage. 35% chance to freeze for a turn.","1 dégât. 35 % de chances de geler 1 tour.","1点伤害，35%几率冰冻1回合。","1點傷害，35%機率冰凍1回合。","1ダメージ。35%で1ターンこおらせる。",false
+br.ball.frost.desc.2,"1 damage. 50% chance to freeze for a turn.","1 dégât. 50 % de chances de geler 1 tour.","1点伤害，50%几率冰冻1回合。","1點傷害，50%機率冰凍1回合。","1ダメージ。50%で1ターンこおらせる。",false
+br.ball.frost.desc.3,"1 damage. 65% chance to freeze. Frozen foes take +2.","1 dégât. 65 % de chances de geler. Cible gelée : +2 dégâts.","1点伤害，65%几率冰冻。冰冻的敌人额外受到2点伤害。","1點傷害，65%機率冰凍。冰凍的敵人額外受到2點傷害。","1ダメージ。65%でこおらせる。こおった敵に+2ダメージ。",false
+br.ball.thunder.desc.1,"1 damage. Chains to 2 nearby enemies.","1 dégât. Enchaîne sur 2 ennemis proches.","1点伤害，连锁攻击附近2个敌人。","1點傷害，連鎖攻擊附近2個敵人。","1ダメージ。近くの敵2体に連鎖。",false
+br.ball.thunder.desc.2,"1 damage. Chains to 3 nearby enemies.","1 dégât. Enchaîne sur 3 ennemis proches.","1点伤害，连锁攻击附近3个敌人。","1點傷害，連鎖攻擊附近3個敵人。","1ダメージ。近くの敵3体に連鎖。",false
+br.ball.thunder.desc.3,"1 damage. Chains to 4 nearby enemies for 2.","1 dégât. Enchaîne sur 4 ennemis proches, 2 dégâts.","1点伤害，连锁攻击附近4个敌人，每次2点伤害。","1點傷害，連鎖攻擊附近4個敵人，每次2點傷害。","1ダメージ。近くの敵4体に連鎖、各2ダメージ。",false
+br.ball.bomb.desc.1,"First hit blasts a 3×3 area for 3.","1er impact : explosion 3×3 de 3 dégâts.","首次命中时在3×3范围内爆炸，造成3点伤害。","首次命中時在3×3範圍內爆炸，造成3點傷害。","最初のヒットで3×3を爆破、3ダメージ。",false
+br.ball.bomb.desc.2,"First hit blasts a 3×3 area for 4.","1er impact : explosion 3×3 de 4 dégâts.","首次命中时在3×3范围内爆炸，造成4点伤害。","首次命中時在3×3範圍內爆炸，造成4點傷害。","最初のヒットで3×3を爆破、4ダメージ。",false
+br.ball.bomb.desc.3,"First hit blasts a 5×5 cross for 5.","1er impact : explosion en croix 5×5 de 5 dégâts.","首次命中时在5×5十字范围内爆炸，造成5点伤害。","首次命中時在5×5十字範圍內爆炸，造成5點傷害。","最初のヒットで5×5の十字を爆破、5ダメージ。",false
+br.ball.splitter.desc.1,"First hit splits into 2 minis.","1er impact : se divise en 2 mini-boules.","首次命中时分裂成2颗迷你球。","首次命中時分裂成2顆迷你球。","最初のヒットでミニボール2個に分裂。",false
+br.ball.splitter.desc.2,"First hit splits into 3 minis.","1er impact : se divise en 3 mini-boules.","首次命中时分裂成3颗迷你球。","首次命中時分裂成3顆迷你球。","最初のヒットでミニボール3個に分裂。",false
+br.ball.splitter.desc.3,"First hit splits into 3 minis dealing 2 each.","1er impact : se divise en 3 mini-boules de 2 dégâts.","首次命中时分裂成3颗迷你球，每颗2点伤害。","首次命中時分裂成3顆迷你球，每顆2點傷害。","最初のヒットでミニボール3個に分裂、各2ダメージ。",false
+br.ball.piercer.desc.1,"Pierces up to 4 enemies for 2 each.","Transperce jusqu’à 4 ennemis, 2 dégâts chacun.","最多贯穿4个敌人，每个2点伤害。","最多貫穿4個敵人，每個2點傷害。","敵を最大4体貫通、各2ダメージ。",false
+br.ball.piercer.desc.2,"Pierces up to 6 enemies for 2 each.","Transperce jusqu’à 6 ennemis, 2 dégâts chacun.","最多贯穿6个敌人，每个2点伤害。","最多貫穿6個敵人，每個2點傷害。","敵を最大6体貫通、各2ダメージ。",false
+br.ball.piercer.desc.3,"Pierces up to 8 enemies for 3 each.","Transperce jusqu’à 8 ennemis, 3 dégâts chacun.","最多贯穿8个敌人，每个3点伤害。","最多貫穿8個敵人，每個3點傷害。","敵を最大8体貫通、各3ダメージ。",false
+br.ball.iron.desc.1,"3 damage. Slow, fewer bounces.","3 dégâts. Lente, rebondit moins.","3点伤害。速度较慢，反弹次数较少。","3點傷害。速度較慢，反彈次數較少。","3ダメージ。遅く、跳ね返りが少ない。",false
+br.ball.iron.desc.2,"4 damage. Slow, fewer bounces.","4 dégâts. Lente, rebondit moins.","4点伤害。速度较慢，反弹次数较少。","4點傷害。速度較慢，反彈次數較少。","4ダメージ。遅く、跳ね返りが少ない。",false
+br.ball.iron.desc.3,"5 damage. Slow, fewer bounces.","5 dégâts. Lente, rebondit moins.","5点伤害。速度较慢，反弹次数较少。","5點傷害。速度較慢，反彈次數較少。","5ダメージ。遅く、跳ね返りが少ない。",false
+br.ball.venom.desc.1,"1 damage. Poison 1.","1 dégât + Poison 1.","1点伤害，附加中毒1。","1點傷害，附加中毒1。","1ダメージ、どく1。",false
+br.ball.venom.desc.2,"1 damage. Poison 2.","1 dégât + Poison 2.","1点伤害，附加中毒2。","1點傷害，附加中毒2。","1ダメージ、どく2。",false
+br.ball.venom.desc.3,"1 damage. Poison 3.","1 dégât + Poison 3.","1点伤害，附加中毒3。","1點傷害，附加中毒3。","1ダメージ、どく3。",false
+br.ball.vampire.desc.1,"1 damage. Heals 1 per hit (max 2 per shot).","1 dégât. Soigne 1 PV par touche (max 2 par tir).","1点伤害。每次命中恢复1点生命（每杆最多2点）。","1點傷害。每次命中恢復1點生命（每桿最多2點）。","1ダメージ。ヒットごとにHP1回復（1ショット最大2）。",false
+br.ball.vampire.desc.2,"1 damage. Heals 1 per hit (max 3 per shot).","1 dégât. Soigne 1 PV par touche (max 3 par tir).","1点伤害。每次命中恢复1点生命（每杆最多3点）。","1點傷害。每次命中恢復1點生命（每桿最多3點）。","1ダメージ。ヒットごとにHP1回復（1ショット最大3）。",false
+br.ball.vampire.desc.3,"1 damage. Heals 1 per hit (max 4 per shot).","1 dégât. Soigne 1 PV par touche (max 4 par tir).","1点伤害。每次命中恢复1点生命（每杆最多4点）。","1點傷害。每次命中恢復1點生命（每桿最多4點）。","1ダメージ。ヒットごとにHP1回復（1ショット最大4）。",false
+br.ball.rubber.desc.1,"1 damage, +1 per wall bounce (max +4).","1 dégât, +1 par rebond sur un mur (max +4).","1点伤害，每次撞墙反弹+1（最多+4）。","1點傷害，每次撞牆反彈+1（最多+4）。","1ダメージ。壁で跳ねるたびに+1（最大+4）。",false
+br.ball.rubber.desc.2,"1 damage, +1 per wall bounce (max +6).","1 dégât, +1 par rebond sur un mur (max +6).","1点伤害，每次撞墙反弹+1（最多+6）。","1點傷害，每次撞牆反彈+1（最多+6）。","1ダメージ。壁で跳ねるたびに+1（最大+6）。",false
+br.ball.rubber.desc.3,"1 damage, +1 per wall bounce (max +8).","1 dégât, +1 par rebond sur un mur (max +8).","1点伤害，每次撞墙反弹+1（最多+8）。","1點傷害，每次撞牆反彈+1（最多+8）。","1ダメージ。壁で跳ねるたびに+1（最大+8）。",false
+br.ball.lucky.desc.1,"1 damage. 25% chance to crit ×3.","1 dégât. 25 % de chances de critique ×3.","1点伤害，25%几率暴击×3。","1點傷害，25%機率暴擊×3。","1ダメージ。25%で会心×3。",false
+br.ball.lucky.desc.2,"1 damage. 35% chance to crit ×3.","1 dégât. 35 % de chances de critique ×3.","1点伤害，35%几率暴击×3。","1點傷害，35%機率暴擊×3。","1ダメージ。35%で会心×3。",false
+br.ball.lucky.desc.3,"1 damage. 45% chance to crit ×4.","1 dégât. 45 % de chances de critique ×4.","1点伤害，45%几率暴击×4。","1點傷害，45%機率暴擊×4。","1ダメージ。45%で会心×4。",false
+# ---- Enemy names
+br.enemy.slime.name,"Slime","Gluant","史莱姆","史萊姆","スライム",false
+br.enemy.bat.name,"Bat","Chauve-souris","蝙蝠","蝙蝠","コウモリ",false
+br.enemy.skeleton.name,"Skeleton","Squelette","骷髅","骷髏","ガイコツ",false
+br.enemy.shieldKnight.name,"Shield Knight","Chevalier-bouclier","盾骑士","盾騎士","シールドナイト",false
+br.enemy.mage.name,"Imp Mage","Diablotin mage","小鬼法师","小鬼法師","インプメイジ",false
+br.enemy.healer.name,"Shroom","Champi","蘑菇怪","蘑菇怪","キノコ",false
+br.enemy.bomber.name,"Beetle","Scarabée","甲虫","甲蟲","カブトムシ",false
+br.enemy.totem.name,"Totem","Totem","图腾","圖騰","トーテム",false
+br.enemy.kingSlime.name,"King Slime","Roi Gluant","史莱姆王","史萊姆王","キングスライム",false
+br.enemy.boneLich.name,"Bone Lich","Liche d’os","白骨巫妖","白骨巫妖","ボーンリッチ",false
+br.enemy.crystalGolem.name,"Crystal Golem","Golem de cristal","水晶魔像","水晶魔像","クリスタルゴーレム",false
+br.enemy.boneWall.name,"Bone Wall","Mur d’os","骨墙","骨牆","骨の壁",false
+# ---- Act names
+br.act.1.name,"Mossy Ruins","Ruines moussues","苔藓遗迹","苔蘚遺跡","苔むした遺跡",false
+br.act.2.name,"Sunken Crypt","Crypte engloutie","沉没墓穴","沉沒墓穴","水没した墓所",false
+br.act.3.name,"Crystal Hollow","Grotte de cristal","水晶洞窟","水晶洞窟","水晶の洞窟",false

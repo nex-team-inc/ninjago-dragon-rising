@@ -11,6 +11,7 @@ Usage: python3 Tools/compile_check.py [--warnings] [--filter SUBSTRING]
 Exit code 0 = no errors.
 """
 import argparse
+import json
 import os
 import re
 import subprocess
@@ -38,12 +39,54 @@ def latest_rsp(name):
     return best
 
 
+OWN_ASMDEF_ROOT = "Assets/Scripts/BilliardRogue/"
+
+
 def asmdef_dirs():
     dirs = []
     for base, _, files in os.walk(os.path.join(PROJECT, "Assets")):
         if any(f.endswith(".asmdef") or f.endswith(".asmref") for f in files):
             dirs.append(os.path.relpath(base, PROJECT) + "/")
     return dirs
+
+
+def own_asmdefs():
+    """Our asmdefs (under Assets/Scripts/BilliardRogue), topologically sorted by references."""
+    found = {}
+    for base, _, files in os.walk(os.path.join(PROJECT, OWN_ASMDEF_ROOT)):
+        for f in files:
+            if f.endswith(".asmdef"):
+                with open(os.path.join(base, f), encoding="utf-8") as fh:
+                    data = json.load(fh)
+                rel_dir = os.path.relpath(base, PROJECT) + "/"
+                found[data["name"]] = {
+                    "dir": rel_dir,
+                    "refs": [r for r in data.get("references", []) if not r.startswith("GUID:")],
+                    "editor": data.get("includePlatforms") == ["Editor"],
+                }
+    ordered, seen = [], set()
+
+    def visit(name):
+        if name in seen or name not in found:
+            return
+        seen.add(name)
+        for ref in found[name]["refs"]:
+            visit(ref)
+        ordered.append(name)
+
+    for name in sorted(found):
+        visit(name)
+    return [(n, found[n]) for n in ordered]
+
+
+def sources_in(rel_dir, excluded_dirs):
+    out = []
+    for base, _, files in os.walk(os.path.join(PROJECT, rel_dir)):
+        rel_base = os.path.relpath(base, PROJECT) + "/"
+        if any(rel_base.startswith(d) and d != rel_dir for d in excluded_dirs):
+            continue
+        out.extend(rel_base + f for f in files if f.endswith(".cs"))
+    return out
 
 
 def scan_sources():
@@ -84,13 +127,15 @@ def split_rsp(path):
     return options, sources
 
 
-def write_rsp(options, sources, out_dll, tmp, name, replace_ref=None):
+def write_rsp(options, sources, out_dll, tmp, name, replace_ref=None, extra_refs=()):
     rsp = os.path.join(tmp, name + ".rsp")
     with open(rsp, "w", encoding="utf-8") as fh:
         for opt in options:
             if replace_ref and opt.startswith("-r:") and replace_ref[0] in opt:
                 opt = f'-r:"{replace_ref[1]}"'
             fh.write(opt + "\n")
+        for ref in extra_refs:
+            fh.write(f'-r:"{ref}"\n')
         fh.write(f'-out:"{out_dll}"\n')
         for src in sorted(sources):
             fh.write(f'"{src}"\n')
@@ -128,8 +173,34 @@ def main():
     runtime_now, editor_now = scan_sources()
     with tempfile.TemporaryDirectory(prefix="compile_check_") as tmp:
         rt_opts, _ = split_rsp(latest_rsp("Assembly-CSharp"))
+        ed_opts, _ = split_rsp(latest_rsp("Assembly-CSharp-Editor"))
+
+        # Our own asmdefs first (e.g. the pure simulation + its tests), so Assembly-CSharp can reference them.
+        own = own_asmdefs()
+        own_dirs = [info["dir"] for _, info in own]
+        built = {}
+        runtime_own_refs = []
+        for name, info in own:
+            srcs = sources_in(info["dir"], own_dirs)
+            if not srcs:
+                continue
+            dll = os.path.join(tmp, name + ".dll")
+            refs = [built[r] for r in info["refs"] if r in built]
+            opts = ed_opts if info["editor"] else rt_opts
+            code, out = run(write_rsp(opts, srcs, dll, tmp, name, extra_refs=refs))
+            errors = report(name, out, args.warnings, args.filter)
+            if code != 0 and errors == 0:
+                print(out)
+                errors = 1
+            if errors:
+                print(f"FAILED: {errors} error(s) in {name}.")
+                return 1
+            built[name] = dll
+            if not info["editor"]:
+                runtime_own_refs.append(dll)
+
         rt_dll = os.path.join(tmp, "Assembly-CSharp.dll")
-        code, out = run(write_rsp(rt_opts, runtime_now, rt_dll, tmp, "runtime"))
+        code, out = run(write_rsp(rt_opts, runtime_now, rt_dll, tmp, "runtime", extra_refs=runtime_own_refs))
         errors = report("runtime", out, args.warnings, args.filter)
         if code != 0 and errors == 0:
             print(out)
@@ -138,10 +209,9 @@ def main():
             print(f"FAILED: {errors} runtime error(s); editor assembly not checked.")
             return 1
 
-        ed_opts, _ = split_rsp(latest_rsp("Assembly-CSharp-Editor"))
         ed_dll = os.path.join(tmp, "Assembly-CSharp-Editor.dll")
         code, out = run(write_rsp(ed_opts, editor_now, ed_dll, tmp, "editor",
-                                  replace_ref=("Assembly-CSharp.ref.dll", rt_dll)))
+                                  replace_ref=("Assembly-CSharp.ref.dll", rt_dll), extra_refs=runtime_own_refs))
         errors = report("editor", out, args.warnings, args.filter)
         if code != 0 and errors == 0:
             print(out)

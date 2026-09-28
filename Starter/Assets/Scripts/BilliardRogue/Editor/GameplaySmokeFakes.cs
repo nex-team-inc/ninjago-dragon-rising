@@ -41,6 +41,7 @@ namespace Nex.BilliardRogue.Editor
         public int TurnBanners { get; private set; }
         public int ShooterBanners { get; private set; }
         public bool BossVisible { get; private set; }
+        public bool BossSeen { get; private set; }
         public bool FastForward { get; private set; }
         public int FastForwardOns { get; private set; }
 
@@ -66,7 +67,11 @@ namespace Nex.BilliardRogue.Editor
         {
         }
 
-        public void SetBossHp(bool visible, int hp, int maxHp, EnemyType type) => BossVisible = visible;
+        public void SetBossHp(bool visible, int hp, int maxHp, EnemyType type)
+        {
+            BossVisible = visible;
+            BossSeen |= visible;
+        }
 
         public void SetFastForward(bool on)
         {

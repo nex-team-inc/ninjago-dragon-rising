@@ -55,6 +55,7 @@ namespace Nex.BilliardRogue.Editor
             {
                 ok &= PlayNewRun(config, rules, persistence, store, seed, players, maxTicks, report);
                 ok &= ContinueRun(config, rules, persistence, store, seed, maxTicks, report);
+                ok &= PlayBossStage(config, rules, persistence, seed + 2, players, maxTicks, report);
             }
             catch (Exception e)
             {
@@ -81,12 +82,16 @@ namespace Nex.BilliardRogue.Editor
             try
             {
                 Drive(harness, maxTicks, h => h.run.stageNumber >= 1 && h.run.turnInStage >= 1 && h.session.Phase == TurnPhase.PlayerTurn);
+                // KillAll mutates the live board only; the turn-start save taken before it is what the continue loads.
+                var killAll = DebugHooks.KillAll();
                 var ok = Check(report, "stage1-cleared", harness.flow.RewardsChosen >= 1)
+                         & Check(report, "hook-kill-all", killAll.EndsWith("ok") && LivingEnemies(harness.run) == 0)
                          & Check(report, "reached-stage2-turn2", harness.run.stageNumber == 1 && harness.run.turnInStage >= 1)
                          & Check(report, "shots-fired", harness.run.stats.shots > 0)
                          & Check(report, "hits-landed", harness.run.stats.hits > 0)
                          & Check(report, "saves", saves >= 3 && store.Saves == saves)
                          & Check(report, "hud-turn-banners", harness.hud.TurnBanners >= 2)
+                         & Check(report, "hud-shooter-banners", players == 1 || harness.hud.ShooterBanners > 0)
                          & Check(report, "hud-hp", harness.hud.MaxHp == harness.run.playerMaxHp);
                 report.Append(" | new-run: ticks=").Append(harness.ticks).Append(" turns=").Append(harness.run.stats.turns)
                     .Append(" shots=").Append(harness.run.stats.shots).Append(" hits=").Append(harness.run.stats.hits)
@@ -141,11 +146,54 @@ namespace Nex.BilliardRogue.Editor
             }
         }
 
+        // Debug settings and hooks on the way to the act-1 boss: forceStartStage (stage 2), GotoStage (boss stage),
+        // god mode, unlockAllBalls, AddEveryBall, State, and KillAll as a finisher when the boss survives two turns.
+        static bool PlayBossStage(BilliardRogueConfig config, GameRules rules, RunPersistence persistence, int seed, int players, int maxTicks, StringBuilder report)
+        {
+            var bossStage = rules.acts[0].normalStages;
+            var run = new RunFactory().NewRun(rules, seed, players);
+            var debug = new DebugSettings { forceStartStage = 1, godMode = true, unlockAllBalls = true };
+            var harness = Create(config, rules, run, false, persistence, seed, null, debug);
+            try
+            {
+                var ok = Check(report, "force-start-stage", run.stageNumber == 1 && !run.stage.isBoss)
+                         & Check(report, "hook-add-every-ball", DebugHooks.AddEveryBall().EndsWith("ok"))
+                         & Check(report, "hook-state", DebugHooks.State().Contains("phase="));
+                Drive(harness, maxTicks, h => h.session.Phase == TurnPhase.PlayerTurn);
+                ok &= Check(report, "hook-goto-stage", DebugHooks.GotoStage(bossStage).EndsWith("ok"));
+                Drive(harness, maxTicks, h => h.run.stageNumber == bossStage && h.session.Phase == TurnPhase.PlayerTurn || h.session.Phase == TurnPhase.Finished);
+                ok &= Check(report, "goto-boss-stage", run.stage.isBoss && run.stageNumber == bossStage && harness.flow.BossIntros == 1);
+                Drive(harness, maxTicks, h => h.run.turnInStage >= 2 || h.flow.RewardsChosen >= 1 || h.session.Phase == TurnPhase.Finished);
+                var killAll = "";
+                Drive(harness, maxTicks, h =>
+                {
+                    if (h.flow.RewardsChosen >= 1 || h.session.Phase == TurnPhase.Finished) return true;
+                    if (h.session.Phase == TurnPhase.PlayerTurn && killAll.Length == 0) killAll = DebugHooks.KillAll();
+                    return false;
+                });
+                ok &= Check(report, "boss-kill-all", killAll.Length == 0 || killAll.EndsWith("ok"))
+                      & Check(report, "boss-hud", harness.hud.BossSeen)
+                      & Check(report, "boss-cleared", harness.flow.RewardsChosen == 1 && harness.run.stats.bossesDefeated == 1)
+                      & Check(report, "god-mode-hp", harness.run.playerHp == harness.run.playerMaxHp)
+                      & Check(report, "unlock-tier", persistence.MetaProgress.highestUnlockTier >= 1);
+                report.Append(" | boss: ticks=").Append(harness.ticks).Append(" turns=").Append(harness.run.stats.turns)
+                    .Append(" shots=").Append(harness.run.stats.shots).Append(" kills=").Append(harness.run.stats.kills)
+                    .Append(" bag=").Append(harness.run.bag.Count).Append(" hp=").Append(harness.run.playerHp)
+                    .Append(" killAllUsed=").Append(killAll.Length > 0)
+                    .Append(" stageNumber=").Append(harness.run.stageNumber).Append(" phase=").Append(harness.session.Phase);
+                return ok;
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(harness.host);
+            }
+        }
+
         #endregion
 
         #region Helpers
 
-        static Harness Create(BilliardRogueConfig config, GameRules rules, RunState run, bool isContinue, RunPersistence persistence, int seed, Action<RunState>? onSaved)
+        static Harness Create(BilliardRogueConfig config, GameRules rules, RunState run, bool isContinue, RunPersistence persistence, int seed, Action<RunState>? onSaved, DebugSettings? debug = null)
         {
             var host = new GameObject("GameplaySmokeRunner") { hideFlags = HideFlags.HideAndDontSave };
             var timeScale = host.AddComponent<TimeScaleController>();
@@ -161,7 +209,7 @@ namespace Nex.BilliardRogue.Editor
             session.Initialize(new GameSessionContext
             {
                 config = config, rules = rules, run = run, isContinue = isContinue, hud = hud, flowHost = flow, inputs = inputs,
-                persistence = persistence, analytics = null, timeScale = timeScale, headless = true, debugSettings = new DebugSettings(),
+                persistence = persistence, analytics = null, timeScale = timeScale, headless = true, debugSettings = debug ?? new DebugSettings(),
             });
             if (onSaved != null) session.Saved += onSaved;
             session.RunAsync(default).Forget();
@@ -181,6 +229,17 @@ namespace Nex.BilliardRogue.Editor
         {
             if (!condition) report.Append(" [failed: ").Append(name).Append(']');
             return condition;
+        }
+
+        static int LivingEnemies(RunState run)
+        {
+            var count = 0;
+            foreach (var enemy in run.board.enemies)
+            {
+                if (enemy.type != EnemyType.BoneWall) count++;
+            }
+
+            return count;
         }
 
         // The hidden host is destroyed again, so a scene that was clean before the run is reloaded to drop the dirty flag.

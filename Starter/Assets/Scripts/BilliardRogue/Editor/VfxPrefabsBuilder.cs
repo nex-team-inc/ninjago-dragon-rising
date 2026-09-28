@@ -44,6 +44,8 @@ namespace Nex.BilliardRogue.Editor
                 EditorSceneManager.ClosePreviewScene(staging);
             }
 
+            var deletedMaterials = library.DeleteUnused();
+            if (deletedMaterials > 0) warnings.Add($"Deleted {deletedMaterials} stale M_Vfx_* material(s).");
             AssetDatabase.SaveAssets();
             var registered = VfxRegistryWriter.RegisterBursts(recipes, warnings);
             var linked = VfxRegistryWriter.LinkAmbient(recipes, warnings);
@@ -78,7 +80,7 @@ namespace Nex.BilliardRogue.Editor
                 if (HasRecipe(recipes, effect)) continue;
                 warnings.Add($"VisualEffect {effect} has no designed recipe; a placeholder spark is built.");
                 recipes.Add(VfxRecipe.Burst(effect, 2, 8)
-                    .Add(VfxLayerSpec.Glow("Sparks", "Spark").Burst(6).Life(0.4f).Speed(2f, 4f).Sphere(0.1f).Drag(4f).Size(0.5f).Fade()));
+                    .Add(VfxLayerSpec.Emissive("Sparks", "Spark").Burst(6).Life(0.4f).Speed(2f, 4f).Sphere(0.1f).Drag(4f).Size(0.5f).Fade()));
             }
         }
 

@@ -40,9 +40,9 @@ namespace Nex.BilliardRogue.Editor
 
         // Embers rise from the floor near the torches' warmth; dust motes are lit sprites so torchlight picks them out.
         static VfxRecipe Act2() => VfxRecipe.Ambient(2)
-            .Add(L.Glow("Embers", "Ember").Stream(3f, 24, Loop).Life(4f, 6f).Box(Volume(0.5f), Centre(0.4f))
+            .Add(L.Emissive("Embers", "Ember").Stream(3f, 24, Loop).Life(4f, 6f).Box(Volume(0.5f), Centre(0.4f))
                 .Drift(new Vector3(-0.15f, 0.35f, -0.1f), new Vector3(0.2f, 0.7f, 0.2f)).Noise(0.5f, 0.5f)
-                .Size(0.45f, 0.57f).Colors(Orange, SparkYellow).Frames(0, 7).SizeOverLife(PopInOut()).Fade())
+                .Size(0.45f, 0.57f).Colors(Orange, SparkYellow).Frames(0, 7).SizeOverLife(PopInOut()))
             .Add(L.Lit("Dust", "Mote").Stream(3f, 24, Loop).Life(6f, 8f).Box(Volume(4f), Centre(2f))
                 .Drift(new Vector3(-0.1f, -0.05f, -0.1f), new Vector3(0.1f, 0.08f, 0.1f)).Noise(0.2f, 0.3f)
                 .Size(0.35f, 0.45f).Colors(new Color(0.75f, 0.78f, 0.88f), new Color(0.6f, 0.62f, 0.75f)).Frames(0, 7).SizeOverLife(PopInOut()));
@@ -52,7 +52,7 @@ namespace Nex.BilliardRogue.Editor
             .Add(L.Glow("CrystalMotes", "Mote").Stream(3.5f, 30, Loop).Life(6f, 8f).Box(Volume(3.5f), Centre(2f))
                 .Drift(new Vector3(-0.08f, 0.1f, -0.08f), new Vector3(0.08f, 0.3f, 0.08f)).Noise(0.35f, 0.4f)
                 .Size(0.4f, 0.57f).Colors(Cyan, Violet).Frames(0, 7).SizeOverLife(PopInOut()))
-            .Add(L.Glow("Sparkles", "Star").Stream(4f, 6, Loop).Life(FullSheet).Box(Volume(3f), Centre(1.6f))
+            .Add(L.Emissive("Sparkles", "Star").Stream(4f, 6, Loop).Life(FullSheet).Box(Volume(3f), Centre(1.6f))
                 .Size(0.5f, 0.57f).Colors(WarmWhite, Ice).Frames(0, 0));
     }
 }

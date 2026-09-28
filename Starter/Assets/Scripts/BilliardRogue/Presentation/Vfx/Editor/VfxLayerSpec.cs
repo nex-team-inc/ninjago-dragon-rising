@@ -4,10 +4,15 @@ using UnityEngine;
 
 namespace Nex.BilliardRogue.Editor
 {
-    /// <summary>How a VFX layer is shaded (TDD §16): lit alpha-clip pixel sprites or additive bloom glows.</summary>
+    /// <summary>
+    /// How a VFX layer is shaded (TDD §16). Lit: LitParticle lit by the scene (debris, smoke, leaves). Emissive: LitParticle
+    /// unlit with an emission boost, opaque pixels that keep their hue on any floor and bloom through the HDR channel (sparks,
+    /// stars, embers, rings). Glow: additive GlowParticle for light-like flashes and soft motes.
+    /// </summary>
     public enum VfxShading
     {
         Lit,
+        Emissive,
         Glow,
     }
 
@@ -82,6 +87,8 @@ namespace Nex.BilliardRogue.Editor
         }
 
         public static VfxLayerSpec Lit(string name, string sheet) => new(name, sheet, VfxShading.Lit);
+
+        public static VfxLayerSpec Emissive(string name, string sheet) => new(name, sheet, VfxShading.Emissive);
 
         public static VfxLayerSpec Glow(string name, string sheet) => new(name, sheet, VfxShading.Glow);
 
@@ -205,7 +212,7 @@ namespace Nex.BilliardRogue.Editor
             return this;
         }
 
-        /// <summary>Additive glows fade out over the last third of their life (alpha-clipped lit sprites would pop).</summary>
+        /// <summary>Additive glows fade out over the last part of their life; alpha-clipped layers ignore it (they would pop early).</summary>
         public VfxLayerSpec Fade()
         {
             fadeOut = true;

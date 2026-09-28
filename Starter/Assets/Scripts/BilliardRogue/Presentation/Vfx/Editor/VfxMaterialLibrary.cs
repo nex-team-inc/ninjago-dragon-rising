@@ -22,8 +22,8 @@ namespace Nex.BilliardRogue.Editor
 
     /// <summary>
     /// Loads the particle flipbooks and owns the VFX materials in Assets/Materials/BilliardRogue/Vfx (one per shading ×
-    /// sheet, shared by every prefab so particle systems batch). Uses the Rendering module's LitParticle/GlowParticle
-    /// shaders (TDD §16); until they exist, URP particle shaders stand in so the prefabs still render (re-run to upgrade).
+    /// sheet, shared by every prefab so particle systems batch). Uses the Rendering module's LitParticle (Lit and Emissive)
+    /// and GlowParticle shaders (TDD §16); until they exist, URP particle shaders stand in (re-run to upgrade).
     /// </summary>
     public sealed class VfxMaterialLibrary
     {
@@ -35,16 +35,21 @@ namespace Nex.BilliardRogue.Editor
         const string LitFallbackName = "Universal Render Pipeline/Particles/Simple Lit";
         const string GlowFallbackName = "Universal Render Pipeline/Particles/Unlit";
         const float DefaultGlowIntensity = 1.5f;
+        const float DefaultEmissionBoost = 0.5f;
         const float DefaultLightInfluence = 0.9f;
+        const float EmissiveLightInfluence = 0.1f;
         const float LitSelfEmission = 0.12f;
         const float AlphaCutoff = 0.5f;
 
-        // HDR multiplier per glow sheet: the world Volume blooms above 1.0 (research/urp-hd2d-rendering.md §5); kept
-        // below ~2 so saturated vertex colours keep their hue through the neutral tonemapper instead of clipping to white.
-        static readonly Dictionary<string, float> glowIntensity = new()
+        // Additive HDR multiplier per glow sheet: the world Volume blooms above 1.0 (research/urp-hd2d-rendering.md §5).
+        static readonly Dictionary<string, float> glowIntensity = new() { { "Flash", 1.8f }, { "Mote", 1.4f } };
+
+        // Emissive sprites render sheet × vertex colour × (1 + boost): the dominant channel crosses the bloom threshold while
+        // the opaque pixels keep their hue on any floor (additive sprites washed out to white over the lit arena).
+        static readonly Dictionary<string, float> emissionBoost = new()
         {
-            { "Flash", 1.8f }, { "Spark", 1.6f }, { "Bolt", 1.8f }, { "Star", 1.6f }, { "Ring", 1.5f }, { "Ember", 1.6f },
-            { "Mote", 1.4f }, { "Snow", 1.25f }, { "Smoke", 1.5f }, { "Bubble", 1.25f }, { "Heart", 1.35f },
+            { "Spark", 0.7f }, { "Star", 0.6f }, { "Ember", 0.7f }, { "Bolt", 0.9f }, { "Ring", 0.55f },
+            { "Heart", 0.35f }, { "Bubble", 0.3f }, { "Snow", 0.3f }, { "Smoke", 0.55f }, { "Mote", 0.5f }, { "Flash", 0.8f },
         };
 
         // Smoke and dust read softer when the key light dominates less.
@@ -84,7 +89,7 @@ namespace Nex.BilliardRogue.Editor
 
             BuilderAssets.EnsureFolder(MaterialRoot);
             var path = $"{MaterialRoot}/{key}.mat";
-            var shader = shading == VfxShading.Lit ? litShader : glowShader;
+            var shader = shading == VfxShading.Glow ? glowShader : litShader;
             material = AssetDatabase.LoadAssetAtPath<Material>(path);
             if (material == null)
             {
@@ -109,30 +114,59 @@ namespace Nex.BilliardRogue.Editor
             material.renderQueue = -1;
             material.SetTexture("_BaseMap", sheet.texture);
             material.SetFloat("_Cutoff", AlphaCutoff);
-            if (shading == VfxShading.Lit)
-            {
-                material.SetColor("_BaseColor", Color.white);
-                material.SetFloat("_LightInfluence", lightInfluence.TryGetValue(sheet.name, out var influence) ? influence : DefaultLightInfluence);
-                material.SetFloat("_EmissionStrength", LitSelfEmission);
-                if (litFallback) SetupFallbackLit(material);
-                return;
-            }
-
-            var intensity = glowIntensity.TryGetValue(sheet.name, out var value) ? value : DefaultGlowIntensity;
-            material.SetFloat("_Intensity", intensity);
-            if (glowFallback)
-            {
-                SetupFallbackGlow(material, intensity);
-                return;
-            }
-
             material.SetColor("_BaseColor", Color.white);
+            switch (shading)
+            {
+                case VfxShading.Lit:
+                    material.SetFloat("_LightInfluence", Lookup(lightInfluence, sheet.name, DefaultLightInfluence));
+                    material.SetFloat("_EmissionStrength", LitSelfEmission);
+                    if (litFallback) SetupFallbackLit(material);
+                    break;
+                case VfxShading.Emissive:
+                    var boost = Lookup(emissionBoost, sheet.name, DefaultEmissionBoost);
+                    material.SetFloat("_LightInfluence", EmissiveLightInfluence);
+                    material.SetFloat("_EmissionStrength", boost);
+                    if (litFallback) SetupFallbackEmissive(material, 1f + boost);
+                    break;
+                case VfxShading.Glow:
+                    var intensity = Lookup(glowIntensity, sheet.name, DefaultGlowIntensity);
+                    material.SetFloat("_Intensity", intensity);
+                    if (glowFallback) SetupFallbackGlow(material, intensity);
+                    break;
+            }
+        }
+
+        /// <summary>Deletes M_Vfx_* materials this run did not produce (a layer changed shading or sheet).</summary>
+        public int DeleteUnused()
+        {
+            var deleted = 0;
+            foreach (var guid in AssetDatabase.FindAssets("t:Material M_Vfx_", new[] { MaterialRoot }))
+            {
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+                if (materials.ContainsKey(Path.GetFileNameWithoutExtension(path))) continue;
+                if (AssetDatabase.DeleteAsset(path)) deleted++;
+            }
+
+            return deleted;
+        }
+
+        static float Lookup(Dictionary<string, float> table, string sheetName, float fallback)
+        {
+            return table.TryGetValue(sheetName, out var value) ? value : fallback;
         }
 
         static void SetupFallbackLit(Material material)
         {
             material.SetFloat("_Surface", 0f);
             material.SetFloat("_AlphaClip", 1f);
+            BaseShaderGUI.SetMaterialKeywords(material, SimpleLitGUI.SetMaterialKeywords, ParticleGUI.SetMaterialKeywords);
+        }
+
+        static void SetupFallbackEmissive(Material material, float multiplier)
+        {
+            material.SetFloat("_Surface", 0f);
+            material.SetFloat("_AlphaClip", 1f);
+            material.SetColor("_BaseColor", new Color(multiplier, multiplier, multiplier, 1f));
             BaseShaderGUI.SetMaterialKeywords(material, SimpleLitGUI.SetMaterialKeywords, ParticleGUI.SetMaterialKeywords);
         }
 

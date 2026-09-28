@@ -13,7 +13,10 @@ Owner paths: `Starter/Assets/Scripts/BilliardRogue/Editor/VfxPrefabsBuilder.cs`,
 - [x] Builder run in the Editor: 21 prefabs (18 bursts + 3 ambient), 18 registered, 3 ambient slots linked, gallery saved;
       Main.unity stayed clean
 - [x] Verified: TSA `startFrame` is normalized (probe: 0.5 → frame 4); real LitParticle/GlowParticle shaders picked up
-- [ ] Look iteration (glow colours were clipping to white: saturated palette + intensities ≤ 1.8 applied, re-render pending)
+- [x] Look iteration 1: additive sparks washed out to white over the lit floor → new `Emissive` shading (LitParticle,
+      light influence 0.1, per-sheet `_EmissionStrength` boost): opaque pixels keep their hue and still bloom; Glow (additive)
+      only for Flash/Mote. Rebuilt + rendered on the Act 1 arena (c6 contact sheets)
+- [ ] Look iteration 2 (resumed agent): readability at gameplay density, burn/poison reads, ambient passes
 - [ ] Ambient renders at the gameplay camera pose (640×360)
 - [ ] Final commit + report
 
@@ -31,7 +34,7 @@ Camera.Render in a preview scene, HDR forced on for the duration and restored).
   origin, emitter boxes over the arena; ambient floor plane is a static child at local y 0 (no helper).
 - Scaling mode Hierarchy on every system so `PlayVisualEffect(..., scale)` scales children too.
 - Glow colours saturated, intensities 1.25–1.8: only the dominant channel crosses the bloom threshold, hue survives tonemapping.
-- Materials: one per shading × sheet (`M_Vfx_{Lit|Glow}_{Sheet}`) shared by all prefabs (batching); fallback URP particle shaders
+- Materials: one per shading × sheet (`M_Vfx_{Lit|Emissive|Glow}_{Sheet}`, stale ones deleted by the builder) shared by all prefabs (batching); fallback URP particle shaders
   only if the Rendering shaders are missing.
 
 ## API exposed

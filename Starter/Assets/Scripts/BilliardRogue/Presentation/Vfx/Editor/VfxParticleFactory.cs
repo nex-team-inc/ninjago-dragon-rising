@@ -170,7 +170,7 @@ namespace Nex.BilliardRogue.Editor
         static void ConfigureLook(ParticleSystem system, VfxLayerSpec spec, VfxSheet sheet)
         {
             var color = system.colorOverLifetime;
-            color.enabled = spec.fadeOut || spec.endColor.HasValue;
+            color.enabled = FadesOut(spec) || spec.endColor.HasValue;
             if (color.enabled) color.color = LifetimeGradient(spec);
 
             var sizeOverLifetime = system.sizeOverLifetime;
@@ -271,6 +271,8 @@ namespace Nex.BilliardRogue.Editor
 
         #region Helpers
 
+        static bool FadesOut(VfxLayerSpec spec) => spec.fadeOut && spec.shading == VfxShading.Glow;
+
         static ParticleSystem.MinMaxCurve Range(Vector2 range)
         {
             return Mathf.Approximately(range.x, range.y) ? new ParticleSystem.MinMaxCurve(range.x) : new ParticleSystem.MinMaxCurve(range.x, range.y);
@@ -282,7 +284,7 @@ namespace Nex.BilliardRogue.Editor
             var gradient = new Gradient();
             gradient.SetKeys(
                 new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(end, 1f) },
-                spec.fadeOut
+                FadesOut(spec)
                     ? new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(1f, 0.6f), new GradientAlphaKey(0f, 1f) }
                     : new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(1f, 1f) });
             return gradient;

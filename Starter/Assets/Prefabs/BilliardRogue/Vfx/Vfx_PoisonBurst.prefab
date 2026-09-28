@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 5798892983829089948}
   - component: {fileID: 2703027343370986345}
   - component: {fileID: 3882078860412818862}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Vfx_PoisonBurst
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -31,8 +31,8 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 515437294860335591}
-  - {fileID: 7301716004055929527}
+  - {fileID: 4711598508816873407}
+  - {fileID: 4685737078211236039}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!198 &2703027343370986345
@@ -171,8 +171,8 @@ ParticleSystem:
     startSpeed:
       serializedVersion: 2
       minMaxState: 3
-      scalar: 0.8
-      minScalar: 0.3
+      scalar: 1
+      minScalar: 0.4
       maxCurve:
         serializedVersion: 2
         m_Curve:
@@ -224,8 +224,8 @@ ParticleSystem:
     startColor:
       serializedVersion: 2
       minMaxState: 2
-      minColor: {r: 0.58, g: 0.96, b: 0.32, a: 1}
-      maxColor: {r: 0.68, g: 0.4, b: 0.9, a: 1}
+      minColor: {r: 0.5, g: 0.95, b: 0.18, a: 1}
+      maxColor: {r: 0.6, g: 0.24, b: 0.9, a: 1}
       maxGradient:
         serializedVersion: 2
         key0: {r: 1, g: 1, b: 1, a: 1}
@@ -289,8 +289,8 @@ ParticleSystem:
     startSize:
       serializedVersion: 2
       minMaxState: 3
-      scalar: 0.62
-      minScalar: 0.5
+      scalar: 0.7
+      minScalar: 0.57
       maxCurve:
         serializedVersion: 2
         m_Curve:
@@ -753,7 +753,7 @@ ParticleSystem:
     sphericalDirectionAmount: 0
     randomPositionAmount: 0
     radius:
-      value: 0.35
+      value: 0.45
       mode: 0
       spread: 0
       speed:
@@ -4842,7 +4842,7 @@ ParticleSystemRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 58769dc09d023477baceaa667080b2bb, type: 2}
+  - {fileID: 2100000, guid: d869b6839c3b04bd6887788b4d465057, type: 2}
   - {fileID: 0}
   m_StaticBatchInfo:
     firstSubMesh: 0
@@ -4874,7 +4874,7 @@ ParticleSystemRenderer:
   m_CameraVelocityScale: 0
   m_VelocityScale: 0
   m_LengthScale: 2
-  m_SortingFudge: -1
+  m_SortingFudge: 0
   m_NormalDirection: 1
   m_ShadowBias: 0
   m_RenderAlignment: 0
@@ -4897,7 +4897,7 @@ ParticleSystemRenderer:
   m_MeshWeighting1: 1
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
---- !u!1 &5217319092799335835
+--- !u!1 &5691760197983618376
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -4905,23 +4905,23 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 7301716004055929527}
-  - component: {fileID: 8447523097806687369}
-  - component: {fileID: 7420275055061919451}
-  m_Layer: 0
+  - component: {fileID: 4685737078211236039}
+  - component: {fileID: 5692546138940460831}
+  - component: {fileID: 8522988334887400668}
+  m_Layer: 8
   m_Name: Flash
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &7301716004055929527
+--- !u!4 &4685737078211236039
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5217319092799335835}
+  m_GameObject: {fileID: 5691760197983618376}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -4930,13 +4930,13 @@ Transform:
   m_Children: []
   m_Father: {fileID: 5798892983829089948}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!198 &8447523097806687369
+--- !u!198 &5692546138940460831
 ParticleSystem:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5217319092799335835}
+  m_GameObject: {fileID: 5691760197983618376}
   serializedVersion: 8
   lengthInSec: 0.16666667
   simulationSpeed: 1
@@ -5119,8 +5119,8 @@ ParticleSystem:
     startColor:
       serializedVersion: 2
       minMaxState: 2
-      minColor: {r: 0.58, g: 0.96, b: 0.32, a: 1}
-      maxColor: {r: 0.58, g: 0.96, b: 0.32, a: 1}
+      minColor: {r: 0.5, g: 0.95, b: 0.18, a: 1}
+      maxColor: {r: 0.5, g: 0.95, b: 0.18, a: 1}
       maxGradient:
         serializedVersion: 2
         key0: {r: 1, g: 1, b: 1, a: 1}
@@ -9711,14 +9711,14 @@ ParticleSystem:
         m_PostInfinity: 2
         m_RotationOrder: 4
     vectorLabel1_3: W
---- !u!199 &7420275055061919451
+--- !u!199 &8522988334887400668
 ParticleSystemRenderer:
   serializedVersion: 7
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5217319092799335835}
+  m_GameObject: {fileID: 5691760197983618376}
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
@@ -9792,7 +9792,7 @@ ParticleSystemRenderer:
   m_MeshWeighting1: 1
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
---- !u!1 &6993088064924515790
+--- !u!1 &8624968299406153250
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -9800,23 +9800,23 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 515437294860335591}
-  - component: {fileID: 2497770738004386774}
-  - component: {fileID: 2278698625385639430}
-  m_Layer: 0
+  - component: {fileID: 4711598508816873407}
+  - component: {fileID: 1569529503055181977}
+  - component: {fileID: 4035864385641933366}
+  m_Layer: 8
   m_Name: Miasma
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &515437294860335591
+--- !u!4 &4711598508816873407
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6993088064924515790}
+  m_GameObject: {fileID: 8624968299406153250}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -9825,13 +9825,13 @@ Transform:
   m_Children: []
   m_Father: {fileID: 5798892983829089948}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!198 &2497770738004386774
+--- !u!198 &1569529503055181977
 ParticleSystem:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6993088064924515790}
+  m_GameObject: {fileID: 8624968299406153250}
   serializedVersion: 8
   lengthInSec: 0.5833334
   simulationSpeed: 1
@@ -9961,8 +9961,8 @@ ParticleSystem:
     startSpeed:
       serializedVersion: 2
       minMaxState: 3
-      scalar: 0.9
-      minScalar: 0.4
+      scalar: 1
+      minScalar: 0.5
       maxCurve:
         serializedVersion: 2
         m_Curve:
@@ -10014,8 +10014,8 @@ ParticleSystem:
     startColor:
       serializedVersion: 2
       minMaxState: 2
-      minColor: {r: 0.58, g: 0.96, b: 0.32, a: 1}
-      maxColor: {r: 0.68, g: 0.4, b: 0.9, a: 1}
+      minColor: {r: 0.5, g: 0.95, b: 0.18, a: 1}
+      maxColor: {r: 0.6, g: 0.24, b: 0.9, a: 1}
       maxGradient:
         serializedVersion: 2
         key0: {r: 1, g: 1, b: 1, a: 1}
@@ -10079,8 +10079,8 @@ ParticleSystem:
     startSize:
       serializedVersion: 2
       minMaxState: 3
-      scalar: 0.86
-      minScalar: 0.7
+      scalar: 0.95
+      minScalar: 0.8
       maxCurve:
         serializedVersion: 2
         m_Curve:
@@ -10543,7 +10543,7 @@ ParticleSystem:
     sphericalDirectionAmount: 0
     randomPositionAmount: 0
     radius:
-      value: 0.3
+      value: 0.35
       mode: 0
       spread: 0
       speed:
@@ -14606,14 +14606,14 @@ ParticleSystem:
         m_PostInfinity: 2
         m_RotationOrder: 4
     vectorLabel1_3: W
---- !u!199 &2278698625385639430
+--- !u!199 &4035864385641933366
 ParticleSystemRenderer:
   serializedVersion: 7
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6993088064924515790}
+  m_GameObject: {fileID: 8624968299406153250}
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0

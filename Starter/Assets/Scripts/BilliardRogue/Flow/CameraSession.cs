@@ -1,27 +1,40 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-// Implemented by UI & Flow module.
 namespace Nex.BilliardRogue
 {
     /// <summary>
-    /// Owns the DetectionManager instance for a flow session: created before Calibration for numPlayers, one
-    /// hidden-node OnePlayerDetectionEngine per player, disposed when returning to the title. A player-count change
-    /// destroys and re-instantiates the prefab (TDD D1).
+    /// Owns the DetectionManager instance for a flow session (TDD D1): created before Calibration for numPlayers with
+    /// one hidden-node OnePlayerDetectionEngine per player, paused with the app, disposed when returning to the title.
+    /// A player-count change destroys and re-instantiates the prefab; the coordinator reloads Main.unity instead when
+    /// reloadSceneOnPlayerCountChange is on.
     /// </summary>
     public sealed class CameraSession : MonoBehaviour
     {
+        [Header("Player count change")]
+        [Tooltip("TDD D1 fallback: reload Main.unity on a player-count change instead of re-instantiating the DetectionManager prefab.")]
+        [SerializeField] bool reloadSceneOnPlayerCountChange;
+
         DetectionManager detectionPrefab = null!;
         OnePlayerDetectionEngine enginePrefab = null!;
         Transform root = null!;
+        DetectionManager? detection;
+        readonly List<OnePlayerDetectionEngine> engines = new();
 
-        public DetectionManager Detection => throw new NotImplementedException("UI & Flow module");
+        public DetectionManager Detection =>
+            detection != null ? detection : throw new InvalidOperationException("CameraSession is not running.");
+
         public int NumPlayers { get; private set; }
         public bool IsRunning { get; private set; }
+        public bool IsPaused { get; private set; }
+        public bool ReloadSceneOnPlayerCountChange => reloadSceneOnPlayerCountChange;
+
+        #region Life Cycle
 
         public void Initialize(DetectionManager aDetectionPrefab, OnePlayerDetectionEngine aEnginePrefab, Transform aRoot)
         {
@@ -30,21 +43,96 @@ namespace Nex.BilliardRogue
             root = aRoot;
         }
 
-        /// <summary>Instantiates detection for numPlayers, waits for the first detection and configures for setup.</summary>
-        public UniTask StartAsync(int numPlayers, CancellationToken ct)
+        void OnDestroy()
         {
+            Stop();
+        }
+
+        #endregion
+
+        #region Public Methods
+
+        /// <summary>
+        /// Instantiates detection for numPlayers and configures it for setup. A running session with the same
+        /// player count is reused (and un-paused); a different count is torn down and rebuilt.
+        /// </summary>
+        public async UniTask StartAsync(int numPlayers, CancellationToken ct)
+        {
+            if (IsRunning && NumPlayers == numPlayers)
+            {
+                UnPause();
+                return;
+            }
+
+            if (IsRunning) Stop();
+
             NumPlayers = numPlayers;
-            throw new NotImplementedException("UI & Flow module");
+            var instance = Instantiate(detectionPrefab, root);
+            instance.name = detectionPrefab.name;
+            instance.Initialize(numPlayers);
+            for (var playerIndex = 0; playerIndex < numPlayers; playerIndex++)
+            {
+                var engine = Instantiate(enginePrefab, root);
+                engine.name = $"{enginePrefab.name}_P{playerIndex + 1}";
+                engine.Initialize(playerIndex, instance.BodyPoseDetectionManager);
+                engines.Add(engine);
+            }
+
+            detection = instance;
+            instance.ConfigForSetup();
+            // Motion-only play never resets the TV's idle timer.
+            Screen.sleepTimeout = SleepTimeout.NeverSleep;
+            IsRunning = true;
+            IsPaused = false;
+
+            // The MDK starts its camera in Start(): give it a frame before callers register preview handlers.
+            await UniTask.Yield(PlayerLoopTiming.Update, ct);
         }
 
         public OnePlayerDetectionEngine GetEngine(int playerIndex)
         {
-            throw new NotImplementedException("UI & Flow module");
+            return engines[playerIndex];
         }
 
+        /// <summary>Stops the camera and destroys the DetectionManager and every engine.</summary>
         public void Stop()
         {
+            if (!IsRunning) return;
+
+            foreach (var engine in engines)
+            {
+                Destroy(engine.gameObject);
+            }
+
+            engines.Clear();
+
+            if (detection != null)
+            {
+                detection.StopDetection();
+                Destroy(detection.gameObject);
+            }
+
+            detection = null;
             IsRunning = false;
+            IsPaused = false;
+            Screen.sleepTimeout = SleepTimeout.SystemSetting;
         }
+
+        /// <summary>App / pause-view pause: stops pose detection and the preview texture.</summary>
+        public void Pause()
+        {
+            if (!IsRunning || IsPaused) return;
+            IsPaused = true;
+            Detection.PauseDetection();
+        }
+
+        public void UnPause()
+        {
+            if (!IsRunning || !IsPaused) return;
+            IsPaused = false;
+            Detection.UnPauseDetection();
+        }
+
+        #endregion
     }
 }

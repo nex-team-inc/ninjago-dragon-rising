@@ -178,7 +178,7 @@ public sealed class BallSimulator {
   public void ForEachBall(BallVisitor visitor);                       // for presentation: id, type, level, position, velocity, isMini
   public int PredictPath(RunState run, Vector2 origin, Vector2 dir, float maxLength, int maxBounces, Vector2[] pointsOut); // aim guide (walls+enemies+objects)
   public void Clear(); }
-public delegate void BallVisitor(in BallView view);   // readonly struct BallView { int id; BallType type; int level; Vector2 position; Vector2 velocity; bool isMini; float radius; }
+public delegate void BallVisitor(in BallSnapshot ball);   // readonly struct BallSnapshot { int id; BallType type; int level; Vector2 position; Vector2 velocity; bool isMini; float radius; } — not "BallView", which is the Presentation MonoBehaviour (§8)
 public sealed class EnemyPhaseResolver { public EnemyPhaseResolver(GameRules rules, BoardOps ops); public void Resolve(RunState run, SimRandom rng, List<SimEvent> events); } // status ticks → abilities → advance → danger attacks → spawn next wave; events carry `step` (0..4) for staged animation
 public sealed class RunFactory { public RunState NewRun(GameRules rules, int seed, int numPlayers); public void BeginStage(GameRules rules, RunState run, SimRandom rng, List<SimEvent> events); public bool IsStageCleared(RunState run); public bool AdvanceToNextStage(GameRules rules, RunState run) /* false when run complete = victory */; }
 ```
@@ -211,7 +211,7 @@ Reflection off walls/enemy faces, shield block from below, pierce, split, bomb a
 | `BallCatalog` | `BallCatalog.asset` | `EnumDictionary<BallType, BallDefinition>` |
 | `EnemyDefinition` | `Enemies/Enemy_<Type>.asset` ×12 | `EnemyRules rules`; `EnemyView prefab`; `Sprite icon`; `float hopHeight`; `SfxManager.SoundEffect hitSfx, deathSfx, attackSfx`; `VfxManager.VisualEffect deathVfx`; `string nameKey` |
 | `EnemyCatalog` | `EnemyCatalog.asset` | `EnumDictionary<EnemyType, EnemyDefinition>` |
-| `FieldObjectCatalog` | `FieldObjectCatalog.asset` | `EnumDictionary<FieldObjectType, FieldObjectView>` prefabs, `EnumDictionary<PickupType, PickupView>` prefabs, crate base HP |
+| `FieldObjectCatalog` | `FieldObjectCatalog.asset` | `EnumDictionary<FieldObjectType, FieldObjectView>` prefabs, `EnumDictionary<PickupType, PickupView>` prefabs (crate HP is `BalanceRules.crateHp`, single owner) |
 | `ActDefinition` | `Acts/Act_1..3.asset` | `ActRules rules`; `string nameKey`; `GameObject environmentPrefab`; `ActLightingPreset lighting`; `BgmManager.BgmType battleBgm`; `VolumeProfile volumeProfile`; `GameObject ambientParticlesPrefab` |
 | `ArenaConfig` | `ArenaConfig.asset` | `ArenaRules rules`; world scale; wall/floor prefabs; camera pose (position, pitch, FOV) |
 | `BalanceConfig` | `BalanceConfig.asset` | `BalanceRules rules` |
@@ -249,7 +249,7 @@ public sealed class DebugShotInput : MonoBehaviour, IShotInput // mouse/arrows +
 public sealed class AutoAimBot : MonoBehaviour, IShotInput      // Initialize(BallSimulator sim, Func<RunState> run, ArenaRules a, ControlConfig c); picks the best of N sampled angles via PredictPath scoring
 public sealed class ShotInputRouter : MonoBehaviour, IShotInput // per player; selects Paw vs Debug vs Bot from DebugSettings and tracking state; exposes TrackingLost event
 ```
-`ControlConfig` fields: `launchXRangeInches` (left paw offset from chest mapped to full launch width), `aimSmoothing` (OneEuro minCutoff/beta), `strikeSpeedInchesPerSec`, `contactDistanceInches`, `rearmSeconds`, `aimSampleDelaySeconds` (0.12), `powerShotSpeedMultiplier` (2), `minAimAngleDeg`, `trackingLostSeconds` (1.2), bot sampling count, bot think delay.
+`ControlConfig` fields: `launchXRangeInches` (left paw offset from chest mapped to full launch width), `aimSmoothing` (OneEuro minCutoff/beta), `strikeSpeedInchesPerSec`, `contactDistanceInches`, `rearmSeconds`, `aimSampleDelaySeconds` (0.12), `powerShotSpeedMultiplier` (2), `trackingLostSeconds` (1.2), bot sampling count, bot think delay. The aim clamp is `ArenaRules.minAimAngleDeg` only: input clamps through `ArenaGeometry.ClampAim(arenaRules, dir)`.
 
 ---
 
@@ -262,7 +262,7 @@ public sealed class TurnController : MonoBehaviour     // state machine: StageIn
   public event Action<RunOutcome>? RunEnded; public event Action? RewardRequested; public UniTask RunAsync(CancellationToken ct);
 public sealed class ShotSequencer                       // bag order, alternating shooters (P1,P2,...), extra-ball pickups, cooldown
 public sealed class TimeScaleController : MonoBehaviour // single owner of Time.timeScale for gameplay: hit-stop, slow-mo, fast-forward, pause
-public sealed class RunPersistence                      // wraps PlayerDataManager run/meta save; SaveTurnBoundary(RunState), Complete(RunOutcome)
+public sealed class RunPersistence                      // wraps PlayerDataManager run/meta save; bool HasSave (== Load() != null); RunState? Load(); BeginRun(RunState); SaveTurnBoundary(RunState); bool CompleteRun(RunState) → newRecord (a victory ranks as SimConstants.StageCount); Abandon() drops the save — Save & Quit never writes Abandoned into RunState (see GameSession.RunAsync)
 ```
 Main loop per frame during PlayerTurn: read input → maybe `BallSimulator.Launch` → `Step(dt)` → drain `events` into `BoardPresenter.Consume(events)` + analytics aggregation → clear list.
 
@@ -315,7 +315,7 @@ String table collection: existing `LocalizationTable`. Keys prefixed `br.` and d
 ---
 
 ## 12. Analytics (`Analytics/RunAnalytics.cs`, thin wrapper over `AnalyticsManager.Instance`)
-`UiAction(screen, button)`, `SessionStart(numPlayers, isContinue)`/`SessionStop(outcome)` (→ TrackGameStart/Stop), `Pause()/Resume()`, `TurnStart(stage, turn, balls, hp)`, `ShotFired(ballType, level, angleDeg, power, shooter)`, `ShotResult(ballType, hits, damage, bounces, kills, combo)`, `TurnEnd(stage, turn, enemiesAdvanced, damageTaken, hp)`, `StageStart(act, stage, isBoss)`, `StageClear(act, stage, turns, hp)`, `RewardOffered(options)`, `RewardChosen(option, index)`, `BossSpawn(type)`, `BossDefeated(type, turns)`, `RunEnd(outcome, stageNumber, turns, seconds, kills)`, `Setup(step, seconds)`, `TrackingLost(player, seconds)`, `SettingChanged(name, value)`. Every call also `Debug.Log`s through AnalyticsManager.
+`UiAction(screen, button)`, `SessionStart(numPlayers, isContinue, runId = RunState.runId, seed)`/`SessionStop(outcome)` (→ TrackGameStart/Stop), `Pause()/Resume()`, `TurnStart(stage, turn, balls, hp)`, `ShotFired(ballType, level, angleDeg, power, shooter)`, `ShotResult(ballType, hits, damage, bounces, kills, combo)`, `TurnEnd(stage, turn, enemiesAdvanced, damageTaken, hp)`, `StageStart(act, stage, isBoss)`, `StageClear(act, stage, turns, hp)`, `RewardOffered(options)`, `RewardChosen(option, index)`, `BossSpawn(type)`, `BossDefeated(type, turns)`, `RunEnd(outcome, stageNumber, turns, seconds, kills)`, `Setup(step, seconds)`, `TrackingLost(player, seconds)`, `SettingChanged(name, value)`. Every call also `Debug.Log`s through AnalyticsManager (`[Analytics] EVENT: …` in Editor/development/ENABLE_DEBUG_SETTINGS builds).
 
 ---
 
@@ -329,7 +329,7 @@ Rules: prefabs/scenes are regenerated from code (don't hand-tweak generated pref
 ## 14. Asset naming contracts (builders load by path; missing asset → builder uses a primitive placeholder and logs a warning)
 
 ### 14.1 Models (`Assets/Models/BilliardRogue/...`, FBX, 1 unit = 1 m = 1 cell, pivot at bottom-center, Y up, **model faces Unity +Z** — standard forward)
-World convention: `ArenaLayout` maps sim y (up the arena) → world **+Z**; the camera sits south (low Z, high Y) looking north/down. Enemies therefore face the camera by being rotated 180° around Y by `EnemyView`; the cat faces +Z (toward enemies) when striking and turns 3/4 toward the camera when idle.
+World convention: `ArenaLayout` maps sim x → local **+X** and sim y (up the arena) → local **+Z**, height → +Y; the camera sits south (low Z, high Y) looking north/down with yaw 0. **Origin:** the `ArenaLayout` local origin is the centre of the launch line, sim `(columns/2, 0)`, so the arena spans x ∈ [-columns/2, columns/2] (±3.5) and z ∈ [0, launchZoneHeight + rows] (0..11.6) with the grid centre at z = 6.6. `Arena.prefab` (root = `ArenaLayout`), the environment layouts (`Tools/Blender/environment/make_layouts.py`) and `ArenaConfig.cameraPosition` (relative to that origin; rig rotation `Euler(cameraPitchDeg, 0, 0)`) all share this frame. Enemies therefore face the camera by being rotated 180° around Y by `EnemyView`; the cat faces +Z (toward enemies) when striking and turns 3/4 toward the camera when idle.
 Readability: the world renders at 640×360, so one cell is only ~25–30 px on screen — bold silhouettes, big eyes, 2–3 strong colour blocks per model, no thin details. Budgets: enemy ≤ 600 tris, boss ≤ 1500, hero ≤ 900, prop ≤ 300, environment piece ≤ 800.
 Pipeline: offline outputs are generated into the gitignored staging mirror `Tools/Staging/Assets/...` (same sub-paths as `Starter/Assets/...`); the integration step copies them into `Starter/Assets/` so Unity imports everything once with the right import settings.
 Each FBX root has **named child parts** so presentation can animate rigid parts by code (no skeletal rigs):

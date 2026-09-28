@@ -21,7 +21,7 @@ namespace Nex.BilliardRogue
         [SerializeField, Range(0f, 20f)] float minAimDistanceInches = 4f;
         [Tooltip("Aim is sampled this long before the strike started so the thrust does not wobble it.")]
         [SerializeField, Range(0f, 0.5f)] float aimSampleDelaySeconds = 0.12f;
-        [SerializeField, Range(0f, 45f)] float minAimAngleDeg = 12f;
+        // The aim angle clamp is ArenaRules.minAimAngleDeg; input clamps through ArenaGeometry.ClampAim(arenaRules, dir).
 
         [Header("Strike detection")]
         [Tooltip("Right-paw closing speed toward the left paw that fires a strike.")]
@@ -52,7 +52,6 @@ namespace Nex.BilliardRogue
         public float AimBeta => aimBeta;
         public float MinAimDistanceInches => minAimDistanceInches;
         public float AimSampleDelaySeconds => aimSampleDelaySeconds;
-        public float MinAimAngleDeg => minAimAngleDeg;
         public float StrikeSpeedInchesPerSec => strikeSpeedInchesPerSec;
         public float ContactDistanceInches => contactDistanceInches;
         public float ArmDistanceInches => armDistanceInches;

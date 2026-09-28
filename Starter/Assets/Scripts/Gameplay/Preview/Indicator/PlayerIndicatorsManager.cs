@@ -47,12 +47,15 @@ namespace Nex
                 aBodyPoseDetectionManager);
         }
 
-        /// <summary>Highlights the active shooter's indicator and dims the others; -1 clears every highlight.</summary>
+        /// <summary>Highlights the active shooter's indicator and dims the others; -1 restores the neutral prefab look on every indicator.</summary>
         public void SetActivePlayer(int activePlayerIndex)
         {
             foreach (var indicator in indicators)
             {
-                indicator.SetHighlighted(indicator.PlayerIndex == activePlayerIndex);
+                var state = activePlayerIndex < 0 ? PreviewFramePlayerIndicator.HighlightState.Neutral
+                    : indicator.PlayerIndex == activePlayerIndex ? PreviewFramePlayerIndicator.HighlightState.Active
+                    : PreviewFramePlayerIndicator.HighlightState.Dimmed;
+                indicator.SetHighlight(state);
             }
         }
 

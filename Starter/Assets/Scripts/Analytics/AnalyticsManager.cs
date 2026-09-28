@@ -16,6 +16,10 @@ namespace Nex
 
         public void TrackEvent(string eventName, GameAnalyticsProperties? props = null)
         {
+            // Gameplay events fire every shot; the console mirror is for Editor/CLI checks only.
+#if ENABLE_DEBUG_SETTINGS || DEVELOPMENT_BUILD || UNITY_EDITOR
+            Debug.Log($"[Analytics] EVENT: {eventName} props:{props?.ToJsonString()}");
+#endif
             GameAnalytics.Instance.Track(eventName, props);
         }
 

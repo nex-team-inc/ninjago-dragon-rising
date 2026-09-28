@@ -7,27 +7,32 @@ using UnityEngine;
 
 namespace Nex.BilliardRogue.Editor
 {
-    /// <summary>Menu entries for the Billiard Rogue builders. Build All runs every known builder's static Run() in TDD §13 order, skipping missing ones.</summary>
+    /// <summary>Menu entries for the Billiard Rogue builders. Build All runs every known builder's static Run() in TDD §17 order, skipping missing ones with a warning.</summary>
     public static class BilliardRogueMenu
     {
         const string Menu = "Nex/Billiard Rogue/";
 
+        // TDD §17 order: RenderPipeline creates the World/WorldVolume layers before any builder assigns them,
+        // and LocalizationSeeder runs before the views that bind its keys.
         static readonly string[] BuildOrder =
         {
             "ImportSettingsBuilder",
             "ConfigAssetsBuilder",
             "Es3SettingsRepair",
             "EnumDictionaryRepair",
-            "FontAssetsBuilder",
             "MaterialsBuilder",
+            "RenderPipelineBuilder",
+            "WorldCameraRigBuilder",
+            "FontAssetsBuilder",
+            "LocalizationSeeder",
+            "DetectionPrefabsBuilder",
+            "InputPrefabsBuilder",
             "WorldPrefabsBuilder",
             "EnvironmentBuilder",
             "VfxPrefabsBuilder",
-            "UiViewsBuilder",
-            "LocalizationSeeder",
-            "RenderPipelineBuilder",
-            "WorldCameraRigBuilder",
             "AudioRegistryBuilder",
+            "UiViewsBuilder",
+            "FlowPrefabsBuilder",
             "MainSceneBuilder",
         };
 
@@ -58,7 +63,7 @@ namespace Nex.BilliardRogue.Editor
             var type = typeof(BilliardRogueMenu).Assembly.GetType($"Nex.BilliardRogue.Editor.{typeName}");
             if (type == null)
             {
-                Debug.Log($"[BilliardRogue] {typeName}: not present, skipped.");
+                Debug.LogWarning($"[BilliardRogue] {typeName}: not present, skipped.");
                 return false;
             }
 

@@ -43,7 +43,8 @@ namespace Nex.BilliardRogue
         [SerializeField, Range(0f, 4f)] float bloomIntensity = 0.8f;
         [SerializeField, Range(0f, 1f)] float bloomScatter = 0.7f;
         [SerializeField, Range(0f, 1f)] float vignetteIntensity = 0.25f;
-        [SerializeField, Range(0.5f, 8f)] float shadowDistance = 30f;
+        [Tooltip("URP shadow distance measured from the world camera, which sits about 24 m from the arena centre (18–30 m to its edges).")]
+        [SerializeField, Range(10f, 60f)] float shadowDistance = 30f;
 
         [Header("Quality")]
         [SerializeField] QualityOverride[] qualityOverrides = Array.Empty<QualityOverride>();

@@ -38,8 +38,12 @@ namespace Nex.BilliardRogue.Simulation
         public bool isCrit;
     }
 
-    /// <summary>Read-only snapshot of one in-flight ball for presentation (see BallSimulator.ForEachBall).</summary>
-    public readonly struct BallView
+    /// <summary>
+    /// Read-only snapshot of one in-flight ball for presentation (see BallSimulator.ForEachBall). Not BallView:
+    /// that name is the Presentation MonoBehaviour (TDD §8), which would shadow a struct of the same name inside
+    /// namespace Nex.BilliardRogue.
+    /// </summary>
+    public readonly struct BallSnapshot
     {
         public readonly int id;
         public readonly BallType type;
@@ -49,7 +53,7 @@ namespace Nex.BilliardRogue.Simulation
         public readonly bool isMini;
         public readonly float radius;
 
-        public BallView(int id, BallType type, int level, Vector2 position, Vector2 velocity, bool isMini, float radius)
+        public BallSnapshot(int id, BallType type, int level, Vector2 position, Vector2 velocity, bool isMini, float radius)
         {
             this.id = id;
             this.type = type;
@@ -61,5 +65,5 @@ namespace Nex.BilliardRogue.Simulation
         }
     }
 
-    public delegate void BallVisitor(in BallView view);
+    public delegate void BallVisitor(in BallSnapshot ball);
 }

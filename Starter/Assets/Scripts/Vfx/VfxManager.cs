@@ -122,7 +122,8 @@ namespace Nex
         [Serializable]
         class VisualEffectSpec
         {
-            [SerializeField] ParticleSystem prefab = null!;
+            [Tooltip("Optional until the registry is filled: an entry without a prefab never plays.")]
+            [SerializeField] ParticleSystem? prefab;
             [SerializeField] int defaultPoolSize;
             [SerializeField] int maxPoolSize;
 
@@ -132,7 +133,6 @@ namespace Nex
 
             public void Initialize(GameObject host)
             {
-                // Entries without a prefab are legal (registry not filled yet) and simply never play.
                 if (prefab == null) return;
                 pool = host.AddComponent<VisualEffectPool>().Initialize(prefab, defaultPoolSize, maxPoolSize);
             }

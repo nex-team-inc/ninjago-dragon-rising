@@ -20,8 +20,9 @@ namespace Nex.BilliardRogue
         [SerializeField] GameObject? cornerPostPrefab;
 
         [Header("Camera")]
-        [Tooltip("World position of the world camera relative to the arena root.")]
-        [SerializeField] Vector3 cameraPosition = new(0f, 20.4f, 12.7f);
+        [Tooltip("World camera position relative to the arena root (the launch-line centre, TDD §14.1). The camera sits south of the arena (negative z), yaw 0, looking +z; the default aims at the grid centre (z = launchZoneHeight + rows / 2) at the default pitch.")]
+        [SerializeField] Vector3 cameraPosition = new(0f, 20.4f, -6.15f);
+        [Tooltip("Downward pitch of the world camera; its yaw is always 0 (looking +z, north).")]
         [SerializeField, Range(10f, 89f)] float cameraPitchDeg = 58f;
         [SerializeField, Range(10f, 60f)] float cameraFov = 28f;
 

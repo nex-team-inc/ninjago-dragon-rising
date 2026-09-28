@@ -14,8 +14,7 @@ namespace Nex
     {
         [DebugOrder(0)] public bool enableDebugPrinter = false;
 
-        #region Billiard Rogue
-
+        // Billiard Rogue cheats, flow and render toggles.
         [DebugOrder(10), Description("Cheat: God Mode")] public bool godMode;
         [DebugOrder(11), Description("Cheat: Infinite Balls")] public bool infiniteBalls;
         [DebugOrder(12), Description("Cheat: Unlock All Balls")] public bool unlockAllBalls;
@@ -67,10 +66,6 @@ namespace Nex
         [DebugOrder(64), Description("Save: Clear Saved Run"), SaveBeforeInvoking]
         public void ClearSavedRun() => PlayerDataManager.Instance.ClearRun();
 
-        #endregion
-
-        #region Audio
-
         // Volumes go through the PlayerDataManager properties so VolumeManager applies and persists them.
         public void MuteMusic() => SetMusicVolume(0);
 
@@ -78,8 +73,6 @@ namespace Nex
 
         public void SetMusicVolume(float volume) => PlayerDataManager.Instance.BgmVolumeProperty.Value = volume;
         public void SetSfxVolume(float volume) => PlayerDataManager.Instance.SfxVolumeProperty.Value = volume;
-
-        #endregion
 
         public void ClearAllDataCache()
         {

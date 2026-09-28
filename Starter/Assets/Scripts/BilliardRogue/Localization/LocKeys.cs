@@ -5,14 +5,16 @@ using Nex.BilliardRogue.Simulation;
 namespace Nex.BilliardRogue
 {
     // Base key set (TDD §11). Every constant carries the final English copy in its trailing "// en:" comment;
-    // "(smart)" marks smart-string entries with {n} arguments. Modules add keys in their own partial file.
+    // "(smart)" marks smart-string entries with {n} arguments. Modules add keys in their own partial file
+    // (e.g. UI/LocKeys.UI.cs): re-declare LocKeys and the group as `public static partial class` there, so a
+    // key can join an existing group (Title, Hud, ...) without touching this file.
     public static partial class LocKeys
     {
         public const string Table = "LocalizationTable";
 
         #region Common & Title
 
-        public static class Common
+        public static partial class Common
         {
             public const string Ok = "br.ui.common.ok";                       // en: OK
             public const string Back = "br.ui.common.back";                   // en: Back
@@ -22,7 +24,7 @@ namespace Nex.BilliardRogue
             public const string ExitConfirm = "br.ui.common.exitConfirm";     // en: Leave the game?
         }
 
-        public static class Title
+        public static partial class Title
         {
             public const string Tagline = "br.ui.title.tagline";              // en: A cat, a cue, a dungeon.
             public const string Continue = "br.ui.title.continue";            // en: Continue
@@ -35,7 +37,7 @@ namespace Nex.BilliardRogue
             public const string Runs = "br.ui.title.runs";                    // en: Runs {0} · Wins {1} (smart)
         }
 
-        public static class PlayerMode
+        public static partial class PlayerMode
         {
             public const string Prompt = "br.ui.playerMode.prompt";           // en: How many players?
             public const string OnePlayer = "br.ui.playerMode.onePlayer";     // en: 1 Player
@@ -47,7 +49,7 @@ namespace Nex.BilliardRogue
 
         #region Calibration & Setup
 
-        public static class Calibration
+        public static partial class Calibration
         {
             public const string Header = "br.ui.calibration.header";          // en: Camera setup
             public const string MoveIn = "br.ui.calibration.moveIn";          // en: Move into the frame
@@ -61,7 +63,7 @@ namespace Nex.BilliardRogue
         }
 
         // Keys shared with SetupWarningMessage (starter setup hints).
-        public static class Setup
+        public static partial class Setup
         {
             public const string NoPlayer = "br.setup.noPlayer";               // en: No player
             public const string StepBack = "br.setup.stepBack";               // en: Step back
@@ -76,7 +78,7 @@ namespace Nex.BilliardRogue
 
         #region Gameplay HUD & floats
 
-        public static class Hud
+        public static partial class Hud
         {
             public const string Hp = "br.hud.hp";                             // en: HP
             public const string Balls = "br.hud.balls";                       // en: Balls {0}/{1} (smart)
@@ -95,7 +97,7 @@ namespace Nex.BilliardRogue
             public const string WavesLeft = "br.hud.wavesLeft";               // en: Waves {0} (smart)
         }
 
-        public static class Float
+        public static partial class Float
         {
             public const string Block = "br.float.block";                     // en: BLOCK
             public const string Crit = "br.float.crit";                       // en: CRIT!
@@ -111,7 +113,7 @@ namespace Nex.BilliardRogue
 
         #region Overlays: stage intro, reward, pause, tracking lost
 
-        public static class StageIntro
+        public static partial class StageIntro
         {
             public const string Header = "br.ui.stageIntro.header";           // en: Act {0} · Stage {1} (smart)
             public const string BossStage = "br.ui.stageIntro.bossStage";     // en: Boss Stage
@@ -119,7 +121,7 @@ namespace Nex.BilliardRogue
             public const string StageClear = "br.ui.stageIntro.stageClear";   // en: STAGE CLEAR
         }
 
-        public static class Reward
+        public static partial class Reward
         {
             public const string Header = "br.ui.reward.header";               // en: Choose a reward
             public const string Hint = "br.ui.reward.hint";                   // en: ◀ ▶ choose · Enter confirm
@@ -138,7 +140,7 @@ namespace Nex.BilliardRogue
             public const string Unlocked = "br.reward.unlocked";              // en: New ball unlocked: {0}! (smart)
         }
 
-        public static class Pause
+        public static partial class Pause
         {
             public const string Header = "br.ui.pause.header";                // en: Paused
             public const string Resume = "br.ui.pause.resume";                // en: Resume
@@ -146,7 +148,7 @@ namespace Nex.BilliardRogue
             public const string SaveQuit = "br.ui.pause.saveQuit";            // en: Save & Quit
         }
 
-        public static class TrackingLost
+        public static partial class TrackingLost
         {
             public const string Header = "br.ui.trackingLost.header";         // en: Step back into view
             public const string Body = "br.ui.trackingLost.body";             // en: Waiting for player {0}… (smart)
@@ -157,7 +159,7 @@ namespace Nex.BilliardRogue
 
         #region Summary & Settings
 
-        public static class Summary
+        public static partial class Summary
         {
             public const string Victory = "br.summary.victory";               // en: Victory!
             public const string Defeat = "br.summary.defeat";                 // en: Defeat
@@ -176,7 +178,7 @@ namespace Nex.BilliardRogue
             public const string ToTitle = "br.summary.toTitle";               // en: Title
         }
 
-        public static class Settings
+        public static partial class Settings
         {
             public const string Header = "br.ui.settings.header";             // en: Settings
             public const string Language = "br.ui.settings.language";         // en: Language
@@ -202,7 +204,7 @@ namespace Nex.BilliardRogue
 
         #region Balls, enemies, acts
 
-        public static class Ball
+        public static partial class Ball
         {
             // Indexed by (int)BallType. Descriptions: [type][level - 1].
             public static readonly string[] Names =
@@ -254,7 +256,7 @@ namespace Nex.BilliardRogue
             public static string Description(BallType type, int level) => Descriptions[(int)type][level - 1];
         }
 
-        public static class Enemy
+        public static partial class Enemy
         {
             // Indexed by (int)EnemyType.
             public static readonly string[] Names =
@@ -276,7 +278,7 @@ namespace Nex.BilliardRogue
             public static string Name(EnemyType type) => Names[(int)type];
         }
 
-        public static class Act
+        public static partial class Act
         {
             // Indexed by act index 0..2.
             public static readonly string[] Names =

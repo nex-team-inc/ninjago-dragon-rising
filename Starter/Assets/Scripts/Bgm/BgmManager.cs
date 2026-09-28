@@ -48,6 +48,9 @@ namespace Nex
         AudioSource inactive = null!;
         AudioSource stingerPlayer = null!;
         Tween? duckRestoreTween;
+        // Volume every fade lands on: 1, or the duck level while a duck holds. Keeps crossfades and ducks from
+        // fighting when a stinger plays right before a track change (stage clear → reward).
+        float musicVolumeTarget = 1f;
 
         public BgmType? Current { get; private set; }
         public bool IsPlaying => active.isPlaying;
@@ -101,6 +104,7 @@ namespace Nex
             {
                 Current = null;
                 await FadeOut(duration);
+                active.Stop();
                 return;
             }
 
@@ -120,13 +124,14 @@ namespace Nex
             {
                 await UniTask.WhenAll(
                     from.DOFade(0f, duration).SetUpdate(true).ToUniTask(cancellationToken: linked.Token),
-                    to.DOFade(1f, duration).SetUpdate(true).ToUniTask(cancellationToken: linked.Token));
+                    to.DOFade(musicVolumeTarget, duration).SetUpdate(true).ToUniTask(cancellationToken: linked.Token));
             }
             finally
             {
-                // Sources may be gone when the manager is destroyed mid-fade.
+                // Sources may be gone when the manager is destroyed mid-fade. A duck or restore that took over the
+                // fade-in (its tween is still running on `to`) lands on the target by itself.
                 if (from != null) from.Stop();
-                if (to != null) to.volume = 1f;
+                if (to != null && !DOTween.IsTweening(to)) to.volume = musicVolumeTarget;
             }
         }
 
@@ -139,10 +144,11 @@ namespace Nex
             return clip.length;
         }
 
-        /// <summary>Lowers the music to volume01 for holdSeconds (unscaled), then restores it.</summary>
+        /// <summary>Lowers the music to volume01 for holdSeconds (unscaled), then restores it. A crossfade started meanwhile fades in to the ducked level.</summary>
         public void Duck(float volume01, float holdSeconds)
         {
             duckRestoreTween?.Kill();
+            musicVolumeTarget = volume01;
             active.DOKill();
             active.DOFade(volume01, duckFadeSeconds).SetUpdate(true).SetLink(gameObject);
             duckRestoreTween = DOVirtual.DelayedCall(holdSeconds, RestoreVolume, true).SetLink(gameObject);
@@ -154,7 +160,7 @@ namespace Nex
 
         public async UniTask FadeIn(float duration = 0.5f)
         {
-            await active.DOFade(1f, duration).SetUpdate(true).WithCancellation(destroyCancellationToken);
+            await active.DOFade(musicVolumeTarget, duration).SetUpdate(true).WithCancellation(destroyCancellationToken);
         }
 
         public async UniTask FadeOut(float duration = 0.5f)
@@ -172,9 +178,12 @@ namespace Nex
             return bgmDict.TryGetValue(type, out clip) && clip != null;
         }
 
+        // Fades whichever source is active now: a crossfade may have swapped sources while the duck held.
         void RestoreVolume()
         {
             duckRestoreTween = null;
+            musicVolumeTarget = 1f;
+            active.DOKill();
             active.DOFade(1f, unduckFadeSeconds).SetUpdate(true).SetLink(gameObject);
         }
 

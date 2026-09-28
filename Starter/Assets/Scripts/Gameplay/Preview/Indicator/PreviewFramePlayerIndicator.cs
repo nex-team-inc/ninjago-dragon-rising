@@ -11,6 +11,16 @@ namespace Nex
 {
     public class PreviewFramePlayerIndicator : MonoBehaviour
     {
+        public enum HighlightState
+        {
+            /// <summary>Prefab look (scale 1, prefab colour): outside gameplay turns.</summary>
+            Neutral,
+            /// <summary>The active shooter: scaled up, opaque, bouncing.</summary>
+            Active,
+            /// <summary>Another player is shooting: prefab colour at dimmedAlpha.</summary>
+            Dimmed,
+        }
+
         [SerializeField] RectTransform indicator = null!;
         [SerializeField] BodyPose.NodeIndex nodeToFollow;
         [SerializeField] Vector2 offsetInInches = Vector2.zero;
@@ -28,6 +38,7 @@ namespace Nex
 
         int playerIndex = -1;
         Tween? bounceTween;
+        Color baseColor = Color.white;
         BodyPoseDetectionManager bodyPoseDetectionManager = null!;
         PreviewFrameBase previewFrame = null!;
         RectTransform previewFrameRectTransform = null!;
@@ -44,15 +55,17 @@ namespace Nex
 
         public int PlayerIndex => playerIndex;
 
-        /// <summary>Marks the active shooter (scaled up, opaque, bouncing) or dims the indicator. Position stays script-driven.</summary>
-        public void SetHighlighted(bool highlighted)
+        /// <summary>Applies the highlight look (see HighlightState). Position stays script-driven.</summary>
+        public void SetHighlight(HighlightState state)
         {
             bounceTween?.Kill();
             bounceTween = null;
-            var scale = highlighted ? highlightedScale : 1f;
+            var scale = state == HighlightState.Active ? highlightedScale : 1f;
             indicator.localScale = Vector3.one * scale;
-            image.color = new Color(1f, 1f, 1f, highlighted ? 1f : dimmedAlpha);
-            if (!highlighted) return;
+            var color = baseColor;
+            if (state == HighlightState.Dimmed) color.a *= dimmedAlpha;
+            image.color = color;
+            if (state != HighlightState.Active) return;
             bounceTween = indicator.DOScale(scale * bounceScale, bounceSeconds)
                 .SetEase(Ease.InOutSine)
                 .SetLoops(-1, LoopType.Yoyo)
@@ -75,6 +88,7 @@ namespace Nex
             bodyPoseDetectionManager.captureAspectNormalizedDetection += UpdateDetectionResult;
 
             image.sprite = spriteByPlayerIndex[playerIndex];
+            baseColor = image.color;
 
             previewFrameRectTransform = previewFrame.GetComponent<RectTransform>();
             indicator.gameObject.SetActive(false);

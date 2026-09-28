@@ -16,6 +16,8 @@ namespace Nex.BilliardRogue
         void SetActivePlayer(int playerIndex, int numPlayers);
         void SetBossHp(bool visible, int hp, int maxHp, EnemyType type);
         void SetFastForward(bool on);
+        /// <summary>Power pickup armed: the next fired ball deals double damage (RunState.powerPickupArmed, LocKeys.Hud.PowerArmed).</summary>
+        void SetPowerArmed(bool armed);
         void ShowTurnBanner(int turn);
         void ShowShooterBanner(int playerIndex);
         void SetTrackingWarning(int playerIndex, bool lost);

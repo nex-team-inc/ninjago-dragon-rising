@@ -8,10 +8,13 @@ namespace Nex.BilliardRogue
     /// Registration points for driving the game from the Editor/CLI (`unity command eval
     /// 'return Nex.BilliardRogue.DebugHooks.Shoot(70f);'`) and from the DebugSettings panel. Flow and gameplay
     /// register handlers while they are alive and clear them on teardown. Every wrapper returns a status string.
+    /// Registration compiles in every build; only Editor, development and ENABLE_DEBUG_SETTINGS builds invoke
+    /// the handlers, release wrappers answer "disabled".
     /// </summary>
     public static class DebugHooks
     {
-#if ENABLE_DEBUG_SETTINGS || DEVELOPMENT_BUILD || UNITY_EDITOR
+        #region Handlers
+
         /// <summary>(numPlayers, seed; seed 0 = random) → accepted.</summary>
         public static Func<int, int, bool>? StartNewRunHandler;
         public static Func<bool>? ContinueRunHandler;
@@ -29,18 +32,6 @@ namespace Nex.BilliardRogue
         /// <summary>Human-readable summary of the flow/run state.</summary>
         public static Func<string>? StateHandler;
 
-        public static string StartNewRun(int players, int seed) => Report(nameof(StartNewRun), StartNewRunHandler?.Invoke(players, seed));
-        public static string ContinueRun() => Report(nameof(ContinueRun), ContinueRunHandler?.Invoke());
-        public static string SkipCalibration() => Report(nameof(SkipCalibration), SkipCalibrationHandler?.Invoke());
-        public static string SetBot(bool enabled) => Report(nameof(SetBot), SetBotHandler?.Invoke(enabled));
-        public static string ChooseReward(int index) => Report(nameof(ChooseReward), ChooseRewardHandler?.Invoke(index));
-        public static string Shoot(float angleDeg) => Report(nameof(Shoot), ShootHandler?.Invoke(angleDeg));
-        public static string GotoStage(int stageNumber) => Report(nameof(GotoStage), GotoStageHandler?.Invoke(stageNumber));
-        public static string KillAll() => Report(nameof(KillAll), KillAllHandler?.Invoke());
-        public static string ClearStage() => Report(nameof(ClearStage), ClearStageHandler?.Invoke());
-        public static string AddEveryBall() => Report(nameof(AddEveryBall), AddEveryBallHandler?.Invoke());
-        public static string State() => StateHandler?.Invoke() ?? NotRegistered(nameof(State));
-
         /// <summary>Drops every handler (call when the owning objects are destroyed).</summary>
         public static void Clear()
         {
@@ -57,6 +48,62 @@ namespace Nex.BilliardRogue
             StateHandler = null;
         }
 
+        #endregion
+
+        #region Wrappers
+
+        public static string StartNewRun(int players, int seed) => Run(nameof(StartNewRun), StartNewRunHandler, players, seed);
+        public static string ContinueRun() => Run(nameof(ContinueRun), ContinueRunHandler);
+        public static string SkipCalibration() => Run(nameof(SkipCalibration), SkipCalibrationHandler);
+        public static string SetBot(bool enabled) => Run(nameof(SetBot), SetBotHandler, enabled);
+        public static string ChooseReward(int index) => Run(nameof(ChooseReward), ChooseRewardHandler, index);
+        public static string Shoot(float angleDeg) => Run(nameof(Shoot), ShootHandler, angleDeg);
+        public static string GotoStage(int stageNumber) => Run(nameof(GotoStage), GotoStageHandler, stageNumber);
+        public static string KillAll() => Run(nameof(KillAll), KillAllHandler);
+        public static string ClearStage() => Run(nameof(ClearStage), ClearStageHandler);
+        public static string AddEveryBall() => Run(nameof(AddEveryBall), AddEveryBallHandler);
+
+        public static string State()
+        {
+#if ENABLE_DEBUG_SETTINGS || DEVELOPMENT_BUILD || UNITY_EDITOR
+            return StateHandler?.Invoke() ?? NotRegistered(nameof(State));
+#else
+            return Disabled(nameof(State));
+#endif
+        }
+
+        #endregion
+
+        #region Helpers
+
+        static string Run(string name, Func<bool>? handler)
+        {
+#if ENABLE_DEBUG_SETTINGS || DEVELOPMENT_BUILD || UNITY_EDITOR
+            return Report(name, handler?.Invoke());
+#else
+            return Disabled(name);
+#endif
+        }
+
+        static string Run<T>(string name, Func<T, bool>? handler, T arg)
+        {
+#if ENABLE_DEBUG_SETTINGS || DEVELOPMENT_BUILD || UNITY_EDITOR
+            return Report(name, handler?.Invoke(arg));
+#else
+            return Disabled(name);
+#endif
+        }
+
+        static string Run<T1, T2>(string name, Func<T1, T2, bool>? handler, T1 arg1, T2 arg2)
+        {
+#if ENABLE_DEBUG_SETTINGS || DEVELOPMENT_BUILD || UNITY_EDITOR
+            return Report(name, handler?.Invoke(arg1, arg2));
+#else
+            return Disabled(name);
+#endif
+        }
+
+#if ENABLE_DEBUG_SETTINGS || DEVELOPMENT_BUILD || UNITY_EDITOR
         static string Report(string name, bool? accepted)
         {
             if (accepted == null) return NotRegistered(name);
@@ -64,6 +111,10 @@ namespace Nex.BilliardRogue
         }
 
         static string NotRegistered(string name) => $"{name}: not registered";
+#else
+        static string Disabled(string name) => $"{name}: disabled in release builds";
 #endif
+
+        #endregion
     }
 }

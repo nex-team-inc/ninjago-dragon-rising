@@ -20,11 +20,12 @@ namespace Nex.BilliardRogue
 
         #region Run
 
-        public bool HasSave => playerData.HasRunSave();
+        /// <summary>True when Load() would return a run: finished or unreadable saves do not count (and are dropped).</summary>
+        public bool HasSave => Load() != null;
 
         public MetaProgressData MetaProgress => playerData.MetaProgress;
 
-        /// <summary>The saved run, or null when there is none or it is unreadable / already finished.</summary>
+        /// <summary>The saved run, or null when there is none or it is unreadable / already finished (both are dropped).</summary>
         public RunState? Load()
         {
             var run = playerData.LoadRun();
@@ -58,12 +59,17 @@ namespace Nex.BilliardRogue
 
         #region Meta Progress
 
-        /// <summary>Applies the finished run to the meta progress (best stage, wins, kills, unlocks) and clears the save. Returns true on a new best stage.</summary>
+        /// <summary>
+        /// Applies the finished run to the meta progress (best stage, wins, kills, unlocks) and clears the save.
+        /// Returns true on a new best. A victory counts as reaching SimConstants.StageCount, one past the last
+        /// stage index, so it beats a defeat on the final boss and bestStageNumber >= StageCount means "cleared".
+        /// </summary>
         public bool CompleteRun(RunState run)
         {
             var meta = playerData.MetaProgress;
-            var newRecord = run.stageNumber > meta.bestStageNumber;
-            if (newRecord) meta.bestStageNumber = run.stageNumber;
+            var reached = run.outcome == RunOutcome.Victory ? SimConstants.StageCount : run.stageNumber;
+            var newRecord = reached > meta.bestStageNumber;
+            if (newRecord) meta.bestStageNumber = reached;
             if (run.outcome == RunOutcome.Victory) meta.runsWon++;
             meta.totalKills += run.stats.kills;
             UpdateUnlockTier(run);

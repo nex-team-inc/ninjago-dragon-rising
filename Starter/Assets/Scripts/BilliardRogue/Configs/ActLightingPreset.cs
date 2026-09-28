@@ -28,7 +28,8 @@ namespace Nex.BilliardRogue
         public Color rimColor = new(1f, 0.85f, 0.6f);
         [Tooltip("Tint multiplied into every additional light of the act environment (torches, crystals).")]
         public Color additionalLightTint = Color.white;
-        public Color godRayColor = new(1f, 0.9f, 0.7f);
+        [Tooltip("Feeds the HDR _Color of BilliardRogue/LightShaft (TDD §16); values above 1 bloom.")]
+        [ColorUsage(false, true)] public Color godRayColor = new(1f, 0.9f, 0.7f);
         [Range(0f, 3f)] public float godRayIntensity = 0.8f;
         public Color particleTint = Color.white;
     }

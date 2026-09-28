@@ -115,8 +115,8 @@ namespace Nex.BilliardRogue.Simulation
             {
                 var b = slots[i];
                 if (!b.active) continue;
-                var view = new BallView(b.id, b.type, b.level, b.position, b.direction * CurrentSpeed(b), b.isMini, b.radius);
-                visitor(in view);
+                var snapshot = new BallSnapshot(b.id, b.type, b.level, b.position, b.direction * CurrentSpeed(b), b.isMini, b.radius);
+                visitor(in snapshot);
             }
         }
 

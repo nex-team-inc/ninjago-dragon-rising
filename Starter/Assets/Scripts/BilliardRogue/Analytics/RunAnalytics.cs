@@ -1,6 +1,5 @@
 #nullable enable
 
-using System;
 using System.Collections.Generic;
 using Nex.BilliardRogue.Simulation;
 using Nex.Platform;
@@ -65,14 +64,14 @@ namespace Nex.BilliardRogue
 
         #region Session
 
-        /// <summary>TrackGameStart + PLAY-scope session props; seed is optional so TDD §12 callers keep compiling.</summary>
-        public void SessionStart(int numPlayers, bool isContinue, int seed = 0)
+        /// <summary>TrackGameStart + PLAY-scope session props. runId is RunState.runId so a continued run's sessions join up.</summary>
+        public void SessionStart(int numPlayers, bool isContinue, string runId, int seed = 0)
         {
             runStartTime = Time.realtimeSinceStartup;
-            Manager.TrackGameStart(ContentName, numPlayers, isContinue ? "continue" : "new", new GameAnalyticsProperties { ["seed"] = seed });
+            Manager.TrackGameStart(ContentName, numPlayers, isContinue ? "continue" : "new", new GameAnalyticsProperties { ["seed"] = seed, ["run_id"] = runId });
             // PLAY-scope props must be registered after TrackGameStart (start resets them).
             var analytics = GameAnalytics.Instance;
-            analytics.RegisterSessionProperties("run_id", Guid.NewGuid().ToString("N"), GameAnalytics.SessionPropertiesScope.PLAY);
+            analytics.RegisterSessionProperties("run_id", runId, GameAnalytics.SessionPropertiesScope.PLAY);
             analytics.RegisterSessionProperties("num_players", numPlayers, GameAnalytics.SessionPropertiesScope.PLAY);
             analytics.RegisterSessionProperties("is_continue", isContinue, GameAnalytics.SessionPropertiesScope.PLAY);
         }

@@ -192,10 +192,11 @@ namespace Nex
 #endif
         }
 
+        /// <summary>The saved run or null. An unreadable save is deleted so HasRunSave() stops reporting it.</summary>
         public RunState? LoadRun()
         {
 #if DISABLE_PERSISTENCE
-            return memoryRun;
+            return memoryRun == null ? null : Copy(memoryRun);
 #else
             try
             {
@@ -204,6 +205,7 @@ namespace Nex
             catch (Exception e)
             {
                 Debug.LogWarning($"[PlayerDataManager] Discarding unreadable run save: {e}");
+                ES3.DeleteKey(runSaveKey);
                 return null;
             }
 #endif
@@ -212,7 +214,8 @@ namespace Nex
         public void SaveRun(RunState run)
         {
 #if DISABLE_PERSISTENCE
-            memoryRun = run;
+            // A copy, like the file: the live RunState keeps mutating after the turn-boundary save.
+            memoryRun = Copy(run);
 #else
             ES3.Save(runSaveKey, run);
 #endif
@@ -226,6 +229,10 @@ namespace Nex
             ES3.DeleteKey(runSaveKey);
 #endif
         }
+
+#if DISABLE_PERSISTENCE
+        static RunState Copy(RunState run) => JsonUtility.FromJson<RunState>(JsonUtility.ToJson(run));
+#endif
 
         static MetaProgressData LoadMetaProgress()
         {

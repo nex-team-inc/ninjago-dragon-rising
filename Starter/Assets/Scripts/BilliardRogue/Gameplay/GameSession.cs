@@ -30,7 +30,12 @@ namespace Nex.BilliardRogue
             context = ctx;
         }
 
-        /// <summary>Runs until the run ends or ct is cancelled; returns the outcome (Abandoned on cancel/quit).</summary>
+        /// <summary>
+        /// Runs until the run ends or ct is cancelled; returns the outcome. Cancellation and Save &amp; Quit return
+        /// Abandoned as the result only: never write Abandoned into RunState.outcome or save after it, because
+        /// RunPersistence.Load drops any save whose outcome is not None and the player expects to continue.
+        /// Only RunPersistence.Abandon() drops the save on purpose.
+        /// </summary>
         public UniTask<RunOutcome> RunAsync(CancellationToken ct)
         {
             throw new NotImplementedException("Gameplay module");
@@ -38,6 +43,14 @@ namespace Nex.BilliardRogue
 
         /// <summary>Pause/resume from the pause view or platform (freezes the sim, TimeScaleController.SetPaused).</summary>
         public void RequestPause(bool paused)
+        {
+        }
+
+        /// <summary>
+        /// Save &amp; Quit from the pause view: the last turn-boundary save (RunPersistence.SaveTurnBoundary) stays on
+        /// disk with outcome None and RunAsync completes with Abandoned (see RunAsync).
+        /// </summary>
+        public void RequestSaveAndQuit()
         {
         }
     }

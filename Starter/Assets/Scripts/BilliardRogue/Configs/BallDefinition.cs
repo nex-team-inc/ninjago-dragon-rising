@@ -15,7 +15,7 @@ namespace Nex.BilliardRogue
         [SerializeField] Sprite icon = null!;
         [SerializeField] Color color = Color.white;
         [Tooltip("Emissive colour used by the ball material and trail; pushed above 1 for bloom.")]
-        [SerializeField] Color glowColor = Color.white;
+        [SerializeField, ColorUsage(false, true)] Color glowColor = Color.white;
         [SerializeField] Material material = null!;
         [SerializeField] GameObject? trailPrefab;
 

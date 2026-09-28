@@ -127,10 +127,18 @@ def split_rsp(path):
     return options, sources
 
 
-def write_rsp(options, sources, out_dll, tmp, name, replace_ref=None, extra_refs=()):
+def ref_basename(opt):
+    return os.path.basename(opt[len("-r:"):].strip('"')) if opt.startswith("-r:") else None
+
+
+def write_rsp(options, sources, out_dll, tmp, name, replace_ref=None, extra_refs=(), drop_refs=frozenset()):
+    """drop_refs: reference file names (e.g. Foo.dll, Foo.ref.dll) to leave out — Unity's stale copies of the
+    assemblies we rebuild into tmp, which would otherwise duplicate every type (CS0436) or shadow the fresh build."""
     rsp = os.path.join(tmp, name + ".rsp")
     with open(rsp, "w", encoding="utf-8") as fh:
         for opt in options:
+            if ref_basename(opt) in drop_refs:
+                continue
             if replace_ref and opt.startswith("-r:") and replace_ref[0] in opt:
                 opt = f'-r:"{replace_ref[1]}"'
             fh.write(opt + "\n")
@@ -183,6 +191,9 @@ def main():
         # Our own asmdefs first (e.g. the pure simulation + its tests), so Assembly-CSharp can reference them.
         own = own_asmdefs()
         own_dirs = [info["dir"] for _, info in own]
+        # Every own assembly is rebuilt into tmp and referenced from there; Unity's copies under Library/Bee
+        # are dropped from all rsp files so no stale duplicate is ever referenced.
+        stale_refs = frozenset(n + suffix for n, _ in own for suffix in (".dll", ".ref.dll"))
         built = {}
         runtime_own_refs = []
         for name, info in own:
@@ -192,7 +203,7 @@ def main():
             dll = os.path.join(tmp, name + ".dll")
             refs = [built[r] for r in info["refs"] if r in built]
             opts = ed_opts if info["editor"] else rt_opts
-            code, out = run(write_rsp(opts, srcs, dll, tmp, name, extra_refs=refs))
+            code, out = run(write_rsp(opts, srcs, dll, tmp, name, extra_refs=refs, drop_refs=stale_refs))
             errors = report(name, out, args.warnings, args.filter)
             if code != 0 and errors == 0:
                 print(out)
@@ -205,7 +216,7 @@ def main():
                 runtime_own_refs.append(dll)
 
         rt_dll = os.path.join(tmp, "Assembly-CSharp.dll")
-        code, out = run(write_rsp(rt_opts, runtime_now, rt_dll, tmp, "runtime", extra_refs=runtime_own_refs))
+        code, out = run(write_rsp(rt_opts, runtime_now, rt_dll, tmp, "runtime", extra_refs=runtime_own_refs, drop_refs=stale_refs))
         errors = report("runtime", out, args.warnings, args.filter)
         if code != 0 and errors == 0:
             print(out)
@@ -216,7 +227,8 @@ def main():
 
         ed_dll = os.path.join(tmp, "Assembly-CSharp-Editor.dll")
         code, out = run(write_rsp(ed_opts, editor_now, ed_dll, tmp, "editor",
-                                  replace_ref=("Assembly-CSharp.ref.dll", rt_dll), extra_refs=runtime_own_refs))
+                                  replace_ref=("Assembly-CSharp.ref.dll", rt_dll), extra_refs=runtime_own_refs,
+                                  drop_refs=stale_refs))
         errors = report("editor", out, args.warnings, args.filter)
         if code != 0 and errors == 0:
             print(out)

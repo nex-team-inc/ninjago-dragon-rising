@@ -1,13 +1,154 @@
 #nullable enable
 
+using System;
 using UnityEngine;
 
 namespace Nex.BilliardRogue
 {
-    /// <summary>Hit feedback tuning: shake, damage numbers, combo pitch and flashes (GDD §7).</summary>
+    /// <summary>Hit feedback tuning: shake, damage numbers, combo pitch, flashes and view motion (GDD §7).</summary>
     [CreateAssetMenu(fileName = "JuiceConfig", menuName = "Nex/Billiard Rogue/Juice Config", order = 54)]
     public sealed class JuiceConfig : ScriptableObject
     {
+        [Serializable]
+        public sealed class EnemyMotionSettings
+        {
+            [Tooltip("Idle bob amplitude in cells.")]
+            [Range(0f, 0.2f)] public float idleBobAmplitude = 0.03f;
+            [Range(0.2f, 5f)] public float idleBobPeriod = 1.6f;
+            [Tooltip("Breathing scale amplitude (x/z widen while y shrinks).")]
+            [Range(0f, 0.2f)] public float breathAmplitude = 0.04f;
+            [Range(0.5f, 10f)] public float blinkIntervalMin = 2.5f;
+            [Range(0.5f, 10f)] public float blinkIntervalMax = 5.5f;
+            [Range(0.02f, 0.3f)] public float blinkDuration = 0.1f;
+            [Tooltip("Wing flap angle in degrees (bat).")]
+            [Range(0f, 60f)] public float flapAngle = 25f;
+            [Range(1f, 20f)] public float flapSpeed = 9f;
+            [Tooltip("Squash applied on hop take-off and landing (0.25 = 25% flatter).")]
+            [Range(0f, 0.6f)] public float hopSquash = 0.25f;
+            [Tooltip("Scale punch on a hit.")]
+            [Range(0f, 0.6f)] public float hitPunch = 0.22f;
+            [Tooltip("Knockback distance in cells along the ball direction.")]
+            [Range(0f, 0.5f)] public float knockbackDistance = 0.1f;
+            [Range(0.05f, 0.6f)] public float knockbackDuration = 0.18f;
+            [Range(0.05f, 0.6f)] public float spawnPopDuration = 0.28f;
+            [Range(0.05f, 0.6f)] public float deathDuration = 0.16f;
+            [Tooltip("Lunge distance in cells toward the player for a melee attack.")]
+            [Range(0f, 0.8f)] public float attackLunge = 0.35f;
+            [Range(0f, 0.6f)] public float castRaise = 0.15f;
+            [Range(0f, 1f)] public float bossPhaseRoarScale = 0.35f;
+        }
+
+        [Serializable]
+        public sealed class EmissiveSettings
+        {
+            [Tooltip("_EmissionStrength on parts tagged emissive by the prefab builder.")]
+            [Range(0f, 8f)] public float strength = 2.2f;
+            [Range(0f, 1f)] public float pulseAmount = 0.35f;
+            [Range(0.2f, 6f)] public float pulsePeriod = 1.8f;
+        }
+
+        [Serializable]
+        public sealed class StatusVisualSettings
+        {
+            public Color burnTint = new(1f, 0.45f, 0.1f);
+            public Color poisonTint = new(0.7f, 0.3f, 1f);
+            [Tooltip("_StatusTint alpha (blend amount) while a status is active.")]
+            [Range(0f, 1f)] public float tintAmount = 0.45f;
+            [Range(0f, 1f)] public float freezeTintAmount = 0.7f;
+            [Tooltip("Shield marker thickness in cells.")]
+            [Range(0.02f, 0.3f)] public float shieldMarkerThickness = 0.08f;
+            [Range(0f, 1f)] public float shieldMarkerHeight = 0.35f;
+        }
+
+        [Serializable]
+        public sealed class PropSettings
+        {
+            [Range(0f, 0.3f)] public float pickupBobAmplitude = 0.08f;
+            [Range(0.2f, 5f)] public float pickupBobPeriod = 1.2f;
+            [Range(0f, 360f)] public float pickupSpinSpeed = 90f;
+            [Range(0f, 720f)] public float portalSwirlSpeed = 160f;
+            [Range(0f, 0.5f)] public float crateWobble = 0.18f;
+            [Range(0.05f, 0.6f)] public float crateWobbleDuration = 0.25f;
+            [Range(0f, 0.3f)] public float mudPulse = 0.04f;
+        }
+
+        [Serializable]
+        public sealed class BallSettings
+        {
+            [Tooltip("Degrees of spin per world unit travelled.")]
+            [Range(0f, 720f)] public float spinPerUnit = 240f;
+            [Range(0f, 1f)] public float trailTime = 0.16f;
+            [Range(0f, 2f)] public float trailWidthScale = 0.9f;
+            [Tooltip("Ghost ball alpha while aiming.")]
+            [Range(0f, 1f)] public float ghostAlpha = 0.55f;
+        }
+
+        [Serializable]
+        public sealed class CatSettings
+        {
+            [Tooltip("Walk speed along the launch line in cells per second.")]
+            [Range(0.5f, 20f)] public float walkSpeed = 7f;
+            [Tooltip("Idle yaw in degrees (180 = facing the camera, 135 = 3/4 view).")]
+            [Range(90f, 270f)] public float idleYaw = 140f;
+            [Tooltip("Distance behind the ball (toward the camera) where the cat stands, in cells.")]
+            [Range(0f, 1.2f)] public float standOffset = 0.5f;
+            [Tooltip("Launch X (0..1) of the waiting player in 2P.")]
+            [Range(0f, 0.3f)] public float waitingX01 = 0.06f;
+            [Range(0.05f, 1f)] public float strikeDuration = 0.28f;
+            [Range(0f, 1f)] public float cuePullBack = 0.32f;
+            [Range(0.05f, 1f)] public float hurtDuration = 0.35f;
+            [Range(0f, 1f)] public float hurtRecoil = 0.25f;
+            [Range(0f, 2f)] public float victoryJump = 0.6f;
+            [Range(0f, 4f)] public float tailWagSpeed = 2.2f;
+            [Range(0f, 40f)] public float tailWagAngle = 18f;
+            [Range(0f, 2f)] public float earTwitchInterval = 3f;
+        }
+
+        [Serializable]
+        public sealed class AimGuideSettings
+        {
+            [Tooltip("Line height above the floor in cells.")]
+            [Range(0f, 0.5f)] public float height = 0.12f;
+            [Range(0.01f, 0.4f)] public float width = 0.09f;
+            [Range(0f, 0.5f)] public float bounceMarkerSize = 0.16f;
+            [Tooltip("HDR intensity multiplier of the guide colour (bloom).")]
+            [Range(0f, 6f)] public float intensity = 1.8f;
+        }
+
+        [Serializable]
+        public sealed class LabelSettings
+        {
+            [Tooltip("Label offset in canvas pixels from the projected anchor.")]
+            public Vector2 hpLabelOffset = new(0f, 6f);
+            [Range(8f, 96f)] public float hpLabelSize = 32f;
+            [Range(8f, 96f)] public float floatTextSize = 30f;
+            [Range(8f, 96f)] public float comboTextSize = 26f;
+            [Tooltip("Random horizontal jitter of damage numbers in canvas pixels.")]
+            [Range(0f, 80f)] public float numberJitter = 18f;
+            [Range(0f, 200f)] public float floatRise = 46f;
+            [Range(0.2f, 3f)] public float floatLifetime = 0.9f;
+            [Range(16f, 64f)] public float statusIconSize = 28f;
+            [Range(16f, 96f)] public float telegraphIconSize = 40f;
+        }
+
+        [Serializable]
+        public sealed class SequenceSettings
+        {
+            [Tooltip("Camera push-in distance (world units) for the boss intro.")]
+            [Range(0f, 6f)] public float bossIntroPushIn = 2.2f;
+            [Range(0f, 30f)] public float bossIntroShake = 5f;
+            [Range(0f, 6f)] public float victoryPushIn = 1.4f;
+            [Range(0f, 6f)] public float defeatPushIn = 1.8f;
+            [Range(0f, 30f)] public float explosionShake = 6f;
+            [Range(0f, 30f)] public float quakeShake = 8f;
+            [Range(0f, 30f)] public float enemyAttackShake = 3f;
+            [Tooltip("Damage at or above which a hit uses the mid / hard SFX.")]
+            [Range(1, 50)] public int midDamage = 4;
+            [Range(1, 100)] public int hardDamage = 10;
+            [Range(0.5f, 3f)] public float critVfxScale = 1.5f;
+            [Range(0.2f, 3f)] public float explosionVfxScalePerRadius = 1f;
+        }
+
         [Header("Camera shake")]
         [Tooltip("Shake amplitude (world display pixels) by damage dealt.")]
         [SerializeField] AnimationCurve shakeAmplitudeByDamage = AnimationCurve.Linear(0f, 0f, 20f, 6f);
@@ -39,6 +180,21 @@ namespace Nex.BilliardRogue
         [SerializeField] Color playerHurtFlash = new(1f, 0.2f, 0.2f, 0.45f);
         [SerializeField, Range(0.02f, 0.5f)] float flashDuration = 0.08f;
 
+        [Header("Players")]
+        [SerializeField] Color player1Color = new(1f, 0.85f, 0.3f);
+        [SerializeField] Color player2Color = new(0.4f, 0.8f, 1f);
+
+        [Header("View motion")]
+        [SerializeField] EnemyMotionSettings enemyMotion = new();
+        [SerializeField] EmissiveSettings emissive = new();
+        [SerializeField] StatusVisualSettings statusVisuals = new();
+        [SerializeField] PropSettings props = new();
+        [SerializeField] BallSettings balls = new();
+        [SerializeField] CatSettings cat = new();
+        [SerializeField] AimGuideSettings aimGuide = new();
+        [SerializeField] LabelSettings labels = new();
+        [SerializeField] SequenceSettings sequences = new();
+
         public AnimationCurve ShakeAmplitudeByDamage => shakeAmplitudeByDamage;
         public float ShakeDuration => shakeDuration;
         public float PlayerHurtShake => playerHurtShake;
@@ -60,5 +216,18 @@ namespace Nex.BilliardRogue
         public Color EnemyFreezeTint => enemyFreezeTint;
         public Color PlayerHurtFlash => playerHurtFlash;
         public float FlashDuration => flashDuration;
+        public Color Player1Color => player1Color;
+        public Color Player2Color => player2Color;
+        public EnemyMotionSettings EnemyMotion => enemyMotion;
+        public EmissiveSettings Emissive => emissive;
+        public StatusVisualSettings StatusVisuals => statusVisuals;
+        public PropSettings Props => props;
+        public BallSettings Balls => balls;
+        public CatSettings Cat => cat;
+        public AimGuideSettings AimGuide => aimGuide;
+        public LabelSettings Labels => labels;
+        public SequenceSettings Sequences => sequences;
+
+        public Color PlayerColor(int playerIndex) => playerIndex == 0 ? player1Color : player2Color;
     }
 }

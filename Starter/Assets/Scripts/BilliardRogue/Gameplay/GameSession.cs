@@ -31,6 +31,7 @@ namespace Nex.BilliardRogue
         CancellationTokenRegistration cancelRegistration;
         bool initialized;
         bool running;
+        bool quitting;
 
         public GameSessionContext Context => context;
 
@@ -132,10 +133,14 @@ namespace Nex.BilliardRogue
 
         void Update() => Tick(Time.unscaledDeltaTime);
 
+        // Singletons may already be gone during app shutdown, so a quitting session only stops ticking.
+        void OnApplicationQuit() => quitting = true;
+
         void OnDestroy()
         {
             if (!initialized) return;
-            Abandon();
+            if (quitting) running = false;
+            else Abandon();
             cancelRegistration.Dispose();
             context.persistence.Saved -= HandleSaved;
 #if ENABLE_DEBUG_SETTINGS || DEVELOPMENT_BUILD || UNITY_EDITOR

@@ -23,8 +23,6 @@ namespace Nex.BilliardRogue
             services = aServices;
         }
 
-        #region Public Methods
-
         /// <summary>Prepares run.pendingRewards, saves, and returns the flow host's choice task.</summary>
         public UniTask<int> Offer(CancellationToken ct)
         {
@@ -64,10 +62,6 @@ namespace Nex.BilliardRogue
             services.Persistence.SaveTurnBoundary(run);
         }
 
-        #endregion
-
-        #region Helpers
-
         void ForceRewardBall(List<RewardOption> options)
         {
             var forced = services.Debug.forceRewardBall;
@@ -75,7 +69,5 @@ namespace Nex.BilliardRogue
             if (services.Run.bag.Count >= services.Rules.balance.bagCap) return;
             options[0] = new RewardOption { kind = RewardKind.NewBall, ballType = (BallType)forced };
         }
-
-        #endregion
     }
 }

@@ -37,9 +37,13 @@ Owner paths: `Starter/Assets/Scripts/BilliardRogue/Gameplay/**`, `Persistence/**
 
 ## In progress / next steps
 
-1. Run the smoke runner in the Editor (inside `Tools/editor_lock.sh gameplay`) once the tree compiles
-   (UI's `PauseView.cs` currently has a `UniTask.Forget` error — not mine).
-2. Commit code + this file.
+1. Run the smoke runner in the Editor once the tree compiles (blocked by UI's `PauseView.cs`
+   `UniTask.Forget` error and Flow/Presentation WIP builders — not mine). Script:
+   `Tools/editor_lock.sh gameplay bash <scratchpad>/modules/gameplay/run_smoke.sh` (recompile → eval
+   `Nex.BilliardRogue.Editor.GameplaySmokeRunner.Run()` → console errors → dirty scenes).
+   A scratch copy of `compile_check.py` with `CC_EXCLUDE`/`CC_KEEP` env vars verified my runtime + editor
+   files while the other modules' WIP files are excluded.
+2. Committed: a1e79d8c (module) — polish commits follow (regions, smoke runner fixes, quit guard).
 
 ## Decisions
 

@@ -5,7 +5,9 @@ using System.Text;
 using Cysharp.Threading.Tasks;
 using Nex.BilliardRogue.Simulation;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Nex.BilliardRogue.Editor
 {
@@ -46,6 +48,8 @@ namespace Nex.BilliardRogue.Editor
             var persistence = new RunPersistence(store);
             var report = new StringBuilder();
             var previousTimeScale = Time.timeScale;
+            var scene = SceneManager.GetActiveScene();
+            var wasDirty = scene.isDirty;
             var ok = true;
             try
             {
@@ -60,6 +64,7 @@ namespace Nex.BilliardRogue.Editor
             finally
             {
                 Time.timeScale = previousTimeScale;
+                RestoreCleanScene(scene, wasDirty, report);
             }
 
             return (ok ? "OK" : "FAIL") + report;
@@ -112,7 +117,8 @@ namespace Nex.BilliardRogue.Editor
             try
             {
                 Drive(harness, maxTicks, h => h.run.stageNumber >= 2 || h.session.Phase == TurnPhase.Finished);
-                ok &= Check(report, "continue-resumed-same-turn", harness.hud.TurnBanners >= 1 && harness.flow.StageIntros == 1)
+                // One intro for the resumed stage, one for the stage that follows its reward.
+                ok &= Check(report, "continue-resumed-same-turn", harness.hud.TurnBanners >= 1 && harness.flow.StageIntros == 2)
                       & Check(report, "continue-cleared-stage2", harness.run.stageNumber == 2 && harness.flow.RewardsChosen == 1)
                       & Check(report, "continue-no-defeat", harness.session.Phase != TurnPhase.Finished);
                 report.Append(" | continue: resumedTurn=").Append(savedTurn + 1).Append(" ticks=").Append(harness.ticks)
@@ -168,6 +174,19 @@ namespace Nex.BilliardRogue.Editor
         {
             if (!condition) report.Append(" [failed: ").Append(name).Append(']');
             return condition;
+        }
+
+        // The hidden host is destroyed again, so a scene that was clean before the run is reloaded to drop the dirty flag.
+        static void RestoreCleanScene(Scene scene, bool wasDirty, StringBuilder report)
+        {
+            if (wasDirty || !scene.isDirty) return;
+            if (string.IsNullOrEmpty(scene.path))
+            {
+                report.Append(" [note: untitled scene left dirty]");
+                return;
+            }
+
+            EditorSceneManager.OpenScene(scene.path);
         }
 
         #endregion

@@ -18,8 +18,6 @@ namespace Nex.BilliardRogue
             inner = aInner;
         }
 
-        #region Session
-
         public void SessionStart(int numPlayers, bool isContinue, string runId, int seed) => inner?.SessionStart(numPlayers, isContinue, runId, seed);
 
         public void SessionStop(RunOutcome outcome) => inner?.SessionStop(outcome);
@@ -27,10 +25,6 @@ namespace Nex.BilliardRogue
         public void Pause() => inner?.Pause();
 
         public void Resume() => inner?.Resume();
-
-        #endregion
-
-        #region Turns & shots
 
         public void TurnStart(int stage, int turn, int balls, int hp) => inner?.TurnStart(stage, turn, balls, hp);
 
@@ -48,10 +42,6 @@ namespace Nex.BilliardRogue
         {
             inner?.TurnEnd(stage, turn, enemiesAdvanced, damageTaken, hp);
         }
-
-        #endregion
-
-        #region Stages, rewards, bosses, run end
 
         public void StageStart(int act, int stage, bool isBoss) => inner?.StageStart(act, stage, isBoss);
 
@@ -71,7 +61,5 @@ namespace Nex.BilliardRogue
         }
 
         public void TrackingLost(int player, float seconds) => inner?.TrackingLost(player, seconds);
-
-        #endregion
     }
 }

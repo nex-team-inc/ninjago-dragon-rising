@@ -39,8 +39,6 @@ namespace Nex.BilliardRogue
 
         public bool CanFire => HasBallToFire && cooldownRemaining <= 0f;
 
-        #region Public Methods
-
         public void BeginTurn(bool infiniteBalls)
         {
             nextIndex = 0;
@@ -73,7 +71,5 @@ namespace Nex.BilliardRogue
             nextIndex = 0;
             cooldownRemaining = 0f;
         }
-
-        #endregion
     }
 }

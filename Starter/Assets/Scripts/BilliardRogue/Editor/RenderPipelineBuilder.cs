@@ -1,5 +1,6 @@
 #nullable enable
 
+using System.Collections.Generic;
 using System.Text;
 using UnityEditor;
 using UnityEngine;
@@ -222,24 +223,34 @@ namespace Nex.BilliardRogue.Editor
         #region Quality
 
         // URP owns lighting/shadow quality; here only the built-in per-level costs that still apply are trimmed.
+        // Names follow the Unity 6 QualitySettings serialization; a property a later version renames is reported, not fatal.
         static void TuneQualityLevels(StringBuilder report)
         {
             var so = new SerializedObject(AssetDatabase.LoadAllAssetsAtPath(QualitySettingsPath)[0]);
             var levels = so.FindProperty("m_QualitySettings");
+            var missing = new HashSet<string>();
             for (var i = 0; i < levels.arraySize; i++)
             {
                 var level = levels.GetArrayElementAtIndex(i);
-                level.FindPropertyRelative("antiAliasing").intValue = 0;
-                level.FindPropertyRelative("anisotropicFiltering").intValue = 0;
-                level.FindPropertyRelative("softParticles").boolValue = false;
-                level.FindPropertyRelative("realtimeReflectionProbes").boolValue = false;
-                level.FindPropertyRelative("particleRaycastBudget").intValue = 64;
-                level.FindPropertyRelative("billboardsFaceCameraPosition").boolValue = true;
-                level.FindPropertyRelative("resolutionScalingFixedDPIFactor").floatValue = 1f;
+                if (Find(level, "antiAliasing", missing) is { } antiAliasing) antiAliasing.intValue = 0;
+                if (Find(level, "anisotropicTextures", missing) is { } anisotropic) anisotropic.intValue = 0;
+                if (Find(level, "softParticles", missing) is { } softParticles) softParticles.boolValue = false;
+                if (Find(level, "realtimeReflectionProbes", missing) is { } probes) probes.boolValue = false;
+                if (Find(level, "particleRaycastBudget", missing) is { } raycasts) raycasts.intValue = 64;
+                if (Find(level, "billboardsFaceCameraPosition", missing) is { } billboards) billboards.boolValue = true;
+                if (Find(level, "resolutionScalingFixedDPIFactor", missing) is { } dpi) dpi.floatValue = 1f;
             }
 
             so.ApplyModifiedPropertiesWithoutUndo();
             report.Append($" quality levels tuned={levels.arraySize}");
+            if (missing.Count > 0) report.Append($" (unknown quality properties skipped: {string.Join(", ", missing)})");
+        }
+
+        static SerializedProperty? Find(SerializedProperty level, string name, HashSet<string> missing)
+        {
+            var property = level.FindPropertyRelative(name);
+            if (property == null) missing.Add(name);
+            return property;
         }
 
         #endregion

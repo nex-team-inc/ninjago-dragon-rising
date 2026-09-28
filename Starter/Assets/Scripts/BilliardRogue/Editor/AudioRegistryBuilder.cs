@@ -26,6 +26,9 @@ namespace Nex.BilliardRogue.Editor
         const string BgmPrefab = "Assets/Prefabs/Singletons/BgmManager.prefab";
         const string ManifestFromProject = "../Tools/Audio/audio_manifest.json";
         const float PeakToleranceDb = 0.5f;
+        // ADPCM's adaptive step size moves sharp transients by about a dB; larger drifts are real import problems.
+        const float AdpcmPeakToleranceDb = 1.5f;
+        const int AdpcmBlockSamples = 64;
 
         sealed class Report
         {
@@ -150,10 +153,11 @@ namespace Nex.BilliardRogue.Editor
                 var clip = AssetDatabase.LoadAssetAtPath<AudioClip>(assetPath);
                 if (clip == null) continue;
                 var name = Path.GetFileName(assetPath);
-                CheckImporter(assetPath, name, report);
+                var importer = AssetImporter.GetAtPath(assetPath) as AudioImporter;
+                CheckImporter(importer, name, report);
                 var expectedPeakDb = property.Value.Value<float>("peak_db");
                 var expectedSamples = property.Value.Value<int>("samples");
-                if (clip.samples != expectedSamples)
+                if (!SampleCountMatches(clip.samples, expectedSamples, importer))
                 {
                     report.ImportErrors.Add($"{name}: {clip.samples} samples, built {expectedSamples} (resampled? keep Preserve Sample Rate)");
                 }
@@ -166,7 +170,7 @@ namespace Nex.BilliardRogue.Editor
 
                 report.LevelsVerified++;
                 var difference = peakDb - expectedPeakDb;
-                if (Mathf.Abs(difference) > PeakToleranceDb)
+                if (Mathf.Abs(difference) > (IsAdpcm(importer) ? AdpcmPeakToleranceDb : PeakToleranceDb))
                 {
                     var hint = difference > 0f ? "re-normalized on import" : "quieter than built";
                     report.ImportErrors.Add($"{name}: imported peak {peakDb:F1} dBFS, built {expectedPeakDb:F1} ({difference:+0.0;-0.0} dB, {hint})");
@@ -174,10 +178,22 @@ namespace Nex.BilliardRogue.Editor
             }
         }
 
-        /// <summary>Unity normalizes a clip while downmixing it when Force To Mono and Normalize are both on.</summary>
-        static void CheckImporter(string assetPath, string name, Report report)
+        /// <summary>ADPCM encodes whole blocks, so an imported clip may carry up to one block of padding.</summary>
+        static bool SampleCountMatches(int imported, int built, AudioImporter? importer)
         {
-            var importer = AssetImporter.GetAtPath(assetPath) as AudioImporter;
+            if (imported == built) return true;
+            if (!IsAdpcm(importer)) return false;
+            return imported > built && imported - built < AdpcmBlockSamples && imported % AdpcmBlockSamples == 0;
+        }
+
+        static bool IsAdpcm(AudioImporter? importer)
+        {
+            return importer != null && importer.defaultSampleSettings.compressionFormat == AudioCompressionFormat.ADPCM;
+        }
+
+        /// <summary>Unity normalizes a clip while downmixing it when Force To Mono and Normalize are both on.</summary>
+        static void CheckImporter(AudioImporter? importer, string name, Report report)
+        {
             if (importer == null) return;
             if (!importer.forceToMono) return;
             var normalize = new SerializedObject(importer).FindProperty("m_Normalize");

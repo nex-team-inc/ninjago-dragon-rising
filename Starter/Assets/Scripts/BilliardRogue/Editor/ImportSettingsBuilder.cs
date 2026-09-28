@@ -296,10 +296,13 @@ namespace Nex.BilliardRogue.Editor
 
         #region Audio and Fonts
 
-        /// <summary>SFX: mono, ADPCM, decompress on load, preloaded (short, frequent, zero decode cost at play time).</summary>
+        /// <summary>
+        /// SFX: ADPCM, decompress on load, preloaded (short, frequent, zero decode cost at play time). The files are
+        /// built mono with their loudness baked in, so Force To Mono stays off: it would re-normalize the peaks.
+        /// </summary>
         static string ConfigureSfx(AudioImporter importer)
         {
-            importer.forceToMono = true;
+            importer.forceToMono = false;
             importer.loadInBackground = false;
             importer.ambisonic = false;
             var settings = importer.defaultSampleSettings;

@@ -2,6 +2,7 @@
 
 using System;
 using Nex.BilliardRogue.Simulation;
+using Nex.KeyboardNavigation;
 using UnityEngine;
 
 namespace Nex.BilliardRogue
@@ -18,6 +19,10 @@ namespace Nex.BilliardRogue
         [SerializeField] UnityEngine.UI.Button settingsButton = null!;
         [Tooltip("'Act 1 · Stage 2 · 24 HP' under the Continue label.")]
         [SerializeField] TextLabel continueInfo = null!;
+        [Tooltip("Menu focus group: a focused Continue that disappears (the run just ended) would leave nothing focused.")]
+        [SerializeField] GroupKeyResponder menuGroup = null!;
+        [SerializeField] KeyResponder continueResponder = null!;
+        [SerializeField] KeyResponder newRunResponder = null!;
 
         [Header("Record")]
         [SerializeField] TextLabel bestLabel = null!;
@@ -50,12 +55,20 @@ namespace Nex.BilliardRogue
         public void SetContinueInfo(RunState? run)
         {
             continueButton.gameObject.SetActive(run != null);
+            menuGroup.NavigateTo(run != null ? continueResponder : newRunResponder);
             if (run == null) return;
             continueInfo.SetKey(LocKeys.Title.ContinueInfo, run.actIndex + 1, run.stageInAct + 1, run.playerHp);
         }
 
+        /// <summary>
+        /// Record panel (it sizes to its lines): nothing played → "No runs yet"; runs started but none finished
+        /// (the best is recorded at run end) → "Best run: none yet" + the runs counter; otherwise the best + counter.
+        /// </summary>
         public void SetBest(MetaProgressData meta)
         {
+            var anyRun = meta.runsStarted > 0;
+            runsLabel.gameObject.SetActive(anyRun);
+            if (anyRun) runsLabel.SetKey(LocKeys.Title.Runs, meta.runsStarted, meta.runsWon);
             if (meta.bestStageNumber >= SimConstants.StageCount)
             {
                 bestLabel.SetKey(LocKeys.Title.BestVictory);
@@ -67,11 +80,10 @@ namespace Nex.BilliardRogue
             }
             else
             {
-                bestLabel.SetKey(LocKeys.Title.NoBest);
+                bestLabel.SetKey(anyRun ? LocKeys.Title.NoRecordYet : LocKeys.Title.NoBest);
             }
 
-            runsLabel.gameObject.SetActive(meta.runsStarted > 0);
-            if (meta.runsStarted > 0) runsLabel.SetKey(LocKeys.Title.Runs, meta.runsStarted, meta.runsWon);
+            bestLabel.Color = meta.bestStageNumber >= 0 ? theme.Accent : theme.TextMuted;
         }
 
         public override void OnBackButton()

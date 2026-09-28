@@ -52,6 +52,10 @@ namespace Nex.BilliardRogue
         [SerializeField] Color stageBandColor = new(0.03f, 0.04f, 0.1f, 0.8f);
         [Tooltip("Stage intro band on boss stages.")]
         [SerializeField] Color bossTint = new(0.42f, 0.04f, 0.07f, 0.85f);
+        [Tooltip("Opaque fade between calibration and the first stage intro (hides the board being built).")]
+        [SerializeField] Color curtainColor = new(0.047f, 0.071f, 0.157f, 1f);
+        [SerializeField, Range(0.05f, 1.5f)] float curtainFadeInDuration = 0.3f;
+        [SerializeField, Range(0.05f, 1.5f)] float curtainFadeOutDuration = 0.5f;
 
         [Header("Sprites (pixel UI kit, filled by UiViewsBuilder from Assets/Sprites/BilliardRogue/UI)")]
         [SerializeField] Sprite? panel;
@@ -79,6 +83,12 @@ namespace Nex.BilliardRogue
         [SerializeField] Sprite? portraitP2;
         [SerializeField] Sprite? rewardHeal;
         [SerializeField] Sprite? rewardMaxHp;
+        [Tooltip("Camera placeholder glyph (PiP and calibration before the first camera frame).")]
+        [SerializeField] Sprite? cameraGlyph;
+        [Tooltip("Calibration controls: paw, cue and strike glyphs.")]
+        [SerializeField] Sprite? paw;
+        [SerializeField] Sprite? cue;
+        [SerializeField] Sprite? strike;
 
         [Header("View motion (unscaled seconds)")]
         [SerializeField, Range(0.05f, 1f)] float presentDuration = 0.26f;
@@ -103,6 +113,9 @@ namespace Nex.BilliardRogue
         [SerializeField, Range(0f, 400f)] float bannerSlideDistance = 160f;
         [SerializeField, Range(1f, 1.5f)] float chipPulseScale = 1.08f;
         [SerializeField, Range(0.1f, 2f)] float chipPulseDuration = 0.45f;
+        [Tooltip("HUD columns slide in from the screen edges after the stage intro band has left.")]
+        [SerializeField, Range(0.05f, 1f)] float hudRevealDuration = 0.35f;
+        [SerializeField, Range(0f, 480f)] float hudRevealSlide = 96f;
 
         [Header("Overlay timings (unscaled seconds)")]
         [Tooltip("How long 'Found you! Resuming…' stays before the tracking-lost overlay closes.")]
@@ -144,6 +157,9 @@ namespace Nex.BilliardRogue
         public Color VignetteColor => vignetteColor;
         public Color StageBandColor => stageBandColor;
         public Color BossTint => bossTint;
+        public Color CurtainColor => curtainColor;
+        public float CurtainFadeInDuration => curtainFadeInDuration;
+        public float CurtainFadeOutDuration => curtainFadeOutDuration;
 
         public Sprite? Panel => panel;
         public Sprite? Card => card;
@@ -170,6 +186,10 @@ namespace Nex.BilliardRogue
         public Sprite? PortraitP2 => portraitP2;
         public Sprite? RewardHeal => rewardHeal;
         public Sprite? RewardMaxHp => rewardMaxHp;
+        public Sprite? CameraGlyph => cameraGlyph;
+        public Sprite? Paw => paw;
+        public Sprite? Cue => cue;
+        public Sprite? Strike => strike;
 
         public float PresentDuration => presentDuration;
         public float DismissDuration => dismissDuration;
@@ -186,6 +206,8 @@ namespace Nex.BilliardRogue
         public float BannerSlideDistance => bannerSlideDistance;
         public float ChipPulseScale => chipPulseScale;
         public float ChipPulseDuration => chipPulseDuration;
+        public float HudRevealDuration => hudRevealDuration;
+        public float HudRevealSlide => hudRevealSlide;
         public float TrackingResumeHold => trackingResumeHold;
         public float SummaryCountUpDuration => summaryCountUpDuration;
         public float RewardRevealDuration => rewardRevealDuration;

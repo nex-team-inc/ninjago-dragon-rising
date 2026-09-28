@@ -28,11 +28,15 @@ namespace Nex.BilliardRogue
             // The act look fades in behind the intro overlay (a no-op for every stage after the act's first).
             context.environment.ApplyAct(context.config.Acts[actIndex]);
             await UniTask.WaitWhile(managerInTransition, cancellationToken: ct);
+            // The band covers the middle of the screen: the HUD leaves first and slides back in after it.
+            SetHudRevealed(false);
             var view = Instantiate(stageIntroViewPrefab);
             view.Initialize(context.config.Pacing, context.config.Enemies, context.config.Acts);
             view.Show(actIndex, stageInAct, isBoss);
             await manager.PushView(view);
+            RevealWorld();
             await view.WaitClosedAsync(ct);
+            SetHudRevealed(true);
         }
 
         public async UniTask<int> ChooseRewardAsync(IReadOnlyList<RewardOption> options, RunState run, CancellationToken ct)
@@ -45,6 +49,7 @@ namespace Nex.BilliardRogue
             {
                 // ChooseAsync waits for the view to be on top and pops it after the pick.
                 var push = manager.PushView(view);
+                RevealWorld();
                 var index = await view.ChooseAsync(options, context.config.Balls, run, ct);
                 await push;
                 return index;

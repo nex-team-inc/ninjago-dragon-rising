@@ -43,21 +43,27 @@ namespace Nex.BilliardRogue.Editor
             var newRun = kit.MenuButton(menu.transform, "NewRunButton", LocKeys.Title.NewRun, new Vector2(560f, 96f));
             var settings = kit.MenuButton(menu.transform, "SettingsButton", LocKeys.Title.Settings, new Vector2(560f, 96f));
 
-            var record = kit.Image(c, "RecordPanel", theme.Panel, Kit.Bottom, new Vector2(0f, 24f), new Vector2(1008f, 144f), Fill.Tiled);
-            // Centres the best line alone when the runs line is hidden (no runs yet).
+            // Sizes to its visible lines (one line before the first run, best + runs afterwards).
+            var record = kit.Image(c, "RecordPanel", theme.Panel, Kit.Bottom, new Vector2(0f, 32f), new Vector2(768f, 128f), Fill.Tiled);
             var recordLayout = record.gameObject.AddComponent<VerticalLayoutGroup>();
-            recordLayout.spacing = -8f;
+            recordLayout.padding = new RectOffset(0, 0, 16, 16);
+            recordLayout.spacing = -4f;
             recordLayout.childAlignment = TextAnchor.MiddleCenter;
             recordLayout.childControlWidth = recordLayout.childControlHeight = false;
             recordLayout.childForceExpandWidth = recordLayout.childForceExpandHeight = false;
-            var best = kit.Label(record.transform, "Best", LocKeys.Title.Best, 32, theme.Accent, Kit.Center, new Vector2(0f, 18f), new Vector2(944f, 48f));
-            var runs = kit.Label(record.transform, "Runs", LocKeys.Title.Runs, 32, theme.TextMuted, Kit.Center, new Vector2(0f, -22f), new Vector2(944f, 48f));
+            var fitter = record.gameObject.AddComponent<ContentSizeFitter>();
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            var best = kit.Label(record.transform, "Best", LocKeys.Title.Best, 32, theme.Accent, Kit.Center, Vector2.zero, new Vector2(704f, 48f));
+            var runs = kit.Label(record.transform, "Runs", LocKeys.Title.Runs, 32, theme.TextMuted, Kit.Center, Vector2.zero, new Vector2(704f, 48f));
 
             var graph = kit.GraphWithControlProxy(root.transform, group, TopLevelControlPanel.ControlConfig.Exit);
             UiFields.Set(view, "continueButton", continueButton);
             UiFields.Set(view, "newRunButton", newRun);
             UiFields.Set(view, "settingsButton", settings);
             UiFields.Set(view, "continueInfo", info);
+            UiFields.Set(view, "menuGroup", group);
+            UiFields.Set(view, "continueResponder", continueButton.GetComponent<UiButtonKeyResponder>());
+            UiFields.Set(view, "newRunResponder", newRun.GetComponent<UiButtonKeyResponder>());
             UiFields.Set(view, "bestLabel", best);
             UiFields.Set(view, "runsLabel", runs);
             UiFields.Set(view, "keyResponder", graph);
@@ -89,6 +95,7 @@ namespace Nex.BilliardRogue.Editor
             var p2 = kit.Image(twoFrame, "PortraitP2", theme.PortraitP2, Kit.Center, new Vector2(96f, 90f), new Vector2(256f, 256f));
             p2.rectTransform.localScale = new Vector3(-1f, 1f, 1f);
             CardTexts(kit, twoFrame, LocKeys.PlayerMode.TwoPlayers, LocKeys.PlayerMode.CoopHint);
+            kit.Label(c, "Hint", LocKeys.Reward.ChooseHint, 32, theme.TextMuted, Kit.Bottom, new Vector2(0f, 40f), new Vector2(1200f, 48f));
 
             var graph = kit.GraphWithControlProxy(root.transform, group, TopLevelControlPanel.ControlConfig.Back);
             UiFields.Set(view, "onePlayerButton", one);

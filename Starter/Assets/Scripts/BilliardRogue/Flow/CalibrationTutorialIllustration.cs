@@ -6,21 +6,30 @@ using UnityEngine;
 namespace Nex.BilliardRogue
 {
     /// <summary>
-    /// Animated pose tutorial for the calibration step: the right paw (cue) thrusts into the left paw (ball) in a
-    /// loop. Flash() punches the ball on a successful test strike. Unscaled time, tweens die with the object.
+    /// Animated controls illustration for the calibration step, seen as in a mirror: the left paw holds the ball, the
+    /// right paw (the cue) rests below-right, thrusts into the left paw, a burst flashes and the ball shoots up, then the
+    /// paw returns and a new ball appears. Flash() punches the ball on a successful test strike. Unscaled time, tweens
+    /// die with the object.
     /// </summary>
     public sealed class CalibrationTutorialIllustration : MonoBehaviour
     {
-        [Header("Paws")]
+        [Header("Parts")]
         [SerializeField] RectTransform leftPaw = null!;
         [SerializeField] RectTransform rightPaw = null!;
+        [SerializeField] RectTransform ball = null!;
+        [SerializeField] CanvasGroup ballGroup = null!;
+        [SerializeField] RectTransform burst = null!;
+        [SerializeField] CanvasGroup burstGroup = null!;
 
-        [Header("Motion (UI px, relative to the left paw)")]
-        [SerializeField] Vector2 restOffset = new(230f, -130f);
-        [SerializeField] Vector2 contactOffset = new(70f, -30f);
-        [SerializeField, Range(0.05f, 1f)] float thrustSeconds = 0.18f;
-        [SerializeField, Range(0.1f, 3f)] float returnSeconds = 0.7f;
-        [SerializeField, Range(0f, 3f)] float restSeconds = 0.6f;
+        [Header("Motion (UI units, relative to the left paw)")]
+        [SerializeField] Vector2 restOffset = new(240f, -120f);
+        [SerializeField] Vector2 contactOffset = new(88f, -24f);
+        [Tooltip("Where the ball sits on the left paw.")]
+        [SerializeField] Vector2 ballOffset = new(0f, 72f);
+        [SerializeField, Range(0f, 600f)] float ballFlyHeight = 200f;
+        [SerializeField, Range(0.05f, 1f)] float thrustSeconds = 0.16f;
+        [SerializeField, Range(0.1f, 3f)] float returnSeconds = 0.6f;
+        [SerializeField, Range(0f, 3f)] float restSeconds = 0.7f;
         [Tooltip("Extra ball scale on the success flash.")]
         [SerializeField, Range(0f, 1f)] float flashPunch = 0.35f;
 
@@ -28,14 +37,27 @@ namespace Nex.BilliardRogue
 
         public void Play()
         {
-            Stop();
-            var ball = leftPaw.anchoredPosition;
-            rightPaw.anchoredPosition = ball + restOffset;
+            if (loop != null) return;
+            var paw = leftPaw.anchoredPosition;
+            var ballHome = paw + ballOffset;
+            rightPaw.anchoredPosition = paw + restOffset;
+            ball.anchoredPosition = ballHome;
+            ballGroup.alpha = 1f;
+            burstGroup.alpha = 0f;
+            burst.anchoredPosition = (paw + contactOffset + ballHome) * 0.5f;
             loop = DOTween.Sequence()
                 .AppendInterval(restSeconds)
-                .Append(rightPaw.DOAnchorPos(ball + contactOffset, thrustSeconds).SetEase(Ease.InQuad))
-                .Append(leftPaw.DOPunchScale(Vector3.one * 0.15f, 0.25f, 6, 0.6f))
-                .Append(rightPaw.DOAnchorPos(ball + restOffset, returnSeconds).SetEase(Ease.OutSine))
+                .Append(rightPaw.DOAnchorPos(paw + contactOffset, thrustSeconds).SetEase(Ease.InQuad))
+                .AppendCallback(() => burst.localScale = Vector3.one * 0.5f)
+                .Append(burstGroup.DOFade(1f, 0.04f))
+                .Join(burst.DOScale(1.2f, 0.25f).SetEase(Ease.OutQuad))
+                .Join(leftPaw.DOPunchScale(Vector3.one * 0.12f, 0.25f, 6, 0.6f))
+                .Join(ball.DOAnchorPos(ballHome + new Vector2(0f, ballFlyHeight), 0.4f).SetEase(Ease.OutQuad))
+                .Join(ballGroup.DOFade(0f, 0.4f).SetEase(Ease.InQuad))
+                .Insert(restSeconds + thrustSeconds + 0.12f, burstGroup.DOFade(0f, 0.2f))
+                .AppendCallback(() => ball.anchoredPosition = ballHome)
+                .Append(rightPaw.DOAnchorPos(paw + restOffset, returnSeconds).SetEase(Ease.OutSine))
+                .Join(ballGroup.DOFade(1f, returnSeconds * 0.5f))
                 .SetLoops(-1)
                 .SetUpdate(true)
                 .SetLink(gameObject);
@@ -43,8 +65,8 @@ namespace Nex.BilliardRogue
 
         public void Flash()
         {
-            leftPaw.DOKill(true);
-            leftPaw.DOPunchScale(Vector3.one * flashPunch, 0.35f, 8, 0.5f).SetUpdate(true).SetLink(gameObject);
+            ball.DOKill(true);
+            ball.DOPunchScale(Vector3.one * flashPunch, 0.35f, 8, 0.5f).SetUpdate(true).SetLink(gameObject);
         }
 
         public void Stop()

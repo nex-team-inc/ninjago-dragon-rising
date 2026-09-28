@@ -1,17 +1,19 @@
 #nullable enable
 
 using System.Collections.Generic;
+using DG.Tweening;
 using Nex.BilliardRogue.Simulation;
 using UnityEngine;
 
 namespace Nex.BilliardRogue
 {
     /// <summary>
-    /// Gameplay HUD (IGameplayHud), laid out around a vertical centre arena: left column (below the PiP reserve)
-    /// holds stage, HP, shooter tags and tracking warnings; right column holds the boss bar, ball queue and chips;
-    /// turn/shooter ribbons slide in at the top centre. Every setter ignores unchanged values, so GameSession may
-    /// push every frame without cost. Must sit under a canvas (GameplayView); the root carries a nested Canvas so
-    /// HUD rebuilds never dirty the view canvas.
+    /// Gameplay HUD (IGameplayHud), laid out around a vertical centre arena: left column = camera panel (the PiP feed
+    /// overlay sits on its screen, P1/P2 shooter chips in its header), stage/turn, HP and tracking warnings; right
+    /// column = boss bar, ball queue and chips; turn/shooter ribbons slide in at the top centre. Both columns hide
+    /// while the stage intro band is up and slide in after it (SetRevealed). Every setter ignores unchanged values,
+    /// so GameSession may push every frame without cost. Must sit under a canvas (GameplayView); the root carries a
+    /// nested Canvas so HUD rebuilds never dirty the view canvas.
     /// </summary>
     public sealed class GameplayHud : MonoBehaviour, IGameplayHud
     {
@@ -38,6 +40,12 @@ namespace Nex.BilliardRogue
         [SerializeField] HudBanner turnBanner = null!;
         [SerializeField] HudBanner shooterBanner = null!;
 
+        [Header("Reveal (slide in from the screen edges)")]
+        [SerializeField] RectTransform leftColumn = null!;
+        [SerializeField] CanvasGroup leftGroup = null!;
+        [SerializeField] RectTransform rightColumn = null!;
+        [SerializeField] CanvasGroup rightGroup = null!;
+
         PacingConfig pacing = null!;
         int stageAct = -1;
         int stageIndex = -1;
@@ -45,12 +53,18 @@ namespace Nex.BilliardRogue
         int ballsRemaining = -1;
         int ballsTotal = -1;
         int bonusBalls = -1;
+        bool revealed = true;
+        Vector2 leftHome;
+        Vector2 rightHome;
+        Sequence? revealTween;
 
         #region Public Methods
 
         public void Initialize(BallCatalog balls, PacingConfig pacing)
         {
             this.pacing = pacing;
+            leftHome = leftColumn.anchoredPosition;
+            rightHome = rightColumn.anchoredPosition;
             ballQueue.Initialize(balls);
             turnLabel.gameObject.SetActive(false);
             for (var i = 0; i < trackingWarnings.Length; i++)
@@ -66,7 +80,7 @@ namespace Nex.BilliardRogue
 
         public void SetBallQueue(IReadOnlyList<BallInstance> bag, int nextIndex, int extraBalls)
         {
-            ballQueue.Set(bag, nextIndex);
+            ballQueue.Set(bag, nextIndex, extraBalls);
             if (extraBalls == bonusBalls) return;
             bonusBalls = extraBalls;
             if (extraBalls > 0) bonusBallsChip.Label.SetKey(LocKeys.Hud.BonusBalls, extraBalls);
@@ -110,11 +124,14 @@ namespace Nex.BilliardRogue
         public void SetPowerArmed(bool armed)
         {
             powerChip.SetVisible(armed);
+            ballQueue.SetPowerArmed(armed);
         }
 
         /// <summary>turn as shown to the player (1-based).</summary>
         public void ShowTurnBanner(int turn)
         {
+            // A turn never starts under the intro band; this also covers a Continue that resumes into the reward.
+            SetRevealed(true, true);
             if (turn != shownTurn)
             {
                 shownTurn = turn;
@@ -138,6 +155,34 @@ namespace Nex.BilliardRogue
         {
             if (playerIndex < 0 || playerIndex >= trackingWarnings.Length) return;
             trackingWarnings[playerIndex].SetVisible(lost);
+        }
+
+        /// <summary>Hides both columns (stage intro) or slides them back in from the screen edges.</summary>
+        public void SetRevealed(bool show, bool animate)
+        {
+            if (show == revealed) return;
+            revealed = show;
+            revealTween?.Kill();
+            var slide = theme.HudRevealSlide;
+            var leftAway = leftHome - new Vector2(slide, 0f);
+            var rightAway = rightHome + new Vector2(slide, 0f);
+            var alpha = show ? 1f : 0f;
+            if (!animate)
+            {
+                leftColumn.anchoredPosition = show ? leftHome : leftAway;
+                rightColumn.anchoredPosition = show ? rightHome : rightAway;
+                leftGroup.alpha = alpha;
+                rightGroup.alpha = alpha;
+                return;
+            }
+
+            var duration = show ? theme.HudRevealDuration : theme.DismissDuration;
+            var ease = show ? Ease.OutCubic : Ease.InQuad;
+            revealTween = DOTween.Sequence().SetUpdate(true).SetLink(gameObject)
+                .Join(leftColumn.DOAnchorPos(show ? leftHome : leftAway, duration).SetEase(ease))
+                .Join(rightColumn.DOAnchorPos(show ? rightHome : rightAway, duration).SetEase(ease))
+                .Join(leftGroup.DOFade(alpha, duration))
+                .Join(rightGroup.DOFade(alpha, duration));
         }
 
         #endregion

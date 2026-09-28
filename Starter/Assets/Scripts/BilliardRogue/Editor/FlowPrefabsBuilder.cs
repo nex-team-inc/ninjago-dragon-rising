@@ -95,27 +95,26 @@ namespace Nex.BilliardRogue.Editor
 
         #region PiP
 
-        // Top-left 384x216 (16:9 = exactly the play area) inside a pixel frame on its own overlay canvas (TDD D5).
+        // Only the feed lives on this overlay canvas (TDD D5): the camera panel around it (frame, header, P1/P2 chips,
+        // placeholder shown until the first frame) is part of GameplayHud, so both builders share the feed rect.
         static GameObject BuildPip()
         {
             var canvas = FlowUiFactory.CreateOverlayCanvasRoot("GameplayPip", 5);
             var root = canvas.gameObject;
             var group = root.AddComponent<CanvasGroup>();
+            group.blocksRaycasts = false;
+            group.interactable = false;
             var pip = root.AddComponent<GameplayPip>();
 
-            const float border = 10f * FlowUiFactory.PixelScale; // Frame_Panel border (ui_slices.json) at 3x
-            var frame = FlowUiFactory.CreateImage("Frame", root.transform, "Frame_Panel", Color.white);
-            FlowUiFactory.Place(frame.gameObject, new Vector2(0f, 1f), new Vector2(24f, -24f), new Vector2(384f + border * 2f, 216f + border * 2f));
-
-            var previewGo = FlowUiFactory.CreateUIObject("PreviewFrame", frame.transform);
-            FlowUiFactory.Stretch(previewGo, border);
+            var previewGo = FlowUiFactory.CreateUIObject("PreviewFrame", root.transform);
+            FlowUiFactory.Place(previewGo, new Vector2(0f, 1f), UiHudBuilder.PipFeedScreenPosition, UiHudBuilder.PipFeedSize);
             var previewGroup = previewGo.AddComponent<CanvasGroup>();
             var preview = previewGo.AddComponent<AreaPreviewFrame>();
             var rawImageGo = FlowUiFactory.CreateUIObject("RawImage", previewGo.transform);
             FlowUiFactory.Stretch(rawImageGo);
             var rawImage = rawImageGo.AddComponent<RawImage>();
             rawImage.raycastTarget = false;
-            rawImage.color = Color.black;
+            rawImage.color = Color.white;
 
             var previewSo = new SerializedObject(preview);
             previewSo.FindProperty("rawImage").objectReferenceValue = rawImage;
@@ -123,8 +122,8 @@ namespace Nex.BilliardRogue.Editor
             previewSo.FindProperty("enableSmoothing").boolValue = false;
             previewSo.ApplyModifiedPropertiesWithoutUndo();
 
-            // Indicators are instantiated under the preview frame by the manager; it only needs to live on the frame.
-            var indicators = frame.gameObject.AddComponent<PlayerIndicatorsManager>();
+            // Indicators are instantiated under the preview frame by the manager (they fade in with the feed).
+            var indicators = root.AddComponent<PlayerIndicatorsManager>();
             var indicatorPrefab = FlowUiFactory.LoadPrefabComponent<PreviewFramePlayerIndicator>(IndicatorPrefabPath, "starter");
             var indicatorsSo = new SerializedObject(indicators);
             indicatorsSo.FindProperty("playerIndicatorPrefab").objectReferenceValue = indicatorPrefab;

@@ -4,6 +4,7 @@ using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Cysharp.Threading.Tasks.Linq;
+using DG.Tweening;
 using Nex.BilliardRogue.Simulation;
 using UnityEngine;
 
@@ -25,11 +26,22 @@ namespace Nex.BilliardRogue
         [SerializeField] Transform inputRoot = null!;
         [SerializeField] GameplayPip pipPrefab = null!;
 
+        [Header("Look")]
+        [SerializeField] UiTheme theme = null!;
+        [Tooltip("Opaque full-screen cover shown on Present (calibration ends on the same colour): the board is built "
+            + "under it and it fades once the first overlay (stage intro or reward) is on top.")]
+        [SerializeField] CanvasGroup curtain = null!;
+
         GameplayViewContext context = null!;
         // View.Manager is cleared when the view is dismissed; the pause events need it until OnDestroy.
         ViewManager manager = null!;
         GameplayPip pip = null!;
+        GameplayHud? hudWidget;
         Func<bool> managerInTransition = null!;
+        bool hudRevealed;
+        bool worldRevealed;
+        // Overlay currently covering this view (the PiP overlay canvas would draw above it); null when on top.
+        ViewIdentifier? coveringOverlay;
         bool runStarted;
         bool runEnded;
         bool paused;
@@ -53,15 +65,29 @@ namespace Nex.BilliardRogue
         protected override void Awake()
         {
             base.Awake();
-            // RunFlow instantiates this view before it pops the views above the title: nothing shows until Present.
+            // RunFlow instantiates this view before it pops the views above the title: nothing shows until Initialize
+            // raises the opaque curtain.
             canvas.enabled = false;
         }
 
         public override async UniTask Present(bool animate = true)
         {
             canvas.enabled = true;
-            pip.SetVisible(true);
             await base.Present(animate);
+        }
+
+        public override async UniTask EnterBackground(ViewIdentifier childViewIdentifier, bool animate = true)
+        {
+            coveringOverlay = childViewIdentifier;
+            UpdatePip();
+            await base.EnterBackground(childViewIdentifier, animate);
+        }
+
+        public override async UniTask EnterForeground(ViewIdentifier childViewIdentifier, bool animate = true)
+        {
+            coveringOverlay = null;
+            UpdatePip();
+            await base.EnterForeground(childViewIdentifier, animate);
         }
 
         public void Initialize(GameplayViewContext ctx)
@@ -75,8 +101,19 @@ namespace Nex.BilliardRogue
             pip.SetVisible(false);
 
             // The HUD prefab (UI-Views) is nested by FlowPrefabsBuilder; a missing one degrades to a no-op relay.
-            var hudWidget = GetComponentInChildren<GameplayHud>(true);
-            if (hudWidget != null) hudWidget.Initialize(ctx.config.Balls, ctx.config.Pacing);
+            hudWidget = GetComponentInChildren<GameplayHud>(true);
+            if (hudWidget != null)
+            {
+                hudWidget.Initialize(ctx.config.Balls, ctx.config.Pacing);
+                // Revealed after the first stage intro band (or by the first turn banner).
+                hudWidget.SetRevealed(false, false);
+            }
+
+            // Calibration has faded to the curtain colour: cover the screen from now on (the canvas renders on top
+            // until the push gives it its camera), so its pop and the board build never show.
+            curtain.alpha = 1f;
+            canvas.enabled = true;
+
             var hud = new GameplayHudRelay(hudWidget, pip);
             ctx.board.Initialize(ctx.config, ctx.rules, ctx.layout, ctx.display, worldLabelLayer);
             session.Initialize(new GameSessionContext
@@ -150,6 +187,35 @@ namespace Nex.BilliardRogue
 
         #endregion
 
+        #region Reveal
+
+        /// <summary>Fades the opening curtain out (once): the first overlay is on top, so the built board shows under it.</summary>
+        void RevealWorld()
+        {
+            if (worldRevealed) return;
+            worldRevealed = true;
+            curtain.DOFade(0f, theme.CurtainFadeOutDuration).SetUpdate(true).SetLink(gameObject);
+        }
+
+        /// <summary>HUD columns and the PiP feed together: hidden while the stage intro band is up.</summary>
+        void SetHudRevealed(bool show)
+        {
+            hudRevealed = show;
+            if (hudWidget != null) hudWidget.SetRevealed(show, true);
+            UpdatePip();
+        }
+
+        // The feed shows with the HUD, except under an overlay other than tracking lost (where it helps the player
+        // step back into view).
+        void UpdatePip()
+        {
+            var covered = coveringOverlay != null && coveringOverlay != ViewIdentifier.TrackingLost;
+            var visible = hudRevealed && !covered;
+            pip.SetVisible(visible, visible ? theme.HudRevealDuration : theme.DismissDuration);
+        }
+
+        #endregion
+
         #region Pause
 
         public override void OnBackButton()
@@ -173,6 +239,7 @@ namespace Nex.BilliardRogue
         // GameSession.RequestPause owns the pause analytics; this only adds the camera and the overlay.
         void BeginPause()
         {
+            RevealWorld();
             paused = true;
             session.RequestPause(true);
             context.camera.Pause();

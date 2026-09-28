@@ -24,6 +24,13 @@ namespace Nex.BilliardRogue.Editor
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 
+        public static void SetInt(Object target, string field, int value)
+        {
+            var so = new SerializedObject(target);
+            so.FindProperty(field).intValue = value;
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
         public static void SetFloat(Object target, string field, float value)
         {
             var so = new SerializedObject(target);

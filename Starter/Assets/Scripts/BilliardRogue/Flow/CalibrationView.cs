@@ -1,14 +1,11 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using Nex.Dev;
-using TMPro;
 using UnityEngine;
-using UnityEngine.Localization.Settings;
 
 namespace Nex.BilliardRogue
 {
@@ -17,8 +14,11 @@ namespace Nex.BilliardRogue
 
     /// <summary>
     /// Camera setup step: starts the camera session, runs the starter setup (move into frame → raise hand) with the
-    /// PreviewsManager, then the pose tutorial and a live test strike per player. Back cancels (the view pops
-    /// itself), DebugSettings.skipCalibration / DebugHooks.SkipCalibration / the S key skip steps in debug builds.
+    /// PreviewsManager on the camera panel, then the pose tutorial and a live test strike per player (player cards on
+    /// the same panel). The controls card (animated illustration + left paw / right paw / strike rows) stays up the
+    /// whole time; numbered pips show the step and the prompt says what to do. On success the view fades to the
+    /// curtain colour GameplayView opens on. Back cancels (the view pops itself); DebugSettings.skipCalibration /
+    /// DebugHooks.SkipCalibration / the S key skip steps in debug builds.
     /// </summary>
     public sealed class CalibrationView : SimpleCanvasView
     {
@@ -29,13 +29,29 @@ namespace Nex.BilliardRogue
         [Header("Setup previews")]
         [SerializeField] PreviewsManager previewsManager = null!;
 
-        [Header("Tutorial")]
-        [SerializeField] CanvasGroup tutorialGroup = null!;
+        [Header("Controls card")]
         [SerializeField] CalibrationTutorialIllustration illustration = null!;
-        [SerializeField] TMP_Text promptLabel = null!;
-        [SerializeField] TMP_Text hintLabel = null!;
-        [Tooltip("Per-player status (2P only), index = player index.")]
-        [SerializeField] TMP_Text[] playerStatusLabels = null!;
+        [Tooltip("Shown instead of the paw rows' footnote when the left-handed cue is on.")]
+        [SerializeField] TextLabel hintLabel = null!;
+
+        [Header("Camera panel")]
+        [Tooltip("Camera glyph on an empty screen while the camera starts; the setup previews replace it.")]
+        [SerializeField] CanvasGroup placeholderGroup = null!;
+        [Tooltip("'Stand in front of the camera…' line under the setup previews.")]
+        [SerializeField] CanvasGroup setupTipGroup = null!;
+        [Tooltip("Player cards for the pose tutorial and the test strike.")]
+        [SerializeField] CanvasGroup playersGroup = null!;
+        [Tooltip("Index = player index; cards beyond the player count are hidden.")]
+        [SerializeField] CalibrationPlayerCard[] playerCards = null!;
+        [Tooltip("Card centres for 1 player (index 0) and 2 players (indices 1, 2).")]
+        [SerializeField] Vector2[] cardPositions = { new(0f, 0f), new(-232f, 0f), new(232f, 0f) };
+
+        [Header("Progress")]
+        [SerializeField] CalibrationStepPips stepPips = null!;
+        [SerializeField] TextLabel promptLabel = null!;
+        [SerializeField] UiTheme theme = null!;
+        [Tooltip("Full-screen cover faded in on success (GameplayView opens on the same colour).")]
+        [SerializeField] CanvasGroup curtain = null!;
         [SerializeField] Transform inputRoot = null!;
 
         [Header("Timing")]
@@ -60,7 +76,6 @@ namespace Nex.BilliardRogue
         bool skipAll;
         float stepStartTime;
         float flowStartTime;
-        Strings strings = null!;
 
         public Step CurrentStep { get; private set; }
 
@@ -76,13 +91,28 @@ namespace Nex.BilliardRogue
             numPlayers = aNumPlayers;
             tutorialSeen = aTutorialSeen;
             shotInputFactory = aShotInputFactory;
-            tutorialGroup.alpha = 0f;
-            hintLabel.gameObject.SetActive(false);
-            promptLabel.text = "";
-            for (var i = 0; i < playerStatusLabels.Length; i++)
+            curtain.alpha = 0f;
+            playersGroup.alpha = 0f;
+            placeholderGroup.alpha = 1f;
+            setupTipGroup.alpha = 1f;
+            hintLabel.gameObject.SetActive(PlayerDataManager.Instance.PlayerPreference.leftHandedCue);
+            for (var i = 0; i < playerCards.Length; i++)
             {
-                playerStatusLabels[i].gameObject.SetActive(numPlayers > 1 && i < numPlayers);
+                var shown = i < numPlayers;
+                playerCards[i].gameObject.SetActive(shown);
+                if (!shown) continue;
+                ((RectTransform)playerCards[i].transform).anchoredPosition = cardPositions[numPlayers > 1 ? i + 1 : 0];
+                playerCards[i].Set(i, false);
             }
+
+            stepPips.Set(-1);
+            promptLabel.SetKey(LocKeys.Calibration.Starting);
+        }
+
+        public override void ViewDidBecomeTopView(bool afterPush)
+        {
+            base.ViewDidBecomeTopView(afterPush);
+            illustration.Play();
         }
 
         void Update()
@@ -152,27 +182,25 @@ namespace Nex.BilliardRogue
         {
             flowStartTime = Time.realtimeSinceStartup;
             skipAll = PlayerDataManager.Instance.DebugSettings.skipCalibration;
-            strings = await Strings.LoadAsync(numPlayers, ct);
 
             BeginStep(Step.Starting);
-            promptLabel.text = strings.starting;
             await cameraSession.StartAsync(numPlayers, ct);
-            promptLabel.text = "";
             var detection = cameraSession.Detection;
             var setup = detection.SetupStateManager;
 
             if (!skipAll)
             {
                 previewsManager.Initialize(numPlayers, detection.BodyPoseDetectionManager, detection.PlayAreaController, setup);
+                _ = placeholderGroup.DOFade(0f, 0.3f).SetUpdate(true).SetLink(gameObject);
                 await previewsManager.MoveIn(true).AttachExternalCancellation(ct);
 
                 BeginStep(Step.MoveIn);
-                previewsManager.SetPromptText(strings.moveIn);
+                promptLabel.SetKey(LocKeys.Calibration.MoveIn);
                 await WaitOrSkipAsync(setup.WaitForGoodPlayerPosition(), ct);
                 EndStep("move_in");
 
                 BeginStep(Step.RaiseHand);
-                previewsManager.SetPromptText(strings.raiseHand);
+                promptLabel.SetKey(LocKeys.Calibration.RaiseHand);
                 setup.SetAllowPassingRaisingHandState(true);
                 await WaitOrSkipAsync(setup.WaitForRaiseHand(), ct);
                 EndStep("raise_hand");
@@ -189,17 +217,17 @@ namespace Nex.BilliardRogue
             }
 
             RunAnalytics.SetupComplete(numPlayers, Time.realtimeSinceStartup - flowStartTime);
+            await curtain.DOFade(1f, theme.CurtainFadeInDuration).SetUpdate(true).SetLink(gameObject).ToUniTask(cancellationToken: ct);
         }
 
         async UniTask TutorialAsync(CancellationToken ct)
         {
             BeginStep(Step.Tutorial);
-            promptLabel.text = strings.poseTutorial;
-            hintLabel.text = PlayerDataManager.Instance.PlayerPreference.leftHandedCue ? strings.leftHandedHint : strings.tutorialHint;
-            hintLabel.gameObject.SetActive(true);
-            // Discarded on purpose: the tween is awaitable through UniTask's DOTween support but runs fire-and-forget.
-            _ = tutorialGroup.DOFade(1f, 0.3f).SetUpdate(true).SetLink(gameObject);
-            illustration.Play();
+            promptLabel.SetKey(LocKeys.Calibration.PoseTutorial);
+            // Discarded on purpose: the tweens are awaitable through UniTask's DOTween support but run fire-and-forget.
+            _ = placeholderGroup.DOFade(0f, 0.3f).SetUpdate(true).SetLink(gameObject);
+            _ = setupTipGroup.DOFade(0f, 0.3f).SetUpdate(true).SetLink(gameObject);
+            _ = playersGroup.DOFade(1f, 0.3f).SetUpdate(true).SetLink(gameObject);
             var seconds = tutorialSeen ? tutorialSecondsSeen : tutorialSeconds;
             await WaitOrSkipAsync(UniTask.Delay(TimeSpan.FromSeconds(seconds), DelayType.UnscaledDeltaTime, cancellationToken: ct), ct);
             EndStep("tutorial");
@@ -208,7 +236,7 @@ namespace Nex.BilliardRogue
         async UniTask TestStrikeAsync(CancellationToken ct)
         {
             BeginStep(Step.TestStrike);
-            promptLabel.text = strings.testStrike;
+            promptLabel.SetKey(LocKeys.Calibration.TestStrike);
             var hasInput = true;
             for (var i = 0; i < numPlayers; i++)
             {
@@ -231,8 +259,12 @@ namespace Nex.BilliardRogue
             EndStep("test_strike");
 
             BeginStep(Step.Ready);
-            illustration.Stop();
-            promptLabel.text = numPlayers > 1 ? strings.allReady : strings.ready;
+            for (var i = 0; i < numPlayers; i++)
+            {
+                SetPlayerStatus(i, true);
+            }
+
+            promptLabel.SetKey(numPlayers > 1 ? LocKeys.Calibration.AllReady : LocKeys.Calibration.Ready);
             await UniTask.Delay(TimeSpan.FromSeconds(readySeconds), DelayType.UnscaledDeltaTime, cancellationToken: ct);
         }
 
@@ -248,7 +280,7 @@ namespace Nex.BilliardRogue
                     playerReady[i] = true;
                     readyCount++;
                     SetPlayerStatus(i, true);
-                    promptLabel.text = strings.strikeSuccess;
+                    promptLabel.SetKey(LocKeys.Calibration.StrikeSuccess);
                     illustration.Flash();
                     SfxManager.Instance.PlaySoundEffect(SfxManager.SoundEffect.UiSelect);
                 }
@@ -272,6 +304,16 @@ namespace Nex.BilliardRogue
         {
             CurrentStep = step;
             stepStartTime = Time.realtimeSinceStartup;
+            // Pips count the four player-facing steps; Starting shows none, Ready shows all done.
+            stepPips.Set(step switch
+            {
+                Step.MoveIn => 0,
+                Step.RaiseHand => 1,
+                Step.Tutorial => 2,
+                Step.TestStrike => 3,
+                Step.Ready => 4,
+                _ => -1,
+            });
         }
 
         void EndStep(string analyticsStep)
@@ -281,61 +323,8 @@ namespace Nex.BilliardRogue
 
         void SetPlayerStatus(int playerIndex, bool ready)
         {
-            if (playerIndex >= playerStatusLabels.Length) return;
-            playerStatusLabels[playerIndex].text = ready ? strings.playerReady[playerIndex] : strings.waiting[playerIndex];
-        }
-
-        /// <summary>Localized copy fetched once per calibration (labels change every step, so no per-label components).</summary>
-        sealed class Strings
-        {
-            public string starting = "";
-            public string moveIn = "";
-            public string raiseHand = "";
-            public string poseTutorial = "";
-            public string tutorialHint = "";
-            public string leftHandedHint = "";
-            public string testStrike = "";
-            public string strikeSuccess = "";
-            public string ready = "";
-            public string allReady = "";
-            public readonly string[] playerReady = new string[MaxPlayers];
-            public readonly string[] waiting = new string[MaxPlayers];
-
-            public static async UniTask<Strings> LoadAsync(int numPlayers, CancellationToken ct)
-            {
-                await LocalizationSettings.InitializationOperation.ToUniTask(cancellationToken: ct);
-                var strings = new Strings
-                {
-                    starting = await GetAsync(LocKeys.Calibration.Starting, ct),
-                    moveIn = await GetAsync(LocKeys.Calibration.MoveIn, ct),
-                    raiseHand = await GetAsync(LocKeys.Calibration.RaiseHand, ct),
-                    poseTutorial = await GetAsync(LocKeys.Calibration.PoseTutorial, ct),
-                    tutorialHint = await GetAsync(LocKeys.Calibration.TutorialHint, ct),
-                    leftHandedHint = await GetAsync(LocKeys.Calibration.LeftHandedHint, ct),
-                    testStrike = await GetAsync(LocKeys.Calibration.TestStrike, ct),
-                    strikeSuccess = await GetAsync(LocKeys.Calibration.StrikeSuccess, ct),
-                    ready = await GetAsync(LocKeys.Calibration.Ready, ct),
-                    allReady = await GetAsync(LocKeys.Calibration.AllReady, ct),
-                };
-                for (var i = 0; i < numPlayers && i < MaxPlayers; i++)
-                {
-                    IList<object> playerNumber = new object[] { i + 1 };
-                    strings.playerReady[i] = await GetAsync(LocKeys.Calibration.PlayerReady, playerNumber, ct);
-                    strings.waiting[i] = await GetAsync(LocKeys.Calibration.Waiting, playerNumber, ct);
-                }
-
-                return strings;
-            }
-
-            static UniTask<string> GetAsync(string key, CancellationToken ct)
-            {
-                return LocalizationSettings.StringDatabase.GetLocalizedStringAsync(LocKeys.Table, key).ToUniTask(cancellationToken: ct);
-            }
-
-            static UniTask<string> GetAsync(string key, IList<object> arguments, CancellationToken ct)
-            {
-                return LocalizationSettings.StringDatabase.GetLocalizedStringAsync(LocKeys.Table, key, arguments).ToUniTask(cancellationToken: ct);
-            }
+            if (playerIndex >= playerCards.Length) return;
+            playerCards[playerIndex].Set(playerIndex, ready);
         }
 
         #endregion

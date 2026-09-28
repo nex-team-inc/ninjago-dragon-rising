@@ -40,6 +40,8 @@ namespace Nex.BilliardRogue.Editor
             ("vignette", SpritesUi + "Overlay_Vignette.png"), ("logo", SpritesUi + "Logo_BilliardRogue.png"),
             ("portraitP1", SpritesUi + "Portrait_CatP1.png"), ("portraitP2", SpritesUi + "Portrait_CatP2.png"),
             ("rewardHeal", SpritesIcons + "Reward_Heal.png"), ("rewardMaxHp", SpritesIcons + "Reward_MaxHp.png"),
+            ("cameraGlyph", SpritesUi + "Icon_Camera.png"), ("paw", SpritesUi + "Icon_Paw.png"), ("cue", SpritesUi + "Icon_Cue.png"),
+            ("strike", SpritesUi + "Icon_Strike.png"),
         };
 
         [MenuItem("Nex/Billiard Rogue/UI Views", priority = 60)]

@@ -13,6 +13,12 @@ namespace Nex.BilliardRogue
             public const string TutorialHint = "br.ui.calibration.tutorialHint";  // en: Left paw = ball · Right paw = cue
             public const string StrikeSuccess = "br.ui.calibration.strikeSuccess"; // en: Nice strike!
             public const string AllReady = "br.ui.calibration.allReady";          // en: Everyone's ready. Let's go!
+            public const string LeftPawTag = "br.ui.calibration.leftPawTag";      // en: L
+            public const string RightPawTag = "br.ui.calibration.rightPawTag";    // en: R
+            public const string ControlsHeader = "br.ui.calibration.controlsHeader"; // en: How to play
+            public const string ControlBall = "br.ui.calibration.controlBall";    // en: Left paw: move the ball
+            public const string ControlCue = "br.ui.calibration.controlCue";      // en: Right paw: aim the cue
+            public const string ControlStrike = "br.ui.calibration.controlStrike"; // en: Snap right paw into left paw: shoot!
         }
 
         public static partial class Hud

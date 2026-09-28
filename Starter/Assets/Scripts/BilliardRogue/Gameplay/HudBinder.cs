@@ -116,7 +116,12 @@ namespace Nex.BilliardRogue
 
         #region Pushes
 
-        public void SetStage() => hud.SetStage(run.actIndex, run.stageInAct, run.stage.isBoss);
+        public void SetStage()
+        {
+            hud.SetStage(run.actIndex, run.stageInAct, run.stage.isBoss);
+            // A reward can level up a bag ball without changing the count or the next index: re-push the bag.
+            queueIndex = -1;
+        }
 
         public void SetFastForward(bool on)
         {

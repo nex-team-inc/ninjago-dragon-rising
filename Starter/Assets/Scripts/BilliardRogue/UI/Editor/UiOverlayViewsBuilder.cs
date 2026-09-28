@@ -180,20 +180,21 @@ namespace Nex.BilliardRogue.Editor
             var view = UiViewsBuilder.ViewRoot<TrackingLostView>(kit, root, out var content);
             var c = content.transform;
             kit.DimLayers(c);
-            var panel = kit.Image(c, "Panel", theme.Panel, Kit.Center, Vector2.zero, new Vector2(1280f, 576f), Fill.Tiled);
+            // Kept inside the centre band (x 480..1440): the PiP camera feed stays visible at the top-left meanwhile.
+            var panel = kit.Image(c, "Panel", theme.Panel, Kit.Center, new Vector2(0f, -24f), new Vector2(960f, 576f), Fill.Tiled);
             var p = panel.transform;
-            kit.Label(p, "Header", LocKeys.TrackingLost.Header, 96, theme.Accent, Kit.Center, new Vector2(0f, 176f), new Vector2(1200f, 128f));
-            var portrait = kit.Image(p, "Portrait", theme.PortraitP1, Kit.Center, new Vector2(-424f, -40f), new Vector2(256f, 256f));
-            var chip = kit.Image(p, "PlayerChip", theme.Chip, Kit.Center, new Vector2(-424f, -212f), new Vector2(160f, 64f), Fill.Sliced);
+            kit.Label(p, "Header", LocKeys.TrackingLost.Header, 64, theme.Accent, Kit.Center, new Vector2(0f, 200f), new Vector2(880f, 96f));
+            var portrait = kit.Image(p, "Portrait", theme.PortraitP1, Kit.Center, new Vector2(-272f, -24f), new Vector2(256f, 256f));
+            var chip = kit.Image(p, "PlayerChip", theme.Chip, Kit.Center, new Vector2(-272f, -192f), new Vector2(160f, 64f), Fill.Sliced);
             var chipLabel = kit.Label(chip.transform, "Label", LocKeys.Hud.PlayerTag, 48, theme.PlayerColor(0), Kit.Center, new Vector2(0f, 3f), new Vector2(144f, 64f));
             var waiting = kit.Ui("Waiting", p);
-            Kit.Place(waiting, Kit.Center, new Vector2(152f, -72f), new Vector2(832f, 256f));
-            var body = kit.Label(waiting.transform, "Body", LocKeys.TrackingLost.Body, 48, theme.TextPrimary, Kit.Center, new Vector2(0f, 48f), new Vector2(832f, 64f));
-            kit.Label(waiting.transform, "Hint", LocKeys.TrackingLost.Hint, 32, theme.TextMuted, Kit.Center, new Vector2(0f, -56f),
-                new Vector2(736f, 112f), TextAlignmentOptions.Top, wrap: true);
+            Kit.Place(waiting, Kit.Center, new Vector2(144f, -48f), new Vector2(544f, 288f));
+            var body = kit.Label(waiting.transform, "Body", LocKeys.TrackingLost.Body, 48, theme.TextPrimary, Kit.Center, new Vector2(0f, 72f), new Vector2(544f, 64f));
+            kit.Label(waiting.transform, "Hint", LocKeys.TrackingLost.Hint, 32, theme.TextMuted, Kit.Center, new Vector2(0f, -40f),
+                new Vector2(512f, 144f), TextAlignmentOptions.Top, wrap: true);
             var resuming = kit.Ui("Resuming", p);
-            Kit.Place(resuming, Kit.Center, new Vector2(152f, -72f), new Vector2(832f, 256f));
-            kit.Label(resuming.transform, "Label", LocKeys.TrackingLost.Resuming, 48, theme.Positive, Kit.Center, new Vector2(0f, 48f), new Vector2(832f, 64f));
+            Kit.Place(resuming, Kit.Center, new Vector2(144f, -48f), new Vector2(544f, 288f));
+            kit.Label(resuming.transform, "Label", LocKeys.TrackingLost.Resuming, 48, theme.Positive, Kit.Center, new Vector2(0f, 72f), new Vector2(544f, 64f));
             resuming.SetActive(false);
 
             UiFields.Set(view, "bodyLabel", body);
@@ -226,7 +227,8 @@ namespace Nex.BilliardRogue.Editor
             kit.DimLayers(c);
             var title = kit.Label(c, "Title", LocKeys.Summary.Victory, 96, theme.Accent, Kit.Center, new Vector2(0f, 424f), new Vector2(1200f, 128f));
             var stage = kit.Label(c, "Stage", LocKeys.Summary.StageReached, 48, theme.TextPrimary, Kit.Center, new Vector2(0f, 336f), new Vector2(1400f, 64f));
-            var record = kit.Image(c, "NewRecord", theme.Chip, Kit.Center, new Vector2(560f, 448f), new Vector2(352f, 64f), Fill.Sliced);
+            // A stamp beside the result title (it is the headline's news, not a separate element).
+            var record = kit.Image(c, "NewRecord", theme.Chip, Kit.Center, new Vector2(416f, 440f), new Vector2(352f, 64f), Fill.Sliced);
             record.rectTransform.localRotation = Quaternion.Euler(0f, 0f, 8f);
             kit.Label(record.transform, "Label", LocKeys.Summary.NewRecord, 32, theme.Accent, Kit.Center, new Vector2(0f, 2f), new Vector2(336f, 48f));
             record.gameObject.SetActive(false);

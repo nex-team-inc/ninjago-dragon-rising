@@ -6,6 +6,11 @@ namespace Nex.BilliardRogue
     // "(smart)" marks smart-string entries with {n} arguments.
     public static partial class LocKeys
     {
+        public static partial class Title
+        {
+            public const string NoRecordYet = "br.ui.title.noRecordYet";      // en: Best run: none yet
+        }
+
         public static partial class PlayerMode
         {
             public const string SoloHint = "br.ui.playerMode.soloHint";       // en: Solo: one cat, one cue

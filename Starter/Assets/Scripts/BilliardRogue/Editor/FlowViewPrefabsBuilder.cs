@@ -1,121 +1,271 @@
 #nullable enable
 
+using System.Collections.Generic;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
+using Fill = Nex.BilliardRogue.Editor.UiPrefabKit.Fill;
+using Kit = Nex.BilliardRogue.Editor.UiPrefabKit;
 
 namespace Nex.BilliardRogue.Editor
 {
     /// <summary>
-    /// The two Flow views: CalibrationView (nested starter PreviewsManager + pose tutorial panel) and GameplayView
-    /// (label layer, nested GameplayHud, session host, input root, overlay prefab slots). Both are regenerated over
-    /// their existing paths by FlowPrefabsBuilder.
+    /// The two Flow views, drawn with the UI-Views kit (UiTheme sprites, drop-shadow labels bound to LocKeys):
+    /// CalibrationView (controls card, camera panel hosting the nested starter PreviewsManager and the player cards,
+    /// step pips, prompt, curtain) and GameplayView (label layer, nested GameplayHud, session host, input root, overlay
+    /// prefab slots, curtain). Both are regenerated over their existing paths by FlowPrefabsBuilder.
+    /// Layout in 1920x1080 units.
     /// </summary>
     public static class FlowViewPrefabsBuilder
     {
         const string PreviewsManagerPath = "Assets/Prefabs/Detection/Preview/PreviewsManager.prefab";
         const string GameplayHudPath = "Assets/Prefabs/BilliardRogue/UI/GameplayHud.prefab";
 
-        const int HeaderFontSize = 48;
-        const int BodyFontSize = 32;
-        static readonly Color ballColor = new(1f, 0.93f, 0.55f);
-        static readonly Color cueColor = new(0.95f, 0.6f, 0.35f);
-        static readonly Color hintColor = new(0.85f, 0.85f, 0.95f);
+        const float MainTop = 208f;
+        const float MainHeight = 672f;
+        const float SideMargin = 64f;
+        const float CardWidth = 640f;
+        static readonly Vector2 cameraPanelSize = new(1088f, MainHeight);
+        /// <summary>Setup previews area inside the camera panel (the tip line sits under it).</summary>
+        const float PanelInset = 32f;
+        static readonly Vector2 previewsSize = new(1024f, 528f);
 
         #region Calibration view
 
         public static CalibrationView BuildCalibrationView(string path)
         {
+            var kit = new Kit(LoadTheme());
+            var theme = kit.Theme;
             var root = FlowUiFactory.CreateViewRoot<CalibrationView>("CalibrationView", out var view);
             var rootGroup = root.GetComponent<CanvasGroup>();
             var animators = FlowUiFactory.CreateUIObject("Animators", root.transform);
             var entry = FlowUiFactory.CreateFadeAnimator("EntryAnimator", animators.transform, rootGroup, 0f, 1f);
             var graph = FlowUiFactory.CreateGraphWithBackProxy(root.transform, null, TopLevelControlPanel.ControlConfig.Back);
 
-            var ui = FlowUiFactory.CreateUIObject("UI", root.transform);
-            FlowUiFactory.Stretch(ui);
-            var header = FlowUiFactory.CreateLabel("Header", ui.transform, HeaderFontSize, TextAlignmentOptions.Center, LocKeys.Calibration.Header, "Camera setup");
-            FlowUiFactory.Place(header.gameObject, new Vector2(0.5f, 1f), new Vector2(0f, -48f), new Vector2(1600f, 80f));
-            var prompt = FlowUiFactory.CreateLabel("Prompt", ui.transform, BodyFontSize, TextAlignmentOptions.Center, null, "Starting the camera…");
-            FlowUiFactory.Place(prompt.gameObject, new Vector2(0.5f, 0f), new Vector2(0f, 96f), new Vector2(1600f, 96f));
+            var ui = kit.Ui("UI", root.transform);
+            Kit.Stretch(ui);
+            var u = ui.transform;
+            kit.StretchImage(u, "Vignette", theme.Vignette, 0f, Fill.Simple, theme.VignetteColor).preserveAspect = false;
+            UiMenuViewsBuilder.Banner(kit, u, "Header", LocKeys.Calibration.Header, new Vector2(0f, -32f), 896f);
+            var pips = BuildStepPips(kit, u);
+            var illustration = BuildControlsCard(kit, u);
+            var camera = kit.Image(u, "CameraPanel", theme.Panel, Kit.TopRight, new Vector2(-SideMargin, -MainTop), cameraPanelSize, Fill.Tiled).transform;
+            var placeholder = BuildPlaceholder(kit, camera, out var setupTip);
+            var players = BuildPlayerCards(kit, camera, out var cards);
+            // Navy strip behind the prompt: the cat and the arena show through the bottom of the screen.
+            kit.Image(u, "PromptBacking", theme.Chip, Kit.Bottom, new Vector2(0f, 88f), new Vector2(1280f, 80f), Fill.Sliced, new Color(1f, 1f, 1f, 0.92f));
+            var prompt = kit.Label(u, "Prompt", LocKeys.Calibration.Starting, 48, theme.TextPrimary, Kit.Bottom, new Vector2(0f, 96f), new Vector2(1728f, 64f));
+            var hint = kit.Label(u, "Hint", LocKeys.Calibration.LeftHandedHint, 32, theme.Accent, Kit.Bottom, new Vector2(0f, 40f), new Vector2(1728f, 48f));
 
-            var tutorial = BuildTutorialPanel(ui.transform, out var illustration, out var hint, out var statusLabels);
             var inputRoot = FlowUiFactory.CreateUIObject("InputRoot", root.transform);
-            FlowUiFactory.InstantiateNested(PreviewsManagerPath, root.transform, "starter");
+            var previews = FlowUiFactory.InstantiateNested(PreviewsManagerPath, root.transform, "starter");
+            if (previews != null) FitPreviews(previews);
+            var curtain = Curtain(kit, root.transform);
 
             var so = new SerializedObject(view);
             so.FindProperty("entryAnimator").objectReferenceValue = entry;
             so.FindProperty("keyResponder").objectReferenceValue = graph;
             so.FindProperty("previewsManager").objectReferenceValue = root.GetComponentInChildren<PreviewsManager>(true);
-            so.FindProperty("tutorialGroup").objectReferenceValue = tutorial;
             so.FindProperty("illustration").objectReferenceValue = illustration;
-            so.FindProperty("promptLabel").objectReferenceValue = prompt;
             so.FindProperty("hintLabel").objectReferenceValue = hint;
-            var labels = so.FindProperty("playerStatusLabels");
-            labels.arraySize = statusLabels.Length;
-            for (var i = 0; i < statusLabels.Length; i++)
+            so.FindProperty("placeholderGroup").objectReferenceValue = placeholder;
+            so.FindProperty("setupTipGroup").objectReferenceValue = setupTip;
+            so.FindProperty("playersGroup").objectReferenceValue = players;
+            var cardsProperty = so.FindProperty("playerCards");
+            cardsProperty.arraySize = cards.Count;
+            for (var i = 0; i < cards.Count; i++)
             {
-                labels.GetArrayElementAtIndex(i).objectReferenceValue = statusLabels[i];
+                cardsProperty.GetArrayElementAtIndex(i).objectReferenceValue = cards[i];
             }
 
+            so.FindProperty("stepPips").objectReferenceValue = pips;
+            so.FindProperty("promptLabel").objectReferenceValue = prompt;
+            so.FindProperty("theme").objectReferenceValue = theme;
+            so.FindProperty("curtain").objectReferenceValue = curtain;
             so.FindProperty("inputRoot").objectReferenceValue = inputRoot.transform;
             so.ApplyModifiedPropertiesWithoutUndo();
 
+            foreach (var warning in kit.Warnings) Debug.LogWarning("[FlowPrefabs] " + warning);
             return FlowUiFactory.SavePrefab(root, path).GetComponent<CalibrationView>();
         }
 
-        static CanvasGroup BuildTutorialPanel(Transform parent, out CalibrationTutorialIllustration illustration,
-            out TextMeshProUGUI hint, out TextMeshProUGUI[] statusLabels)
+        /// <summary>1 move in · 2 raise hand · 3 pose · 4 test strike, joined by short links, under the header ribbon.</summary>
+        static CalibrationStepPips BuildStepPips(Kit kit, Transform parent)
         {
-            var panelGo = FlowUiFactory.CreateUIObject("Tutorial", parent);
-            FlowUiFactory.Place(panelGo, new Vector2(0.5f, 0.5f), new Vector2(0f, 40f), new Vector2(960f, 560f));
-            var group = panelGo.AddComponent<CanvasGroup>();
-            group.alpha = 0f;
-            var frame = FlowUiFactory.CreateImage("Panel", panelGo.transform, "Frame_Panel", Color.white);
-            FlowUiFactory.Stretch(frame.gameObject);
-
-            var illustrationGo = FlowUiFactory.CreateUIObject("Illustration", panelGo.transform);
-            FlowUiFactory.Place(illustrationGo, new Vector2(0.5f, 0.5f), new Vector2(0f, 70f), new Vector2(640f, 300f));
-            illustration = illustrationGo.AddComponent<CalibrationTutorialIllustration>();
-            var leftPaw = CreatePaw("LeftPaw", illustrationGo.transform, "Icon_Ball", ballColor, new Vector2(-110f, 30f));
-            var rightPaw = CreatePaw("RightPaw", illustrationGo.transform, "Cursor", cueColor, new Vector2(120f, -100f));
-            var leftTag = FlowUiFactory.CreateLabel("LeftTag", leftPaw.transform, 16, TextAlignmentOptions.Center, null, "L");
-            FlowUiFactory.Place(leftTag.gameObject, new Vector2(0.5f, 0f), new Vector2(0f, -8f), new Vector2(120f, 32f));
-            var rightTag = FlowUiFactory.CreateLabel("RightTag", rightPaw.transform, 16, TextAlignmentOptions.Center, null, "R");
-            FlowUiFactory.Place(rightTag.gameObject, new Vector2(0.5f, 0f), new Vector2(0f, -8f), new Vector2(120f, 32f));
-            FlowUiFactory.SetReference(illustration, "leftPaw", leftPaw.transform);
-            FlowUiFactory.SetReference(illustration, "rightPaw", rightPaw.transform);
-
-            hint = FlowUiFactory.CreateLabel("Hint", panelGo.transform, BodyFontSize, TextAlignmentOptions.Center, null, "Left paw = ball · Right paw = cue");
-            hint.color = hintColor;
-            FlowUiFactory.Place(hint.gameObject, new Vector2(0.5f, 0f), new Vector2(0f, 140f), new Vector2(880f, 48f));
-
-            var statusRow = FlowUiFactory.CreateUIObject("PlayerStatus", panelGo.transform);
-            FlowUiFactory.Place(statusRow, new Vector2(0.5f, 0f), new Vector2(0f, 60f), new Vector2(880f, 48f));
-            var layout = statusRow.AddComponent<HorizontalLayoutGroup>();
-            layout.childAlignment = TextAnchor.MiddleCenter;
-            layout.spacing = 48f;
-            layout.childControlWidth = true;
-            layout.childControlHeight = true;
-            layout.childForceExpandWidth = true;
-            layout.childForceExpandHeight = true;
-            statusLabels = new TextMeshProUGUI[2];
-            for (var i = 0; i < statusLabels.Length; i++)
+            var theme = kit.Theme;
+            const int count = 4;
+            const float pip = 64f;
+            const float link = 48f;
+            var width = count * pip + (count - 1) * link;
+            var row = kit.Ui("Steps", parent);
+            Kit.Place(row, Kit.Top, new Vector2(0f, -140f), new Vector2(width, 56f));
+            var pipImages = new List<Object>();
+            var numbers = new List<Object>();
+            var links = new List<Object>();
+            for (var i = 0; i < count; i++)
             {
-                statusLabels[i] = FlowUiFactory.CreateLabel($"Player{i + 1}Status", statusRow.transform, BodyFontSize, TextAlignmentOptions.Center, null, $"Waiting for player {i + 1}…");
-                statusLabels[i].gameObject.SetActive(false);
+                var x = -width * 0.5f + pip * 0.5f + i * (pip + link);
+                if (i > 0)
+                {
+                    var bar = kit.Image(row.transform, $"Link{i}", null, Kit.Center, new Vector2(x - (pip + link) * 0.5f, 0f), new Vector2(link - 8f, 6f),
+                        color: theme.Disabled);
+                    bar.preserveAspect = false;
+                    links.Add(bar);
+                }
+
+                var image = kit.Image(row.transform, $"Pip{i + 1}", theme.Chip, Kit.Center, new Vector2(x, 0f), new Vector2(pip, 56f), Fill.Sliced);
+                pipImages.Add(image);
+                numbers.Add(kit.Label(image.transform, "Number", null, 48, theme.Disabled, Kit.Center, new Vector2(0f, 3f), new Vector2(pip, 56f),
+                    numbersPreview: (i + 1).ToString()));
+            }
+
+            var widget = row.AddComponent<CalibrationStepPips>();
+            UiFields.Set(widget, "theme", theme);
+            UiFields.SetArray(widget, "pips", pipImages);
+            UiFields.SetArray(widget, "numbers", numbers);
+            UiFields.SetArray(widget, "links", links);
+            return widget;
+        }
+
+        /// <summary>Parchment card: title, the animated paws on a navy stage (clipped), and the three control rows.</summary>
+        static CalibrationTutorialIllustration BuildControlsCard(Kit kit, Transform parent)
+        {
+            var theme = kit.Theme;
+            var card = kit.Image(parent, "ControlsCard", theme.Card, Kit.TopLeft, new Vector2(SideMargin, -MainTop), new Vector2(CardWidth, MainHeight), Fill.Tiled).transform;
+            kit.Label(card, "Title", LocKeys.Calibration.ControlsHeader, 48, theme.TextDark, Kit.Top, new Vector2(0f, -24f), new Vector2(560f, 64f), shadow: false);
+
+            var stage = kit.Image(card, "Stage", theme.BarBackground, Kit.Top, new Vector2(0f, -104f), new Vector2(576f, 288f), Fill.Sliced);
+            stage.gameObject.AddComponent<RectMask2D>();
+            var s = stage.transform;
+            var leftPaw = Paw(kit, s, "LeftPaw", new Vector2(-120f, -8f), 0f, LocKeys.Calibration.LeftPawTag);
+            var ball = kit.Image(s, "Ball", theme.Ball, Kit.Center, new Vector2(-120f, 64f), new Vector2(64f, 64f));
+            var ballGroup = ball.gameObject.AddComponent<CanvasGroup>();
+            var burst = kit.Image(s, "Burst", theme.Strike, Kit.Center, Vector2.zero, new Vector2(64f, 64f));
+            var burstGroup = burst.gameObject.AddComponent<CanvasGroup>();
+            burstGroup.alpha = 0f;
+            // Toes point at the ball: the cue paw strikes leftwards (the screen is a mirror).
+            var rightPaw = Paw(kit, s, "RightPaw", new Vector2(112f, -32f), 90f, LocKeys.Calibration.RightPawTag);
+            ball.transform.SetAsLastSibling();
+
+            var illustration = stage.gameObject.AddComponent<CalibrationTutorialIllustration>();
+            UiFields.Set(illustration, "leftPaw", leftPaw);
+            UiFields.Set(illustration, "rightPaw", rightPaw);
+            UiFields.Set(illustration, "ball", ball.rectTransform);
+            UiFields.Set(illustration, "ballGroup", ballGroup);
+            UiFields.Set(illustration, "burst", burst.rectTransform);
+            UiFields.Set(illustration, "burstGroup", burstGroup);
+            var so = new SerializedObject(illustration);
+            so.FindProperty("restOffset").vector2Value = new Vector2(232f, -24f);
+            so.FindProperty("contactOffset").vector2Value = new Vector2(88f, -16f);
+            so.FindProperty("ballOffset").vector2Value = new Vector2(0f, 72f);
+            so.FindProperty("ballFlyHeight").floatValue = 112f;
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            ControlRow(kit, card, "BallRow", theme.Ball, LocKeys.Calibration.ControlBall, -408f);
+            ControlRow(kit, card, "CueRow", theme.Cue, LocKeys.Calibration.ControlCue, -488f);
+            ControlRow(kit, card, "StrikeRow", theme.Strike, LocKeys.Calibration.ControlStrike, -568f);
+            return illustration;
+        }
+
+        /// <summary>Paw root (moved by the illustration) with the glyph (rotated) and an unrotated L/R tag under it.</summary>
+        static RectTransform Paw(Kit kit, Transform parent, string name, Vector2 pos, float rotation, string tagKey)
+        {
+            var theme = kit.Theme;
+            var root = kit.Ui(name, parent);
+            var rect = Kit.Place(root, Kit.Center, pos, new Vector2(96f, 96f));
+            var glyph = kit.Image(root.transform, "Glyph", theme.Paw, Kit.Center, Vector2.zero, new Vector2(96f, 96f));
+            glyph.rectTransform.localRotation = Quaternion.Euler(0f, 0f, rotation);
+            var tag = kit.Image(root.transform, "Tag", theme.Chip, Kit.Center, new Vector2(0f, -80f), new Vector2(64f, 48f), Fill.Sliced);
+            kit.Label(tag.transform, "Label", tagKey, 32, theme.Accent, Kit.Center, new Vector2(0f, 2f), new Vector2(56f, 48f));
+            return rect;
+        }
+
+        static void ControlRow(Kit kit, Transform card, string name, Sprite? icon, string key, float y)
+        {
+            var theme = kit.Theme;
+            var row = kit.Ui(name, card);
+            Kit.Place(row, Kit.Top, new Vector2(0f, y), new Vector2(576f, 72f));
+            var slot = kit.Image(row.transform, "IconSlot", theme.Slot, Kit.Left, Vector2.zero, new Vector2(72f, 72f), Fill.Sliced);
+            kit.Image(slot.transform, "Icon", icon, Kit.Center, Vector2.zero, new Vector2(48f, 48f));
+            kit.Label(row.transform, "Text", key, 32, theme.TextDark, Kit.Left, new Vector2(96f, 2f), new Vector2(480f, 72f),
+                TextAlignmentOptions.Left, wrap: true, shadow: false);
+        }
+
+        /// <summary>Camera glyph on an empty screen (until the setup previews move in) + the tip line under them.</summary>
+        static CanvasGroup BuildPlaceholder(Kit kit, Transform panel, out CanvasGroup setupTip)
+        {
+            var theme = kit.Theme;
+            var go = kit.Ui("Placeholder", panel);
+            Kit.Stretch(go);
+            var group = go.AddComponent<CanvasGroup>();
+            // Same rect as the previews container (FitPreviews): the setup frames cover the glyph once the camera runs.
+            kit.Image(go.transform, "Screen", theme.BarBackground, Kit.Top, new Vector2(0f, -PanelInset), previewsSize, Fill.Sliced);
+            kit.Image(go.transform, "Glyph", theme.CameraGlyph, Kit.Top, new Vector2(0f, -PanelInset - (previewsSize.y - 192f) * 0.5f),
+                new Vector2(192f, 192f), color: new Color(1f, 1f, 1f, 0.55f));
+            var tip = kit.Label(panel, "SetupTip", LocKeys.TrackingLost.Hint, 32, theme.TextMuted, Kit.Bottom, new Vector2(0f, 28f), new Vector2(1024f, 48f));
+            setupTip = tip.gameObject.AddComponent<CanvasGroup>();
+            return group;
+        }
+
+        /// <summary>Test-strike cards (one per player; CalibrationView places them for 1P or 2P).</summary>
+        static CanvasGroup BuildPlayerCards(Kit kit, Transform panel, out List<CalibrationPlayerCard> cards)
+        {
+            var theme = kit.Theme;
+            var go = kit.Ui("Players", panel);
+            Kit.Stretch(go);
+            var group = go.AddComponent<CanvasGroup>();
+            group.alpha = 0f;
+            cards = new List<CalibrationPlayerCard>();
+            for (var i = 0; i < 2; i++)
+            {
+                var cardGo = kit.Ui($"PlayerCard{i + 1}", go.transform);
+                Kit.Place(cardGo, Kit.Center, new Vector2(-232f + 464f * i, 0f), new Vector2(400f, 528f));
+                var glow = kit.StretchImage(cardGo.transform, "ReadyGlow", theme.ButtonFocused, -18f, Fill.Sliced);
+                glow.gameObject.SetActive(false);
+                var frame = kit.StretchImage(cardGo.transform, "Frame", theme.Card, 0f, Fill.Tiled).transform;
+                var portrait = kit.Image(frame, "Portrait", theme.Portrait(i), Kit.Top, new Vector2(0f, -24f), new Vector2(256f, 256f));
+                if (i == 1) portrait.rectTransform.localScale = new Vector3(-1f, 1f, 1f);
+                var tag = kit.Image(frame, "PlayerTag", theme.Chip, Kit.Top, new Vector2(0f, -296f), new Vector2(112f, 64f), Fill.Sliced);
+                var tagLabel = kit.Label(tag.transform, "Label", LocKeys.Hud.PlayerTag, 48, theme.PlayerColor(i), Kit.Center, new Vector2(0f, 3f),
+                    new Vector2(104f, 64f));
+                var statusChip = kit.Image(frame, "Status", theme.Chip, Kit.Bottom, new Vector2(0f, 32f), new Vector2(352f, 88f), Fill.Sliced);
+                var status = kit.Label(statusChip.transform, "Label", LocKeys.Calibration.Waiting, 32, theme.TextMuted, Kit.Center, new Vector2(0f, 2f),
+                    new Vector2(320f, 80f), wrap: true);
+                var card = cardGo.AddComponent<CalibrationPlayerCard>();
+                UiFields.Set(card, "theme", theme);
+                UiFields.Set(card, "statusLabel", status);
+                UiFields.Set(card, "readyGlow", glow.gameObject);
+                UiFields.Set(card, "portrait", portrait.rectTransform);
+                UiFields.Set(card, "tagLabel", tagLabel);
+                cards.Add(card);
             }
 
             return group;
         }
 
-        static Image CreatePaw(string name, Transform parent, string spriteName, Color color, Vector2 position)
+        /// <summary>
+        /// The starter PreviewsManager is a plain-Transform root with its own canvas child ("UI"), made for a scene root:
+        /// nested under this view it collapsed to zero size and scale. Give that canvas the reference screen and put the previews
+        /// container on the camera panel's inner rect; hide its prompt (the view's prompt label says it).
+        /// </summary>
+        static void FitPreviews(GameObject previews)
         {
-            var image = FlowUiFactory.CreateImage(name, parent, spriteName, color);
-            image.preserveAspect = true;
-            FlowUiFactory.Place(image.gameObject, new Vector2(0.5f, 0.5f), position, new Vector2(96f, 96f));
-            return image;
+            var ui = (RectTransform)previews.transform.Find("UI");
+            ui.anchorMin = ui.anchorMax = ui.pivot = new Vector2(0.5f, 0.5f);
+            ui.sizeDelta = new Vector2(1920f, 1080f);
+            ui.anchoredPosition3D = Vector3.zero;
+            // A root canvas stores scale 0 (Unity drives it); nested, nothing does.
+            ui.localScale = Vector3.one;
+            var container = (RectTransform)ui.Find("UIRoot/PreviewsContainer");
+            var left = 1920f - SideMargin - cameraPanelSize.x + PanelInset;
+            var right = left + previewsSize.x;
+            var top = 1080f - MainTop - PanelInset;
+            var bottom = top - previewsSize.y;
+            container.anchorMin = new Vector2(left / 1920f, bottom / 1080f);
+            container.anchorMax = new Vector2(right / 1920f, top / 1080f);
+            container.offsetMin = container.offsetMax = Vector2.zero;
+            ui.Find("UIRoot/SetupText").gameObject.SetActive(false);
         }
 
         #endregion
@@ -124,6 +274,7 @@ namespace Nex.BilliardRogue.Editor
 
         public static GameplayView BuildGameplayView(string path, GameplayPip pipPrefab)
         {
+            var kit = new Kit(LoadTheme());
             var root = FlowUiFactory.CreateViewRoot<GameplayView>("GameplayView", out var view);
             var rootGroup = root.GetComponent<CanvasGroup>();
             var animators = FlowUiFactory.CreateUIObject("Animators", root.transform);
@@ -142,6 +293,7 @@ namespace Nex.BilliardRogue.Editor
             var session = sessionGo.AddComponent<GameSession>();
             var timeScale = sessionGo.AddComponent<TimeScaleController>();
             var inputRoot = FlowUiFactory.CreateUIObject("InputRoot", root.transform);
+            var curtain = Curtain(kit, root.transform);
 
             var so = new SerializedObject(view);
             so.FindProperty("entryAnimator").objectReferenceValue = entry;
@@ -151,6 +303,8 @@ namespace Nex.BilliardRogue.Editor
             so.FindProperty("timeScale").objectReferenceValue = timeScale;
             so.FindProperty("inputRoot").objectReferenceValue = inputRoot.transform;
             so.FindProperty("pipPrefab").objectReferenceValue = pipPrefab;
+            so.FindProperty("theme").objectReferenceValue = kit.Theme;
+            so.FindProperty("curtain").objectReferenceValue = curtain;
             so.FindProperty("stageIntroViewPrefab").objectReferenceValue = FlowUiFactory.LoadPrefabComponent<StageIntroView>(FlowUiFactory.ViewsFolder + "/StageIntroView.prefab", "UI-Views");
             so.FindProperty("rewardViewPrefab").objectReferenceValue = FlowUiFactory.LoadPrefabComponent<RewardView>(FlowUiFactory.ViewsFolder + "/RewardView.prefab", "UI-Views");
             so.FindProperty("trackingLostViewPrefab").objectReferenceValue = FlowUiFactory.LoadPrefabComponent<TrackingLostView>(FlowUiFactory.ViewsFolder + "/TrackingLostView.prefab", "UI-Views");
@@ -158,6 +312,29 @@ namespace Nex.BilliardRogue.Editor
             so.ApplyModifiedPropertiesWithoutUndo();
 
             return FlowUiFactory.SavePrefab(root, path).GetComponent<GameplayView>();
+        }
+
+        #endregion
+
+        #region Helpers
+
+        static UiTheme LoadTheme()
+        {
+            var theme = AssetDatabase.LoadAssetAtPath<UiTheme>(UiViewsBuilder.ThemePath);
+            if (theme == null) throw new System.InvalidOperationException($"{UiViewsBuilder.ThemePath} missing: run UiViewsBuilder first.");
+            return theme;
+        }
+
+        /// <summary>Full-screen opaque cover (last child, so it draws over the view), transparent until faded in.</summary>
+        static CanvasGroup Curtain(Kit kit, Transform root)
+        {
+            var image = kit.StretchImage(root, "Curtain", null, 0f, Fill.Simple, kit.Theme.CurtainColor);
+            image.preserveAspect = false;
+            var group = image.gameObject.AddComponent<CanvasGroup>();
+            group.alpha = 0f;
+            group.blocksRaycasts = false;
+            group.interactable = false;
+            return group;
         }
 
         #endregion

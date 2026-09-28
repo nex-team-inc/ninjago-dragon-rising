@@ -37,6 +37,11 @@ namespace Nex.BilliardRogue
 #endif
             Application.targetFrameRate = TargetFrameRate;
             GlobalOptions.shared.frameResolution = (1920, 1080);
+#if UNITY_EDITOR
+            // Editor CLI sessions drive play mode from an unfocused Editor, which otherwise pauses the player loop
+            // (the starter examples do the same; Android TV ignores this flag).
+            Application.runInBackground = true;
+#endif
             BootAsync(destroyCancellationToken).Forget();
         }
 

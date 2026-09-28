@@ -83,6 +83,8 @@ namespace Nex.BilliardRogue
 
         void Update()
         {
+            // The scene cats exist before any run: BoardPresenter.Initialize wires them at the first GameplayView.
+            if (settings == null) return;
             var dt = Time.deltaTime;
             phase += dt;
             if (!defeated)

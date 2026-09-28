@@ -99,15 +99,29 @@ namespace Nex.BilliardRogue
             // "Unlocked by this run" for the summary: the tier before this run's boss kills moved it.
             unlockTierAtRunStart = ctx.persistence.MetaProgress.highestUnlockTier;
 
-            // Title stays the root below Gameplay: PlayerMode and Calibration go without activating in between.
-            using (ctx.viewManager.CreateTransaction())
+            // Title stays the root below Gameplay: PlayerMode and Calibration go without activating in between, and
+            // the views they reveal stay faded out (KeepHidden) so neither PlayerMode nor the title flashes. The
+            // gameplay push is a cut too: the stage intro overlay right after it is the visible transition.
+            var covered = UnityEngine.Object.FindObjectsByType<RogueView>(FindObjectsSortMode.None);
+            foreach (var view in covered) view.KeepHidden = true;
+            try
             {
-                while (ctx.viewManager.TopViewIdentifier != View.ViewIdentifier.Title)
+                using (ctx.viewManager.CreateTransaction())
                 {
-                    await ctx.viewManager.PopView(animate: false);
-                }
+                    while (ctx.viewManager.TopViewIdentifier != View.ViewIdentifier.Title)
+                    {
+                        await ctx.viewManager.PopView(animate: false);
+                    }
 
-                await ctx.viewManager.PushView(gameplay);
+                    await ctx.viewManager.PushView(gameplay, animate: false);
+                }
+            }
+            finally
+            {
+                foreach (var view in covered)
+                {
+                    if (view != null) view.KeepHidden = false;
+                }
             }
         }
 
@@ -116,9 +130,9 @@ namespace Nex.BilliardRogue
             var seed = NextSeed != 0 ? NextSeed : PlayerDataManager.Instance.DebugSettings.fixedSeed;
             if (seed == 0) seed = UnityEngine.Random.Range(1, int.MaxValue);
             NextSeed = 0;
-            var run = runFactory.NewRun(ctx.rules, seed, numPlayers);
-            ctx.persistence.BeginRun(run);
-            return run;
+            // The session's TurnController calls persistence.BeginRun at its first stage (runsStarted + first save);
+            // doing it here as well counted every new run twice on the title.
+            return runFactory.NewRun(ctx.rules, seed, numPlayers);
         }
 
         #endregion

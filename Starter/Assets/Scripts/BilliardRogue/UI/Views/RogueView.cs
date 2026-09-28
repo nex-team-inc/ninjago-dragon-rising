@@ -79,8 +79,14 @@ namespace Nex.BilliardRogue
         public override async UniTask EnterForeground(ViewIdentifier childViewIdentifier, bool animate = true)
         {
             await base.EnterForeground(childViewIdentifier, animate);
-            if (hideWhenCovered) await FadeContent(1f, animate);
+            if (hideWhenCovered && !KeepHidden) await FadeContent(1f, animate);
         }
+
+        /// <summary>
+        /// While set, a covered view stays faded out when the view above it pops: RunFlow unwinds PlayerMode and
+        /// Calibration inside one transaction before it pushes Gameplay, and nothing in between should flash.
+        /// </summary>
+        public bool KeepHidden { get; set; }
 
         /// <summary>Completes when the view is destroyed (after its pop/replace); throws only when ct is cancelled.</summary>
         public async UniTask WaitClosedAsync(CancellationToken ct)

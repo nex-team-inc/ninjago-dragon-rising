@@ -50,6 +50,20 @@ namespace Nex.BilliardRogue
 
         #region Life Cycle
 
+        protected override void Awake()
+        {
+            base.Awake();
+            // RunFlow instantiates this view before it pops the views above the title: nothing shows until Present.
+            canvas.enabled = false;
+        }
+
+        public override async UniTask Present(bool animate = true)
+        {
+            canvas.enabled = true;
+            pip.SetVisible(true);
+            await base.Present(animate);
+        }
+
         public void Initialize(GameplayViewContext ctx)
         {
             context = ctx;
@@ -58,6 +72,7 @@ namespace Nex.BilliardRogue
             pip = Instantiate(pipPrefab);
             pip.Initialize(ctx.run.numPlayers, detection.PlayAreaController, detection.BodyPoseDetectionManager);
             pip.SetActivePlayer(ctx.run.numPlayers > 1 ? ctx.run.activePlayerIndex : -1);
+            pip.SetVisible(false);
 
             // The HUD prefab (UI-Views) is nested by FlowPrefabsBuilder; a missing one degrades to a no-op relay.
             var hudWidget = GetComponentInChildren<GameplayHud>(true);

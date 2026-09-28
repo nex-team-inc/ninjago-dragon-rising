@@ -30,6 +30,7 @@ namespace Nex.BilliardRogue.Editor
         public static readonly Color HealGreen = new(0.38f, 1f, 0.42f);
         public static readonly Color PoisonGreen = new(0.5f, 0.95f, 0.18f);
         public static readonly Color PoisonPurple = new(0.6f, 0.24f, 0.9f);
+        public static readonly Color PoisonDark = new(0.42f, 0.2f, 0.55f);
         public static readonly Color SmokeLight = new(0.93f, 0.91f, 0.98f);
         public static readonly Color SmokeLavender = new(0.7f, 0.66f, 0.84f);
         public static readonly Color Soot = new(0.42f, 0.38f, 0.42f);

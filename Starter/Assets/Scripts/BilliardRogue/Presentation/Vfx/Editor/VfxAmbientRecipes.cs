@@ -31,18 +31,18 @@ namespace Nex.BilliardRogue.Editor
 
         // Falling leaves settle on the floor (plane at the root) before they shrink away; golden motes hover low.
         static VfxRecipe Act1() => VfxRecipe.Ambient(1)
-            .Add(L.Lit("Leaves", "Leaf").Stream(3.5f, 36, Loop).Life(8f, 10f).Box(Volume(0.5f), Centre(6f))
+            .Add(L.Lit("Leaves", "Leaf").Stream(4f, 38, Loop).Life(8f, 10f).Box(Volume(0.5f), Centre(6f))
                 .Drift(new Vector3(-0.1f, -0.9f, -0.25f), new Vector3(0.45f, -0.6f, 0.1f)).Noise(0.6f, 0.35f)
-                .Size(0.5f, 0.57f).Colors(LeafGreen, LeafAutumn).Frames(0, 7).SizeOverLife(PopInOut()).Bounce(0.05f, 0.9f))
+                .Size(0.57f, 0.7f).Colors(LeafGreen, LeafAutumn).Frames(0, 7).SizeOverLife(PopInOut()).Bounce(0.05f, 0.9f))
             .Add(L.Glow("Motes", "Mote").Stream(2.5f, 20, Loop).Life(5f, 7f).Box(Volume(3f), Centre(1.8f))
                 .Drift(new Vector3(-0.1f, 0.05f, -0.1f), new Vector3(0.1f, 0.25f, 0.1f)).Noise(0.3f, 0.5f)
-                .Size(0.4f, 0.5f).Colors(Gold, PaleYellow).Frames(0, 7).SizeOverLife(PopInOut()));
+                .Size(0.45f, 0.57f).Colors(Gold, PaleYellow).Frames(0, 7).SizeOverLife(PopInOut()));
 
         // Embers rise from the floor near the torches' warmth; dust motes are lit sprites so torchlight picks them out.
         static VfxRecipe Act2() => VfxRecipe.Ambient(2)
-            .Add(L.Emissive("Embers", "Ember").Stream(3f, 24, Loop).Life(4f, 6f).Box(Volume(0.5f), Centre(0.4f))
+            .Add(L.Emissive("Embers", "Ember").Stream(6f, 34, Loop).Life(4f, 6f).Box(Volume(0.5f), Centre(0.4f))
                 .Drift(new Vector3(-0.15f, 0.35f, -0.1f), new Vector3(0.2f, 0.7f, 0.2f)).Noise(0.5f, 0.5f)
-                .Size(0.45f, 0.57f).Colors(Orange, SparkYellow).Frames(0, 7).SizeOverLife(PopInOut()))
+                .Size(0.62f, 0.8f).Colors(Orange, SparkYellow).Frames(0, 7).SizeOverLife(PopInOut()))
             .Add(L.Lit("Dust", "Mote").Stream(3f, 24, Loop).Life(6f, 8f).Box(Volume(4f), Centre(2f))
                 .Drift(new Vector3(-0.1f, -0.05f, -0.1f), new Vector3(0.1f, 0.08f, 0.1f)).Noise(0.2f, 0.3f)
                 .Size(0.35f, 0.45f).Colors(new Color(0.75f, 0.78f, 0.88f), new Color(0.6f, 0.62f, 0.75f)).Frames(0, 7).SizeOverLife(PopInOut()));

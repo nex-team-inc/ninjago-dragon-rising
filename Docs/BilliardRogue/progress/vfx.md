@@ -16,13 +16,18 @@ Owner paths: `Starter/Assets/Scripts/BilliardRogue/Editor/VfxPrefabsBuilder.cs`,
 - [x] Look iteration 1: additive sparks washed out to white over the lit floor → new `Emissive` shading (LitParticle,
       light influence 0.1, per-sheet `_EmissionStrength` boost): opaque pixels keep their hue and still bloom; Glow (additive)
       only for Flash/Mote. Rebuilt + rendered on the Act 1 arena (c6 contact sheets)
-- [ ] Look iteration 2 (resumed agent): readability at gameplay density, burn/poison reads, ambient passes
-- [ ] Ambient renders at the gameplay camera pose (640×360)
-- [ ] Final commit + report
+- [x] Look iteration 2 (resumed agent): BurnBurst gets emissive fire puffs (yellow → red), PoisonBurst a purple miasma with
+      green bubbles (GDD purple poison), Act 1 leaves/motes a bit larger, Act 2 embers denser/brighter (Ember boost 0.9);
+      Burn/Poison pools 6/16 (status ticks hit many enemies at once). Rendered on the Act 1–3 arenas
+- [x] Ambient renders at the gameplay camera pose (640×360, act volumes): scratch `final_ambient/`, bursts `final_{a,b,c}.png`
+- [x] Stable rebuilds: `VfxPrefabWriter` reuses children by layer name (file IDs survive, unchanged recipe → byte-identical
+      prefabs, verified by checksum over prefabs/materials/gallery); gallery regenerated only when missing, a prefab's
+      structure changed, or `Run(true)`
+- [x] Final commit + report
 
 ## How to run
 `Tools/editor_lock.sh vfx bash -c 'source Docs/BilliardRogue/research/unity-cli-helpers.sh; urecompile 300; ueval "return Nex.BilliardRogue.Editor.VfxPrefabsBuilder.Run();" 240000'`
-Menu: `Nex/Billiard Rogue/VFX Prefabs`. Preview stills: scratch `run_script` (VfxPreview.cs in the agent scratchpad; Simulate +
+Menu: `Nex/Billiard Rogue/VFX Prefabs`. `VfxPrefabsBuilder.Run(true)` also forces the gallery scene. Preview stills: scratch `run_script` (VfxPreview.cs in the agent scratchpad; Simulate +
 Camera.Render in a preview scene, HDR forced on for the duration and restored).
 
 ## Decisions

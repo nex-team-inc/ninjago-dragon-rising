@@ -14,6 +14,7 @@ namespace Nex.BilliardRogue.Editor
     /// looping act ambients, their materials, the VfxManager registry, the ActDefinition ambient links and the review
     /// gallery scene. Idempotent; re-run after RenderPipelineBuilder (World layer) and the Rendering shaders land.
     /// CLI: unity command eval 'return Nex.BilliardRogue.Editor.VfxPrefabsBuilder.Run();' --project-path …/Starter
+    /// (Run(true) also regenerates the gallery scene when only its layout code changed).
     /// </summary>
     public static class VfxPrefabsBuilder
     {
@@ -23,7 +24,13 @@ namespace Nex.BilliardRogue.Editor
         [MenuItem("Nex/Billiard Rogue/VFX Prefabs", priority = 60)]
         public static void RunFromMenu() => Debug.Log(Run());
 
-        public static string Run()
+        public static string Run() => Run(false);
+
+        /// <summary>
+        /// The gallery is rebuilt only when it is missing, a prefab's object structure changed (its looping overrides
+        /// target the children) or rebuildGallery is set, so an unchanged rebuild leaves every asset untouched.
+        /// </summary>
+        public static string Run(bool rebuildGallery)
         {
             var warnings = new List<string>();
             var recipes = Recipes(warnings);
@@ -31,12 +38,13 @@ namespace Nex.BilliardRogue.Editor
             var worldLayer = WorldLayers.Resolve();
             if (worldLayer < 0) warnings.Add("Layer 'World' missing (RenderPipelineBuilder): prefabs keep the Default layer the WorldCamera does not render; re-run after it.");
 
+            var structureChanged = false;
             var staging = EditorSceneManager.NewPreviewScene();
             try
             {
                 foreach (var recipe in recipes)
                 {
-                    VfxPrefabWriter.Write(recipe, library, staging, worldLayer);
+                    structureChanged |= VfxPrefabWriter.Write(recipe, library, staging, worldLayer);
                 }
             }
             finally
@@ -49,7 +57,8 @@ namespace Nex.BilliardRogue.Editor
             AssetDatabase.SaveAssets();
             var registered = VfxRegistryWriter.RegisterBursts(recipes, warnings);
             var linked = VfxRegistryWriter.LinkAmbient(recipes, warnings);
-            var gallery = VfxGalleryBuilder.Build(recipes, warnings);
+            var galleryMissing = AssetDatabase.LoadAssetAtPath<SceneAsset>(VfxGalleryBuilder.ScenePath) == null;
+            var gallery = rebuildGallery || structureChanged || galleryMissing ? VfxGalleryBuilder.Build(recipes, warnings) : "unchanged";
             AssetDatabase.SaveAssets();
             return Report(recipes.Count, registered, linked, gallery, warnings);
         }

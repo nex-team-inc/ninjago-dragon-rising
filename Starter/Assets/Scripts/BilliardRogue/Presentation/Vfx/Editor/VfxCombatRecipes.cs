@@ -101,19 +101,23 @@ namespace Nex.BilliardRogue.Editor
             .Add(L.Emissive("Flakes", "Snow").Delay(0.05f).Burst(6).Life(0.6f, 0.9f).Speed(0.4f, 0.9f).Sphere(0.5f).Drag(2f).Gravity(0.05f)
                 .Size(0.45f, 0.57f).Colors(Ice, Cyan).Frames(0, 7));
 
-        static VfxRecipe BurnBurst() => VfxRecipe.Burst(Fx.BurnBurst, 4, 12)
-            .Add(L.Glow("Flash", "Flash").Burst(1).Life(2 * Frame).Size(0.8f).Colors(Orange))
-            .Add(L.Emissive("Flames", "Ember").Burst(8, 10).Life(0.5f, 0.8f).Speed(0.8f, 1.6f).Sphere(0.35f).Drag(2f).Gravity(-0.8f)
-                .Size(0.62f, 0.8f).Colors(Gold, Orange).Frames(0, 7).SizeOverLife(Taper()))
-            .Add(L.Lit("Smoke", "Smoke").Delay(0.15f).Burst(3).Life(6 * Frame).Speed(0.3f, 0.6f).Sphere(0.2f).Gravity(-0.4f)
+        // Flame-ball hit and burn tick (0.7×): a licking fire puff with rising flame tongues and a wisp of soot.
+        static VfxRecipe BurnBurst() => VfxRecipe.Burst(Fx.BurnBurst, 6, 16)
+            .Add(L.Glow("Flash", "Flash").Burst(1).Life(2 * Frame).Size(0.9f).Colors(Orange))
+            .Add(L.Emissive("Fire", "Smoke").Burst(3, 4).Life(5 * Frame, 6 * Frame).Speed(0.5f, 1.1f).Sphere(0.25f).Drag(3f).Gravity(-0.6f)
+                .Size(0.62f, 0.8f).Colors(PaleYellow, Gold).TintTo(Red).Frames(0, 1))
+            .Add(L.Emissive("Flames", "Ember").Burst(6, 8).Life(0.5f, 0.8f).Speed(0.8f, 1.6f).Sphere(0.35f).Drag(2f).Gravity(-0.8f)
+                .Size(0.62f, 0.8f).Colors(Gold, Orange).TintTo(DeepOrange).Frames(0, 7).SizeOverLife(Taper()))
+            .Add(L.Lit("Smoke", "Smoke").Delay(0.15f).Burst(2, 3).Life(6 * Frame).Speed(0.3f, 0.6f).Sphere(0.2f).Gravity(-0.4f)
                 .Size(0.57f, 0.7f).Colors(Soot, SootDark).Frames(1, 2));
 
-        static VfxRecipe PoisonBurst() => VfxRecipe.Burst(Fx.PoisonBurst, 4, 12)
-            .Add(L.Emissive("Bubbles", "Bubble").Burst(6, 7).Life(7 * Frame, FullSheet).Speed(0.4f, 1f).Sphere(0.45f).Drag(1.5f).Gravity(-0.4f)
-                .Size(0.57f, 0.7f).Colors(PoisonGreen, PoisonPurple).Frames(0, 1))
-            .Add(L.Lit("Miasma", "Smoke").Burst(4).Life(6 * Frame, 7 * Frame).Speed(0.5f, 1f).Sphere(0.35f).Drag(2f).Gravity(-0.1f)
-                .Size(0.8f, 0.95f).Colors(PoisonGreen, PoisonPurple).Frames(0, 1))
-            .Add(L.Glow("Flash", "Flash").Burst(1).Life(2 * Frame).Size(0.8f).Colors(PoisonGreen));
+        // Poison hit and tick (0.7×): a purple miasma cloud (GDD: purple poison numbers) with toxic green bubbles popping out.
+        static VfxRecipe PoisonBurst() => VfxRecipe.Burst(Fx.PoisonBurst, 6, 16)
+            .Add(L.Emissive("Miasma", "Smoke").Burst(4).Life(6 * Frame, 7 * Frame).Speed(0.5f, 1f).Sphere(0.35f).Drag(2f).Gravity(-0.1f)
+                .Size(0.8f, 0.95f).Colors(PoisonPurple, Violet).TintTo(PoisonDark).Frames(0, 1))
+            .Add(L.Emissive("Bubbles", "Bubble").Delay(0.04f).Burst(6, 7).Life(7 * Frame, FullSheet).Speed(0.4f, 1f).Sphere(0.45f).Drag(1.5f)
+                .Gravity(-0.4f).Size(0.57f, 0.7f).Colors(PoisonGreen, HealGreen).Frames(0, 1))
+            .Add(L.Glow("Flash", "Flash").Burst(1).Life(2 * Frame).Size(0.8f).Colors(PoisonPurple));
 
         // One crisp bolt strikes down onto the target, a second flickers in a frame later with another shape.
         static VfxRecipe LightningHit() => VfxRecipe.Burst(Fx.LightningHit, 4, 10)

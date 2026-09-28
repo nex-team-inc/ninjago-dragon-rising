@@ -48,7 +48,7 @@ namespace Nex.BilliardRogue.Editor
         // the opaque pixels keep their hue on any floor (additive sprites washed out to white over the lit arena).
         static readonly Dictionary<string, float> emissionBoost = new()
         {
-            { "Spark", 0.7f }, { "Star", 0.6f }, { "Ember", 0.7f }, { "Bolt", 0.9f }, { "Ring", 0.55f },
+            { "Spark", 0.7f }, { "Star", 0.6f }, { "Ember", 0.9f }, { "Bolt", 0.9f }, { "Ring", 0.55f },
             { "Heart", 0.35f }, { "Bubble", 0.3f }, { "Snow", 0.3f }, { "Smoke", 0.55f }, { "Mote", 0.5f }, { "Flash", 0.8f },
         };
 

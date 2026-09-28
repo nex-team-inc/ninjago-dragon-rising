@@ -205,6 +205,13 @@ namespace Nex.BilliardRogue
             idle.Paused = true;
         }
 
+        /// <summary>Returns to the pool without the death animation (rebuild, clear).</summary>
+        public void ReleaseNow()
+        {
+            dying = false;
+            OnRelease?.Invoke(this);
+        }
+
         public void PlayAttackLunge(float duration)
         {
             lungeDuration = Mathf.Max(0.05f, duration);

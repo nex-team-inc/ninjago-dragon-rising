@@ -76,9 +76,8 @@ namespace Nex.BilliardRogue.Editor
         static bool PlayNewRun(BilliardRogueConfig config, GameRules rules, RunPersistence persistence, MemoryRunStore store, int seed, int players, int maxTicks, StringBuilder report)
         {
             var run = new RunFactory().NewRun(rules, seed, players);
-            var harness = Create(config, rules, run, false, persistence, seed);
             var saves = 0;
-            harness.session.Saved += _ => saves++;
+            var harness = Create(config, rules, run, false, persistence, seed, _ => saves++);
             try
             {
                 Drive(harness, maxTicks, h => h.run.stageNumber >= 1 && h.run.turnInStage >= 1 && h.session.Phase == TurnPhase.PlayerTurn);
@@ -113,7 +112,11 @@ namespace Nex.BilliardRogue.Editor
                      & Check(report, "save-outcome-none", run.outcome == RunOutcome.None)
                      & Check(report, "save-bag", run.bag.Count >= 4);
             var savedTurn = run.turnInStage;
-            var harness = Create(config, rules, run, true, persistence, seed + 1);
+            var savedTurns = run.stats.turns;
+            var savedShots = run.stats.shots;
+            var savedHits = run.stats.hits;
+            var savedKills = run.stats.kills;
+            var harness = Create(config, rules, run, true, persistence, seed + 1, null);
             try
             {
                 Drive(harness, maxTicks, h => h.run.stageNumber >= 2 || h.session.Phase == TurnPhase.Finished);
@@ -121,8 +124,11 @@ namespace Nex.BilliardRogue.Editor
                 ok &= Check(report, "continue-resumed-same-turn", harness.hud.TurnBanners >= 1 && harness.flow.StageIntros == 2)
                       & Check(report, "continue-cleared-stage2", harness.run.stageNumber == 2 && harness.flow.RewardsChosen == 1)
                       & Check(report, "continue-no-defeat", harness.session.Phase != TurnPhase.Finished);
+                var stats = harness.run.stats;
                 report.Append(" | continue: resumedTurn=").Append(savedTurn + 1).Append(" ticks=").Append(harness.ticks)
-                    .Append(" turns=").Append(harness.run.stats.turns).Append(" hp=").Append(harness.run.playerHp)
+                    .Append(" turns+=").Append(stats.turns - savedTurns).Append(" shots+=").Append(stats.shots - savedShots)
+                    .Append(" hits+=").Append(stats.hits - savedHits).Append(" kills+=").Append(stats.kills - savedKills)
+                    .Append(" hp=").Append(harness.run.playerHp)
                     .Append(" stageNumber=").Append(harness.run.stageNumber).Append(" phase=").Append(harness.session.Phase)
                     .Append(" ended=").Append(harness.flow.Ended?.ToString() ?? "-");
                 harness.session.RequestSaveAndQuit();
@@ -139,7 +145,7 @@ namespace Nex.BilliardRogue.Editor
 
         #region Helpers
 
-        static Harness Create(BilliardRogueConfig config, GameRules rules, RunState run, bool isContinue, RunPersistence persistence, int seed)
+        static Harness Create(BilliardRogueConfig config, GameRules rules, RunState run, bool isContinue, RunPersistence persistence, int seed, Action<RunState>? onSaved)
         {
             var host = new GameObject("GameplaySmokeRunner") { hideFlags = HideFlags.HideAndDontSave };
             var timeScale = host.AddComponent<TimeScaleController>();
@@ -149,7 +155,7 @@ namespace Nex.BilliardRogue.Editor
             var inputs = new IShotInput[run.numPlayers];
             for (var i = 0; i < inputs.Length; i++)
             {
-                inputs[i] = new SmokeShotInput(run, rules.arena, seed + i);
+                inputs[i] = new SmokeShotInput(run, rules, seed + i);
             }
 
             session.Initialize(new GameSessionContext
@@ -157,6 +163,7 @@ namespace Nex.BilliardRogue.Editor
                 config = config, rules = rules, run = run, isContinue = isContinue, hud = hud, flowHost = flow, inputs = inputs,
                 persistence = persistence, analytics = null, timeScale = timeScale, headless = true, debugSettings = new DebugSettings(),
             });
+            if (onSaved != null) session.Saved += onSaved;
             session.RunAsync(default).Forget();
             return new Harness { host = host, session = session, hud = hud, flow = flow, run = run };
         }

@@ -1,6 +1,5 @@
 #nullable enable
 
-using System;
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
@@ -130,19 +129,31 @@ namespace Nex.BilliardRogue.Editor
     }
 
     /// <summary>
-    /// Scripted shooter: stands under the lowest enemy and aims at its centre (straight or via one wall bounce when
-    /// the direct line is too flat), striking whenever asked. Deterministic for a seed.
+    /// Scripted shooter: scores launch positions × angles by the enemy contacts of BallSimulator.PredictPath (lower
+    /// rows weigh more) on its own read-only simulator, re-aims once per shot or board change, and strikes whenever
+    /// asked. Deterministic for a seed.
     /// </summary>
     public sealed class SmokeShotInput : IShotInput
     {
-        readonly RunState run;
-        readonly ArenaRules arena;
-        readonly System.Random random;
+        const int LaunchSamples = 7;
+        const int AngleSamples = 31;
+        const float PathLength = 36f;
+        const int PathBounces = 8;
+        const float ContactSlack = 0.06f;
 
-        public SmokeShotInput(RunState aRun, ArenaRules aArena, int seed)
+        readonly RunState run;
+        readonly GameRules rules;
+        readonly BallSimulator predictor;
+        readonly Vector2[] points = new Vector2[64];
+        readonly System.Random random;
+        int aimedShots = -1;
+        int aimedEnemies = -1;
+
+        public SmokeShotInput(RunState aRun, GameRules aRules, int seed)
         {
             run = aRun;
-            arena = aArena;
+            rules = aRules;
+            predictor = new BallSimulator(rules, new BoardOps(rules));
             random = new System.Random(seed);
         }
 
@@ -163,25 +174,57 @@ namespace Nex.BilliardRogue.Editor
 
         void Retarget()
         {
-            EnemyState? target = null;
-            foreach (var enemy in run.board.enemies)
+            var enemies = run.board.enemies.Count;
+            if (aimedShots == run.stats.shots && aimedEnemies == enemies) return;
+            aimedShots = run.stats.shots;
+            aimedEnemies = enemies;
+            var arena = rules.arena;
+            var bestScore = -1f;
+            var bestLaunch = 0.5f;
+            var bestDirection = Vector2.up;
+            var minAngle = arena.minAimAngleDeg + 1f;
+            var maxAngle = 180f - arena.minAimAngleDeg - 1f;
+            for (var l = 0; l < LaunchSamples; l++)
             {
-                if (enemy.type == EnemyType.BoneWall) continue;
-                if (target == null || enemy.row + enemy.height > target.row + target.height) target = enemy;
+                var launch = (l + 0.5f) / LaunchSamples;
+                var origin = ArenaGeometry.LaunchOrigin(arena, launch);
+                for (var a = 0; a < AngleSamples; a++)
+                {
+                    var angle = Mathf.Lerp(minAngle, maxAngle, a / (AngleSamples - 1f)) * Mathf.Deg2Rad;
+                    var direction = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+                    var score = Score(origin, direction) + (float)random.NextDouble() * 0.01f;
+                    if (score <= bestScore) continue;
+                    bestScore = score;
+                    bestLaunch = launch;
+                    bestDirection = direction;
+                }
             }
 
-            if (target == null)
+            LaunchX01 = bestLaunch;
+            AimDirection = bestDirection;
+        }
+
+        // Every predicted polyline vertex inside an enemy footprint is one contact; deeper rows count more.
+        float Score(Vector2 origin, Vector2 direction)
+        {
+            var count = predictor.PredictPath(run, origin, direction, PathLength, PathBounces, points);
+            var arena = rules.arena;
+            var score = 0f;
+            for (var i = 1; i < count; i++)
             {
-                LaunchX01 = 0.5f;
-                AimDirection = Vector2.up;
-                return;
+                var p = points[i];
+                foreach (var enemy in run.board.enemies)
+                {
+                    var inset = rules.enemies[(int)enemy.type].isBoss ? arena.bossInset : arena.enemyInset;
+                    var rect = ArenaGeometry.FootprintRect(arena, enemy.col, enemy.row, enemy.width, enemy.height, inset);
+                    var slack = arena.ballRadius + ContactSlack;
+                    if (p.x < rect.xMin - slack || p.x > rect.xMax + slack || p.y < rect.yMin - slack || p.y > rect.yMax + slack) continue;
+                    score += 1f + 0.15f * (enemy.row + enemy.height - 1);
+                    break;
+                }
             }
 
-            var centre = ArenaGeometry.FootprintCenter(arena, target.col, target.row, target.width, target.height);
-            var jitter = (float)(random.NextDouble() - 0.5) * 0.6f;
-            LaunchX01 = Mathf.Clamp01((centre.x + jitter) / arena.columns);
-            var origin = ArenaGeometry.LaunchOrigin(arena, LaunchX01);
-            AimDirection = ArenaGeometry.ClampAim(arena, (centre - origin).normalized);
+            return score;
         }
     }
 }

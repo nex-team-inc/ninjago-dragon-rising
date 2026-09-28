@@ -72,6 +72,7 @@ namespace Nex.BilliardRogue
         /// </summary>
         public UniTask<RunOutcome> RunAsync(CancellationToken ct)
         {
+            if (ct.IsCancellationRequested) return UniTask.FromResult(RunOutcome.Abandoned);
             completion = new UniTaskCompletionSource<RunOutcome>();
             running = true;
             cancelRegistration = ct.Register(HandleCancelled);

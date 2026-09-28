@@ -2,10 +2,12 @@
 
 Run:  Tools/.venv/bin/python Tools/Textures/make_particles.py [--preview-dir DIR]
 Out:  Tools/Staging/Assets/Sprites/BilliardRogue/Particles/<Name>.png + particles.json (frames, frameSize,
-      loop, suggested fps/size); preview contact sheet (plain + tinted) in DIR.
+      loop, suggested fps/size); preview contact sheet (plain + tinted) in DIR, and particles_gamescale.png: every
+      sheet point-sampled at the recipes' billboard sizes over the act floors and a torchlit patch (2x of 1x).
 
 Colour: values are white (255) / light grey (214) / mid grey (170) / shadow grey (128) so the particle colour
-(vertex colour, HDR > 1 feeds bloom) tints them; alpha is strictly 0 or 255 (alpha-clip friendly).
+(vertex colour, HDR > 1 feeds bloom) tints them; Leaf and Debris add a 1 px contour (56) that tints to a dark rim so
+they hold over grass / floors of their own value; alpha is strictly 0 or 255 (alpha-clip friendly).
 Gutter: every frame keeps a 1 px empty border (checked, the build fails otherwise), so point sampling at
 non-integer billboard sizes never picks up a column of the neighbouring frame and rays are never cut square.
 Unity: Texture Sheet Animation, Mode Grid, Tiles (8, 1), Animation Whole Sheet, 12 fps (TDD D13).
@@ -25,6 +27,7 @@ import pixelkit as pk  # noqa: E402
 FRAMES = 8
 OUT_DIR = ("Sprites", "BilliardRogue", "Particles")
 W, L, M, D = 255, 214, 170, 128  # white, light, mid, dark grey
+K = 56  # contour grey (Leaf, Debris): tints to a dark rim of the particle's own hue
 
 
 class Frame:
@@ -199,8 +202,18 @@ def leaf(n=16):
         stem = pk.line(n, n, [(7.5 + rot(4.9, 0, ang)[0], 7.5 + rot(4.9, 0, ang)[1]),
                               (7.5 + rot(6.2, 0, ang)[0], 7.5 + rot(6.2, 0, ang)[1])], 1)
         fr.paint(stem & ~body, M)
+        contour(fr)
         frames.append(fr)
     return frames
+
+
+def contour(fr):
+    """1 px dark rim (4-neighbour) around the ink: mid-value Lit sheets (Leaf over Act 1 grass, brown Debris over
+    the floors) would otherwise dissolve into a background of their own value at 640x360."""
+    inside = np.zeros((fr.n, fr.n), bool)
+    inside[1:-1, 1:-1] = True  # the contour never takes the 1 px gutter (a stem tip may lose its rim pixel)
+    fr.paint(pk.dilate(fr.a, False) & ~fr.a & inside, K)
+    return fr
 
 
 EMBER_SHAPES = [
@@ -481,7 +494,7 @@ def debris(n=16):
     for f in range(FRAMES):
         fr = Frame(n)
         ang = f / FRAMES * 2 * math.pi
-        shaded_poly(fr, rock, 7.5, 7.5, ang, outline_value=None)
+        shaded_poly(fr, rock, 7.5, 7.5, ang, outline_value=K)
         frames.append(fr)
     return frames
 
@@ -559,12 +572,65 @@ def tint(img, color):
     return out
 
 
+# game-scale check: every sheet at the billboard sizes the VFX recipes use (Presentation/Vfx/Editor/Vfx*Recipes.cs,
+# 0.35-0.95 m for 16 px sheets = 10-27 px on the 640x360 world RT at ~28 px/m), point-sampled, tinted, over the act
+# floors and a bright torchlit patch; Glow sheets (Mote, Flash) add, the others alpha-clip.
+GLOW_SHEETS = ("Mote", "Flash")
+GAME_SIZES = (0.4, 0.57, 0.8)  # metres; 32 px sheets (Ring, Bolt, Flash) at 2x these
+BACKDROPS = [("act1 RuinFloor", "RuinFloor", (1.0, 0.89, 0.75)), ("act2 CryptFloor", "CryptFloor", (0.78, 0.83, 1.0)),
+             ("act3 HollowFloor", "HollowFloor", (0.86, 0.78, 1.0)), ("torchlit stone", None, (1.0, 0.85, 0.6))]
+
+
+def backdrop(name, tint_rgb, w, h):
+    from PIL import Image
+    path = os.path.join(pk.STAGING_ASSETS, "Textures", "BilliardRogue", "Surfaces", f"{name}_Albedo.png") if name else None
+    if path and os.path.exists(path):
+        tile = np.asarray(Image.open(path).convert("RGB")).astype(np.float32)
+        tile = np.tile(tile[32:64, 0:32], (h // 32 + 1, w // 32 + 1, 1))[:h, :w]  # the kit quadrant, per 1 m cell
+    else:
+        x, y = np.meshgrid(np.arange(w), np.arange(h))
+        tile = np.full((h, w, 3), 200.0) + 30 * ((x // 6 + y // 6) % 2)[..., None]
+    return np.clip(tile * np.array(tint_rgb), 0, 255)
+
+
+def scaled(frame_rgba, px):
+    from PIL import Image
+    return np.asarray(Image.fromarray(frame_rgba).resize((px, px), Image.NEAREST))
+
+
+def gamescale_preview(strips):
+    """-> 1x image: a row per sheet (frames 0, 2, 4, 6 at each game size), a column block per backdrop."""
+    rows = []
+    for name, (strip, size, color) in strips.items():
+        frames = [strip[:, i * size:(i + 1) * size] for i in (0, 2, 4, 6)]
+        k = 2 if size == 32 else 1
+        cells = [scaled(tint(f, color), max(4, round(m * k * 28))) for m in GAME_SIZES for f in frames]
+        rows.append((name, cells))
+    cell = max(c.shape[0] for _, cs in rows for c in cs) + 2
+    ncol = len(GAME_SIZES) * 4
+    block_w = ncol * cell + 8
+    out = np.zeros((len(rows) * cell + 4, len(BACKDROPS) * block_w, 3), np.float32)
+    for b, (_, surf, tint_rgb) in enumerate(BACKDROPS):
+        out[:, b * block_w:(b + 1) * block_w] = backdrop(surf, tint_rgb, block_w, out.shape[0])
+        for r, (name, cells) in enumerate(rows):
+            for c, spr in enumerate(cells):
+                x0 = b * block_w + 4 + c * cell + (cell - spr.shape[1]) // 2
+                y0 = 2 + r * cell + (cell - spr.shape[0]) // 2
+                reg = out[y0:y0 + spr.shape[0], x0:x0 + spr.shape[1]]
+                m = spr[..., 3] > 0
+                if name in GLOW_SHEETS:
+                    reg[m] = np.clip(reg[m] + spr[..., :3][m].astype(np.float32) * 0.8, 0, 255)
+                else:
+                    reg[m] = spr[..., :3][m]
+    return np.dstack([out.astype(np.uint8), np.full(out.shape[:2], 255, np.uint8)])
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--preview-dir", default=None)
     a = ap.parse_args()
     preview_dir = a.preview_dir or pk.default_preview_dir("art2d")
-    meta, items, touching = {}, [], []
+    meta, items, touching, strips = {}, [], [], {}
     for name, (gen, size, loop, fps, color, usage) in SHEETS.items():
         frames = gen(size)
         assert len(frames) == FRAMES
@@ -577,6 +643,7 @@ def main():
                       "loop": loop, "fps": fps, "startSizeMetres": round(size / 28.0, 3), "previewTint": color,
                       "usage": usage}
         items.append((f"{name} {size}px {'loop' if loop else 'once'}", strip))
+        strips[name] = (strip, size, color)
         items.append((name + " tinted", tint(strip, color)))
     if touching:
         sys.exit("particle ink touches the frame border (keep a 1 px gutter): " + ", ".join(touching))
@@ -586,6 +653,7 @@ def main():
         "texelsPerMetre": 28, "sheets": meta})
     sheet = pk.contact_sheet(items, scale=4, cols=2, checker_bg=False, bg=(24, 24, 32))
     pk.save_rgb(os.path.join(preview_dir, "particles.png"), sheet)
+    pk.save_rgb(os.path.join(preview_dir, "particles_gamescale.png"), pk.upscale(gamescale_preview(strips), 2))
     print("PARTICLES", {"count": len(SHEETS), "preview": os.path.join(preview_dir, "particles.png")})
 
 

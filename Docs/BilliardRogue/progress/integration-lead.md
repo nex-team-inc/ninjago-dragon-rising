@@ -1,16 +1,17 @@
 # Integration lead — progress checkpoint
 
 Owner: integration lead (owns the Editor between lock sections; the localization lead runs in parallel and only
-touches `Localization/**`). Resume from here after a usage-limit kill: read this file + `git log --oneline -15`.
+touches `Localization/**`, `Editor/LocalizationSeeder.cs` and the LocalizationTable / string-table Addressable groups).
+Resume from here after a usage-limit kill: read this file + `git log --oneline -15`.
 
-## Done
+## Status: integration wave complete (Build All 19/19, tests 82/82, console clean)
 
-- [x] Staging sync (`Tools/sync_staging.sh`): only sprite timestamps changed; content dirs were already in place
-      (untracked until ImportSettingsBuilder has rewritten their .meta, then committed).
-- [x] Staged editor scripts moved into `Editor/`: `AudioRegistryBuilder`, `FontAssetsBuilder`, `ImportSettingsBuilder`,
-      `TmpStaticFontAssetBuilder`. The staged `EnvironmentLayout.cs` was DROPPED: Presentation-World committed its own
-      reader with the same name that `EnvironmentBuilder` is written against.
-- [x] Requests applied (compile_check --warnings clean):
+- [x] Staging sync (`Tools/sync_staging.sh`): only sprite timestamps changed; content dirs committed with the .meta
+      ImportSettingsBuilder rewrote (514851da).
+- [x] Staged editor scripts moved into `Editor/` (db59a017): `AudioRegistryBuilder`, `FontAssetsBuilder`,
+      `ImportSettingsBuilder`, `TmpStaticFontAssetBuilder`. The staged `EnvironmentLayout.cs` was DROPPED: Presentation-World
+      committed its own reader of that name that `EnvironmentBuilder` is written against.
+- [x] Requests applied (4815b84d), compile_check --warnings clean:
   - Input 1: `BilliardRogueCoordinator.Inputs.cs` builds one shared `ShotInputContext` and calls
     `ShotInputRouter.Initialize(playerIndex, engine, ctx)`; coordinator caches `rules` (`RulesFactory.Build`).
   - Input 2: `DebugSettings.forceDebugInput` `[DebugOrder(23)]`.
@@ -25,9 +26,10 @@ touches `Localization/**`). Resume from here after a usage-limit kill: read this
     refreshed after `Rebuild`, after `Consume` with an `EnemyKilled`, after `PlayEnemyPhaseAsync`, 0 on `Clear`.
   - Presentation-World 6: `VolumeProfilesBuilder.DeepBlueNight` = the validated milder grade.
   - Presentation-World 5 / 7 / 8, Rendering 2–4, Presentation-Core 1–2 / 4, Flow 3, Gameplay 1 / 4, UI 2–3: verified
-    already satisfied (layer applied by the builder once the layer exists; rendering assets committed; ImportSettingsBuilder
-    handles Surfaces/Palette; targetFrameRate set; volume profile via rig; TryWorldToCanvas centre-relative; labelLayer
-    full-stretch; settings are read live; unlock tier captured at run start; ChooseReward → RewardView.TryChoose).
+    already satisfied (World layer applied by the builder once the layer exists; rendering assets committed;
+    ImportSettingsBuilder handles Surfaces/Palette; targetFrameRate set; volume profile via rig; TryWorldToCanvas
+    centre-relative; labelLayer full-stretch; settings are read live; unlock tier captured at run start;
+    ChooseReward → RewardView.TryChoose).
   - Presentation-Core 3 vs Gameplay 3 (conflict, TDD §8 tie-break: the presenter turns SimEvents into SFX): removed the
     doubled StageClear / BossAppear / Defeat / Victory stingers from `TurnController` and the batch EnemyStep / PlayerHurt
     SFX from `EnemyPhaseRunner`; the presenter's sequences / event player keep them (in sync with the visuals).
@@ -35,17 +37,31 @@ touches `Localization/**`). Resume from here after a usage-limit kill: read this
   - Build All: `VolumeProfilesBuilder` added, RenderPipeline before Materials, LocalizationSeeder before FontAssets;
     `BilliardRogueMenu.RunAll()` returns a summary and keeps going when a builder throws. TDD §17 order updated.
   - `CalibrationView.camera` renamed `cameraSession` (CS0108 warning).
+- [x] Build All fixes (e545571e): `RenderPipelineBuilder.TuneQualityLevels` used Unity 5's `anisotropicFiltering`
+      (Unity 6: `anisotropicTextures`) and now skips + reports unknown properties; `ImportSettingsBuilder` no longer forces
+      the already-mono SFX to mono (that re-normalized their peaks); `AudioRegistryBuilder` tolerates ADPCM block padding
+      (64 samples) and ±1.5 dB quantization.
+- [x] `BilliardRogueMenu.RunAll()` → 19/19 builders (LocalizationSeeder 208 rows × 5 locales, CJK atlas 941 chars,
+      UiViews no missing keys, MainSceneBuilder roots 7, build index 0). Main.unity reopened: not dirty, 0 errors.
+- [x] EditMode tests `Nex.BilliardRogue*`: 82/82 (Simulation, InputCore, Rendering, Environment, ArenaLayout).
+- [x] Generated assets committed (this commit).
 
-## In progress / next
+## Remaining for the playable pass
 
-1. Editor (lock `integration`): recompile → commit the 4 builder scripts + minted .meta.
-2. `ImportSettingsBuilder.Run()` first (reimports the synced content), then commit content dirs + .meta.
-3. `BilliardRogueMenu.RunAll()` end-to-end; fix builder errors/warnings; Main.unity index 0 opens clean; commit generated assets.
-4. EditMode tests (Simulation, InputCore, Rendering, Environment, ArenaLayout); console clean; compile_check --warnings.
-5. Re-run LocalizationSeeder → FontAssetsBuilder → UiViewsBuilder → WorldPrefabsBuilder once the seeder lands.
+- `AudioRegistryBuilder` still reports `BallLaunch_1/2.wav` ~3 dB quieter than built: ADPCM flattens their attack.
+  Audio owner: re-export with a softer attack or import those two as PCM.
+- Unity/package warnings during prefab saves (`[SerializeReference]` on `SmartStringColumn`, `MMF_Position`,
+  `MMF_CanvasGroup`) are not ours.
+- No play mode was entered in this wave (per rules). First playable checks: title → calibration (`DebugHooks.SkipCalibration`)
+  → gameplay with `DebugSettings.forceDebugInput` / `autoAimBot`, act fade behind the stage intro, danger-row glow, shake
+  under texel snapping, stingers once per sequence.
+- Re-run `LocalizationSeeder` → `FontAssetsBuilder` → `UiViewsBuilder` (Build All does) after the localization lead's
+  final strings land; the 2 file-only keys the seeder reports (`br.ui.calibration.leftPawTag/rightPawTag`) are theirs.
 
 ## Findings
 
 - Nobody initialised `ArenaLayout` at runtime before this wave; `ActEnvironmentController.Initialize` (now called in
   StartMain) does it through `ArenaView.Initialize`.
 - `BoardPresenter.Initialize` runs once per GameplayView (per run); the shaker base is re-captured at `Rebuild`.
+- Build All is fast (≈3–7 s) once content is imported: every builder is idempotent; UiViews prefabs get new child IDs
+  on each rebuild (known, UI-Views report), so their files always diff.

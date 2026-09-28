@@ -168,9 +168,14 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--warnings", action="store_true", help="also list warnings in Assets/Scripts")
     parser.add_argument("--filter", default="", help="only print diagnostics containing this text")
+    parser.add_argument("--extra-editor", action="append", default=[],
+                        help="extra folder of editor .cs files to compile (e.g. staged scripts outside Assets)")
     args = parser.parse_args()
 
     runtime_now, editor_now = scan_sources()
+    for extra in args.extra_editor:
+        for base, _, files in os.walk(os.path.abspath(extra)):
+            editor_now.update(os.path.join(base, f) for f in files if f.endswith(".cs"))
     with tempfile.TemporaryDirectory(prefix="compile_check_") as tmp:
         rt_opts, _ = split_rsp(latest_rsp("Assembly-CSharp"))
         ed_opts, _ = split_rsp(latest_rsp("Assembly-CSharp-Editor"))

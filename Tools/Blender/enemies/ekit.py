@@ -501,12 +501,7 @@ class Model:
     def get(self, name):
         return next(p for p in self.parts if p.name == name)
 
-    def tilt_up(self, name, deg):
-        """Tilt a part (and every descendant part) about the part's own pivot so its front (-Y) turns `deg` degrees
-        up toward the high game camera: faces built upright read far better from the 58 deg pitch when tipped back.
-        The part's pivot stays put (animation contract); descendant pivots move with the geometry."""
-        root = self.get(name)
-        m = T(*root.pivot) @ R(Vector((1.0, 0.0, 0.0)), -deg) @ T(*(-root.pivot))
+    def _subtree(self, name):
         names = {name}
         changed = True
         while changed:
@@ -515,6 +510,26 @@ class Model:
                 if p.parent in names and p.name not in names:
                     names.add(p.name)
                     changed = True
+        return names
+
+    def scale_part(self, name, s):
+        """Scale a part (and its descendant parts) about the part's own pivot - e.g. a bigger chibi head."""
+        root = self.get(name)
+        m = T(*root.pivot) @ S(s) @ T(*(-root.pivot))
+        for p in self.parts:
+            if p.name in self._subtree(name):
+                p.geo = p.geo.copy(m)
+                if p is not root:
+                    p.pivot = m @ p.pivot
+        return self
+
+    def tilt_up(self, name, deg):
+        """Tilt a part (and every descendant part) about the part's own pivot so its front (-Y) turns `deg` degrees
+        up toward the high game camera: faces built upright read far better from the 58 deg pitch when tipped back.
+        The part's pivot stays put (animation contract); descendant pivots move with the geometry."""
+        root = self.get(name)
+        m = T(*root.pivot) @ R(Vector((1.0, 0.0, 0.0)), -deg) @ T(*(-root.pivot))
+        names = self._subtree(name)
         for p in self.parts:
             if p.name in names:
                 p.geo = p.geo.copy(m)

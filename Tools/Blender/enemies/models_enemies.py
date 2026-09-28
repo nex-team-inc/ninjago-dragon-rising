@@ -185,6 +185,7 @@ def skeleton():
     for s in (-1, 1):
         club.add(k.sphere(0.074, 6, 3, top_lit(BONE, 13, 14, 11)), T(*(top + side_dir * s * 0.056)))
     club.add(k.sphere(0.05, 5, 3, C(BONE, 11)), T(*(grip - sd * 0.1)))
+    m.scale_part("Head", 1.06)  # a touch more chibi skull (the face is the skeleton's read)
     m.tilt_up("Head", 18)  # skull looks up at the camera: sockets + jaw face it instead of the cranium
     return m.scale_all(1.1)
 
@@ -277,7 +278,7 @@ def mage():
         head.add(ear, T(side * 0.12, 0.02, hz + 0.0) @ R(Y, side * 76) @ R(X, -12))
 
     hat = m.part("Hat", (0, 0.02, 0.66), parent="Head")
-    hg = k.lathe([(0.0, 0.0), (0.28, 0.0), (0.295, 0.03), (0.16, 0.05), (0.135, 0.13), (0.1, 0.23), (0.065, 0.3)], 9,
+    hg = k.lathe([(0.0, 0.0), (0.31, 0.0), (0.325, 0.03), (0.16, 0.05), (0.135, 0.13), (0.1, 0.23), (0.065, 0.3)], 9,
                  top_lit("yellow", 10, 12, 8), phase=math.pi / 9)
     hg.paint(C("brown", 6), where=lambda c, n: 0.05 < c.z < 0.11 and abs(n.z) < 0.6)
     hg.add(k.sweep([(0, 0, 0.29), (0, 0.02, 0.36), (0, 0.08, 0.41), (0, 0.15, 0.4)], [0.066, 0.045, 0.026, 0.0], 5,

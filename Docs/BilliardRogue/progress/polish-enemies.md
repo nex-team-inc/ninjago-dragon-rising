@@ -37,8 +37,25 @@ Previews (R = `/private/tmp/claude-501/-Users-simonbut-project-VibeProject3/78b5
   - Bloom: large surfaces kept under ~shade 12-13 (in game the warm sun lights tops x1.3-1.5 and bloom starts at
     1.05); eye whites gray 8 -> gray 4 emissive because M_Palette multiplies emission by 2.2 (gray 8 was ~2.0).
 
-## Next
-- Final before/after composites, icons check, manifest, report.
+- Final pass: skeleton Head `scale_part` 1.06 (new helper), mage hat brim 0.28 -> 0.31; final build is
+  deterministic (second run: fbx_changed=False for all 12), tri budgets 452-600 / 992-1148, footprint + FBX round-trip
+  checks pass; part names / hierarchy unchanged (only the Eyes pivots of Slime/Bat/Healer/KingSlime moved with the
+  bigger, higher eyes, and the Mage Hat pivot moved with the head tilt). compile_check green (no C# touched).
+
+## Results (R/final, R/compare_*.png)
+- Before/after: `R/compare_act1_x4.png`, `R/compare_rows_acts.png`; in-game before: `R/before/game_05_crop.png`,
+  `R/before/game_07_crop.png`; final previews `R/final/{arena_act*,context_act*_x3,contact_sheet,icons}.png`.
+- Eye size at game scale (29 px/cell): slime 5.4 -> 7.3 px wide, King Slime 8.7 -> 10.7, skeleton sockets 4.7 -> 6.8,
+  beetle 3.9 -> 5.0, shroom 4.0 -> 4.9, totem 4.1 -> 4.9, mage 3.3 -> 4.2, bat 4.6 -> 5.3.
+- Floor contrast (R/final/readability_vs_before.txt, mean Lab dE Act1/2/3): beetle 44/39/41 -> 62/62/66, shroom
+  42/48/43 -> 53/55/60, totem 35/38/35 -> 42/42/42, mage 43/49/47 -> 47/51/52, knight 50/47/45 -> 52/50/50; slime
+  62/70/69 -> 60/63/66 and bat 57/45/48 -> 54/41/46 about level (now green / lavender instead of lemon / pastel);
+  skeleton 44/53/44 -> 42/49/40 and bone wall 51/55/51 -> 49/51/47 slightly lower (bone tops held under the bloom
+  threshold); every model stays >= 40 in every act.
+
+## Next (not in this module)
+- Integrator: `Tools/sync_staging.sh`, then re-run WorldPrefabsBuilder (labelHeight/centerHeight come from bounds).
+- Requests below (TDD 14.1 emission text; optional outline pass; Act 1 exposure).
 
 ## Findings
 - In-game capture 05/07: slimes read as flat yellow lemons with small low eyes; skeleton / shroom wash out to pastel;
@@ -46,3 +63,17 @@ Previews (R = `/private/tmp/claude-501/-Users-simonbut-project-VibeProject3/78b5
 - WorldPrefabsBuilder already gives every enemy M_Palette with `_EmissionMap = Palette_Emission` (x2.2), so the
   palette-half glow works; only `EnemyStatusVisuals.emissiveRenderers` (status pulse) is name-based
   (`WorldPrefabModels.EmissiveTokens`). TDD 14.1's text still describes the name rule -> Request below.
+- Bloom in game starts at 1.05 on the gamma-space colour; with Act 1 sun 1.35 x (1, .78, .5) plus rim 0.35, lit
+  albedo above shade ~12 blooms / clips to pastel. Kept large surfaces <= 12-13; highlights only as small specks.
+- The mean-colour floor-contrast metric does not capture the internal reads (eyes, faces); those are checked visually
+  in the x4 crops.
+
+## Requests (TDD 15)
+1. TDD 14.1 last paragraph -> "palette-mapped models use M_Palette (_EMISSION always on, _EmissionMap =
+   Palette_Emission x PaletteEmission); the palette's right half decides what glows; name-based flags
+   (WorldPrefabModels.EmissiveTokens) only pick the renderers the status pulse drives." (The builder already works
+   this way; only the text is stale.)
+2. Rendering (optional): the TDD 10 `BilliardRogue/Outline` inverted-hull pass for enemy renderers would be the
+   strongest remaining silhouette boost on the busy floors; the model side can bake smoothed normals into UV2 on
+   request.
+3. Presentation: HP labels must not cover the head of the enemy in the row behind (tall knight / mage / totem).

@@ -1,5 +1,6 @@
 #nullable enable
 
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using Nex.Util;
@@ -9,37 +10,184 @@ namespace Nex
 {
     public class BgmManager : Singleton<BgmManager>
     {
+        // Values are persisted in the prefab EnumDictionary: explicit ints, append only, keep ascending order.
         public enum BgmType
         {
-            Main
+            Main = 0,
+            Title = 1,
+            Act1 = 10,
+            Act2 = 11,
+            Act3 = 12,
+            Boss = 20,
+            Reward = 30,
+        }
+
+        public enum StingerType
+        {
+            StageClear = 0,
+            BossAppear = 1,
+            Victory = 2,
+            Defeat = 3,
         }
 
         [SerializeField] AudioSource audioSource = null!;
         [SerializeField] EnumDictionary<BgmType, AudioClip> bgmDict = null!;
 
+        [Header("Crossfade & stingers")]
+        [Tooltip("Optional second music source for crossfades; created from the primary one at runtime when missing.")]
+        [SerializeField] AudioSource? secondarySource;
+        [Tooltip("Optional one-shot source for stingers; created from the primary one at runtime when missing.")]
+        [SerializeField] AudioSource? stingerSource;
+        [SerializeField] EnumDictionary<StingerType, AudioClip> stingerDict = new();
+        [Tooltip("Music volume while a stinger plays.")]
+        [SerializeField, Range(0f, 1f)] float stingerDuckVolume = 0.3f;
+        [SerializeField, Range(0.05f, 2f)] float duckFadeSeconds = 0.15f;
+        [SerializeField, Range(0.05f, 3f)] float unduckFadeSeconds = 0.6f;
+
+        AudioSource active = null!;
+        AudioSource inactive = null!;
+        AudioSource stingerPlayer = null!;
+        Tween? duckRestoreTween;
+
+        public BgmType? Current { get; private set; }
+        public bool IsPlaying => active.isPlaying;
+
         protected override BgmManager GetThis() => this;
 
+        #region Life Cycle
+
+        protected override void Awake()
+        {
+            base.Awake();
+            active = audioSource;
+            inactive = secondarySource != null ? secondarySource : CloneSource(audioSource, true);
+            stingerPlayer = stingerSource != null ? stingerSource : CloneSource(audioSource, false);
+        }
+
+        #endregion
+
+        #region Playback
+
+        /// <summary>Starts a track at once on the active source (no fade, volume untouched). Unknown clips stop music.</summary>
         public void Play(BgmType type)
         {
-            audioSource.clip = bgmDict[type];
-            audioSource.Play();
+            active.DOKill();
+            if (!TryGetClip(type, out var clip))
+            {
+                active.Stop();
+                Current = null;
+                return;
+            }
+
+            Current = type;
+            active.clip = clip;
+            active.Play();
         }
 
         public void Stop()
         {
-            audioSource.Stop();
+            active.DOKill();
+            inactive.DOKill();
+            active.Stop();
+            inactive.Stop();
+            Current = null;
         }
+
+        /// <summary>Fades the current track out and the new one in on the other source. Unscaled time, pause-safe.</summary>
+        public async UniTask CrossFadeTo(BgmType type, float duration = 0.8f, CancellationToken cancellationToken = default)
+        {
+            if (Current == type && active.isPlaying) return;
+            if (!TryGetClip(type, out var clip))
+            {
+                Current = null;
+                await FadeOut(duration);
+                return;
+            }
+
+            Current = type;
+            var from = active;
+            var to = inactive;
+            active = to;
+            inactive = from;
+            from.DOKill();
+            to.DOKill();
+            to.clip = clip;
+            to.volume = 0f;
+            to.Play();
+
+            using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, destroyCancellationToken);
+            try
+            {
+                await UniTask.WhenAll(
+                    from.DOFade(0f, duration).SetUpdate(true).ToUniTask(cancellationToken: linked.Token),
+                    to.DOFade(1f, duration).SetUpdate(true).ToUniTask(cancellationToken: linked.Token));
+            }
+            finally
+            {
+                // Sources may be gone when the manager is destroyed mid-fade.
+                if (from != null) from.Stop();
+                if (to != null) to.volume = 1f;
+            }
+        }
+
+        /// <summary>Plays a one-shot stinger over ducked music; returns the stinger length (0 when no clip is set).</summary>
+        public float PlayStinger(StingerType stinger)
+        {
+            if (!stingerDict.TryGetValue(stinger, out var clip) || clip == null) return 0f;
+            stingerPlayer.PlayOneShot(clip);
+            Duck(stingerDuckVolume, clip.length);
+            return clip.length;
+        }
+
+        /// <summary>Lowers the music to volume01 for holdSeconds (unscaled), then restores it.</summary>
+        public void Duck(float volume01, float holdSeconds)
+        {
+            duckRestoreTween?.Kill();
+            active.DOKill();
+            active.DOFade(volume01, duckFadeSeconds).SetUpdate(true).SetLink(gameObject);
+            duckRestoreTween = DOVirtual.DelayedCall(holdSeconds, RestoreVolume, true).SetLink(gameObject);
+        }
+
+        #endregion
 
         #region Fading In/Out
 
         public async UniTask FadeIn(float duration = 0.5f)
         {
-            await audioSource.DOFade(1, duration).WithCancellation(this.GetCancellationTokenOnDestroy());
+            await active.DOFade(1f, duration).SetUpdate(true).WithCancellation(destroyCancellationToken);
         }
 
         public async UniTask FadeOut(float duration = 0.5f)
         {
-            await audioSource.DOFade(0, duration).WithCancellation(this.GetCancellationTokenOnDestroy());
+            await active.DOFade(0f, duration).SetUpdate(true).WithCancellation(destroyCancellationToken);
+        }
+
+        #endregion
+
+        #region Helpers
+
+        bool TryGetClip(BgmType type, out AudioClip clip)
+        {
+            // The prefab dictionary can lag behind the enum; a missing clip is tolerated.
+            return bgmDict.TryGetValue(type, out clip) && clip != null;
+        }
+
+        void RestoreVolume()
+        {
+            duckRestoreTween = null;
+            active.DOFade(1f, unduckFadeSeconds).SetUpdate(true).SetLink(gameObject);
+        }
+
+        static AudioSource CloneSource(AudioSource template, bool loop)
+        {
+            var source = template.gameObject.AddComponent<AudioSource>();
+            source.outputAudioMixerGroup = template.outputAudioMixerGroup;
+            source.playOnAwake = false;
+            source.loop = loop;
+            source.spatialBlend = template.spatialBlend;
+            source.priority = template.priority;
+            source.volume = 1f;
+            return source;
         }
 
         #endregion

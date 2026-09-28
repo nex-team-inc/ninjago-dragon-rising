@@ -17,6 +17,7 @@ namespace Nex
         List<int> playerIndexList = null!;
         PreviewFrameBase previewFrame = null!;
         BodyPoseDetectionManager bodyPoseDetectionManager = null!;
+        readonly List<PreviewFramePlayerIndicator> indicators = new();
 
         public void Initialize(
             int aNumOfPlayers,
@@ -46,6 +47,15 @@ namespace Nex
                 aBodyPoseDetectionManager);
         }
 
+        /// <summary>Highlights the active shooter's indicator and dims the others; -1 clears every highlight.</summary>
+        public void SetActivePlayer(int activePlayerIndex)
+        {
+            foreach (var indicator in indicators)
+            {
+                indicator.SetHighlighted(indicator.PlayerIndex == activePlayerIndex);
+            }
+        }
+
         void InitializePlayerIndicators()
         {
             foreach (var playerIndex in playerIndexList)
@@ -56,6 +66,7 @@ namespace Nex
                     bodyPoseDetectionManager,
                     previewFrame,
                     playerIndicatorSizeRatioToPreviewHeight);
+                indicators.Add(indicator);
             }
         }
     }

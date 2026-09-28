@@ -31,6 +31,18 @@ namespace Nex
 
             // Debug Specific.
             DebugSettings,
+
+            // Billiard Rogue (append only).
+            Title,
+            PlayerMode,
+            Calibration,
+            Gameplay,
+            StageIntro,
+            Reward,
+            Pause,
+            TrackingLost,
+            Summary,
+            Settings,
         }
 
         /// <summary>

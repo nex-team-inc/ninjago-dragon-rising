@@ -3,6 +3,7 @@
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Jazz;
+using Nex.Dev;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -74,7 +75,8 @@ namespace Nex
 
         void Update()
         {
-            if (Input.GetKeyDown(KeyCode.S))
+            // Debug shortcut to pass the position / raise-hand steps; DebugInput is inert under PRODUCTION.
+            if (DebugInput.GetKeyDown(KeyCode.S))
             {
                 SetAllowPassingRaisingHandState(true);
                 ResolveGoodPlayerPosition();
@@ -95,6 +97,8 @@ namespace Nex
             }
 
             playerTrackers.Clear();
+            // CreateTrackers appends one state per player; stale entries would keep the waits from ever resolving.
+            playerStates.Clear();
         }
 
         void CreateTrackers()

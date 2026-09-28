@@ -1,0 +1,95 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c46a5fef7388c4712a819da9716ea62e, type: 3}
+  m_Name: Ball_Frost
+  m_EditorClassIdentifier: Assembly-CSharp::Nex.BilliardRogue.BallDefinition
+  rules:
+    type: 2
+    rarity: 1
+    levels:
+    - damage: 1
+      speedMultiplier: 1
+      maxBounces: 40
+      statusStacks: 0
+      procChance: 0.35
+      chainCount: 0
+      chainRange: 2.2
+      chainDamage: 1
+      areaDamage: 0
+      areaRadius: 0
+      areaCross: 0
+      splitCount: 0
+      splitDamage: 1
+      pierceCount: 0
+      healPerHit: 0
+      healCapPerShot: 0
+      bonusPerWallBounce: 0
+      bonusCap: 0
+      critChance: 0
+      critMultiplier: 3
+      frozenBonusDamage: 0
+      spreadBurnOnDeath: 0
+    - damage: 1
+      speedMultiplier: 1
+      maxBounces: 40
+      statusStacks: 0
+      procChance: 0.5
+      chainCount: 0
+      chainRange: 2.2
+      chainDamage: 1
+      areaDamage: 0
+      areaRadius: 0
+      areaCross: 0
+      splitCount: 0
+      splitDamage: 1
+      pierceCount: 0
+      healPerHit: 0
+      healCapPerShot: 0
+      bonusPerWallBounce: 0
+      bonusCap: 0
+      critChance: 0
+      critMultiplier: 3
+      frozenBonusDamage: 0
+      spreadBurnOnDeath: 0
+    - damage: 1
+      speedMultiplier: 1
+      maxBounces: 40
+      statusStacks: 0
+      procChance: 0.65
+      chainCount: 0
+      chainRange: 2.2
+      chainDamage: 1
+      areaDamage: 0
+      areaRadius: 0
+      areaCross: 0
+      splitCount: 0
+      splitDamage: 1
+      pierceCount: 0
+      healPerHit: 0
+      healCapPerShot: 0
+      bonusPerWallBounce: 0
+      bonusCap: 0
+      critChance: 0
+      critMultiplier: 3
+      frozenBonusDamage: 2
+      spreadBurnOnDeath: 0
+    unlockTier: 0
+  icon: {fileID: 0}
+  color: {r: 0.6, g: 0.85, b: 1, a: 1}
+  glowColor: {r: 0.8, g: 1.6, b: 2, a: 1}
+  material: {fileID: 0}
+  trailPrefab: {fileID: 0}
+  hitSfx: 401
+  launchSfx: 201
+  hitVfx: 21
+  nameKey: br.ball.frost.name
+  descKeyPrefix: br.ball.frost.desc.

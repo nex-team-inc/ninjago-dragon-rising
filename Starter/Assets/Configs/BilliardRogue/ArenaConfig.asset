@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ecb1dd2fa6514c98805329443cbc239, type: 3}
+  m_Name: ArenaConfig
+  m_EditorClassIdentifier: Assembly-CSharp::Nex.BilliardRogue.ArenaConfig
+  rules:
+    columns: 7
+    rows: 10
+    launchZoneHeight: 1.6
+    launchY: 0.55
+    ballRadius: 0.2
+    ballSpeed: 13
+    enemyInset: 0.08
+    bossInset: 0.1
+    minAimAngleDeg: 12
+    maxFlightSeconds: 7
+    maxIdleWallBounces: 10
+    antiStallAccel: 6
+    substepsPerSecond: 240
+  worldScale: 1
+  floorTilePrefab: {fileID: 0}
+  dangerTilePrefab: {fileID: 0}
+  wallPrefab: {fileID: 0}
+  cornerPostPrefab: {fileID: 0}
+  cameraPosition: {x: 0, y: 20.4, z: 12.7}
+  cameraPitchDeg: 58
+  cameraFov: 28

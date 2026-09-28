@@ -1,6 +1,9 @@
+#nullable enable
+
 using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Nex.BilliardRogue.Simulation;
 using Nex.Util;
 using Nex.Util.Attributes;
 using UnityEngine;
@@ -72,7 +75,7 @@ namespace Nex
 
         const string preferenceDataKey = "playerPreferenceData";
 
-        public PlayerPreference PlayerPreference { get; private set; }
+        public PlayerPreference PlayerPreference { get; private set; } = null!;
 
         public void ResetPlayerPreference()
         {
@@ -118,7 +121,7 @@ namespace Nex
 
         const string debugSettingsDataKey = "debugSettingsData";
 
-        public DebugSettings DebugSettings { get; private set; }
+        public DebugSettings DebugSettings { get; private set; } = null!;
 
         public void SaveDebugSettings()
         {
@@ -148,6 +151,97 @@ namespace Nex
             DebugSettings = new DebugSettings();
 #if !DISABLE_PERSISTENCE
             ES3.Save(debugSettingsDataKey, DebugSettings);
+#endif
+        }
+
+        #endregion
+
+        #region Billiard Rogue Run & Meta Progress
+
+        // Runs are saved at turn boundaries only (no in-flight balls); the file is rewritten on every save.
+        const string runSaveKey = "billiardRogueRun";
+        const string metaProgressKey = "billiardRogueMeta";
+
+        MetaProgressData? metaProgress;
+#if DISABLE_PERSISTENCE
+        RunState? memoryRun;
+#endif
+
+        /// <summary>Loaded lazily; falls back to defaults (without overwriting the file) when unreadable.</summary>
+        public MetaProgressData MetaProgress => metaProgress ??= LoadMetaProgress();
+
+        public void SaveMetaProgress()
+        {
+#if !DISABLE_PERSISTENCE
+            ES3.Save(metaProgressKey, MetaProgress);
+#endif
+        }
+
+        public void ResetMetaProgress()
+        {
+            metaProgress = new MetaProgressData();
+            SaveMetaProgress();
+        }
+
+        public bool HasRunSave()
+        {
+#if DISABLE_PERSISTENCE
+            return memoryRun != null;
+#else
+            return ES3.KeyExists(runSaveKey);
+#endif
+        }
+
+        public RunState? LoadRun()
+        {
+#if DISABLE_PERSISTENCE
+            return memoryRun;
+#else
+            try
+            {
+                return ES3.KeyExists(runSaveKey) ? ES3.Load<RunState>(runSaveKey) : null;
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[PlayerDataManager] Discarding unreadable run save: {e}");
+                return null;
+            }
+#endif
+        }
+
+        public void SaveRun(RunState run)
+        {
+#if DISABLE_PERSISTENCE
+            memoryRun = run;
+#else
+            ES3.Save(runSaveKey, run);
+#endif
+        }
+
+        public void ClearRun()
+        {
+#if DISABLE_PERSISTENCE
+            memoryRun = null;
+#else
+            ES3.DeleteKey(runSaveKey);
+#endif
+        }
+
+        static MetaProgressData LoadMetaProgress()
+        {
+#if DISABLE_PERSISTENCE
+            return new MetaProgressData();
+#else
+            try
+            {
+                return ES3.Load(metaProgressKey, new MetaProgressData());
+            }
+            catch (Exception e)
+            {
+                // Keep the file for diagnosis until the next real save.
+                Debug.LogError($"[PlayerDataManager] Meta progress unreadable, using defaults: {e}");
+                return new MetaProgressData();
+            }
 #endif
         }
 

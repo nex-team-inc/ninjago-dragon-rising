@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 02c21c90da0d84ef393a1f6de0a577cd, type: 3}
+  m_Name: HD2DVisualConfig
+  m_EditorClassIdentifier: Assembly-CSharp::Nex.BilliardRogue.HD2DVisualConfig
+  renderResolution: {x: 640, y: 360}
+  marginTexels: 1
+  pixelSnapping: 1
+  pixelationEnabled: 1
+  tiltShiftIntensity: 0.8
+  tiltShiftCenter: 0.45
+  tiltShiftHalfWidth: 0.18
+  tiltShiftFalloff: 0.25
+  tiltShiftMaxBlur: 1.5
+  bloomThreshold: 0.9
+  bloomIntensity: 0.8
+  bloomScatter: 0.7
+  vignetteIntensity: 0.25
+  shadowDistance: 30
+  qualityOverrides:
+  - qualityName: Low
+    renderHeight: 270
+    bloom: 0
+    tiltShift: 0
+    shadows: 0
+  - qualityName: Medium
+    renderHeight: 360
+    bloom: 1
+    tiltShift: 0
+    shadows: 1
+  - qualityName: High
+    renderHeight: 360
+    bloom: 1
+    tiltShift: 1
+    shadows: 1

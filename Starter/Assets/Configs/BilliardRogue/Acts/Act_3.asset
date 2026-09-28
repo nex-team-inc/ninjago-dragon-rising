@@ -1,0 +1,70 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d3faaf539cfe4e17ab9ce36487be318, type: 3}
+  m_Name: Act_3
+  m_EditorClassIdentifier: Assembly-CSharp::Nex.BilliardRogue.ActDefinition
+  rules:
+    actIndex: 2
+    normalStages: 3
+    minWaves: 5
+    maxWaves: 8
+    enemyPool:
+    - type: 6
+      weight: 2
+      cost: 2
+    - type: 4
+      weight: 2
+      cost: 2
+    - type: 3
+      weight: 1.5
+      cost: 2
+    - type: 7
+      weight: 1
+      cost: 3
+    - type: 2
+      weight: 1.5
+      cost: 2
+    - type: 5
+      weight: 1
+      cost: 2
+    - type: 1
+      weight: 1
+      cost: 1
+    bossType: 10
+    baseBudgetPerRow: 5
+    budgetGrowthPerStage: 1
+    maxFieldObjects: 3
+    rarityWeights:
+    - 0.3
+    - 0.45
+    - 0.25
+    bossEscortWaves: 3
+    bossEscortEveryNTurns: 2
+  nameKey: br.act.3.name
+  environmentPrefab: {fileID: 0}
+  lighting:
+    sunColor: {r: 0.7, g: 0.5, b: 1, a: 1}
+    sunIntensity: 0.9
+    sunEuler: {x: 55, y: -15, z: 0}
+    ambientSky: {r: 0.3, g: 0.2, b: 0.5, a: 1}
+    ambientEquator: {r: 0.2, g: 0.3, b: 0.45, a: 1}
+    ambientGround: {r: 0.1, g: 0.08, b: 0.18, a: 1}
+    fogColor: {r: 0.25, g: 0.15, b: 0.4, a: 1}
+    fogDensity: 0.02
+    rimColor: {r: 0.5, g: 1, b: 1, a: 1}
+    additionalLightTint: {r: 0.6, g: 0.9, b: 1, a: 1}
+    godRayColor: {r: 0.7, g: 0.5, b: 1, a: 1}
+    godRayIntensity: 0.9
+    particleTint: {r: 0.6, g: 1, b: 1, a: 1}
+  volumeProfile: {fileID: 0}
+  ambientParticlesPrefab: {fileID: 0}
+  battleBgm: 12

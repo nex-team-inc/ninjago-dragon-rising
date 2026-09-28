@@ -1,6 +1,7 @@
 #nullable enable
 
 using System.Collections.Generic;
+using DG.Tweening;
 using Jazz;
 using UnityEngine;
 using Nex.Utils;
@@ -16,7 +17,17 @@ namespace Nex
         [SerializeField] List<Sprite> spriteByPlayerIndex = null!;
         [SerializeField] Image image = null!;
 
+        [Header("Active player highlight")]
+        [Tooltip("Scale of the indicator while it marks the active shooter.")]
+        [SerializeField, Range(1f, 3f)] float highlightedScale = 1.4f;
+        [Tooltip("Extra scale of the highlight bounce (yoyo, unscaled time).")]
+        [SerializeField, Range(1f, 2f)] float bounceScale = 1.12f;
+        [SerializeField, Range(0.1f, 2f)] float bounceSeconds = 0.35f;
+        [Tooltip("Alpha of indicators that are not the active shooter.")]
+        [SerializeField, Range(0f, 1f)] float dimmedAlpha = 0.45f;
+
         int playerIndex = -1;
+        Tween? bounceTween;
         BodyPoseDetectionManager bodyPoseDetectionManager = null!;
         PreviewFrameBase previewFrame = null!;
         RectTransform previewFrameRectTransform = null!;
@@ -28,6 +39,26 @@ namespace Nex
             new OneEuroFilter(4, 10),
             new OneEuroFilter(4, 10)
         );
+
+        #region Public Methods
+
+        public int PlayerIndex => playerIndex;
+
+        /// <summary>Marks the active shooter (scaled up, opaque, bouncing) or dims the indicator. Position stays script-driven.</summary>
+        public void SetHighlighted(bool highlighted)
+        {
+            bounceTween?.Kill();
+            bounceTween = null;
+            var scale = highlighted ? highlightedScale : 1f;
+            indicator.localScale = Vector3.one * scale;
+            image.color = new Color(1f, 1f, 1f, highlighted ? 1f : dimmedAlpha);
+            if (!highlighted) return;
+            bounceTween = indicator.DOScale(scale * bounceScale, bounceSeconds)
+                .SetEase(Ease.InOutSine)
+                .SetLoops(-1, LoopType.Yoyo)
+                .SetUpdate(true)
+                .SetLink(gameObject);
+        }
 
         public void Initialize(
             int aPlayerIndex,
@@ -50,6 +81,10 @@ namespace Nex
 
             initialized = true;
         }
+
+        #endregion
+
+        #region Detection
 
         void OnDestroy()
         {
@@ -108,5 +143,7 @@ namespace Nex
 
             image.rectTransform.sizeDelta = new Vector2(indicatorSize, indicatorSize);
         }
+
+        #endregion
     }
 }

@@ -118,7 +118,10 @@ namespace Nex.BilliardRogue.Simulation
                 if (Contains(ignoreIds, ignoreCount, e.id)) continue;
                 if (!CircleRect(EnemyRect(a, e), position, radius, out var normal, out var depth)) continue;
                 if (Vector2.Dot(direction, normal) >= 0f) continue;
-                if (found && depth <= contact.depth) continue;
+                if (found && depth <= contact.depth)
+                {
+                    continue;
+                }
                 contact = new BallContact { kind = BallContactKind.Enemy, enemy = e, normal = normal, depth = depth };
                 found = true;
             }
@@ -126,10 +129,16 @@ namespace Nex.BilliardRogue.Simulation
             for (var i = 0; i < objects.Count; i++)
             {
                 var o = objects[i];
-                if (o.type != FieldObjectType.Pillar && o.type != FieldObjectType.Crate) continue;
+                if (o.type != FieldObjectType.Pillar && o.type != FieldObjectType.Crate)
+                {
+                    continue;
+                }
                 if (!CircleRect(ArenaGeometry.CellRect(a, o.col, o.row), position, radius, out var normal, out var depth)) continue;
                 if (Vector2.Dot(direction, normal) >= 0f) continue;
-                if (found && depth <= contact.depth) continue;
+                if (found && depth <= contact.depth)
+                {
+                    continue;
+                }
                 var kind = o.type == FieldObjectType.Pillar ? BallContactKind.Pillar : BallContactKind.Crate;
                 contact = new BallContact { kind = kind, fieldObject = o, normal = normal, depth = depth };
                 found = true;

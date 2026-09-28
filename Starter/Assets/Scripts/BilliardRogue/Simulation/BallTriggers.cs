@@ -98,7 +98,10 @@ namespace Nex.BilliardRogue.Simulation
             for (var i = 0; i < objects.Count; i++)
             {
                 var o = objects[i];
-                if (o.type != FieldObjectType.Portal || o.pairId < 0) continue;
+                if (o.type != FieldObjectType.Portal || o.pairId < 0)
+                {
+                    continue;
+                }
                 if (BallCollision.OverlapsCell(rules.arena, o.col, o.row, PortalInset, position, radius)) return i;
             }
             return -1;

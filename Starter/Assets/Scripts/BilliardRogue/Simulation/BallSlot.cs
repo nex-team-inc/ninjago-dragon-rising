@@ -28,7 +28,10 @@ namespace Nex.BilliardRogue.Simulation
         public bool stalled;
         public int bounces;
         public int wallBounces;
+        /// <summary>Wall bounces since the last contact with a new solid; a juggle against one solid keeps counting.</summary>
         public int idleWallBounces;
+        /// <summary>Id of the enemy or field object touched last (-1 = none yet).</summary>
+        public int lastSolidId = -1;
         public int combo;
         public int hitIndex;
         public bool firstHitPending;
@@ -65,6 +68,7 @@ namespace Nex.BilliardRogue.Simulation
             bounces = 0;
             wallBounces = 0;
             idleWallBounces = 0;
+            lastSolidId = -1;
             combo = 0;
             hitIndex = 0;
             firstHitPending = true;

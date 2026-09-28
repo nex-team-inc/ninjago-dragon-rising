@@ -50,6 +50,18 @@ Verification (18:36–18:39):
   after a boss stage, emits `StageCleared`, and sets `awaitingReward` unless it was the final stage. `AdvanceToNextStage`
   sets `outcome = Victory` when it returns false. `RewardGenerator.Roll` does **not** set `awaitingReward`.
 
+Added by the fix pass (2026-09-28 evening; all additive, public APIs unchanged):
+- Rules fields with class defaults, also written into the existing config assets: `ArenaRules.maxStallSeconds = 1`,
+  `BalanceRules.offerBasicBall = false`, `ActRules.minOpenColumnsPerRow = 1`. State: `EnemyState.halfHpSummonPending`.
+- `RewardGenerator.Roll` stores `rng.State` into `run.rngState`, so a save after the reward pick resumes the same run.
+- `BallWallBounce.sourceId` = the pillar id for a pillar reflection (0 = arena wall); `value` stays the wall-bounce count
+  (pillars do not feed the Rubber bonus).
+- `WaveSpawned.flag` = true when a planned cell had to be dropped (row completely full); `value2` = cells spawned.
+- Internals split for the 400-line rule: `BoardOps` delegates to `BoardOccupancy` (queries), `BoardDamage` (hits, statuses,
+  deaths) and `EnemyEvents`; `EnemyPhaseResolver` orchestrates `EnemyAbilities` (step 1) and `EnemyAdvance` (step 2).
+- Tests: `Tests/SimTestHarness.cs` (`SimTest`, `ShotLog`) plus `BallPhysicsTests`, `BallAbilityTests`, `EnemyPhaseTests`,
+  `RunFlowTests` cover every TDD §3.6 item (52 EditMode tests in total).
+
 ## 4. Rule decisions the Gameplay / Presentation / UI modules must follow
 
 **Grid, spawning and stage clear**
@@ -59,8 +71,10 @@ Verification (18:36–18:39):
 - **Ids:** `board.nextId` is unique across enemies, field objects and pickups. Plan field objects use ids 1..N.
   `BeginStage` copies them and sets nextId = max+1.
 - **Stage start:** a normal stage spawns waves[0] into row 1 and waves[1] into row 0. A boss stage spawns waves[0]
-  (the boss alone) at col `(columns − w)/2`, rows 0–1. After that, one wave row per enemy phase spawns into row 0,
-  skipping occupied cells.
+  (the boss alone) at col `(columns − w)/2`, rows 0–1. After that, one wave row per enemy phase spawns into row 0.
+- **Blocked wave cells relocate:** a cell whose planned column is occupied spawns in the nearest free column of the row
+  (closer wins, left on ties), so the planned enemy count survives congestion. Only a completely full row drops cells,
+  and `WaveSpawned.flag` reports it. (Before: 28% of act-3 enemies silently vanished.)
 - **Boss stage:** a stage is a boss stage when `stageInAct >= act.normalStages`. After the planned escorts,
   `waves[1 + k % (waves.Count − 1)]` spawns every `bossEscortEveryNTurns` turns while the boss lives, with
   k = turnInStage / N. Nothing spawns after the boss dies.
@@ -75,22 +89,31 @@ Verification (18:36–18:39):
 - **Freeze:** an enemy frozen at phase start skips abilities, advance and attack. The counter decrements at step 4 of
   that phase, so Freeze 1 skips exactly one phase. Bosses are immune.
 - Ranged enemies don't also melee in the danger row on a phase where they cast.
+- **Spawn-around abilities** (Totem, King Slime, Bone Lich walls and the half-HP summon) pick random free cells of the
+  caster's 8-neighbourhood ring outside the danger row, and never the cells straight below a caster that moves, so a boss
+  can no longer wall itself in with its own spawns. The Bone Lich's one-time summon is `EnemyState.halfHpSummonPending`
+  (set with `bossHalfTriggered`, consumed by the next abilities step), so it survives a save and any object re-creation.
 - The resolver stamps `SimEvent.step` (0–4) and stops after the step in which the player dies.
 
 **Balls**
 - **Iteration:** `DamageEnemy` can remove several enemies at once (explosion chains). Always iterate a snapshot of
   `board.enemies`.
 - **Splitter:** the first hit replaces the parent with minis. `BallSplit` ends the parent, and minis don't emit
-  `BallLaunched`.
+  `BallLaunched`. The fan (±18° around the reflected direction) is reflected against the contact normal, so a grazing
+  hit never sends a mini straight back into the face that triggered the split.
+- **Pillars:** a pillar reflection emits `BallWallBounce` with `sourceId` = pillar id (arena walls use 0).
 - **Bomb:** the enemy hit directly takes both the hit damage and the area damage.
 - **Piercer:** it forgets a pierced enemy once it has left it, so it can hit that enemy again on a later pass.
 - **Crates:** take the ball's level damage (minimum 1). Crates with odd ids drop a pickup: `CrateBroken` gets
   `flag = true`, `pickup` set, and `sourceId` = the pickup id.
 - **Randomness:** crit and freeze procs use a hash of (seed, shot number, hit index, salt). No RNG state is saved,
   and a continued run replays the same procs.
-- **Anti-stall:** after max flight time, max idle wall bounces, or the level's max bounces, a growing downward pull
-  applies at constant speed. After 2× max flight time the ball ignores solids and drops out. Pool size is 96 balls
-  with 240 Hz substeps.
+- **Anti-stall:** after `maxFlightSeconds` (7), `maxIdleWallBounces` (10) or the level's max bounces, a growing downward
+  pull applies at constant speed. Idle wall bounces are wall bounces since the last contact with a *new* solid: bouncing
+  between the walls and one enemy (the 90° "juggle") counts as idle, so it stalls after 10 wall bounces. Once the pull
+  has run for `maxStallSeconds` (1 s) the ball ignores every solid and drops straight out at `ballSpeed`, so no flight
+  exceeds `maxFlightSeconds + maxStallSeconds + TopWallY / ballSpeed` = 8.9 s (measured worst case 8.8 s over 3034
+  bot shots; 1.9% of shots reach the drop). Pool size is 96 balls with 240 Hz substeps.
 
 **Pickups, generation and rewards**
 - **Pickups** move with the waves through `EnemyMoved` with `flag = true`. Wave pickups have no spawn event, so
@@ -98,27 +121,40 @@ Verification (18:36–18:39):
 - **Shots:** `run.extraBalls` (+1 Ball pickups) is **not** reset by the simulation. `ShotSequencer` owns resetting it
   at the end of the turn.
 - **Stage generation:**
-  - Every row has at least one enemy and keeps at least one column open.
+  - Every row has at least one enemy and keeps at least `act.minOpenColumnsPerRow` (1) columns open.
   - Field objects sit in rows 2..danger−1, at most one per column, at most one portal pair, and avoid boss columns.
   - Crate HP = `crateHp × (1 + hpScalePerStage × stageNumber)`.
 - **Reward cards:** card 1 is a new ball, card 2 an upgrade, card 3 a Heal when HP ≤ 50% (otherwise a random kind).
-  No Basic ball is offered while an ability ball is unlocked, and no two cards share a ball type.
+  No Basic ball is offered while an ability ball is unlocked (`balance.offerBasicBall = false`), and no two cards share
+  a ball type. `Roll` writes `run.rngState`, so saving right after the pick is safe.
 
 ## 5. Known issues and follow-ups (none block the module wave)
 
-1. **Class-size rule:** `BoardOps.cs` (436 lines) and `EnemyPhaseResolver.cs` (474) exceed the 400-line limit.
-   Split them, e.g. into `EnemyAbilities` and `EnemyAdvance`.
-2. **Missing tests from TDD §3.6:** wall/face reflection, shield block, pierce, split, bomb area, chain, burn/poison
-   ticks, freeze skip, advance with blocking and diagonal slide, danger attack, wave spawn, stage clear, anti-stall
-   exit bound, `PredictPath` vs `Step`, and a `RunState` JSON round-trip.
-3. **Pacing:** in the smoke test the longest single ball flight was 820 frames (13.7 s). The anti-stall pull is too
-   gentle for the GDD pacing targets; tune `antiStallAccel` or the max flight time, and add the §3.6 exit-bound test.
-4. **Balance:** two of three bot runs died in the act-1 boss stage with 17 enemies on board. Check the escort cadence
-   and pile-up once a real aiming bot exists.
-5. **Hard-coded constants** that could become `ActRules` fields: the minimum open columns per row, and the rule that
-   excludes Basic from new-ball cards.
+Status after the Simulation fix pass (2026-09-28 evening): items 1, 2, 3 and 5 are done, 4 was measured, 6 stands.
+
+1. ~~**Class-size rule**~~ Done: `BoardOps` → `BoardOccupancy` + `BoardDamage` + `EnemyEvents`; `EnemyPhaseResolver`
+   → `EnemyAbilities` + `EnemyAdvance`. Largest Simulation class is now `BallSimulator` (333 lines).
+2. ~~**Missing tests from TDD §3.6**~~ Done: 31 new EditMode tests (52 total, all green) in `Simulation/Tests`.
+3. ~~**Pacing**~~ Done: flights are bounded by `ArenaRules.maxStallSeconds` (see §4 Anti-stall). Worst flight in the
+   smoke run: 8.8 s (was 13.7 s); `antiStallAccel` and `maxFlightSeconds` keep their GDD values.
+4. **Balance (measured, no designer values changed).** `Tools/sim_smoke_eval.cs` now aims: it scores sampled launch
+   positions × angles and straight lines at the lowest enemies by their `PredictPath` contacts, grows the bag to 8 balls,
+   then levels up, and heals at ≤ 50% HP. Six seeds with the real config assets:
+   - Act-1 boss stage cleared on 6/6 seeds in 5–8 turns (it is not a wall); normal act-1 stages take 4–8 turns.
+   - Outcomes: 2 victories (89 and 110 turns), defeats at stage numbers 7, 7 (Bone Lich), 9 and 10. Turns per stage
+     4–18 (longest: act-3 boss). Max enemies on board 13–17 with the aiming bot (16–22 with the earlier random bot).
+   - Ball-flight pacing: worst flight 8.77 s; 98/3034 shots exceed 7 s and 57 reach the ghost drop.
+   - Best combo per shot 20–32 on dense boards. If that reads as too much, lower `maxIdleWallBounces` (juggles) or
+     the level `maxBounces` in the ball assets; both are designer values.
+   The escort cadence / King Slime numbers were left as in the GDD. Act 2–3 difficulty for a naive bot is a designer
+   call; the bot never picks Bomb/Piercer deliberately and only uses straight or single-bounce aims.
+5. ~~**Hard-coded constants**~~ Done: `ActRules.minOpenColumnsPerRow` and `BalanceRules.offerBasicBall` (current
+   behaviour as defaults, written into the assets).
 6. `DebugSettings.godMode` and similar settings must be handled by Gameplay around `BoardOps.DamagePlayer` (the
    simulation has no debug flags).
+7. **Pile-ups on boss stages** are now visible instead of silently trimmed (wave cells relocate rather than vanish). If
+   boss stages feel crowded, `bossEscortEveryNTurns` and the boss `spawnCount` are the levers; the simulation reports
+   drops through `WaveSpawned.flag`.
 
 ## 6. Suggested next steps for Claude
 

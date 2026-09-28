@@ -17,9 +17,6 @@ namespace Nex.BilliardRogue.Simulation
         const int MaxSubstepsPerStep = 120;
         const float MiniRadiusScale = 0.7f;
         const float SplitFanDegrees = 18f;
-        // Past this multiple of maxFlightSeconds a stalled ball ignores solids and drops straight out, so a turn
-        // can never hang even if the pull keeps losing against enemy reflections.
-        const float GhostAfterFlightMultiple = 2f;
 
         readonly GameRules rules;
         readonly BoardOps ops;
@@ -78,12 +75,15 @@ namespace Nex.BilliardRogue.Simulation
         }
 
         /// <summary>
-        /// Advances every ball by dt using substepsPerSecond internally. Handles wall bounces (BallWallBounce, Rubber
-        /// bonus, maxBounces), enemy hits via BallHitResolver/BoardOps (shield BLOCK from the shielded face, pierce,
-        /// split, bomb area, chain lightning, freeze/burn/poison procs, crit, vampire heal cap, combo per ball →
-        /// ComboChanged), crates, pickups, portal teleports with re-entry lock, mud slow, the anti-stall pull after
-        /// maxFlightSeconds, maxIdleWallBounces or the level's maxBounces, and BallExited (value = combo,
-        /// value2 = bounces) when y &lt; 0.
+        /// Advances every ball by dt using substepsPerSecond internally. Handles wall and pillar bounces (BallWallBounce
+        /// with sourceId = pillar id, 0 for an arena wall; value = wall bounces so far, which feed the Rubber bonus and
+        /// maxBounces), enemy hits via BallHitResolver/BoardOps (shield BLOCK from the shielded face, pierce, split,
+        /// bomb area, chain lightning, freeze/burn/poison procs, crit, vampire heal cap, combo per ball → ComboChanged),
+        /// crates, pickups, portal teleports with re-entry lock, mud slow, and BallExited (value = combo,
+        /// value2 = bounces) when y &lt; 0. Anti-stall: after maxFlightSeconds, maxIdleWallBounces wall bounces since
+        /// the last new solid (juggling one enemy between the walls counts as idle) or the level's maxBounces, a growing
+        /// downward pull applies; once it has run for maxStallSeconds the ball ignores every solid and drops straight
+        /// out at ballSpeed, so a flight never exceeds maxFlightSeconds + maxStallSeconds + TopWallY / ballSpeed.
         /// </summary>
         public void Step(RunState run, float dt, List<SimEvent> events)
         {
@@ -183,14 +183,15 @@ namespace Nex.BilliardRogue.Simulation
             b.flightTime += h;
             b.portalLock -= h;
             b.slowTimer -= h;
-            var ghost = b.flightTime > a.maxFlightSeconds * GhostAfterFlightMultiple;
-            if (ghost)
+            UpdateStall(b, h);
+            if (b.stalled && b.stallTime > a.maxStallSeconds)
             {
+                // The pull lost against the geometry (a ball resting on enemy top faces converges to vertical): drop
+                // straight out through everything so the flight ends within TopWallY / ballSpeed.
                 b.direction = Vector2.down;
-            }
-            else
-            {
-                ApplyStallPull(b, h);
+                b.position.y -= a.ballSpeed * h;
+                if (b.position.y < 0f) Exit(b, events);
+                return;
             }
             b.position += b.direction * (CurrentSpeed(b) * h);
             if (b.position.y < 0f)
@@ -203,39 +204,49 @@ namespace Nex.BilliardRogue.Simulation
                 b.bounces++;
                 b.wallBounces++;
                 b.idleWallBounces++;
-                events.Add(new SimEvent { kind = SimEventKind.BallWallBounce, ballId = b.id, ballType = b.type, value = b.wallBounces, position = b.position });
+                events.Add(WallBounce(b, 0));
             }
-            if (ghost) return;
             triggers.CollectPickups(run, b, events);
             if (triggers.TryTeleport(run, b, events)) return;
             triggers.UpdateMud(run, b, events);
             if (b.piercedCount > 0) triggers.PrunePierced(run.board, b);
             if (!BallCollision.FindSolidContact(a, run.board, b.position, b.direction, b.radius, b.piercedIds, b.piercedCount, out var contact)) return;
-            b.idleWallBounces = 0;
+            var solidId = contact.kind == BallContactKind.Enemy ? contact.enemy!.id : contact.fieldObject!.id;
+            // Bouncing between the walls and one solid is a juggle, not progress: only a new solid resets the idle count.
+            if (solidId != b.lastSolidId)
+            {
+                b.idleWallBounces = 0;
+                b.lastSolidId = solidId;
+            }
             if (contact.kind == BallContactKind.Enemy)
             {
                 var outcome = hitResolver.Resolve(run, b, contact.enemy!, contact.normal, events);
                 if (outcome == HitOutcome.PassThrough) return;
                 Bounce(b, contact);
-                if (outcome == HitOutcome.Split) Split(b, events);
+                if (outcome == HitOutcome.Split) Split(b, contact.normal, events);
                 return;
             }
             Bounce(b, contact);
-            if (contact.kind == BallContactKind.Crate) ops.DamageCrate(run, contact.fieldObject!, CrateDamage(b), events);
+            if (contact.kind == BallContactKind.Crate)
+            {
+                ops.DamageCrate(run, contact.fieldObject!, CrateDamage(b), events);
+                return;
+            }
+            events.Add(WallBounce(b, contact.fieldObject!.id));
         }
 
-        void ApplyStallPull(BallSlot b, float h)
+        void UpdateStall(BallSlot b, float h)
         {
+            var a = rules.arena;
             if (!b.stalled)
             {
-                var a = rules.arena;
                 var maxBounces = hitResolver.LevelStats(b.type, b.level).maxBounces;
                 b.stalled = b.flightTime > a.maxFlightSeconds || b.idleWallBounces >= a.maxIdleWallBounces
                     || (maxBounces > 0 && b.bounces >= maxBounces);
                 if (!b.stalled) return;
             }
             b.stallTime += h;
-            var pull = rules.arena.antiStallAccel * (1f + b.stallTime) * h / Mathf.Max(CurrentSpeed(b), 0.01f);
+            var pull = a.antiStallAccel * (1f + b.stallTime) * h / Mathf.Max(CurrentSpeed(b), 0.01f);
             b.direction = (b.direction + Vector2.down * pull).normalized;
         }
 
@@ -246,7 +257,12 @@ namespace Nex.BilliardRogue.Simulation
             b.bounces++;
         }
 
-        void Split(BallSlot parent, List<SimEvent> events)
+        static SimEvent WallBounce(BallSlot b, int sourceId)
+        {
+            return new SimEvent { kind = SimEventKind.BallWallBounce, ballId = b.id, ballType = b.type, sourceId = sourceId, value = b.wallBounces, position = b.position };
+        }
+
+        void Split(BallSlot parent, Vector2 normal, List<SimEvent> events)
         {
             var count = hitResolver.LevelStats(parent.type, parent.level).splitCount;
             events.Add(new SimEvent { kind = SimEventKind.BallSplit, ballId = parent.id, ballType = parent.type, value = count, position = parent.position });
@@ -256,7 +272,8 @@ namespace Nex.BilliardRogue.Simulation
                 var mini = Acquire();
                 if (mini == null) break;
                 var angle = baseAngle + (i - (count - 1) * 0.5f) * SplitFanDegrees * Mathf.Deg2Rad;
-                var direction = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+                // A grazing parent leaves part of the fan pointing back into the face it just hit; those minis go onward.
+                var direction = BallCollision.Reflect(new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)), normal);
                 mini.Begin(nextBallId++, parent.type, parent.level, true, parent.shooterIndex, parent.shotNumber, i + 1,
                     parent.position, direction, parent.speed, parent.radius * MiniRadiusScale);
                 mini.flightTime = parent.flightTime;
@@ -266,6 +283,7 @@ namespace Nex.BilliardRogue.Simulation
                 mini.areaUsed = parent.areaUsed;
                 mini.splitUsed = true;
                 mini.firstHitPending = false;
+                mini.lastSolidId = parent.lastSolidId;
             }
             Release(parent);
         }

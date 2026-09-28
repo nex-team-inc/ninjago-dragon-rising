@@ -91,6 +91,11 @@ namespace Nex.BilliardRogue.Simulation
         public float maxFlightSeconds = 7f;
         public int maxIdleWallBounces = 10;
         public float antiStallAccel = 6f;
+        /// <summary>
+        /// Seconds the anti-stall pull may run before the ball ignores solids and drops straight out at ballSpeed,
+        /// bounding every flight to maxFlightSeconds + maxStallSeconds + TopWallY / ballSpeed.
+        /// </summary>
+        public float maxStallSeconds = 1f;
         public int substepsPerSecond = 240;
     }
 
@@ -115,6 +120,8 @@ namespace Nex.BilliardRogue.Simulation
         public float portalLockSeconds = 0.25f;
         public int powerShotBonusDamage = 1;
         public int powerPickupMultiplier = 2;
+        /// <summary>Offer Basic as a new-ball reward card while ability balls are available (it stays the last resort).</summary>
+        public bool offerBasicBall;
     }
 
     [Serializable]
@@ -141,6 +148,8 @@ namespace Nex.BilliardRogue.Simulation
         public float[] rarityWeights = { 0.6f, 0.3f, 0.1f };
         public int bossEscortWaves = 3;
         public int bossEscortEveryNTurns = 2;
+        /// <summary>Columns every generated wave row leaves open so a ball can always slip past it.</summary>
+        public int minOpenColumnsPerRow = 1;
     }
 
     public sealed class GameRules

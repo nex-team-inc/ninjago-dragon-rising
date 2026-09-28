@@ -136,6 +136,7 @@ public enum SimEventKind { /* see 3.5 */ }
   public int maxFieldObjects = 3; public float[] rarityWeights = { 0.6f, 0.3f, 0.1f }; }
 public sealed class GameRules { public ArenaRules arena; public BalanceRules balance; public BallRules[] balls /*index = (int)BallType*/; public EnemyRules[] enemies /*index=(int)EnemyType*/; public ActRules[] acts; }
 ```
+Additive fields since (defaults in the class; see HANDOFF.md §3–§4): `ArenaRules.maxStallSeconds = 1f` (ghost drop after the pull, bounding a flight to `maxFlightSeconds + maxStallSeconds + TopWallY / ballSpeed`), `BalanceRules.offerBasicBall = false`, `ActRules.minOpenColumnsPerRow = 1`, `EnemyRules.spawnEveryNTurns / spawnCountBelowHalf / halfHpSummonType / halfHpSummonCount`, `EnemyState.halfHpSummonPending`, `StatusStacks.burnSpreads`.
 
 ### 3.3 State (all `[Serializable]`, public fields, ES3-friendly; lists not arrays where they grow)
 ```csharp

@@ -47,6 +47,8 @@ namespace Nex.BilliardRogue.Simulation
         public int turnCounter;
         public Face shieldFace;
         public bool bossHalfTriggered;
+        /// <summary>Set with bossHalfTriggered; the next enemy phase consumes it for the one-time summon, so it survives a save.</summary>
+        public bool halfHpSummonPending;
     }
 
     [Serializable, Preserve]

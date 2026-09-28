@@ -13,8 +13,6 @@ namespace Nex.BilliardRogue.Simulation
     {
         // Rows 0-1 receive spawning waves and the danger row must stay reachable, so objects live in between.
         const int FirstObjectRow = 2;
-        // Every wave row keeps at least one open column so a ball can always slip past it.
-        const int MinOpenColumnsPerRow = 1;
 
         readonly List<int> startColumns = new();
         readonly List<WaveEntryWeight> candidates = new();
@@ -77,8 +75,10 @@ namespace Nex.BilliardRogue.Simulation
             ResetTaken(columnCount, blockedStart, blockedWidth);
             var row = new WaveRow();
             var free = CollectStarts(columnCount, 1);
+            // Open columns keep every row passable for a ball (act.minOpenColumnsPerRow).
+            var minOpen = Math.Max(0, act.minOpenColumnsPerRow);
 
-            if (free > MinOpenColumnsPerRow + 1 && rng.Chance(rules.balance.pickupChancePerRow))
+            if (free > minOpen + 1 && rng.Chance(rules.balance.pickupChancePerRow))
             {
                 var col = startColumns[rng.Range(0, free)];
                 row.cells.Add(new WaveCell { col = col, isPickup = true, pickup = (PickupType)rng.Range(0, SimConstants.PickupTypeCount) });
@@ -86,7 +86,7 @@ namespace Nex.BilliardRogue.Simulation
                 free--;
             }
 
-            var maxEnemies = Math.Max(1, free - MinOpenColumnsPerRow);
+            var maxEnemies = Math.Max(1, free - minOpen);
             var remaining = budget;
             for (var placed = 0; placed < maxEnemies; placed++)
             {

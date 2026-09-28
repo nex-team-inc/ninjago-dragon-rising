@@ -24,15 +24,17 @@ namespace Nex.BilliardRogue.Simulation
         /// entry below levelCap, amount = new level), card 3 a Heal when HP ≤ 50%, otherwise a random kind among
         /// NewBall / UpgradeBall / Heal (only when hurt) / MaxHp. Heal amount = balance.healRewardAmount, MaxHp amount
         /// = balance.maxHpRewardAmount. Missing kinds fall back in that order; Heal at full HP is the last resort.
-        /// Deterministic for a given rng state.
+        /// Deterministic for a given rng state; stores rng.State into run.rngState so a save after the reward resumes
+        /// the same run (callers keep the rolled cards in run.pendingRewards for re-display).
         /// </summary>
         public void Roll(GameRules rules, RunState run, int highestUnlockTier, SimRandom rng, List<RewardOption> output)
         {
             output.Clear();
             var act = rules.acts[Math.Clamp(run.actIndex, 0, rules.acts.Length - 1)];
             var hurt = run.playerHp < run.playerMaxHp;
+            var offerBasic = rules.balance.offerBasicBall;
 
-            TryAddNewBall(rules, run, act, highestUnlockTier, false, rng, output);
+            TryAddNewBall(rules, run, act, highestUnlockTier, offerBasic, rng, output);
             TryAddUpgrade(rules, run, rng, output);
             if (hurt && run.playerHp * 2 <= run.playerMaxHp)
             {
@@ -45,7 +47,7 @@ namespace Nex.BilliardRogue.Simulation
                 switch ((first + i) % RandomKindCount)
                 {
                     case 0:
-                        TryAddNewBall(rules, run, act, highestUnlockTier, false, rng, output);
+                        TryAddNewBall(rules, run, act, highestUnlockTier, offerBasic, rng, output);
                         break;
                     case 1:
                         TryAddUpgrade(rules, run, rng, output);
@@ -74,6 +76,8 @@ namespace Nex.BilliardRogue.Simulation
             {
                 TryAddHeal(rules.balance, output);
             }
+
+            run.rngState = rng.State;
         }
 
         /// <summary>

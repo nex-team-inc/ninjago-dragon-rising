@@ -18,14 +18,16 @@ namespace Nex.BilliardRogue
         [Header("Wiring (BoardPrefabBuilder)")]
         [SerializeField] RectTransform rect = null!;
         [SerializeField] TextMeshProUGUI hpText = null!;
+        [Tooltip("Dark rounded pill behind the HP number (sized to the text by SetHp).")]
+        [SerializeField] Image? hpPill;
         [Tooltip("Indexed by StatusType: Burn, Poison, Freeze.")]
         [SerializeField] Image[] statusIcons = Array.Empty<Image>();
         [SerializeField] Image telegraphIcon = null!;
 
         EnemyView? enemy;
         FieldObjectView? crate;
-        Color fullColor = Color.white;
-        Color lowColor = new(1f, 0.45f, 0.4f);
+        JuiceConfig.LabelSettings? labels;
+        bool hpVisible = true;
 
         public int Id { get; private set; }
         public RectTransform Rect => rect;
@@ -34,29 +36,48 @@ namespace Nex.BilliardRogue
 
         #region Public Methods
 
-        public void AttachEnemy(EnemyView view, float fontSize)
+        /// <summary>Bosses keep their status / telegraph icons but no HP number: the HUD boss bar carries it.</summary>
+        public void AttachEnemy(EnemyView view, JuiceConfig.LabelSettings settings)
         {
             enemy = view;
             crate = null;
             Id = view.Id;
-            Begin(fontSize);
+            Begin(settings, !view.IsBoss);
             SetHp(view.Hp, view.MaxHp);
         }
 
-        public void AttachCrate(FieldObjectView view, float fontSize)
+        public void AttachCrate(FieldObjectView view, JuiceConfig.LabelSettings settings)
         {
             crate = view;
             enemy = null;
             Id = view.Id;
-            Begin(fontSize);
+            Begin(settings, true);
             SetHp(view.Hp, view.MaxHp);
         }
 
         public void SetHp(int hp, int maxHp)
         {
-            hpText.SetText(NumberStrings.Get(Mathf.Max(0, hp)));
-            var fraction = maxHp > 0 ? hp / (float)maxHp : 1f;
-            hpText.color = fraction <= 0.34f ? lowColor : fullColor;
+            if (!hpVisible) return;
+            var text = NumberStrings.Get(Mathf.Max(0, hp));
+            hpText.SetText(text);
+            var fraction = maxHp > 0 ? Mathf.Clamp01(hp / (float)maxHp) : 1f;
+            var settings = labels;
+            if (settings != null)
+            {
+                // Full → mid over the upper half, mid → low over the lower half.
+                hpText.color = fraction >= 0.5f
+                    ? Color.Lerp(settings.hpMidColor, settings.hpFullColor, (fraction - 0.5f) * 2f)
+                    : Color.Lerp(settings.hpLowColor, settings.hpMidColor, fraction * 2f);
+                if (hpPill != null)
+                {
+                    var size = hpText.GetPreferredValues(text, 400f, 100f);
+                    hpPill.rectTransform.sizeDelta = new Vector2(Mathf.Ceil(size.x) + settings.hpPillPadding.x * 2f, Mathf.Ceil(hpText.fontSize) + settings.hpPillPadding.y * 2f);
+                }
+            }
+            else
+            {
+                hpText.color = fraction <= 0.34f ? new Color(1f, 0.45f, 0.4f) : Color.white;
+            }
         }
 
         public void SetStatus(int burn, int poison, bool frozen)
@@ -83,9 +104,18 @@ namespace Nex.BilliardRogue
 
         #region Helpers
 
-        void Begin(float fontSize)
+        void Begin(JuiceConfig.LabelSettings settings, bool showHp)
         {
-            hpText.fontSize = fontSize;
+            labels = settings;
+            hpVisible = showHp;
+            hpText.fontSize = settings.hpLabelSize;
+            hpText.enabled = showHp;
+            if (hpPill != null)
+            {
+                hpPill.enabled = showHp;
+                hpPill.color = settings.hpPillColor;
+            }
+
             for (var i = 0; i < statusIcons.Length; i++)
             {
                 statusIcons[i].enabled = false;

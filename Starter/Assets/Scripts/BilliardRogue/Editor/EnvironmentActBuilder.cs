@@ -15,6 +15,7 @@ namespace Nex.BilliardRogue.Editor
     public static class EnvironmentActBuilder
     {
         public const string PathFormat = "Assets/Prefabs/BilliardRogue/Environment/Env_Act{0}.prefab";
+        public const string CombinedMeshFolder = "Assets/Prefabs/BilliardRogue/Environment/Combined";
         /// <summary>Forward path, 4 lights per object (TDD D2): a handful of dramatic lights, emissive + bloom for the rest.</summary>
         public const int MaxLightsPerAct = 6;
         const string ShaftModel = "Env_LightShaft";
@@ -55,11 +56,16 @@ namespace Nex.BilliardRogue.Editor
             BuildLights(ctx, Group(root.transform, "Lights"));
             BuildShafts(ctx, Group(root.transform, "LightShafts"));
             var anchor = Group(root.transform, "AmbientParticles");
+            // Static dressing (ground tiles, prop bodies) merges into one renderer per material; shafts (per-renderer
+            // property blocks) and the animated parts (never static) stay separate.
+            var shaftRenderers = new HashSet<Renderer>();
+            foreach (var shaft in ctx.shafts) shaftRenderers.Add(shaft.renderer);
+            var combined = StaticMeshCombiner.Combine(root, CombinedMeshFolder, $"Env_Act{act.id}", r => shaftRenderers.Contains(r) ? null : "Env");
 
             WorldLayers.Apply(root, ctx.layer);
             Wire(root, ctx, anchor);
             WorldPrefabModels.SavePrefab(root, string.Format(PathFormat, act.id));
-            return $"act {act.id} ({act.name}): {ctx.props.Count} props, {ctx.groundTiles} ground tiles ({ctx.groundPruned} culled), {ctx.lights.Count}/{act.pointLights.Length} lights, {ctx.shafts.Count} shafts, {ctx.flames.Count} flames, {ctx.swaying.Count} sway, {ctx.bobbing.Count} water";
+            return $"act {act.id} ({act.name}): {ctx.props.Count} props, {ctx.groundTiles} ground tiles ({ctx.groundPruned} culled), {ctx.lights.Count}/{act.pointLights.Length} lights, {ctx.shafts.Count} shafts, {ctx.flames.Count} flames, {ctx.swaying.Count} sway, {ctx.bobbing.Count} water, combined {combined}";
         }
 
         static void BuildGround(Context ctx, Transform root, Plane[] view)

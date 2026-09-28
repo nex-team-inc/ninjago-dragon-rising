@@ -12,6 +12,8 @@ namespace Nex.BilliardRogue
     {
         static readonly int ColorId = Shader.PropertyToID("_Color");
         static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+        static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
+        static readonly int EmissionStrengthId = Shader.PropertyToID("_EmissionStrength");
 
         [Header("Wiring (WorldPrefabsBuilder)")]
         [SerializeField] LineRenderer line = null!;
@@ -22,6 +24,7 @@ namespace Nex.BilliardRogue
 
         ArenaLayout layout = null!;
         JuiceConfig.AimGuideSettings settings = null!;
+        JuiceConfig.BallSettings juiceBalls = null!;
         MaterialPropertyBlock block = null!;
         Vector3[] worldPoints = System.Array.Empty<Vector3>();
         float height;
@@ -33,6 +36,7 @@ namespace Nex.BilliardRogue
         {
             layout = aLayout;
             settings = juice.AimGuide;
+            juiceBalls = juice.Balls;
             block ??= new MaterialPropertyBlock();
             height = settings.height * layout.CellSize;
             line.useWorldSpace = true;
@@ -68,9 +72,16 @@ namespace Nex.BilliardRogue
                 bounceMarkerRenderers[i].SetPropertyBlock(block);
             }
 
+            // The waiting ball at the cue: a lit ball in the shooter colour whose emission blooms like a ball in flight
+            // (M_Ball_Basic); on the additive fallback material the same colours act as the HDR tint.
+            var balls = juiceBalls;
+            var lit = new Color(Mathf.Lerp(1f, playerColor.r, 0.6f), Mathf.Lerp(1f, playerColor.g, 0.6f), Mathf.Lerp(1f, playerColor.b, 0.6f), balls.ghostAlpha);
+            var emission = new Color(playerColor.r, playerColor.g, playerColor.b, 1f) * balls.ghostIntensity;
             block.Clear();
-            block.SetColor(BaseColorId, new Color(playerColor.r, playerColor.g, playerColor.b, 0.6f) * 1.5f);
-            block.SetColor(ColorId, new Color(playerColor.r, playerColor.g, playerColor.b, 0.6f) * 1.5f);
+            block.SetColor(BaseColorId, lit);
+            block.SetColor(ColorId, lit);
+            block.SetColor(EmissionColorId, emission);
+            block.SetFloat(EmissionStrengthId, 1f);
             ghostRenderer.SetPropertyBlock(block);
         }
 

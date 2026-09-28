@@ -161,6 +161,16 @@ namespace Nex.BilliardRogue.Editor
             return Load("M_DangerTile", () => CreateLit("M_Fallback_DangerTile", PaletteTexture, 1f, new Color(1.6f, 0.16f, 0.12f)));
         }
 
+        /// <summary>Dark neutral slab under the arena floor cells / launch pad (their bevelled Base parts): calm grid seams instead of palette-coloured crates.</summary>
+        public static Material FloorBase()
+        {
+            return Load("M_ArenaFloorBase", () => LoadOrCreateFallback("M_Fallback_ArenaFloorBase", LitShader, material =>
+            {
+                material.SetColor("_BaseColor", new Color(0.2f, 0.2f, 0.25f));
+                material.SetFloat("_Smoothness", 0.05f);
+            }));
+        }
+
         public static Material LightShaft()
         {
             return Load("M_LightShaft", CreateShaftFallback);

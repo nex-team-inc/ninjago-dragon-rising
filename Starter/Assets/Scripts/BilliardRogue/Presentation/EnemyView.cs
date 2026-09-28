@@ -24,9 +24,12 @@ namespace Nex.BilliardRogue
         [SerializeField, Range(0.2f, 4f)] float labelHeight = 1.1f;
         [Tooltip("Visual centre height in cells (hit sparks, chain lightning).")]
         [SerializeField, Range(0.1f, 3f)] float centerHeight = 0.45f;
+        [Tooltip("Largest horizontal extent of the authored model in units (WorldPrefabsBuilder); Spawn scales the model so the footprint fills JuiceConfig.EnemyMotion.cellFill of its cells.")]
+        [SerializeField, Range(0.1f, 6f)] float authoredFootprint = 1f;
 
         JuiceConfig.EnemyMotionSettings motion = null!;
         float cellSize = 1f;
+        float modelScale = 1f;
         int width = 1;
         int height = 1;
         Vector3 basePosition;
@@ -55,8 +58,10 @@ namespace Nex.BilliardRogue
         public EnemyStatusVisuals Status => statusVisuals;
         /// <summary>World position of the feet (footprint centre on the floor).</summary>
         public Vector3 Position => basePosition;
-        public Vector3 LabelAnchor => basePosition + Vector3.up * (labelHeight * cellSize);
-        public Vector3 Center => basePosition + Vector3.up * (centerHeight * cellSize);
+        public Vector3 LabelAnchor => basePosition + Vector3.up * (labelHeight * cellSize * modelScale);
+        public Vector3 Center => basePosition + Vector3.up * (centerHeight * cellSize * modelScale);
+        /// <summary>Uniform scale applied to the authored model so its footprint fills the configured cell fraction.</summary>
+        public float ModelScale => modelScale;
         public bool IsAnimating => hopT < 1f || lungeT < 1f || castT < 1f || deathT < 1f || popT < 1f;
 
         #region Life Cycle
@@ -73,10 +78,12 @@ namespace Nex.BilliardRogue
             IsBoss = isBoss;
             motion = juice.EnemyMotion;
             cellSize = layout.CellSize;
+            // Models are authored around one unit per footprint cell; fill the configured fraction of the footprint.
+            modelScale = Mathf.Clamp(motion.cellFill * Mathf.Max(width, 1) * cellSize / Mathf.Max(0.1f, authoredFootprint), 0.5f, 2.5f);
             basePosition = layout.FootprintCenterWorld(state.col, state.row, state.width, state.height);
             transform.SetPositionAndRotation(basePosition, layout.transform.rotation * Quaternion.Euler(0f, 180f, 0f));
             model.localPosition = Vector3.zero;
-            model.localScale = Vector3.one;
+            model.localScale = Vector3.one * modelScale;
             hopT = punchT = knockT = deathT = lungeT = castT = roarT = 1f;
             popT = pop ? 0f : 1f;
             dying = false;
@@ -152,6 +159,7 @@ namespace Nex.BilliardRogue
                 squash -= 0.3f * deathT;
             }
 
+            scale *= modelScale;
             model.localScale = new Vector3(scale * (1f + squash * 0.6f), scale * (1f - squash), scale * (1f + squash * 0.6f));
             if (dying && deathT >= 1f)
             {

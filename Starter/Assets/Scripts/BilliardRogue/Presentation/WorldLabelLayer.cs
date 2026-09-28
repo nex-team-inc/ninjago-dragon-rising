@@ -88,14 +88,14 @@ namespace Nex.BilliardRogue
         public WorldLabel AttachEnemy(EnemyView view)
         {
             var label = Acquire(view.Id);
-            label.AttachEnemy(view, juice.Labels.hpLabelSize);
+            label.AttachEnemy(view, juice.Labels);
             return label;
         }
 
         public WorldLabel AttachCrate(FieldObjectView view)
         {
             var label = Acquire(view.Id);
-            label.AttachCrate(view, juice.Labels.hpLabelSize);
+            label.AttachCrate(view, juice.Labels);
             return label;
         }
 

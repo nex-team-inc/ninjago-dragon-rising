@@ -48,8 +48,8 @@ namespace Nex.BilliardRogue
 
         public int PlayerIndex => playerIndex;
         public Vector3 Position { get; private set; }
-        public Vector3 LabelAnchor => Position + Vector3.up * (labelHeight * layout.CellSize);
-        public Vector3 Center => Position + Vector3.up * (0.5f * layout.CellSize);
+        public Vector3 LabelAnchor => Position + Vector3.up * (labelHeight * layout.CellSize * settings.modelScale);
+        public Vector3 Center => Position + Vector3.up * (0.5f * layout.CellSize * settings.modelScale);
 
         #region Life Cycle
 
@@ -128,7 +128,7 @@ namespace Nex.BilliardRogue
             var lean = defeated ? Quaternion.Euler(35f, 0f, 0f) : Quaternion.identity;
             model.localRotation = Quaternion.Euler(0f, yaw, 0f) * lean;
             model.localPosition = new Vector3(0f, bounce, walking ? 0f : Mathf.Sin(phase * 1.3f) * 0.01f);
-            model.localScale = defeated ? new Vector3(1.08f, 0.85f, 1.08f) : Vector3.one;
+            model.localScale = (defeated ? new Vector3(1.08f, 0.85f, 1.08f) : Vector3.one) * settings.modelScale;
             cue.localPosition = cueBaseLocal + cueOffset;
             cue.localRotation = cueBaseRotation;
             if (tail != null) tail.localRotation = Quaternion.Euler(0f, Mathf.Sin(phase * settings.tailWagSpeed * Mathf.PI) * settings.tailWagAngle, 0f);
@@ -199,11 +199,13 @@ namespace Nex.BilliardRogue
             transform.SetPositionAndRotation(Position, layout.transform.rotation);
         }
 
-        /// <summary>Stand behind the ball (toward the camera) on the launch line.</summary>
+        /// <summary>Stand beside and slightly behind the ball (toward the camera) on the launch line, inside the walls.</summary>
         Vector2 ArenaGeometryStand(float x01)
         {
             var origin = Simulation.ArenaGeometry.LaunchOrigin(layout.Rules, x01);
-            return new Vector2(origin.x, Mathf.Max(0.05f, origin.y - settings.standOffset));
+            var side = playerIndex == 0 ? -settings.standSideOffset : settings.standSideOffset;
+            var x = Mathf.Clamp(origin.x + side, 0.35f, layout.Rules.columns - 0.35f);
+            return new Vector2(x, Mathf.Max(0.05f, origin.y - settings.standOffset));
         }
 
         void UpdateEars(float dt)

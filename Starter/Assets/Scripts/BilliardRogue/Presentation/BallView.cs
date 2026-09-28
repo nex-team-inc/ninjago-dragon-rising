@@ -14,6 +14,7 @@ namespace Nex.BilliardRogue
     {
         static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
+        static readonly int EmissionStrengthId = Shader.PropertyToID("_EmissionStrength");
 
         public event Action<Component>? OnRelease;
 
@@ -44,6 +45,7 @@ namespace Nex.BilliardRogue
             block.Clear();
             block.SetColor(BaseColorId, definition.Color);
             block.SetColor(EmissionColorId, definition.GlowColor);
+            block.SetFloat(EmissionStrengthId, settings.flightGlow);
             meshRenderer.SetPropertyBlock(block);
             // Ball.fbx is a unit-diameter sphere (radius 0.5), TDD §14.1.
             var diameter = worldRadius * 2f;

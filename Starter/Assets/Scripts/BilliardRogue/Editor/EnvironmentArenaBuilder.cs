@@ -22,6 +22,9 @@ namespace Nex.BilliardRogue.Editor
         const string TopSurface = "Top_Surface";
         const string SideSurface = "Side_Surface";
         const string DangerInlay = "DangerInlay_Emissive";
+        const string BasePart = "Base";
+        /// <summary>Floor pieces whose bevelled Base part takes the dark M_ArenaFloorBase instead of the palette (calm seams, no crate look).</summary>
+        static readonly string[] FloorBasePieces = { FloorModel, DangerModel, LaunchPadModel };
         const float LaunchPadAuthoredWidth = 7f;
         const float LaunchPadAuthoredDepth = 1.6f;
         const float CornerInset = 0.22f;
@@ -37,6 +40,11 @@ namespace Nex.BilliardRogue.Editor
             (CornerModel, SideSurface, ArenaSurface.CornerSide),
         };
 
+        public const string CombinedMeshFolder = "Assets/Prefabs/BilliardRogue/World/Combined";
+        const string KitGroup = "Kit";
+        const string InlayGroup = "DangerInlay";
+        const string SurfaceGroupPrefix = "Surface_";
+
         sealed class Context
         {
             public float scale;
@@ -44,6 +52,8 @@ namespace Nex.BilliardRogue.Editor
             public LayoutAct? firstAct;
             public readonly Dictionary<ArenaSurface, List<Renderer>> surfaces = new();
             public readonly List<Renderer> inlays = new();
+            /// <summary>Combine group of the renderers that must stay addressable after merging (surface slots, danger inlays).</summary>
+            public readonly Dictionary<Renderer, string> groups = new();
             public int pieces;
         }
 
@@ -82,6 +92,7 @@ namespace Nex.BilliardRogue.Editor
                     }
 
                     EnvironmentPieces.SetMaterial(inlay, EnvironmentPieces.DangerTile());
+                    ctx.groups[inlay] = InlayGroup;
                     ctx.inlays.Add(inlay);
                 }
             }
@@ -89,11 +100,34 @@ namespace Nex.BilliardRogue.Editor
             var padScale = new Vector3(rules.columns / LaunchPadAuthoredWidth, 1f, rules.launchZoneHeight / LaunchPadAuthoredDepth);
             Place(ctx, Model(config.LaunchPadPrefab, LaunchPadModel), LaunchPadModel, "LaunchPad", root.transform, 0f, rules.launchZoneHeight * 0.5f, 0f, padScale, castShadows: false);
             BuildWalls(ctx, config, root.transform, half, zTop);
+            var combined = CombineStatic(root, ctx);
 
             WireArena(root, danger, ctx);
             WorldLayers.Apply(root, ctx.layer);
             WorldPrefabModels.SavePrefab(root, ArenaPath);
-            return $"arena {ctx.pieces} pieces ({rules.columns}x{rules.rows}, danger row {ctx.inlays.Count} inlays)";
+            return $"arena {ctx.pieces} pieces ({rules.columns}x{rules.rows}, danger row {ctx.inlays.Count} inlays, combined {combined})";
+        }
+
+        // One renderer per (group, material, shadows): the surface slots and the danger inlays keep their own groups
+        // so ArenaView / DangerRowPulse can still swap or pulse them, everything else merges into the kit group.
+        static StaticMeshCombiner.Result CombineStatic(GameObject root, Context ctx)
+        {
+            var result = StaticMeshCombiner.Combine(root, CombinedMeshFolder, "Arena", r => ctx.groups.TryGetValue(r, out var group) ? group : KitGroup);
+            foreach (ArenaSurface slot in System.Enum.GetValues(typeof(ArenaSurface)))
+            {
+                var merged = StaticMeshCombiner.FindAll(result, SurfaceGroupPrefix + slot);
+                if (merged.Count == 0) continue;
+                ctx.surfaces[slot] = merged.ConvertAll(r => (Renderer)r);
+            }
+
+            var inlays = StaticMeshCombiner.FindAll(result, InlayGroup);
+            if (inlays.Count > 0)
+            {
+                ctx.inlays.Clear();
+                ctx.inlays.AddRange(inlays);
+            }
+
+            return result;
         }
 
         static void BuildWalls(Context ctx, ArenaConfig config, Transform root, float half, float zTop)
@@ -144,6 +178,12 @@ namespace Nex.BilliardRogue.Editor
             var s = ctx.scale;
             var instance = EnvironmentPieces.Instantiate(model, name, parent, new Vector3(x * s, 0f, z * s), Quaternion.Euler(0f, rotY, 0f), scale * s);
             EnvironmentPieces.SetAllMaterials(instance, EnvironmentPieces.Palette());
+            if (System.Array.IndexOf(FloorBasePieces, piece) >= 0)
+            {
+                var basePart = EnvironmentPieces.PartRenderer(instance, BasePart);
+                if (basePart != null) EnvironmentPieces.SetMaterial(basePart, EnvironmentPieces.FloorBase());
+            }
+
             foreach (var (surfacePiece, part, slot) in SurfaceParts)
             {
                 if (surfacePiece != piece) continue;
@@ -153,6 +193,7 @@ namespace Nex.BilliardRogue.Editor
                 if (surface.Length > 0) EnvironmentPieces.SetMaterial(renderer, EnvironmentPieces.Surface(surface));
                 if (!ctx.surfaces.TryGetValue(slot, out var list)) ctx.surfaces[slot] = list = new List<Renderer>();
                 list.Add(renderer);
+                ctx.groups[renderer] = SurfaceGroupPrefix + slot;
             }
 
             EnvironmentPieces.SetShadows(instance, castShadows);

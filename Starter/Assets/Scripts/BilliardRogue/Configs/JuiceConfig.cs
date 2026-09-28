@@ -12,6 +12,8 @@ namespace Nex.BilliardRogue
         [Serializable]
         public sealed class EnemyMotionSettings
         {
+            [Tooltip("Fraction of a cell an enemy model's footprint fills (per footprint cell: a 2x2 boss fills 2 × this). EnemyView scales the authored model to it.")]
+            [Range(0.5f, 1.2f)] public float cellFill = 0.92f;
             [Tooltip("Idle bob amplitude in cells.")]
             [Range(0f, 0.2f)] public float idleBobAmplitude = 0.03f;
             [Range(0.2f, 5f)] public float idleBobPeriod = 1.6f;
@@ -41,8 +43,8 @@ namespace Nex.BilliardRogue
         [Serializable]
         public sealed class EmissiveSettings
         {
-            [Tooltip("_EmissionStrength on parts tagged emissive by the prefab builder.")]
-            [Range(0f, 8f)] public float strength = 2.2f;
+            [Tooltip("_EmissionStrength on parts tagged emissive by the prefab builder (× the palette's 1.6 HDR emission).")]
+            [Range(0f, 8f)] public float strength = 1.2f;
             [Range(0f, 1f)] public float pulseAmount = 0.35f;
             [Range(0.2f, 6f)] public float pulsePeriod = 1.8f;
         }
@@ -77,10 +79,14 @@ namespace Nex.BilliardRogue
         {
             [Tooltip("Degrees of spin per world unit travelled.")]
             [Range(0f, 720f)] public float spinPerUnit = 240f;
-            [Range(0f, 1f)] public float trailTime = 0.16f;
-            [Range(0f, 2f)] public float trailWidthScale = 0.9f;
+            [Range(0f, 1f)] public float trailTime = 0.26f;
+            [Range(0f, 2f)] public float trailWidthScale = 1.15f;
             [Tooltip("Ghost ball alpha while aiming.")]
-            [Range(0f, 1f)] public float ghostAlpha = 0.55f;
+            [Range(0f, 1f)] public float ghostAlpha = 0.85f;
+            [Tooltip("_EmissionStrength of a ball in flight (its BallDefinition glow colour × this): balls must be the brightest thing on screen, so this sits well above the bloom threshold.")]
+            [Range(0f, 6f)] public float flightGlow = 1.8f;
+            [Tooltip("HDR multiplier of the ghost ball / aim origin so the waiting ball reads at the cue.")]
+            [Range(0.5f, 6f)] public float ghostIntensity = 2.2f;
         }
 
         [Serializable]
@@ -92,6 +98,10 @@ namespace Nex.BilliardRogue
             [Range(90f, 270f)] public float idleYaw = 140f;
             [Tooltip("Distance behind the ball (toward the camera) where the cat stands, in cells.")]
             [Range(0f, 1.2f)] public float standOffset = 0.5f;
+            [Tooltip("Uniform scale of the cat model (Cat_Hero.fbx is authored 1.3 cells tall); the cat must read at the bottom of the screen next to the 0.4-cell ball.")]
+            [Range(0.5f, 2.5f)] public float modelScale = 1.35f;
+            [Tooltip("Sideways offset from the ball, in cells (P1 stands to the left of its ball, P2 to the right), so the cat never hides the waiting ball from the camera.")]
+            [Range(0f, 1.5f)] public float standSideOffset = 0.62f;
             [Tooltip("Launch X (0..1) of the waiting player in 2P.")]
             [Range(0f, 0.3f)] public float waitingX01 = 0.06f;
             [Range(0.05f, 1f)] public float strikeDuration = 0.28f;
@@ -119,8 +129,16 @@ namespace Nex.BilliardRogue
         public sealed class LabelSettings
         {
             [Tooltip("Label offset in canvas pixels from the projected anchor.")]
-            public Vector2 hpLabelOffset = new(0f, 6f);
+            public Vector2 hpLabelOffset = new(0f, 14f);
+            [Tooltip("Pixel font size of the HP number; keep an integer multiple of 16 (the BilliardPixel raster size) so it stays crisp.")]
             [Range(8f, 96f)] public float hpLabelSize = 32f;
+            [Tooltip("Padding of the dark pill behind the HP number (x per side, y per side) in canvas pixels.")]
+            public Vector2 hpPillPadding = new(12f, 4f);
+            public Color hpPillColor = new(0.04f, 0.04f, 0.07f, 0.86f);
+            [Tooltip("HP number colour at full, half and low HP (blended by the HP fraction).")]
+            public Color hpFullColor = new(0.66f, 1f, 0.6f);
+            public Color hpMidColor = new(1f, 0.9f, 0.4f);
+            public Color hpLowColor = new(1f, 0.38f, 0.32f);
             [Range(8f, 96f)] public float floatTextSize = 30f;
             [Range(8f, 96f)] public float comboTextSize = 26f;
             [Tooltip("Random horizontal jitter of damage numbers in canvas pixels.")]

@@ -56,3 +56,96 @@ MonoBehaviour:
   enemyFreezeTint: {r: 0.6, g: 0.85, b: 1, a: 1}
   playerHurtFlash: {r: 1, g: 0.2, b: 0.2, a: 0.45}
   flashDuration: 0.08
+  player1Color: {r: 1, g: 0.85, b: 0.3, a: 1}
+  player2Color: {r: 0.4, g: 0.8, b: 1, a: 1}
+  enemyMotion:
+    cellFill: 0.92
+    idleBobAmplitude: 0.03
+    idleBobPeriod: 1.6
+    breathAmplitude: 0.04
+    blinkIntervalMin: 2.5
+    blinkIntervalMax: 5.5
+    blinkDuration: 0.1
+    flapAngle: 25
+    flapSpeed: 9
+    hopSquash: 0.25
+    hitPunch: 0.22
+    knockbackDistance: 0.1
+    knockbackDuration: 0.18
+    spawnPopDuration: 0.28
+    deathDuration: 0.16
+    attackLunge: 0.35
+    castRaise: 0.15
+    bossPhaseRoarScale: 0.35
+  emissive:
+    strength: 1.2
+    pulseAmount: 0.35
+    pulsePeriod: 1.8
+  statusVisuals:
+    burnTint: {r: 1, g: 0.45, b: 0.1, a: 1}
+    poisonTint: {r: 0.7, g: 0.3, b: 1, a: 1}
+    tintAmount: 0.45
+    freezeTintAmount: 0.7
+    shieldMarkerThickness: 0.08
+    shieldMarkerHeight: 0.35
+  props:
+    pickupBobAmplitude: 0.08
+    pickupBobPeriod: 1.2
+    pickupSpinSpeed: 90
+    portalSwirlSpeed: 160
+    crateWobble: 0.18
+    crateWobbleDuration: 0.25
+    mudPulse: 0.04
+  balls:
+    spinPerUnit: 240
+    trailTime: 0.26
+    trailWidthScale: 1.15
+    ghostAlpha: 0.85
+    flightGlow: 1.8
+    ghostIntensity: 2.2
+  cat:
+    walkSpeed: 7
+    idleYaw: 140
+    standOffset: 0.5
+    modelScale: 1.35
+    waitingX01: 0.06
+    strikeDuration: 0.28
+    cuePullBack: 0.32
+    hurtDuration: 0.35
+    hurtRecoil: 0.25
+    victoryJump: 0.6
+    tailWagSpeed: 2.2
+    tailWagAngle: 18
+    earTwitchInterval: 3
+  aimGuide:
+    height: 0.12
+    width: 0.09
+    bounceMarkerSize: 0.16
+    intensity: 1.8
+  labels:
+    hpLabelOffset: {x: 0, y: 14}
+    hpLabelSize: 32
+    hpPillPadding: {x: 12, y: 4}
+    hpPillColor: {r: 0.04, g: 0.04, b: 0.07, a: 0.86}
+    hpFullColor: {r: 0.66, g: 1, b: 0.6, a: 1}
+    hpMidColor: {r: 1, g: 0.9, b: 0.4, a: 1}
+    hpLowColor: {r: 1, g: 0.38, b: 0.32, a: 1}
+    floatTextSize: 30
+    comboTextSize: 26
+    numberJitter: 18
+    floatRise: 46
+    floatLifetime: 0.9
+    statusIconSize: 28
+    telegraphIconSize: 40
+  sequences:
+    bossIntroPushIn: 2.2
+    bossIntroShake: 5
+    victoryPushIn: 1.4
+    defeatPushIn: 1.8
+    explosionShake: 6
+    quakeShake: 8
+    enemyAttackShake: 3
+    midDamage: 4
+    hardDamage: 10
+    critVfxScale: 1.5
+    explosionVfxScalePerRadius: 1

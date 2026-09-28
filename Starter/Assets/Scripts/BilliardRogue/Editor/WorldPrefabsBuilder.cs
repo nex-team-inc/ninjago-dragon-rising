@@ -38,11 +38,14 @@ namespace Nex.BilliardRogue.Editor
             }
         }
 
+        static readonly StringBuilder footprintReport = new();
+
         static string Build()
         {
             var layer = WorldPrefabModels.WorldLayer();
             var palette = WorldPrefabModels.Palette(false);
             var glow = WorldPrefabModels.Glow();
+            footprintReport.Clear();
             var enemies = new EnemyView[SimConstants.EnemyTypeCount];
             for (var i = 0; i < enemies.Length; i++)
             {
@@ -70,7 +73,7 @@ namespace Nex.BilliardRogue.Editor
             AssetDatabase.Refresh();
             var report = new StringBuilder("[WorldPrefabsBuilder] prefabs: ");
             report.Append($"{enemies.Length} enemies, ball, {objects.Length} field objects, {pickups.Length} pickups, cat, labels, BoardPresenter; ");
-            report.Append($"definition slots filled {filled}; warnings {WorldPrefabModels.Warnings.Count}");
+            report.Append($"definition slots filled {filled}; warnings {WorldPrefabModels.Warnings.Count}; authored footprints (units / footprint cells):{footprintReport}");
             Debug.Log(report.ToString());
             return report.ToString();
         }
@@ -106,6 +109,10 @@ namespace Nex.BilliardRogue.Editor
             viewSo.FindProperty("statusVisuals").objectReferenceValue = status;
             viewSo.FindProperty("labelHeight").floatValue = Mathf.Clamp(bounds.max.y + 0.25f, 0.6f, 4f);
             viewSo.FindProperty("centerHeight").floatValue = Mathf.Clamp(bounds.center.y, 0.1f, 3f);
+            // Horizontal extent of the model alone (before the shield marker exists); EnemyView scales it to JuiceConfig.EnemyMotion.cellFill.
+            var authoredFootprint = Mathf.Clamp(Mathf.Max(bounds.size.x, bounds.size.z), 0.1f, 6f);
+            viewSo.FindProperty("authoredFootprint").floatValue = authoredFootprint;
+            footprintReport.Append($" {type}:{authoredFootprint:0.00}/{footprint:0}");
             viewSo.ApplyModifiedPropertiesWithoutUndo();
 
             var idleSo = new SerializedObject(idle);
@@ -142,10 +149,10 @@ namespace Nex.BilliardRogue.Editor
             var basic = WorldPrefabModels.Ball(BallType.Basic);
             WorldPrefabModels.ApplyMaterial(mesh, basic != null ? basic : palette, renderers);
             var trail = root.AddComponent<TrailRenderer>();
-            trail.sharedMaterial = glow;
-            trail.time = 0.16f;
+            trail.sharedMaterial = WorldPrefabModels.BallTrail(glow);
+            trail.time = 0.26f;
             trail.minVertexDistance = 0.05f;
-            trail.startWidth = 0.35f;
+            trail.startWidth = 0.45f;
             trail.endWidth = 0f;
             trail.numCornerVertices = 2;
             trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
@@ -172,10 +179,14 @@ namespace Nex.BilliardRogue.Editor
                 FieldObjectType.Portal => (PrimitiveType.Cylinder, new Vector3(0.9f, 0.05f, 0.9f)),
                 _ => (PrimitiveType.Cylinder, new Vector3(0.95f, 0.02f, 0.95f)),
             };
-            var model = WorldPrefabModels.InstantiateModel($"Props/Prop_{type}.fbx", root.transform, "Model", primitive, scale, layer, out _);
+            var model = WorldPrefabModels.InstantiateModel($"Props/Prop_{type}.fbx", root.transform, "Model", primitive, scale, layer, out var placeholder);
             var renderers = new List<Renderer>();
             WorldPrefabModels.ApplyMaterial(model, palette, renderers);
             var emissive = WorldPrefabModels.CollectEmissive(renderers);
+            // Game-scale readability (TDD §14.1 models are authored inside one cell): the pillar rises well above the
+            // balls and casts a real shadow, crates / portals fill their cell. The view animates the container, so the
+            // authored scale lives on the FBX root below it.
+            if (!placeholder) WorldPrefabModels.FbxRoot(model).localScale = FieldObjectScale(type);
             var bounds = WorldPrefabModels.RendererBounds(model);
             var pips = new List<Renderer>();
             if (type == FieldObjectType.Crate)
@@ -201,11 +212,24 @@ namespace Nex.BilliardRogue.Editor
             return WorldPrefabModels.SavePrefab(root, $"{Root}/Board/FieldObject_{type}.prefab").GetComponent<FieldObjectView>();
         }
 
+        /// <summary>Authored-scale multiplier of the field-object FBX roots (designer-tunable here; re-run the builder).</summary>
+        static Vector3 FieldObjectScale(FieldObjectType type) => type switch
+        {
+            FieldObjectType.Pillar => new Vector3(1.05f, 1.6f, 1.05f),
+            FieldObjectType.Crate => new Vector3(1.1f, 1.1f, 1.1f),
+            FieldObjectType.Portal => new Vector3(1.12f, 1f, 1.12f),
+            _ => new Vector3(1.04f, 1f, 1.04f),
+        };
+
+        /// <summary>Pickups are authored small (0.5–0.6 units); at game scale they need to read next to 0.4-unit balls.</summary>
+        const float PickupScale = 1.35f;
+
         static PickupView BuildPickup(PickupType type, Material palette, int layer)
         {
             var root = WorldPrefabModels.NewRoot($"Pickup_{type}");
             root.layer = Mathf.Max(0, layer);
-            var model = WorldPrefabModels.InstantiateModel($"Props/Pickup_{type}.fbx", root.transform, "Model", PrimitiveType.Sphere, new Vector3(0.4f, 0.4f, 0.4f), layer, out _);
+            var model = WorldPrefabModels.InstantiateModel($"Props/Pickup_{type}.fbx", root.transform, "Model", PrimitiveType.Sphere, new Vector3(0.4f, 0.4f, 0.4f), layer, out var placeholder);
+            if (!placeholder) WorldPrefabModels.FbxRoot(model).localScale = Vector3.one * PickupScale;
             var renderers = new List<Renderer>();
             WorldPrefabModels.ApplyMaterial(model, palette, renderers);
             var emissive = WorldPrefabModels.CollectEmissive(renderers);

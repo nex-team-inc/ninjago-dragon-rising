@@ -8,9 +8,10 @@ namespace Nex.BilliardRogue.Editor
     /// Unity calibration of the act looks, applied by EnvironmentBuilder when it seeds a lighting preset (once per
     /// preset, see ActLightingPreset.seededFromLayout). layouts.json carries the art direction from the Blender preview
     /// (sun angles, shaft and particle tints); these values re-balance exposure and colour for BilliardRogue/ToonLit
-    /// under the act's Volume grade, tuned from edit-mode renders at the ArenaConfig camera pose: the grid keeps a
-    /// mid value in every act, night acts stay near-neutral so their grade carries the mood, and the act lights are
-    /// scaled until their pools read against the sun.
+    /// under the act's Volume grade, tuned from play-mode captures at the ArenaConfig camera pose (gameplay-view polish):
+    /// the sun stays low enough (46–58° elevation) for hard, readable cast shadows under actors, its colour is only
+    /// mildly tinted so the grade (not the light) carries the mood, ambient stays a step below the floor value, and
+    /// the act lights are scaled until their pools read against the sun without washing the table.
     /// </summary>
     public static class EnvironmentLooks
     {
@@ -36,60 +37,81 @@ namespace Nex.BilliardRogue.Editor
         /// <summary>Cozy golden hour behind the Title: the Act 1 ruins under a low, warm sun with strong god rays and glowing lanterns.</summary>
         public static void Title(ActLightingPreset look)
         {
-            look.sunColor = C(1f, 0.64f, 0.36f);
-            look.sunIntensity = 1.55f;
+            look.sunColor = C(1f, 0.7f, 0.42f);
+            look.sunIntensity = 1.45f;
             look.sunEuler = new Vector3(30f, 112f, 0f);
-            look.shadowStrength = 0.8f;
-            look.ambientSky = C(0.62f, 0.48f, 0.56f);
-            look.ambientEquator = C(0.58f, 0.4f, 0.32f);
-            look.ambientGround = C(0.3f, 0.2f, 0.16f);
-            look.fogColor = C(1f, 0.7f, 0.42f);
-            look.fogDensity = 0.012f;
+            look.shadowStrength = 0.85f;
+            look.ambientSky = C(0.58f, 0.46f, 0.56f);
+            look.ambientEquator = C(0.52f, 0.38f, 0.32f);
+            look.ambientGround = C(0.26f, 0.18f, 0.16f);
+            look.fogColor = C(1f, 0.72f, 0.45f);
+            look.fogDensity = 0.011f;
             look.rimColor = C(1f, 0.78f, 0.5f);
             look.additionalLightTint = C(1f, 0.72f, 0.42f);
-            look.additionalLightIntensity = 2.5f;
-            look.godRayColor = C(1f, 0.7f, 0.36f);
-            look.godRayIntensity = 2f;
+            look.additionalLightIntensity = 2.2f;
+            look.godRayColor = C(1f, 0.72f, 0.4f);
+            look.godRayIntensity = 1.6f;
             look.particleTint = C(1f, 0.85f, 0.6f);
         }
 
-        // Sunny afternoon: the layout look holds; only the stone lanterns need more punch against the sun.
+        // Sunny afternoon in the ruins: a warm but not yellow sun from the upper left at 46°, long hard shadows,
+        // cooler violet ambient in the shade, stone lanterns as accents only.
         static void MossyRuins(ActLightingPreset look)
         {
-            look.additionalLightIntensity = 1.5f;
-        }
-
-        // Moonlit crypt: near-neutral cool light (the act grade adds the blue), warm torch and brazier pools.
-        static void SunkenCrypt(ActLightingPreset look)
-        {
-            look.sunColor = C(0.72f, 0.8f, 1f);
-            look.sunIntensity = 1.1f;
-            look.shadowStrength = 0.85f;
-            look.ambientSky = C(0.34f, 0.38f, 0.54f);
-            look.ambientEquator = C(0.25f, 0.25f, 0.33f);
-            look.ambientGround = C(0.1f, 0.1f, 0.13f);
-            look.fogColor = C(0.08f, 0.1f, 0.18f);
-            look.fogDensity = 0.012f;
-            look.rimColor = C(0.55f, 0.68f, 1f);
-            look.additionalLightTint = C(1f, 0.72f, 0.45f);
-            look.additionalLightIntensity = 3f;
-            look.godRayColor = C(0.6f, 0.72f, 1f);
+            look.sunColor = C(1f, 0.9f, 0.74f);
+            look.sunIntensity = 1.3f;
+            look.sunEuler = new Vector3(46f, 108f, 0f);
+            look.shadowStrength = 0.92f;
+            look.ambientSky = C(0.46f, 0.5f, 0.72f);
+            look.ambientEquator = C(0.38f, 0.34f, 0.46f);
+            look.ambientGround = C(0.18f, 0.16f, 0.2f);
+            look.fogColor = C(0.86f, 0.76f, 0.6f);
+            look.fogDensity = 0.006f;
+            look.rimColor = C(1f, 0.88f, 0.66f);
+            look.additionalLightTint = C(1f, 0.8f, 0.5f);
+            look.additionalLightIntensity = 1.2f;
+            look.godRayColor = C(1f, 0.86f, 0.6f);
             look.godRayIntensity = 0.7f;
         }
 
-        // Crystal cave: soft violet key, desaturated enough that enemy colours survive; cyan / violet crystal pools.
+        // Moonlit crypt: a cool, near-neutral key from the upper right at 55° (the act grade adds the blue), dark
+        // ambient so the torch and brazier pools stay warm accents instead of a haze.
+        static void SunkenCrypt(ActLightingPreset look)
+        {
+            look.sunColor = C(0.76f, 0.82f, 1f);
+            look.sunIntensity = 1.05f;
+            look.sunEuler = new Vector3(55f, -112f, 0f);
+            look.shadowStrength = 0.9f;
+            look.ambientSky = C(0.28f, 0.32f, 0.5f);
+            look.ambientEquator = C(0.2f, 0.21f, 0.3f);
+            look.ambientGround = C(0.08f, 0.08f, 0.12f);
+            look.fogColor = C(0.07f, 0.09f, 0.17f);
+            look.fogDensity = 0.009f;
+            look.rimColor = C(0.6f, 0.72f, 1f);
+            look.additionalLightTint = C(1f, 0.7f, 0.42f);
+            look.additionalLightIntensity = 2f;
+            look.godRayColor = C(0.6f, 0.72f, 1f);
+            look.godRayIntensity = 0.5f;
+        }
+
+        // Crystal cave: a soft violet key from ceiling cracks at 58° (was near-vertical: no readable shadows),
+        // desaturated enough that enemy colours survive; the cyan / violet crystals glow but do not flood the table.
         static void CrystalHollow(ActLightingPreset look)
         {
-            look.sunColor = C(0.82f, 0.76f, 1f);
-            look.sunIntensity = 1f;
-            look.ambientSky = C(0.44f, 0.38f, 0.58f);
-            look.ambientEquator = C(0.3f, 0.27f, 0.4f);
-            look.ambientGround = C(0.13f, 0.1f, 0.17f);
-            look.fogColor = C(0.2f, 0.13f, 0.32f);
-            look.fogDensity = 0.012f;
+            look.sunColor = C(0.86f, 0.8f, 1f);
+            look.sunIntensity = 1.15f;
+            look.sunEuler = new Vector3(58f, 120f, 0f);
+            look.shadowStrength = 0.9f;
+            look.ambientSky = C(0.36f, 0.32f, 0.5f);
+            look.ambientEquator = C(0.24f, 0.22f, 0.34f);
+            look.ambientGround = C(0.1f, 0.08f, 0.14f);
+            look.fogColor = C(0.18f, 0.12f, 0.3f);
+            look.fogDensity = 0.008f;
+            look.rimColor = C(0.6f, 1f, 1f);
             look.additionalLightTint = C(0.8f, 0.95f, 1f);
-            look.additionalLightIntensity = 2.5f;
-            look.godRayIntensity = 1f;
+            look.additionalLightIntensity = 1.7f;
+            look.godRayColor = C(0.9f, 0.9f, 1f);
+            look.godRayIntensity = 0.6f;
         }
     }
 }

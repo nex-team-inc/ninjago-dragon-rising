@@ -92,6 +92,15 @@ namespace Nex.BilliardRogue.Editor
             return Fallback("M_Fallback_Glow", "Universal Render Pipeline/Unlit", null);
         }
 
+        /// <summary>HDR additive trail behind balls in flight (MaterialsBuilder); the plain glow material when it is not built yet.</summary>
+        public static Material BallTrail(Material glowFallback)
+        {
+            var material = AssetDatabase.LoadAssetAtPath<Material>($"{MaterialRoot}/M_BallTrail.mat");
+            if (material != null) return material;
+            Warn("M_BallTrail.mat missing (MaterialsBuilder); the ball trail uses the default glow material.");
+            return glowFallback;
+        }
+
         public static Material AimGuide()
         {
             var material = AssetDatabase.LoadAssetAtPath<Material>($"{MaterialRoot}/M_AimGuide.mat");

@@ -32,10 +32,10 @@ namespace Nex.BilliardRogue
         [Header("Tilt-shift band")]
         [SerializeField, Range(0f, 1f)] float tiltShiftIntensity = 0.8f;
         [Tooltip("Focus band centre, 0 = screen bottom, 1 = top.")]
-        [SerializeField, Range(0f, 1f)] float tiltShiftCenter = 0.45f;
-        [Tooltip("Half height of the sharp band in screen fraction.")]
-        [SerializeField, Range(0f, 0.5f)] float tiltShiftHalfWidth = 0.18f;
-        [SerializeField, Range(0.01f, 1f)] float tiltShiftFalloff = 0.25f;
+        [SerializeField, Range(0f, 1f)] float tiltShiftCenter = 0.49f;
+        [Tooltip("Half height of the sharp band in screen fraction. The playfield (cat at 0.05 .. top-row heads at 0.93 with the ArenaConfig camera) must stay inside it; only the scenery strips above and below blur.")]
+        [SerializeField, Range(0f, 0.5f)] float tiltShiftHalfWidth = 0.44f;
+        [SerializeField, Range(0.01f, 1f)] float tiltShiftFalloff = 0.06f;
         [SerializeField, Range(0.5f, 4f)] float tiltShiftMaxBlur = 1.5f;
         [Tooltip("Gaussian taps per side of each half-resolution blur pass.")]
         [SerializeField, Range(1, 8)] int tiltShiftSampleCount = 4;
@@ -47,8 +47,8 @@ namespace Nex.BilliardRogue
         [Tooltip("Bloom mip chain length; 4–5 keeps the 640×360 target cheap.")]
         [SerializeField, Range(2, 8)] int bloomMaxIterations = 4;
         [SerializeField, Range(0f, 1f)] float vignetteIntensity = 0.25f;
-        [Tooltip("URP shadow distance measured from the world camera, which sits about 24 m from the arena centre (18–30 m to its edges).")]
-        [SerializeField, Range(10f, 60f)] float shadowDistance = 30f;
+        [Tooltip("URP shadow distance measured from the world camera, which sits about 28 m from the arena centre (23–33 m to its far corners with the ArenaConfig pose); shadows must reach the top row.")]
+        [SerializeField, Range(10f, 60f)] float shadowDistance = 42f;
 
         [Header("Quality")]
         [SerializeField] QualityOverride[] qualityOverrides = Array.Empty<QualityOverride>();

@@ -82,6 +82,12 @@ namespace Nex.BilliardRogue.Editor
 
             var label = NewRect("WorldLabel", null, new Vector2(160f, 48f));
             var labelView = label.AddComponent<WorldLabel>();
+            // Dark rounded pill under the number (built-in 9-sliced rounded rect; WorldLabel sizes and tints it).
+            var pill = NewImage("HpPill", label.transform, Vector2.zero, new Vector2(56f, 40f));
+            pill.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Background.psd");
+            pill.type = Image.Type.Sliced;
+            pill.preserveAspect = false;
+            pill.color = new Color(0.04f, 0.04f, 0.07f, 0.86f);
             var hp = NewText("Hp", label.transform, font, 32f, new Vector2(0f, 0f), new Vector2(160f, 40f));
             var icons = new List<Image>();
             var statusNames = new[] { "Status_Burn", "Status_Poison", "Status_Freeze" };
@@ -98,6 +104,7 @@ namespace Nex.BilliardRogue.Editor
             var labelSo = new SerializedObject(labelView);
             labelSo.FindProperty("rect").objectReferenceValue = label.GetComponent<RectTransform>();
             labelSo.FindProperty("hpText").objectReferenceValue = hp;
+            labelSo.FindProperty("hpPill").objectReferenceValue = pill;
             SerializedPropertyWriter.Write(labelSo.FindProperty("statusIcons"), icons);
             labelSo.FindProperty("telegraphIcon").objectReferenceValue = telegraph;
             labelSo.ApplyModifiedPropertiesWithoutUndo();
@@ -245,7 +252,9 @@ namespace Nex.BilliardRogue.Editor
             line.numCornerVertices = 2;
             line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             line.receiveShadows = false;
-            var ghost = WorldPrefabModels.CreatePrimitive(go.transform, "GhostBall", PrimitiveType.Sphere, Vector3.zero, Vector3.one * 0.4f, glow, layer);
+            // The waiting ball at the cue: a real lit ball (M_Ball_Basic + emission), not an additive glow disc.
+            var ghostMaterial = WorldPrefabModels.Ball(BallType.Basic);
+            var ghost = WorldPrefabModels.CreatePrimitive(go.transform, "GhostBall", PrimitiveType.Sphere, Vector3.zero, Vector3.one * 0.4f, ghostMaterial != null ? ghostMaterial : glow, layer);
             var markers = new List<Transform>();
             var markerRenderers = new List<Renderer>();
             for (var i = 0; i < BounceMarkers; i++)

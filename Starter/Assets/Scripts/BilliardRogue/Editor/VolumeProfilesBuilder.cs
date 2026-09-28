@@ -24,12 +24,13 @@ namespace Nex.BilliardRogue.Editor
         const string ActConfigFormat = BuilderAssets.ConfigRoot + "/Acts/Act_{0}.asset";
 
         // Bloom values are relative to HD2DVisualConfig (threshold 0.9 / intensity 0.8 / scatter 0.7 = 1×): only pixels
-        // above ~1.0 in HDR (emissive palette cells, ball glow, shafts) may bloom, sunlit albedo must stay crisp.
+        // above ~1.2 in HDR (emissive palette cells, balls in flight, torches, crystals) may bloom; sunlit albedo, the
+        // floor and the scenery must stay crisp (gameplay-view polish: the earlier 0.95 thresholds hazed every act).
         sealed class Look
         {
-            public float bloomIntensity = 0.6f;
-            public float bloomThreshold = 1.05f;
-            public float bloomScatter = 0.65f;
+            public float bloomIntensity = 0.45f;
+            public float bloomThreshold = 1.2f;
+            public float bloomScatter = 0.6f;
             public Color bloomTint = Color.white;
             public float contrast = 10f;
             public float saturation = 10f;
@@ -64,10 +65,10 @@ namespace Nex.BilliardRogue.Editor
             }
 
             var defaultProfile = BuildLook(DefaultProfilePath, visual, new Look(), report);
-            BuildLook(VolumeRoot + "/Volume_Title.asset", visual, GoldenHour(0.8f, 0.3f), report);
+            BuildLook(VolumeRoot + "/Volume_Title.asset", visual, GoldenHour(0.6f, 0.3f, title: true), report);
             var acts = new[]
             {
-                BuildLook(VolumeRoot + "/Volume_Act1.asset", visual, GoldenHour(0.65f, 0.25f), report),
+                BuildLook(VolumeRoot + "/Volume_Act1.asset", visual, GoldenHour(0.42f, 0.2f, title: false), report),
                 BuildLook(VolumeRoot + "/Volume_Act2.asset", visual, DeepBlueNight(), report),
                 BuildLook(VolumeRoot + "/Volume_Act3.asset", visual, VioletCyanMagic(), report),
             };
@@ -81,59 +82,65 @@ namespace Nex.BilliardRogue.Editor
 
         #region Looks
 
-        static Look GoldenHour(float bloom, float vignette) => new()
+        // Golden hour without the yellow soup: warm highlights, cool violet shade, contrast up, white balance only a
+        // touch warm (the sun colour already carries the hour). The title keeps a richer, dreamier version.
+        static Look GoldenHour(float bloom, float vignette, bool title) => new()
         {
             bloomIntensity = bloom,
-            bloomTint = new Color(1f, 0.95f, 0.85f),
-            contrast = 12f,
-            saturation = 14f,
-            temperature = 12f,
-            tint = 2f,
-            splitShadows = new Color(0.3f, 0.25f, 0.45f),
-            splitHighlights = new Color(1f, 0.85f, 0.55f),
-            splitBalance = 8f,
+            bloomThreshold = title ? 1.1f : 1.25f,
+            bloomTint = new Color(1f, 0.94f, 0.82f),
+            contrast = title ? 12f : 18f,
+            saturation = title ? 12f : 6f,
+            temperature = title ? 10f : 3f,
+            tint = 0f,
+            splitShadows = new Color(0.28f, 0.26f, 0.48f),
+            splitHighlights = title ? new Color(1f, 0.85f, 0.55f) : new Color(1f, 0.92f, 0.76f),
+            splitBalance = title ? 8f : 4f,
             vignette = vignette,
-            vignetteColor = new Color(0.12f, 0.06f, 0.04f),
+            vignetteColor = new Color(0.1f, 0.06f, 0.05f),
         };
 
         // Calibrated on the real Act 2 diorama (Presentation-World): the first pass drove the red channel to zero,
-        // which drained the warm torch pools and the danger-row inlay; this keeps the night cool but readable.
+        // which drained the warm torch pools and the danger-row inlay; this keeps the night cool but readable, and
+        // the bloom now only takes the torches, crystals and balls (threshold 1.2, intensity 0.6).
         static Look DeepBlueNight() => new()
         {
-            bloomIntensity = 1.3f,
-            bloomThreshold = 0.95f,
-            bloomScatter = 0.7f,
-            bloomTint = new Color(0.9f, 0.95f, 1f),
-            contrast = 14f,
-            saturation = 0f,
+            bloomIntensity = 0.6f,
+            bloomThreshold = 1.2f,
+            bloomScatter = 0.6f,
+            bloomTint = new Color(0.92f, 0.95f, 1f),
+            contrast = 20f,
+            saturation = -4f,
             postExposure = 0f,
-            temperature = -14f,
-            tint = 4f,
+            temperature = -12f,
+            tint = 3f,
             splitShadows = new Color(0.3f, 0.36f, 0.72f),
-            splitHighlights = new Color(1f, 0.86f, 0.7f),
-            splitBalance = -15f,
-            lift = new Vector4(0.98f, 0.99f, 1.03f, 0f),
+            splitHighlights = new Color(1f, 0.88f, 0.74f),
+            splitBalance = -12f,
+            lift = new Vector4(0.98f, 0.99f, 1.02f, 0f),
             gain = new Vector4(1f, 1f, 1.02f, 0f),
-            vignette = 0.38f,
+            vignette = 0.3f,
             vignetteColor = new Color(0.01f, 0.02f, 0.08f),
         };
 
+        // Crystal cave: violet shade with cyan highlights, but far less saturation / tint than the first pass (which
+        // turned the whole frame into one purple wash) and bloom limited to the crystals and balls.
         static Look VioletCyanMagic() => new()
         {
-            bloomIntensity = 1.1f,
-            bloomThreshold = 0.95f,
-            bloomScatter = 0.75f,
-            bloomTint = new Color(0.85f, 0.8f, 1f),
-            contrast = 12f,
-            saturation = 26f,
-            tint = 18f,
-            splitShadows = new Color(0.38f, 0.14f, 0.6f),
-            splitHighlights = new Color(0.5f, 1f, 1f),
-            splitBalance = -6f,
-            gamma = new Vector4(1.02f, 0.98f, 1.06f, 0f),
-            vignette = 0.32f,
+            bloomIntensity = 0.55f,
+            bloomThreshold = 1.2f,
+            bloomScatter = 0.65f,
+            bloomTint = new Color(0.88f, 0.86f, 1f),
+            contrast = 18f,
+            saturation = 10f,
+            tint = 8f,
+            splitShadows = new Color(0.36f, 0.16f, 0.58f),
+            splitHighlights = new Color(0.62f, 1f, 1f),
+            splitBalance = -4f,
+            gamma = new Vector4(1f, 0.99f, 1.03f, 0f),
+            vignette = 0.26f,
             vignetteColor = new Color(0.08f, 0.02f, 0.14f),
-            tiltShiftScale = 1.1f,
+            tiltShiftScale = 1f,
         };
 
         #endregion

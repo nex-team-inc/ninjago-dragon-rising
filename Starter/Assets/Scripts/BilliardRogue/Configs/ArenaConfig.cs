@@ -50,11 +50,12 @@ namespace Nex.BilliardRogue
         [SerializeField] DangerRowSettings dangerRow = new();
 
         [Header("Camera")]
-        [Tooltip("World camera position relative to the arena root (the launch-line centre, TDD §14.1). The camera sits south of the arena (negative z), yaw 0, looking +z; the default aims at the arena centre (z = (launchZoneHeight + rows) / 2 = 5.8) at the default pitch, so the launch pad and the cat stay in frame (the grid spans screen height 0.17-0.86).")]
-        [SerializeField] Vector3 cameraPosition = new(0f, 20.4f, -6.947f);
-        [Tooltip("Downward pitch of the world camera; its yaw is always 0 (looking +z, north).")]
-        [SerializeField, Range(10f, 89f)] float cameraPitchDeg = 58f;
-        [SerializeField, Range(10f, 60f)] float cameraFov = 28f;
+        [Tooltip("World camera position relative to the arena root (the launch-line centre, TDD §14.1). The camera sits south of the arena (negative z), yaw 0, looking +z. The default (with the pitch / FOV below) frames the whole diorama at 16:9: the top-row enemy heads land at 0.93 of the screen height (room for their HP labels), the launch pad, the cat with its cue and the waiting ball at 0.05-0.12, the 7-cell grid 665 px wide at the top and 825 px at the danger row on a 1920 px screen (clear of the HUD side columns).")]
+        [SerializeField] Vector3 cameraPosition = new(0f, 22.1f, -11.7f);
+        [Tooltip("Downward pitch of the world camera; its yaw is always 0 (looking +z, north). 52° keeps the HD-2D diorama tilt (enemy fronts and cast shadows visible) without rows occluding each other.")]
+        [SerializeField, Range(10f, 89f)] float cameraPitchDeg = 52f;
+        [Tooltip("Vertical field of view; a long lens so the far rows stay nearly as wide as the near ones.")]
+        [SerializeField, Range(10f, 60f)] float cameraFov = 22f;
 
         public ArenaRules Rules => rules;
         public float WorldScale => worldScale;

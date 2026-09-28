@@ -63,7 +63,8 @@ namespace Nex.BilliardRogue
             shieldMarker.gameObject.SetActive(false);
             var markerBlock = block;
             markerBlock.Clear();
-            markerBlock.SetColor(BaseColorId, juice.EnemyFreezeTint * 2f);
+            // Below the bloom threshold: the shield plane is a status marker, not a light source.
+            markerBlock.SetColor(BaseColorId, juice.EnemyFreezeTint * 0.9f);
             shieldMarkerRenderer.SetPropertyBlock(markerBlock);
             dirty = true;
             Apply();

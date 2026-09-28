@@ -120,16 +120,25 @@ def mirror_corners(img, fn):
 # ----------------------------------------------------------------------------------------------
 
 def plank_center(tile=16):
+    """Dark navy wood for the Tiled panel centre: two 8 px planks per 16 px tile with 1 px seams (uniform along x),
+    one staggered vertical butt joint per plank (dark line + lit edge), and 1 px grain streaks in two navy shades
+    that wrap inside the tile, so the Tiled repeat stays seamless and reads as wood at 3x instead of a flat fill."""
+    grain = [(2, 1, 6, NAVY["e"]), (4, 8, 3, NAVY["c"]), (5, 13, 5, NAVY["e"]),     # plank 1 (rows 0..6, joint lx 11)
+             (10, 6, 7, NAVY["e"]), (12, 12, 4, NAVY["c"]), (13, 1, 3, NAVY["e"])]  # plank 2 (rows 8..14, joint lx 3)
+
     def fill(img, mask):
         ys, xs = np.nonzero(mask)
         x0, y0 = xs.min(), ys.min()
         x, y = np.meshgrid(np.arange(img.shape[1]), np.arange(img.shape[0]))
         lx, ly = (x - x0) % tile, (y - y0) % tile
         pk.put(img, mask, NAVY["d"])
+        for gy, gx, n, c in grain:
+            pk.put(img, mask & (ly == gy) & (((lx - gx) % tile) < n), c)
         pk.put(img, mask & ((ly == 7) | (ly == 15)), NAVY["e"])   # plank seams (uniform along x)
         pk.put(img, mask & ((ly == 8) | (ly == 0)), "#1b284e")    # lit lip under each seam
-        pk.put(img, mask & (ly == 7) & (lx == 11), NAVY["f"])      # one butt joint per plank row
-        pk.put(img, mask & (ly == 15) & (lx == 3), NAVY["f"])
+        for jx, r0, r1 in ((11, 0, 6), (3, 8, 14)):               # staggered butt joints
+            pk.put(img, mask & (lx == jx) & (ly >= r0) & (ly <= r1), NAVY["f"])
+            pk.put(img, mask & (lx == (jx + 1) % tile) & (ly >= r0 + 1) & (ly <= r1), NAVY["c"])
     return fill
 
 
@@ -261,35 +270,21 @@ def bar_bg():
                  "note": "place Bar_Fill_* inset by fillInset px (3x = 9 canvas units) on each side"}
 
 
-def bar_fill(stops, sheen=False, ticks=0):
+def bar_fill(color, highlight):
+    """HP / boss bar fill: uniform along x (shading only down the rows: highlight, lit, body, shadow), so a Filled
+    Horizontal image stretched to any Bar_Bg interior width keeps clean pixel columns. Segment ticks, if any, belong
+    to Bar_Bg or code, not to the stretched fill."""
     w, h = 64, 8
     img = pk.canvas(w, h)
-    x = np.arange(w)
-    t = x / (w - 1)
-    n = len(stops) - 1
-    base = np.zeros((w, 3), np.float32)
-    for i in range(w):
-        k = min(int(t[i] * n), n - 1)
-        f = t[i] * n - k
-        a, b = np.array(pk.rgba(stops[k])[:3], np.float32), np.array(pk.rgba(stops[k + 1])[:3], np.float32)
-        base[i] = a + (b - a) * f
-    # posterise the gradient into 4 clean steps (pixel look, no dither noise)
-    steps = 4
-    q = np.minimum(np.floor(t * steps), steps - 1) / (steps - 1)
-    cols = np.array([base[int(round(v * (w - 1)))] for v in q])
-    row_k = [1.55, 1.25, 1.0, 1.0, 1.0, 0.82, 0.68, 0.5]
-    for yy in range(h):
-        k = row_k[yy]
-        c = np.clip(cols * k if k <= 1 else cols + (255 - cols) * (k - 1), 0, 255)
-        img[yy, :, :3] = c.astype(np.uint8)
+    base = np.array(pk.rgba(color)[:3], np.float32)
+    hi = np.array(pk.rgba(highlight)[:3], np.float32)
+    rows = [base + (255 - base) * 0.45, hi, hi * 0.5 + base * 0.5, base, base, base * 0.82, base * 0.68, base * 0.5]
+    for yy, c in enumerate(rows):
+        img[yy, :, :3] = np.clip(c, 0, 255).astype(np.uint8)
         img[yy, :, 3] = 255
-    if sheen:
-        img[1, ::4, :3] = np.clip(img[1, ::4, :3].astype(int) + 40, 0, 255).astype(np.uint8)
-    if ticks:
-        for tx in range(ticks, w, ticks):
-            img[1:h - 1, tx, :3] = (img[1:h - 1, tx, :3] * 0.6).astype(np.uint8)
     return img, {"border": [0, 0, 0, 0], "imageType": "Filled", "fillMethod": "Horizontal",
-                 "note": "stretch to the Bar_Bg interior; Filled Horizontal (origin Left) -> fillAmount = hp/max"}
+                 "note": "uniform along x: stretch to the Bar_Bg interior at any width; Filled Horizontal (origin Left) "
+                         "-> fillAmount = hp/max"}
 
 
 def frame_slot(active):
@@ -756,15 +751,16 @@ def mockup(sprites):
         text.draw(img, title, cx + 60, 152, ink, "bold", center=True)
         for k, ln in enumerate(lines):
             text.draw(img, ln, cx + 60, 172 + k * 16, "#5c3a1a", "regular", center=True)
-    pk.blit(img, sprites["Arrow"][0], 90, 140)
-    pk.blit(img, sprites["Arrow_Left"][0], 534, 140)
+    pk.blit(img, sprites["Arrow_Left"][0], 90, 140)   # "<" left of the cards, ">" right of them
+    pk.blit(img, sprites["Arrow"][0], 534, 140)
     # button row on a wood panel
     pk.blit(img, nine("Frame_Panel", 236, 56), 202, 252)
     pk.blit(img, nine("Frame_ButtonFocused", 104, 32), 214, 264)
     pk.blit(img, nine("Frame_Button", 104, 32), 322, 264)
     text.draw(img, "CONTINUE", 266, 264 + 3 + 8, "#ffffff", "bold", shadow="#1a2650", center=True)
     text.draw(img, "REROLL", 374, 264 + 3 + 8, "#b8c4e8", "bold", shadow=NAVY["f"], center=True)
-    pk.blit(img, sprites["Cursor"][0], 196, 272)
+    cur = sprites["Cursor"][0]
+    pk.blit(img, cur, 202 - cur.shape[1] - 2, 280 - cur.shape[0] // 2)  # outside the panel trim, on the focused row
     # HUD: hp bar + value, balls, turn chip, boss bar
     pk.blit(img, nine("Bar_Bg", 96, 14), 20, 10)
     fill = sprites["Bar_Fill_Hp"][0]
@@ -800,8 +796,8 @@ def main():
         "Frame_Slot": frame_slot(False),
         "Frame_SlotActive": frame_slot(True),
         "Bar_Bg": bar_bg(),
-        "Bar_Fill_Hp": bar_fill(["#b01830", "#d8283a", "#f04a3a", "#ff7a3a"]),
-        "Bar_Fill_Boss": bar_fill(["#4a1e88", "#6a2ab0", "#8a3ad0", "#b060f0"], sheen=True, ticks=16),
+        "Bar_Fill_Hp": bar_fill("#d8283a", "#ff7a3a"),
+        "Bar_Fill_Boss": bar_fill("#6a2ab0", "#b060f0"),
         "Chip": chip(),
         "Icon_Heart": (icon_heart(), {}),
         "Icon_Ball": (icon_ball(), {}),

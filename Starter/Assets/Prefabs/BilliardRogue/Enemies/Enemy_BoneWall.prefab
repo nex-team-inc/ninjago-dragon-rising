@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 259984859093917894}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Model
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -44,7 +44,7 @@ GameObject:
   - component: {fileID: 3658461234447473894}
   - component: {fileID: 5137604698485582032}
   - component: {fileID: 5834592911670244802}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Enemy_BoneWall
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -97,7 +97,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7ac4070f9fa7f4378b0d92b173f219f9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Nex.BilliardRogue.EnemyIdleMotion
-  bobPart: {fileID: 5164137394439352857}
+  bobPart: {fileID: 8377276071236680528}
   blinkParts: []
   flapParts: []
 --- !u!114 &5834592911670244802
@@ -113,7 +113,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Nex.BilliardRogue.EnemyStatusVisuals
   renderers:
-  - {fileID: 6332517673431304566}
+  - {fileID: 2942305628359041289}
   emissiveRenderers: []
   shieldMarker: {fileID: 7720357717650895473}
   shieldMarkerRenderer: {fileID: 1178793563045664640}
@@ -129,7 +129,7 @@ GameObject:
   - component: {fileID: 7720357717650895473}
   - component: {fileID: 2671967186502200854}
   - component: {fileID: 1178793563045664640}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: ShieldMarker
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -184,7 +184,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe7b4b7e602ad4688afea55fbd52599b, type: 2}
+  - {fileID: 2100000, guid: ebd652339b09247fca4f44c8a7f0a669, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -256,26 +256,39 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: -7511558181221131132, guid: b8f7f4089b0a940f496faee346fb420d, type: 3}
+    - target: {fileID: -1807970279642858887, guid: b8f7f4089b0a940f496faee346fb420d, type: 3}
+      propertyPath: m_Layer
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: -1660384031183063813, guid: b8f7f4089b0a940f496faee346fb420d, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 8a5e63ef3f0a14080a360ff5d3d9b5dc, type: 2}
+      objectReference: {fileID: 2100000, guid: f60681876d6674f3f9336fffad8e34c4, type: 2}
     - target: {fileID: 919132149155446097, guid: b8f7f4089b0a940f496faee346fb420d, type: 3}
       propertyPath: m_Name
       value: Enemy_BoneWall
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: b8f7f4089b0a940f496faee346fb420d, type: 3}
+      propertyPath: m_Layer
+      value: 8
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: b8f7f4089b0a940f496faee346fb420d, type: 3}
+--- !u!23 &2942305628359041289 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -1660384031183063813, guid: b8f7f4089b0a940f496faee346fb420d, type: 3}
+  m_PrefabInstance: {fileID: 4620705192191661554}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &5164137394439352857 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: b8f7f4089b0a940f496faee346fb420d, type: 3}
   m_PrefabInstance: {fileID: 4620705192191661554}
   m_PrefabAsset: {fileID: 0}
---- !u!23 &6332517673431304566 stripped
-MeshRenderer:
-  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: b8f7f4089b0a940f496faee346fb420d, type: 3}
+--- !u!4 &8377276071236680528 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3774608951414501026, guid: b8f7f4089b0a940f496faee346fb420d, type: 3}
   m_PrefabInstance: {fileID: 4620705192191661554}
   m_PrefabAsset: {fileID: 0}

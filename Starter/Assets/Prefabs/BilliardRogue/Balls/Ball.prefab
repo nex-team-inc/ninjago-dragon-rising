@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 8677961191584198262}
   - component: {fileID: 3469489157493857767}
   - component: {fileID: 4207522957712663858}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Ball
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -60,7 +60,7 @@ TrailRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe7b4b7e602ad4688afea55fbd52599b, type: 2}
+  - {fileID: 2100000, guid: ebd652339b09247fca4f44c8a7f0a669, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -166,7 +166,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Nex.BilliardRogue.BallView
   mesh: {fileID: 8210306834283765353}
-  meshRenderer: {fileID: 3039339488939895685}
+  meshRenderer: {fileID: 8266072720379140377}
   trail: {fileID: 3469489157493857767}
 --- !u!1 &8843677945353618643
 GameObject:
@@ -177,7 +177,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8210306834283765353}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Mesh
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -248,26 +248,34 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: -7511558181221131132, guid: d24a4284b9ce040e193489f4b74b1d05, type: 3}
-      propertyPath: 'm_Materials.Array.data[0]'
-      value: 
-      objectReference: {fileID: 2100000, guid: 8a5e63ef3f0a14080a360ff5d3d9b5dc, type: 2}
     - target: {fileID: 919132149155446097, guid: d24a4284b9ce040e193489f4b74b1d05, type: 3}
       propertyPath: m_Name
       value: Ball
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: d24a4284b9ce040e193489f4b74b1d05, type: 3}
+      propertyPath: m_Layer
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 5718040866267344408, guid: d24a4284b9ce040e193489f4b74b1d05, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 3cd71b5b10b864f4ea566cecf72ad1ef, type: 2}
+    - target: {fileID: 6800398303002138120, guid: d24a4284b9ce040e193489f4b74b1d05, type: 3}
+      propertyPath: m_Layer
+      value: 8
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d24a4284b9ce040e193489f4b74b1d05, type: 3}
---- !u!23 &3039339488939895685 stripped
-MeshRenderer:
-  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: d24a4284b9ce040e193489f4b74b1d05, type: 3}
-  m_PrefabInstance: {fileID: 4462067262156109569}
-  m_PrefabAsset: {fileID: 0}
 --- !u!4 &4208275158475706602 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: d24a4284b9ce040e193489f4b74b1d05, type: 3}
+  m_PrefabInstance: {fileID: 4462067262156109569}
+  m_PrefabAsset: {fileID: 0}
+--- !u!23 &8266072720379140377 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 5718040866267344408, guid: d24a4284b9ce040e193489f4b74b1d05, type: 3}
   m_PrefabInstance: {fileID: 4462067262156109569}
   m_PrefabAsset: {fileID: 0}

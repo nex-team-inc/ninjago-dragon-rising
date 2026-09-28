@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1641603553599372954}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Model
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -42,7 +42,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6373365019448616547}
   - component: {fileID: 7926694135731139548}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: FieldObject_Mud
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -131,14 +131,22 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: -7511558181221131132, guid: 46cc10ba717ad46deb80a8cb2c319643, type: 3}
-      propertyPath: 'm_Materials.Array.data[0]'
-      value: 
-      objectReference: {fileID: 2100000, guid: 8a5e63ef3f0a14080a360ff5d3d9b5dc, type: 2}
     - target: {fileID: 919132149155446097, guid: 46cc10ba717ad46deb80a8cb2c319643, type: 3}
       propertyPath: m_Name
       value: Prop_Mud
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 46cc10ba717ad46deb80a8cb2c319643, type: 3}
+      propertyPath: m_Layer
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 3174658353891147437, guid: 46cc10ba717ad46deb80a8cb2c319643, type: 3}
+      propertyPath: m_Layer
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 3441823868639253307, guid: 46cc10ba717ad46deb80a8cb2c319643, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: f60681876d6674f3f9336fffad8e34c4, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

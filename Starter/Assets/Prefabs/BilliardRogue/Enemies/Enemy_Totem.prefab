@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 3144790812694125548}
   - component: {fileID: 8767536844053897288}
   - component: {fileID: 2811556651794897943}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: ShieldMarker
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -66,7 +66,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fe7b4b7e602ad4688afea55fbd52599b, type: 2}
+  - {fileID: 2100000, guid: ebd652339b09247fca4f44c8a7f0a669, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -102,7 +102,7 @@ GameObject:
   - component: {fileID: 7008523261603780934}
   - component: {fileID: 5846233810533205189}
   - component: {fileID: 8447563931033948139}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Enemy_Totem
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -155,9 +155,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7ac4070f9fa7f4378b0d92b173f219f9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Nex.BilliardRogue.EnemyIdleMotion
-  bobPart: {fileID: 8452187388838863976}
+  bobPart: {fileID: 8226523874654119522}
   blinkParts:
-  - {fileID: 5774108688558912877}
+  - {fileID: 2838534864317181582}
   flapParts: []
 --- !u!114 &8447563931033948139
 MonoBehaviour:
@@ -172,11 +172,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Nex.BilliardRogue.EnemyStatusVisuals
   renderers:
-  - {fileID: 7101514739991476451}
-  - {fileID: 7176042069994827129}
-  - {fileID: 1501662900634370461}
+  - {fileID: 3251128890055093998}
+  - {fileID: 633684727640809278}
+  - {fileID: 4930341214445325194}
   emissiveRenderers:
-  - {fileID: 1501662900634370461}
+  - {fileID: 4930341214445325194}
   shieldMarker: {fileID: 3144790812694125548}
   shieldMarkerRenderer: {fileID: 2811556651794897943}
   rotatingShieldPart: {fileID: 0}
@@ -189,7 +189,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8270450440936326028}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Model
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -260,45 +260,66 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: -7511558181221131132, guid: 147be52bd30734236bb88e1cbcc841e6, type: 3}
+    - target: {fileID: -8391791003546489136, guid: 147be52bd30734236bb88e1cbcc841e6, type: 3}
+      propertyPath: m_Layer
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: -5683502527191076883, guid: 147be52bd30734236bb88e1cbcc841e6, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 8a5e63ef3f0a14080a360ff5d3d9b5dc, type: 2}
+      objectReference: {fileID: 2100000, guid: f60681876d6674f3f9336fffad8e34c4, type: 2}
+    - target: {fileID: -3133498875991405556, guid: 147be52bd30734236bb88e1cbcc841e6, type: 3}
+      propertyPath: m_Layer
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: -2859109400176981367, guid: 147be52bd30734236bb88e1cbcc841e6, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: f60681876d6674f3f9336fffad8e34c4, type: 2}
     - target: {fileID: 919132149155446097, guid: 147be52bd30734236bb88e1cbcc841e6, type: 3}
       propertyPath: m_Name
       value: Enemy_Totem
       objectReference: {fileID: 0}
-    - target: {fileID: 1646733720424155422, guid: 147be52bd30734236bb88e1cbcc841e6, type: 3}
+    - target: {fileID: 919132149155446097, guid: 147be52bd30734236bb88e1cbcc841e6, type: 3}
+      propertyPath: m_Layer
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 6439713082134130472, guid: 147be52bd30734236bb88e1cbcc841e6, type: 3}
+      propertyPath: m_Layer
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 9045338293819423577, guid: 147be52bd30734236bb88e1cbcc841e6, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 8a5e63ef3f0a14080a360ff5d3d9b5dc, type: 2}
-    - target: {fileID: 7033155687751820794, guid: 147be52bd30734236bb88e1cbcc841e6, type: 3}
-      propertyPath: 'm_Materials.Array.data[0]'
-      value: 
-      objectReference: {fileID: 2100000, guid: 8a5e63ef3f0a14080a360ff5d3d9b5dc, type: 2}
+      objectReference: {fileID: 2100000, guid: f60681876d6674f3f9336fffad8e34c4, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 147be52bd30734236bb88e1cbcc841e6, type: 3}
---- !u!23 &1501662900634370461 stripped
+--- !u!23 &633684727640809278 stripped
 MeshRenderer:
-  m_CorrespondingSourceObject: {fileID: 7033155687751820794, guid: 147be52bd30734236bb88e1cbcc841e6, type: 3}
+  m_CorrespondingSourceObject: {fileID: 9045338293819423577, guid: 147be52bd30734236bb88e1cbcc841e6, type: 3}
   m_PrefabInstance: {fileID: 8452187388838863975}
   m_PrefabAsset: {fileID: 0}
---- !u!4 &5774108688558912877 stripped
+--- !u!4 &2838534864317181582 stripped
 Transform:
-  m_CorrespondingSourceObject: {fileID: 2697078814991323402, guid: 147be52bd30734236bb88e1cbcc841e6, type: 3}
+  m_CorrespondingSourceObject: {fileID: 5920179405256723177, guid: 147be52bd30734236bb88e1cbcc841e6, type: 3}
   m_PrefabInstance: {fileID: 8452187388838863975}
   m_PrefabAsset: {fileID: 0}
---- !u!23 &7101514739991476451 stripped
+--- !u!23 &3251128890055093998 stripped
 MeshRenderer:
-  m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: 147be52bd30734236bb88e1cbcc841e6, type: 3}
+  m_CorrespondingSourceObject: {fileID: -2859109400176981367, guid: 147be52bd30734236bb88e1cbcc841e6, type: 3}
   m_PrefabInstance: {fileID: 8452187388838863975}
   m_PrefabAsset: {fileID: 0}
---- !u!23 &7176042069994827129 stripped
+--- !u!23 &4930341214445325194 stripped
 MeshRenderer:
-  m_CorrespondingSourceObject: {fileID: 1646733720424155422, guid: 147be52bd30734236bb88e1cbcc841e6, type: 3}
+  m_CorrespondingSourceObject: {fileID: -5683502527191076883, guid: 147be52bd30734236bb88e1cbcc841e6, type: 3}
+  m_PrefabInstance: {fileID: 8452187388838863975}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &8226523874654119522 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 533193074659131909, guid: 147be52bd30734236bb88e1cbcc841e6, type: 3}
   m_PrefabInstance: {fileID: 8452187388838863975}
   m_PrefabAsset: {fileID: 0}
 --- !u!4 &8452187388838863976 stripped

@@ -403,3 +403,27 @@ Localization strings: add keys you need as constants in a module partial `public
 Materials (built by `MaterialsBuilder` into `Assets/Materials/BilliardRogue/`): `M_Palette` (ToonLit, Palette_Main + Palette_Emission), `M_Palette_CatP2`, `M_Surface_<SurfaceName>` (StoneFloor, MossyBrick, CryptBrick, CryptFloor, WoodPlank, CrystalRock, Dirt, Grass — albedo/normal/cavity, `_Tiling` 1), `M_Ball_<BallType>` ×12 (ToonLit, neutral base, emission = ball glow colour), `M_LightShaft`, `M_AimGuide`, `M_GlowParticle_Default`, `M_LitParticle_Default`, `M_DangerTile` (ToonLit with emission driven by script). VFX materials live in `Assets/Materials/BilliardRogue/Vfx/` (VfxPrefabsBuilder).
 Per-renderer runtime changes (flash, status tint) use `MaterialPropertyBlock` with the property names above (cache `Shader.PropertyToID`).
 Layers (created by `RenderPipelineBuilder`): `World` (every 3D object the WorldCamera renders), `WorldVolume` (the world post-process Volume). UI stays on `UI`.
+
+---
+
+## 17. Prefab / asset path contracts between builders (MainSceneBuilder instantiates these by path)
+
+| Asset | Built by (module) | Contents |
+|---|---|---|
+| `Assets/Prefabs/BilliardRogue/World/WorldCameraRig.prefab` | Rendering (`WorldCameraRigBuilder`) | WorldCamera (layer World, low-res RT via `PixelWorldDisplay`), WorldVolume (layer WorldVolume) with default profile, `WorldDisplayCanvas` (Screen Space-Camera on RootCamera at planeDistance 295, full-stretch RawImage) |
+| `Assets/Settings/BilliardRogue/Volumes/Volume_Act{1,2,3}.asset`, `Volume_Title.asset` | Rendering | per-act grading/bloom/vignette/tilt-shift |
+| `Assets/Prefabs/BilliardRogue/World/Arena.prefab` | Presentation-World (`EnvironmentBuilder`) | `ArenaLayout` at root, floor tiles, danger row tiles, launch pad, walls; layer World |
+| `Assets/Prefabs/BilliardRogue/Environment/Env_Act{1,2,3}.prefab` | Presentation-World | act diorama dressing from `Tools/Blender/environment/layouts.json`, act lights, light shafts, ambient particle emitters; applied by `ActEnvironmentController` |
+| `Assets/Prefabs/BilliardRogue/World/BoardPresenter.prefab` | Presentation-Core (`WorldPrefabsBuilder`) | `BoardPresenter`, pools roots, `AimGuideView`, two `CatView`s + cues, `CameraShaker` hook |
+| `Assets/Prefabs/BilliardRogue/{Enemies,Balls,Board,Player}/*.prefab` | Presentation-Core | EnemyView per EnemyType, BallView, FieldObjectView/PickupView per type, CatView; also fills `EnemyDefinition.prefab`, `FieldObjectCatalog`, `BallDefinition.material` refs if null |
+| `Assets/Prefabs/BilliardRogue/Vfx/Vfx_<VisualEffect>.prefab`, `Vfx_Ambient_Act{1,2,3}.prefab` | VFX (`VfxPrefabsBuilder`) | registered in the VfxManager prefab EnumDictionary |
+| `Assets/Prefabs/BilliardRogue/Detection/OnePlayerDetectionEngine_Hidden.prefab` | Input (`DetectionPrefabsBuilder`) | engine variant with HiddenPoseNode nodes |
+| `Assets/Prefabs/BilliardRogue/Input/PlayerShotInput.prefab` | Input | `PawShotInput` + `DebugShotInput` + `AutoAimBot` + `ShotInputRouter` (one instance per player at runtime) |
+| `Assets/Prefabs/BilliardRogue/UI/GameplayHud.prefab` | UI-Views (`UiViewsBuilder`) | `GameplayHud : IGameplayHud` widgets |
+| `Assets/Prefabs/BilliardRogue/Views/{Title,PlayerMode,Settings,StageIntro,Reward,Pause,TrackingLost,Summary}View.prefab` | UI-Views | views |
+| `Assets/Prefabs/BilliardRogue/Views/{Calibration,Gameplay}View.prefab` | Flow (`FlowPrefabsBuilder`) | CalibrationView (PreviewsManager setup UI), GameplayView (HUD instance + PiP overlay canvas + label layer + session host) |
+| `Assets/Prefabs/BilliardRogue/Flow/BilliardRogueCoordinator.prefab`, `BilliardRogueViewManager.prefab` (variant of starter `MainViewManager.prefab` + `SecretCodeSequenceDetector` Up Up Down Down Left Right Left Right) | Flow | |
+| `Assets/Scenes/BilliardRogue/Main.unity` | Flow (`MainSceneBuilder`) | SingletonSpawner (as GameUIExample), initializer, coordinator, view manager, WorldCameraRig, Arena, Env_Act1..3 (inactive), EventSystem; build index 0 |
+| TMP fonts `Assets/Fonts/BilliardRogue/BilliardPixel_TMP.asset`, `BilliardPixelBold_TMP.asset`, `BilliardPixel_CJK_TMP.asset` | 2D art (`FontAssetsBuilder`) | UI code loads these by path in builders; fallback chain Latin → CJK |
+
+Builders reference assets of other modules **by these paths**, and degrade gracefully (placeholder + warning) when an asset is not built yet. `BilliardRogueMenu` Build All order: ImportSettings → ConfigAssets → Materials → RenderPipeline → WorldCameraRig → FontAssets → LocalizationSeeder → DetectionPrefabs → InputPrefabs → WorldPrefabs → Environment → VfxPrefabs → AudioRegistry → UiViews → FlowPrefabs → MainScene.

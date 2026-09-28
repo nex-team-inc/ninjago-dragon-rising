@@ -538,11 +538,11 @@ def act2():
         P("Env_Candles", -7.0, 10.1, 0, 1.0, light=True), P("Env_Candles", -8.6, 5.0, 50, 0.8),
         P("Env_BonePile", -10.3, 2.6, 100, 1.0), P("Env_Urn", -5.9, 9.8, 0, 1.0), P("Env_Urn", -10.2, 5.0, 40, 0.9),
         # right: flooded sarcophagus hall
-        P("Env_WaterPool", 8.0, 6.6, 90, 1.6), P("Env_WaterPool", 6.6, 1.7, 30, 1.0),
-        P("Env_Coffin", 6.4, 8.8, 90, 1.0), P("Env_Coffin", 6.4, 4.4, 90, 1.0), P("Env_Coffin", 9.7, 9.3, 90, 1.0),
+        P("Env_WaterPool", 8.3, 6.6, 90, 1.6), P("Env_WaterPool", 7.1, 1.7, 30, 1.0),
+        P("Env_Coffin", 6.9, 8.8, 90, 1.0), P("Env_Coffin", 6.9, 4.4, 90, 1.0), P("Env_Coffin", 9.9, 9.3, 90, 1.0),
         P("Env_Coffin", 9.6, 3.2, 90, 0.9),
-        P("Env_CryptPillar", 5.4, 1.6, 0, 1.0), P("Env_CryptPillar", 5.4, 5.6, 0, 1.0),
-        P("Env_CryptPillar", 5.4, 9.6, 0, 1.0), P("Env_CryptPillar", -5.4, 11.9, 0, 1.0),
+        P("Env_CryptPillar", 5.9, 1.6, 0, 1.0), P("Env_CryptPillar", 5.9, 6.2, 0, 1.0),
+        P("Env_CryptPillar", 5.9, 10.0, 0, 1.0), P("Env_CryptPillar", -5.4, 11.9, 0, 1.0),
         P("Env_Candles", 7.2, 10.2, 30, 0.9, light=True), P("Env_Candles", 9.6, 7.8, 0, 0.8),
         P("Env_Tombstone_B", 9.6, 1.0, 190, 1.0), P("Env_BonePile", 10.1, 5.4, 300, 1.0),
         P("Env_Urn", 7.6, 10.4, 0, 1.0), P("Env_Urn", 10.0, 6.8, 120, 0.85),
@@ -550,7 +550,7 @@ def act2():
         P("Env_Urn", 3.3, 12.8, 0, 0.9), P("Env_Urn", -3.2, 12.8, 30, 0.85),
     ]
     props += [P("Env_PavingPatch", -7.85, z, 90 + 7 * i, 0.62) for i, z in enumerate((10.3, 8.3, 6.3, 4.3, 2.3, 0.3))]
-    props += [P("Env_PavingPatch", 7.9, z, 90, 1.0) for z in (2.4, 5.2, 8.0, 10.3)]
+    props += [P("Env_PavingPatch", 8.3, z, 90, 1.0) for z in (2.4, 5.2, 8.0, 10.3)]
     props += scatter(props, rng, "Env_Pebbles", 2, [(-10.5, -5.5, -1.5, 11), (5.5, 10.5, -1.5, 11)], 0.4,
                      s=(0.6, 0.8))
     props += dress(props, rng, "Env_GrassTuft", [(-9.9, 9.4), (10.2, 10.6), (-10.0, 3.2)], 2, 0.6, 0.25,
@@ -558,7 +558,7 @@ def act2():
     # ---- light: cold moonbeams from high windows (upper right): one broad beam on the graveyard path, one on the
     # flooded hall, a narrow one on the gate; embers above the braziers, dust in the beams
     moon = (1.0, 1.0, 1.0)      # relative tint of preset.godRayColor (cold moonlight)
-    for land, L, w, k in (((-8.8, 5.6), 10.0, 1.4, 0.45), ((8.0, 6.4), 10.5, 1.2, 0.45),
+    for land, L, w, k in (((-8.8, 5.6), 10.0, 1.4, 0.45), ((8.3, 6.4), 10.5, 1.2, 0.45),
                           ((-7.85, 10.2), 9.0, 0.7, 0.3)):
         props.append(fit_shaft(land, MOON2, L, w, moon, k))
     for x, z in ((-5.8, 10.3), (5.8, 10.3), (-5.9, 0.2), (5.9, 0.2)):

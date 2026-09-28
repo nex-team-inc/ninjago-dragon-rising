@@ -32,23 +32,33 @@ readability_game.json, boss_backdrops_game.png).
 - Frame note: ArenaLayout matches the TDD frame, parent under it with identity. unityNotes: UV contract, floor
   binding, danger parts, draw cost.
 
-## Measurements (previews, game pose)
-| act | arena luma (before) | band | ratio (before) | grid std (before) | min enemy dE (before) |
+## Done (milestone 2)
+- Previews mirror MaterialsBuilder's in-progress floor treatment (FloorSurfaces get _BaseColor FloorTint, floor
+  Base parts M_ArenaFloorBase; sRGB colours linearised); `--no-unity-floor` renders the raw albedo.
+- Grounds pushed below the tinted floor: Env_CryptGroundTile gray 1-2, Env_CaveFloorTile shade 1-2, Env_MossBorder
+  green / brown 1-2; Env_WaterPool one shade calmer; Act 2 flooded hall set back 0.4-0.5 m from the rim.
+
+## Measurements (previews at the working-tree ArenaConfig pose, Unity floor tint mirrored)
+| act | arena luma | band 0-3 m | ratio (baseline) | grid std (baseline) | min enemy dE (baseline) |
 |---|---|---|---|---|---|
-| 1 | 0.32 (0.33) | 0.30 | 1.06 (0.95) | 0.049 (0.160) | 25.7 (18.3) |
-| 2 | 0.19 (0.20) | 0.23 | 0.83 (0.66) | 0.054 (0.078) | 24.3 (19.1) |
-| 3 | 0.23 (0.24) | 0.18 | 1.29 (1.11) | 0.060 (0.131) | 23.3 (13.4) |
+| 1 | 0.243 | 0.266 | 0.92 (0.95) | 0.050 (0.160) | 35.8 (18.3) |
+| 2 | 0.133 | 0.173 | 0.77 (0.66) | 0.045 (0.078) | 29.1 (19.1) |
+| 3 | 0.171 | 0.157 | 1.09 (1.11) | 0.057 (0.131) | 30.4 (13.4) |
+Without the Unity floor tint (raw albedo, milestone 1): ratio 1.06 / 0.83 / 1.29.
 
 ## Findings / requests
-- MaterialsBuilder.Surfaces must list RuinFloor and HollowFloor (else EnvironmentPieces' URP Lit fallback) and the
-  integrator must sync the 2D-art staging surfaces.
-- Act 2 stays below the 1.2 ratio: the slate CryptFloor albedo is 0.27 luma (RuinFloor 0.32, HollowFloor 0.33).
-- Enemy dE < 35 for the dark roster (Bomber, Totem, ShieldKnight) is a floor-value vs enemy-palette trade-off.
+- MaterialsBuilder (other agent, uncommitted) now lists RuinFloor / HollowFloor and tints every floor surface by
+  FloorTint (0.82) for actor contrast: that trades against the review's arena >= 1.2x scenery target (act 2 slate
+  CryptFloor is 0.27 luma before the tint). Both targets need either a lighter act 2 floor or less floor tint.
+- Enemy dE < 35 left for the dark roster (Bomber, Totem, ShieldKnight) in acts 2-3.
 - EnvironmentLayout.cs summary already describes the TDD frame (no change needed).
+- Integrator: sync Tools/Staging/Assets/Models/BilliardRogue/Environment (53 FBX, 2 new) + 2D-art surfaces, re-run
+  MaterialsBuilder + EnvironmentBuilder; add Env_MossBorder / Env_CryptGroundTile to NoShadowPieces (optional).
 
 ## Before
 - in-game: scratchpad/integration/playable/05_playerturn.png (floor reads as wooden crates)
+- before/after: scratchpad/content/environment/revise2/before_after_sheet.png
 - previews: scratchpad/content/environment/_baseline/
 
 ## Next
-- final full rebuild + verify, commit
+- nothing open in this pass; re-run build_all.py after 2D-art floor or ArenaConfig camera changes.

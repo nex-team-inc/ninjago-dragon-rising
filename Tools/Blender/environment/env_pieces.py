@@ -943,8 +943,8 @@ def water_pool(glow=False):
         if glow:
             return "cyan", 6 if rr > 0.78 else (5 if 0.56 < rr < 0.66 else 3)
         if rr > 0.78:
-            return "teal", 8                                # shallows over sand
-        return "sky", 8 if 0.56 < rr < 0.66 else 6          # ripple ring / open water
+            return "teal", 7                                # shallows over sand
+        return "sky", 7 if 0.56 < rr < 0.66 else 5          # ripple ring / open water (luma ~0.25-0.3 lit)
     water.paint_fn(fw, wfn)
     parts = [rim, water]
     rng = Rng(611 if glow else 601)
@@ -1175,7 +1175,7 @@ def cave_floor_tile():
     def fn(f_, nn, c):
         r, q = hash01(*c), patch01(c, 0.9, 21.0)
         fam = "purple" if q > 0.9 else ("gray" if q < 0.3 else CAVE)
-        return fam, 1 + (1 if nn[1] > 0.995 else 0) + (1 if r > 0.8 else 0)
+        return fam, 1 + (1 if r > 0.75 else 0)
     p.paint_fn(f, fn)
     return [p]
 
@@ -1201,8 +1201,8 @@ def moss_border():
     def fn(f_, nn, c):
         q = patch01(c, 1.1, 5.0)
         if q < 0.3:
-            return "brown", 2
-        return "green", 2 + (1 if q > 0.75 else 0)
+            return "brown", 1
+        return "green", 1 + (1 if q > 0.6 else 0)
     p.paint_fn(f, fn)
     cushions = []
     for i in range(4):
@@ -1210,7 +1210,7 @@ def moss_border():
         cushions += p.ico(1, rng.uniform(0.16, 0.24), X((-0.3 - rng.uniform(0.0, 0.3), 0.0, z), yaw=i * 47,
                                                         scale=(1.3, 0.4, 1.1)), jitter=0.18, seed=1320 + i)
     clamp_ground(p, cushions, 0.0)
-    p.paint_fn(cushions, lambda f_, nn, c: ("green", 4 if nn[1] > 0.6 else 3))
+    p.paint_fn(cushions, lambda f_, nn, c: ("green", 3 if nn[1] > 0.6 else 2))
     return [p]
 
 
@@ -1236,9 +1236,8 @@ def crypt_ground_tile():
             f = p.quads([top, low], close_ends=False)
             f += p.raw(top, [(0, 1, 2, 3)], outward=(0, 1, 0))
             p.orient(f, lambda cc, cx=(x0 + x1) / 2, cz=(z0 + z1) / 2: (cc[0] - cx, 0.4, cc[2] - cz))
-            v = rng.uniform(0, 1)
-            fam, shade = "gray", (1 if v < 0.3 else (2 if v < 0.85 else 3))
-            p.paint_fn(f, lambda f_, nn, cc, fam=fam, shade=shade: (fam, shade + (1 if nn[1] > 0.9 else 0)))
+            shade = 2 if rng.uniform(0, 1) > 0.8 else 1      # darker than the (tinted) arena floor
+            p.paint_fn(f, lambda f_, nn, cc, shade=shade: ("gray", shade))
     return [p]
 
 

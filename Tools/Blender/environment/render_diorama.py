@@ -18,6 +18,7 @@ import argparse
 import json
 import math
 import os
+import re
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -32,6 +33,8 @@ import render_common as rc  # noqa: E402
 PAL_DIR = os.path.join(REPO, "Starter", "Assets", "Textures", "BilliardRogue", "Palette")
 STAGING = os.path.join(REPO, "Tools", "Staging", "Assets")
 MODELS = os.path.join(STAGING, "Models", "BilliardRogue")
+MATERIALS_BUILDER = os.path.join(REPO, "Starter", "Assets", "Scripts", "BilliardRogue", "Editor", "MaterialsBuilder.cs")
+FLOOR_BASE_PIECES = ("Env_FloorTile", "Env_FloorTile_Danger", "Env_LaunchPad")
 POINT_POWER = 55.0      # Blender W per Unity point-light intensity unit (tuned by eye for the preview)
 EMISSION_STRENGTH = 3.2
 SHAFT_GAIN = 1.4        # preview emission per LightShaft intensity unit
@@ -64,6 +67,8 @@ def args():
     p.add_argument("--no-fx", action="store_true", help="skip light shafts + particles")
     p.add_argument("--actors", action="store_true")
     p.add_argument("--mask", action="store_true", help="actors only, flat ID colours (implies --actors)")
+    p.add_argument("--no-unity-floor", action="store_true",
+                   help="skip the MaterialsBuilder floor tint / M_ArenaFloorBase mirror (raw surface albedo)")
     p.add_argument("--world-uv", action="store_true",
                    help="sample *_Surface parts with world box mapping (ToonLit _WORLD_UV) instead of the mesh UVs "
                         "x _Tiling Unity uses today")
@@ -125,6 +130,24 @@ def add_game_camera(a, doc):
     return pose["pitchDeg"]
 
 
+def unity_floor_look():
+    """Mirror of MaterialsBuilder's arena-floor treatment, so the previews match the game: the floor surfaces get
+    _BaseColor = FloorTint and the bevelled Base of the floor pieces takes the flat M_ArenaFloorBase colour.
+    Returns (floor surface names, tint, base colour); empty / None parts when the builder does not define them."""
+    try:
+        src = open(MATERIALS_BUILDER).read()
+    except OSError:
+        return (), None, None
+    num = r"([\d.]+)f"
+    names = re.search(r"FloorSurfaces\s*=\s*\{([^}]*)\}", src)
+    tint = re.search(rf"FloorTint\s*=\s*new\({num},\s*{num},\s*{num}\)", src)
+    base = re.search(rf'"M_ArenaFloorBase".*?"_BaseColor",\s*new Color\({num},\s*{num},\s*{num}\)', src, re.S)
+    def lin(m):   # Unity material colours are sRGB values, linearised on upload (linear colour space project)
+        return tuple(round(((c + 0.055) / 1.055) ** 2.4 if c > 0.04045 else c / 12.92, 4)
+                     for c in (float(v) for v in m.groups())) if m else None
+    return tuple(re.findall(r'"(\w+)"', names.group(1))) if names else (), lin(tint), lin(base)
+
+
 def cell_centre(col, row, w=1, h=1):
     """TDD frame: col 0 at x -3.5..-2.5; row 0 is the top row (z 10.6..11.6)."""
     return col + w / 2 - 3.5, 1.6 + 10 - (row + h) + h / 2
@@ -150,6 +173,13 @@ def main():
     emi = rc._img(os.path.join(PAL_DIR, "Palette_Emission.png"))
     m_pal = rc.toon_material("M_Palette_Preview", pal, amb, emi, EMISSION_STRENGTH)
     m_rest = rc.toon_material("M_DangerTile_Rest", pal, amb)     # M_DangerTile at rest: emission 0
+    floor_names, floor_tint, floor_base = ((), None, None) if a.no_unity_floor else unity_floor_look()
+    m_floor_base = None
+    if floor_base is not None:
+        white = bpy.data.images.new("White1px", 1, 1)
+        white.pixels = [1.0, 1.0, 1.0, 1.0]
+        m_floor_base = rc.toon_material("M_ArenaFloorBase_Preview", white, amb, tint=floor_base)
+    print("UNITY_FLOOR_LOOK", floor_names, floor_tint, floor_base)
     surf_mats, used_dirs = {}, set()
 
     def surface_mat(name, tint=(1.0, 1.0, 1.0)):
@@ -176,7 +206,11 @@ def main():
             if part.endswith("_Surface"):
                 sname, tint = (g["surface"], (1.0, 1.0, 1.0)) if key == g["piece"] else \
                     surfaces.get((key, part), ("StoneFloor", (1.0, 1.0, 1.0)))
+                if sname in floor_names and floor_tint is not None and tint == (1.0, 1.0, 1.0):
+                    tint = floor_tint
                 mat = surface_mat(sname, tint)
+            elif part == "Base" and key in FLOOR_BASE_PIECES and m_floor_base is not None:
+                mat = m_floor_base
             elif part == "DangerInlay_Emissive":
                 mat = m_rest
             else:

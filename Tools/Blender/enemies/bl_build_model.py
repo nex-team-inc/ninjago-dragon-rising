@@ -125,7 +125,7 @@ def main():
             o.data.materials.append(toon)
         look.setup_eevee(scene, args.icon_size, args.icon_size, pixel=True)
         look.sun(scene, [-c for c in ICON_LIGHT_FROM], 1.15)
-        yaw, pitch = math.radians(ICON_YAW), math.radians(ICON_PITCH)
+        yaw, pitch = (math.radians(a) for a in (model.icon_view or (ICON_YAW, ICON_PITCH)))
         cam_from = Vector((math.sin(yaw) * math.cos(pitch), -math.cos(yaw) * math.cos(pitch), math.sin(pitch)))
         look.frame_ortho(scene, ordered, -cam_from, fill=44.0 / 48.0)
         look.render(scene, args.icon_raw)

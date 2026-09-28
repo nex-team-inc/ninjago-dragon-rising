@@ -50,6 +50,12 @@ def on_surface(target, piece, x, z, elevation=0.0, sink=0.0, from_y=-3.0, blend=
     return piece.copy(k.frame(hit - nn * sink, nn))
 
 
+def on_top(target, piece, x, y, sink=0.0, from_z=3.0):
+    """Place `piece` (built facing +Z) on the upper surface of `target` at (x, y), ray-cast from above."""
+    hit, n = k.surface(target, (x, y, from_z), (0, 0, -1))
+    return piece.copy(k.frame(hit - n * sink, n))
+
+
 def bands(family, z_bands, default):
     """Colour by height bands: z_bands = [(z0, z1, shade), ...]."""
     def rule(c, n):
@@ -74,13 +80,13 @@ def slime():
     body.add(g)
     body.add(tip)
     # glossy highlight blob (upper-left), mouth, blush
-    body.add(on_surface(g, k.dome(0.075, 0.042, 0.012, 6, C("lime", 15)), -0.2, 0.47, elevation=40, sink=0.002))
-    body.add(on_surface(g, k.dome(0.028, 0.02, 0.01, 4, C("lime", 15)), -0.1, 0.55, elevation=50, sink=0.002))
-    body.add(on_surface(g, k.slab(smile(0.095, 0.05), 0.02, C("red", 2)), 0.0, 0.22, elevation=18, sink=0.004))
+    for x, y, rx, ry in ((-0.17, 0.02, 0.085, 0.05), (-0.05, 0.1, 0.03, 0.022)):  # glossy highlight, from above
+        body.add(on_top(g, k.dome(rx, ry, 0.012, 6, C("lime", 15)), x, y, sink=0.002))
+    body.add(on_surface(g, k.slab(smile(0.1, 0.052), 0.02, C("red", 2)), 0.0, 0.235, elevation=22, sink=0.004))
     for side in (-1, 1):
-        body.add(on_surface(g, k.dome(0.045, 0.024, 0.01, 6, C("pink", 13)), side * 0.215, 0.25, elevation=10,
+        body.add(on_surface(g, k.dome(0.045, 0.026, 0.01, 6, C("pink", 13)), side * 0.25, 0.27, elevation=14,
                             sink=0.002))
-    eyes, mid = k.eye_pair(g, 0.345, 0.13, 0.08, 0.105, "cute", elevation=28)
+    eyes, mid = k.eye_pair(g, 0.395, 0.135, 0.092, 0.118, "cute", elevation=38)
     m.part("Eyes", mid, parent="Body").add(eyes)
     return m
 
@@ -109,7 +115,7 @@ def bat():
         pivot = Vector((side * 0.17, 0.03, cz + 0.02))
         wg = wing_left if side > 0 else mirror_x(wing_left)
         m.part(name, pivot, parent="Body").add(wg, T(*pivot))
-    eyes, mid = k.eye_pair(g, cz + 0.035, 0.08, 0.066, 0.085, "cute", elevation=25)
+    eyes, mid = k.eye_pair(g, cz + 0.04, 0.088, 0.078, 0.098, "cute", elevation=34)
     m.part("Eyes", mid, parent="Body").add(eyes)
     return m
 
@@ -244,7 +250,7 @@ def mage():
     hz = 0.585
     face = k.sphere(0.155, 10, 5, top_lit("indigo", 2, 3, 1), phase=math.pi / 10).copy(T(0, 0, hz) @ S(1.0, 0.95, 0.9))
     head.add(face)
-    eyes, _ = k.eye_pair(face, hz - 0.03, 0.062, 0.044, 0.058, "glow", elevation=32, glow=C("yellow", 15, True),
+    eyes, _ = k.eye_pair(face, hz + 0.005, 0.074, 0.048, 0.066, "glow", elevation=38, glow=C("yellow", 15, True),
                          segs=6)
     head.add(eyes)
     for side in (-1, 1):
@@ -257,7 +263,7 @@ def mage():
     hg.paint(C("brown", 6), where=lambda c, n: 0.05 < c.z < 0.11 and abs(n.z) < 0.6)
     hg.add(k.sweep([(0, 0, 0.29), (0, 0.02, 0.36), (0, 0.08, 0.41), (0, 0.15, 0.4)], [0.066, 0.045, 0.026, 0.0], 5,
                    top_lit("yellow", 13, 15, 11)))
-    hat.add(hg, T(0, 0.02, 0.66) @ R(X, -20))  # tilted back: the brim does not hide the glowing eyes
+    hat.add(hg, T(0, 0.02, 0.66) @ R(X, -26))  # tilted back: the brim does not hide the glowing eyes
 
     grip = Vector((-0.2, -0.1, 0.3))
     staff = m.part("Staff", grip, parent="Body")
@@ -278,16 +284,16 @@ def mage():
 def healer():
     m = k.Model("Enemy_Healer", ENEMY_BUDGET)
     stem = m.part("Stem", (0, 0, 0))
-    sg = k.lathe([(0.19, 0.0), (0.225, 0.06), (0.215, 0.25), (0.18, 0.4), (0.15, 0.47)], 10,
+    sg = k.lathe([(0.19, 0.0), (0.225, 0.06), (0.215, 0.25), (0.18, 0.4), (0.13, 0.53)], 10,
                  C("skin", 14), phase=math.pi / 10)
     sg.paint(k.vgrad("skin", 12, 15, 0.0, 0.35))
     stem.add(sg)
     for side in (-1, 1):
         stem.add(k.sweep([(side * 0.18, -0.02, 0.2), (side * 0.25, -0.05, 0.15), (side * 0.28, -0.07, 0.1)],
                          [0.042, 0.036, 0.0], 5, C("skin", 14)))
-        stem.add(on_surface(sg, k.dome(0.038, 0.021, 0.008, 5, C("pink", 13)), side * 0.145, 0.15, elevation=10,
+        stem.add(on_surface(sg, k.dome(0.038, 0.022, 0.008, 5, C("pink", 13)), side * 0.165, 0.15, elevation=12,
                             sink=0.002))
-    stem.add(on_surface(sg, k.slab(smile(0.07, 0.035), 0.02, C("red", 3)), 0.0, 0.135, elevation=15, sink=0.004))
+    stem.add(on_surface(sg, k.slab(smile(0.072, 0.036), 0.02, C("red", 3)), 0.0, 0.125, elevation=18, sink=0.004))
 
     cap = m.part("Cap", (0, 0.03, 0.44), parent="Stem")
     prof = [(0.12, 0.0), (0.36, 0.035), (0.405, 0.08), (0.37, 0.19), (0.26, 0.29), (0.12, 0.342), (0.0, 0.355)]
@@ -300,9 +306,9 @@ def healer():
         hit, n = k.surface(cg, (rad * math.cos(a), rad * math.sin(a), 1.0), (0, 0, -1))
         spots.add(k.dome(size, size * 0.85, 0.02, 5, C("gray", 15)), k.frame(hit - n * 0.004, n))
     cg.add(spots)
-    cap.add(cg, T(0, 0.03, 0.44) @ R(X, -12))
+    cap.add(cg, T(0, 0.03, 0.44) @ R(X, -20))  # pushed back: the face stays visible from the high camera
 
-    eyes, mid = k.eye_pair(sg, 0.235, 0.078, 0.058, 0.076, "cute", elevation=22)
+    eyes, mid = k.eye_pair(sg, 0.25, 0.082, 0.064, 0.082, "cute", elevation=30)
     m.part("Eyes", mid, parent="Stem").add(eyes)
 
     spores = m.part("Spores", (0, 0, 0.55), parent="Stem")
@@ -326,16 +332,16 @@ def bomber():
                          [0.026, 0.02, 0.0], 4, C("orange", 9)))
         body.add(k.sweep([(side * 0.05, -0.3, 0.3), (side * 0.09, -0.36, 0.38), (side * 0.13, -0.38, 0.41)],
                          [0.014, 0.012, 0.0], 3, C("indigo", 4)))
-    eyes, _ = k.eye_pair(head, 0.24, 0.058, 0.052, 0.066, "cute", elevation=30)
+    eyes, _ = k.eye_pair(head, 0.245, 0.064, 0.058, 0.074, "cute", elevation=40)
     body.add(eyes)
 
     shell = m.part("Shell", (0, 0.06, 0.2), parent="Body")
     dome_prof = [(0.0, 0.0), (0.3, 0.0), (0.315, 0.07), (0.27, 0.18), (0.16, 0.26), (0.0, 0.29)]
-    shg = k.lathe(dome_prof, 10, C("teal", 6), phase=math.pi / 10).copy(S(1.0, 1.08, 1.0))
-    shg.paint(shine(lambda c, n: C("teal", 3 if n.z < -0.5 else 5 if c.z < 0.08 else 6 if c.z < 0.2 else 7),
-                    "teal", 10, thresh=0.86, zmin=0.12))
+    shg = k.lathe(dome_prof, 10, C("teal", 4), phase=math.pi / 10).copy(S(1.0, 1.08, 1.0))
+    shg.paint(shine(lambda c, n: C("teal", 1 if n.z < -0.5 else 3 if c.z < 0.08 else 4 if c.z < 0.2 else 5),
+                    "teal", 9, thresh=0.86, zmin=0.12))
     arc = [(0.0, -0.33, 0.04), (0.0, -0.24, 0.21), (0.0, 0.0, 0.302), (0.0, 0.24, 0.21), (0.0, 0.33, 0.04)]
-    shg.add(k.sweep(arc, 0.018, 4, C("teal", 1), phase=math.pi / 4))
+    shg.add(k.sweep(arc, 0.02, 4, C("teal", 0), phase=math.pi / 4))
     shg.add(k.cyl(0.07, 0.05, 8, top_lit("yellow", 12, 14)), T(0, 0.12, 0.245))  # hazard ring at the fuse
     shell.add(shg, T(0, 0.04, 0.2))
 
@@ -375,10 +381,10 @@ def totem():
                   cap_color=C("yellow", 12))
     base.add(beak, T(0, -0.19, 1.1) @ R(Z, -90) @ R(X, 90))
     for side in (-1, 1):
-        base.add(on_surface(head, k.dome(0.042, 0.042, 0.015, 5, C("gray", 14)), side * 0.13, 1.14, elevation=10,
+        base.add(on_surface(head, k.dome(0.05, 0.04, 0.016, 5, C("brown", 2)), side * 0.13, 1.145, elevation=20,
                             sink=0.004))
-        base.add(on_surface(head, k.dome(0.024, 0.026, 0.02, 4, C("brown", 1)), side * 0.13, 1.14, elevation=10,
-                            sink=-0.006))
+        base.add(on_surface(head, k.dome(0.032, 0.026, 0.02, 4, C("cyan", 14, True)), side * 0.13, 1.145,
+                            elevation=20, sink=-0.004))
     # lower carved face (static, darker) - two stacked faces read as a totem pole
     low = Geo()
     low.add(k.prism([(-0.17, -0.1), (0.17, -0.1), (0.19, 0.06), (0.13, 0.12), (-0.13, 0.12), (-0.19, 0.06)],
@@ -403,7 +409,7 @@ def totem():
     fg.add(k.prism(mask, -0.03, 0.04, C("brown", 9), cap_color=C("brown", 11)))
     fg.add(k.box(0.4, 0.05, 0.05, C("brown", 5), base_z=0.02), T(0, 0.085, 0))  # brow ridge
     for side in (-1, 1):
-        fg.add(k.dome(0.07, 0.055, 0.02, 6, C("brown", 2)), T(side * 0.09, -0.01, 0.04))  # sockets
+        fg.add(k.dome(0.088, 0.07, 0.02, 6, C("brown", 1)), T(side * 0.1, -0.01, 0.04))  # sockets
     fg.add(k.prism([(-0.03, -0.02), (0.03, -0.02), (0.0, 0.07)], 0.04, 0.08, C("brown", 8)), T(0, -0.05, 0))
     fg.add(k.prism([(-0.12, -0.14), (0.12, -0.14), (0.1, -0.08), (-0.1, -0.08)], 0.035, 0.05, C("brown", 2)))
     for tx in (-0.06, 0.0, 0.06):
@@ -413,9 +419,9 @@ def totem():
     eyes = Geo()
     mids = []
     for side in (-1, 1):
-        p = tilt @ Vector((side * 0.09, -0.01, 0.055))
+        p = tilt @ Vector((side * 0.1, -0.01, 0.055))
         n = (tilt.to_3x3() @ Vector((0, 0, 1))).normalized()
-        eyes.add(k.eye(p, n, 0.05, 0.038, "glow", glow=C("cyan", 15, True), segs=6))
+        eyes.add(k.eye(p, n, 0.068, 0.054, "glow", glow=C("cyan", 15, True), segs=6))
         mids.append(p)
     m.part("Eyes", (mids[0] + mids[1]) / 2, parent="Face").add(eyes)
     return m.scale_all(1.05)
@@ -432,28 +438,39 @@ def bone_piece(length, radius, depth, color, cap_color):
     return k.slab(right + left, depth, color, cap_color=cap_color)
 
 
+def skull_geo(pos, r, glow, nose=True):
+    """Round skull facing -Y: cranium + jaw + nose notch + glowing eye sockets (~100 tris)."""
+    sk = k.sphere(r, 8, 4, C(BONE, 14), phase=math.pi / 8)
+    sk.deform(lambda v: Vector((v.x, v.y * 0.9, v.z * (0.95 if v.z > 0 else 0.8))))
+    sk.paint(lambda c, n: C(BONE, 15 if n.z > 0.5 else 13 if n.z > -0.3 else 11))
+    g = sk.copy(T(*pos))
+    eyes, _ = k.eye_pair(g, pos.z + 0.01 * r / 0.13, 0.052 * r / 0.13, 0.042 * r / 0.13, 0.046 * r / 0.13, "glow",
+                         elevation=34, x_center=pos.x, glow=glow, segs=5)
+    out = Geo().add(g).add(eyes)
+    out.add(k.box(0.13 * r / 0.13, 0.06, 0.05 * r / 0.13, top_lit(BONE, 12, 14, 9)),
+            T(pos.x, pos.y - 0.075 * r / 0.13, pos.z - 0.11 * r / 0.13))  # jaw
+    if nose:
+        tri = k.slab([(-0.02, 0.018), (0.0, -0.02), (0.02, 0.018)], 0.02, C(BONE, 3))
+        out.add(on_surface(g, tri, pos.x, pos.z - 0.045 * r / 0.13, elevation=24, sink=0.006))
+    return out
+
+
 def bone_wall():
     m = k.Model("Enemy_BoneWall", ENEMY_BUDGET)
     wall = m.part("Wall", (0, 0, 0))
-    wall.add(k.box(0.8, 0.5, 0.56, top_lit("purple", 2, 3, 1), top_scale=(0.95, 0.92)))
-    front = -0.25
-    for (x, z, ang, ln) in ((-0.2, 0.09, 4, 0.32), (0.2, 0.08, -5, 0.3), (0.0, 0.27, -3, 0.5), (-0.23, 0.44, -8, 0.3),
-                            (0.24, 0.45, 9, 0.3)):
-        wall.add(bone_piece(ln, 0.038, 0.09, C(BONE, 12), C(BONE, 14)), T(x, front, z) @ R(Y, ang) @ R(X, 90))
-    for (x, y, z, ang, ln) in ((-0.12, 0.06, 0.575, 14, 0.4), (0.16, 0.14, 0.575, -24, 0.36),
-                               (0.2, -0.12, 0.575, 70, 0.3), (-0.22, 0.16, 0.6, 100, 0.3)):
-        wall.add(bone_piece(ln, 0.042, 0.08, C(BONE, 13), C(BONE, 15)), T(x, y, z) @ R(Z, ang))
-    for (x, z, s, y) in ((0.02, 0.4, 1.0, front + 0.02), (0.0, 0.6, 0.85, -0.02)):
-        sk = k.sphere(0.13 * s, 8, 4, C(BONE, 14), phase=math.pi / 8)
-        sk.deform(lambda v: Vector((v.x, v.y * 0.9, v.z * (0.95 if v.z > 0 else 0.8))))
-        sk.paint(lambda c, n: C(BONE, 15 if n.z > 0.5 else 13 if n.z > -0.3 else 11))
-        pos = Vector((x, y, z))
-        skg = sk.copy(T(*pos))
-        wall.add(skg)
-        eyes, _ = k.eye_pair(skg, pos.z + 0.005 * s, 0.05 * s, 0.038 * s, 0.042 * s, "glow", elevation=30, x_center=x,
-                             glow=C("purple", 15, True), segs=5)
-        wall.add(eyes)
-        wall.add(k.box(0.1 * s, 0.03, 0.022, C(BONE, 3)), T(x, pos.y - 0.11 * s, pos.z - 0.075 * s))
+    # dark grout core (mostly hidden behind the bones), slightly tapered
+    wall.add(k.box(0.78, 0.44, 0.42, top_lit(BONE, 3, 5, 2), top_scale=(0.96, 0.92)))
+    front = -0.235
+    for (x, z, ang, ln, sh) in ((-0.2, 0.075, 3, 0.3, 11), (0.2, 0.07, -4, 0.3, 12),         # bottom row
+                                (-0.02, 0.2, -2, 0.54, 13),                              # long middle bone
+                                (-0.21, 0.33, -6, 0.28, 12), (0.22, 0.335, 5, 0.28, 11)):  # top row
+        wall.add(bone_piece(ln, 0.042, 0.1, C(BONE, sh - 2), C(BONE, sh)), T(x, front, z) @ R(Y, ang) @ R(X, 90))
+    # a loose bone lying across the back of the top, behind the skulls
+    wall.add(bone_piece(0.5, 0.044, 0.08, C(BONE, 13), C(BONE, 15)), T(0.02, 0.13, 0.44) @ R(Z, -9))
+    glow = C("purple", 15, True)
+    for x, y, r in ((-0.265, -0.03, 0.118), (0.265, -0.01, 0.118), (0.0, -0.075, 0.15)):
+        wall.add(skull_geo(Vector((x, y, 0.42 + r * 0.62)), r, glow, nose=r > 0.13))
+    m.icon_view = (-16.0, 24.0)  # more frontal than the default so the three skull faces read at 48 px
     return m.scale_all(1.08)
 
 

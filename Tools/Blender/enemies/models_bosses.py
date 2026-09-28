@@ -20,7 +20,7 @@ def rock(color_rule, seed, subdiv=0, amount=0.08):
 
 
 def rock_rule(c, n):
-    return C("gray", 9) if n.z > 0.55 else C("indigo", 4) if n.z < -0.45 else C("gray", 7)
+    return C("gray", 10) if n.z > 0.55 else C("indigo", 5) if n.z < -0.45 else C("gray", 8)
 
 
 def crystal_rule(base):
@@ -216,15 +216,15 @@ def crystal_golem():
     hit, n = k.surface(torso, (0.0, -3.0, 0.98), (0, 1, 0))
     body.add(k.dome(0.2, 0.22, 0.05, 6, C("indigo", 1)), k.frame(hit - n * 0.02, n))
 
-    hc = Vector((0.0, -0.22, 1.36))
+    hc = Vector((0.0, -0.32, 1.45))
     head = m.part("Head", hc, parent="Body")
-    hg = rock(rock_rule, 9, amount=0.06).copy(T(*hc) @ S(0.27, 0.23, 0.2))
+    hg = rock(rock_rule, 9, amount=0.06).copy(T(*hc) @ S(0.34, 0.28, 0.25))
     head.add(hg.paint(rock_rule))
-    head.add(on_surface(hg, k.box(0.38, 0.075, 0.07, top_lit("gray", 7, 10, 5)), 0.0, hc.z + 0.06, elevation=10,
-                        sink=0.03))  # brow ridge
+    head.add(on_surface(hg, k.box(0.44, 0.06, 0.06, top_lit("gray", 6, 9, 4)), 0.0, hc.z + 0.11, elevation=10,
+                        sink=0.04))  # brow ridge (shallow: must not hide the eyes from the high camera)
     for side in (-1, 1):
-        head.add(on_surface(hg, k.box(0.085, 0.036, 0.03, C("cyan", 15, True)), side * 0.085, hc.z - 0.02,
-                            elevation=15, sink=0.012))
+        head.add(on_surface(hg, k.box(0.14, 0.065, 0.04, C("cyan", 15, True)).copy(R(Z, side * -12)), side * 0.11,
+                            hc.z + 0.01, elevation=46, sink=0.012))  # angry glowing eye slits
     head.add(k.crystal(0.06, 0.26, 5, crystal_rule(13)), k.aim(hc + Vector((0.06, 0.02, 0.14)), (0.25, 0.1, 1.0)))
 
     for name, side, seed in (("ArmR", -1, 21), ("ArmL", 1, 31)):
@@ -239,7 +239,7 @@ def crystal_golem():
                     k.aim((side * (0.76 + dx), dy, dz), d, (0, -1, 0)))
 
     core = m.part("CoreCrystal", (0.0, -0.46, 0.98), parent="Body")
-    core.add(k.lathe([(0.0, -0.17), (0.11, -0.04), (0.11, 0.05), (0.0, 0.21)], 6,
+    core.add(k.lathe([(0.0, -0.2), (0.14, -0.05), (0.14, 0.06), (0.0, 0.26)], 6,
                      lambda c, n: C("sky", 15 if n.z > 0.3 else 14, True), phase=0.0), T(0.0, -0.46, 0.98))
 
     shield = m.part("ShieldCrystal", (0.0, 0.0, 0.85))

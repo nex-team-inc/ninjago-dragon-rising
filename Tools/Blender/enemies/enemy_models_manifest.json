@@ -115,8 +115,8 @@
      "path": "Body/Head",
      "pivot_unity": [
       -0.0,
-      1.36,
-      0.22
+      1.45,
+      0.32
      ],
      "tris": 84
     },
@@ -273,8 +273,8 @@
      "path": "Body/Eyes",
      "pivot_unity": [
       -0.0,
-      0.505,
-      0.1826
+      0.51,
+      0.1783
      ],
      "tris": 116
     }
@@ -361,11 +361,11 @@
     1,
     1
    ],
-   "height": 0.7614,
+   "height": 0.7079,
    "icon": "Assets/Sprites/BilliardRogue/Icons/Enemy_BoneWall.png",
    "parts": [
     {
-     "emissive_faces": 44,
+     "emissive_faces": 66,
      "name": "Wall",
      "parent": null,
      "path": "Wall",
@@ -374,10 +374,10 @@
       0.0,
       -0.0
      ],
-     "tris": 600
+     "tris": 572
     }
    ],
-   "tris": 600
+   "tris": 572
   },
   "Enemy_Healer": {
    "budget": 600,
@@ -420,8 +420,8 @@
      "path": "Stem/Eyes",
      "pivot_unity": [
       -0.0,
-      0.2538,
-      0.2057
+      0.27,
+      0.2034
      ],
      "tris": 116
     },
@@ -581,7 +581,7 @@
     1,
     1
    ],
-   "height": 1.005,
+   "height": 1.1256,
    "icon": "Assets/Sprites/BilliardRogue/Icons/Enemy_Skeleton.png",
    "parts": [
     {
@@ -603,7 +603,7 @@
      "path": "Body/Head",
      "pivot_unity": [
       -0.0,
-      0.53,
+      0.5936,
       -0.0
      ],
      "tris": 192
@@ -614,8 +614,8 @@
      "parent": "Body",
      "path": "Body/ArmR",
      "pivot_unity": [
-      0.18,
-      0.46,
+      0.2016,
+      0.5152,
       -0.0
      ],
      "tris": 46
@@ -626,8 +626,8 @@
      "parent": "Body",
      "path": "Body/ArmL",
      "pivot_unity": [
-      -0.18,
-      0.46,
+      -0.2016,
+      0.5152,
       -0.0
      ],
      "tris": 46
@@ -638,9 +638,9 @@
      "parent": "ArmR",
      "path": "Body/ArmR/Weapon",
      "pivot_unity": [
-      0.27,
-      0.3,
-      0.1
+      0.3024,
+      0.336,
+      0.112
      ],
      "tris": 84
     }
@@ -667,7 +667,7 @@
       0.0,
       -0.0
      ],
-     "tris": 452
+     "tris": 460
     },
     {
      "emissive_faces": 44,
@@ -676,13 +676,13 @@
      "path": "Body/Eyes",
      "pivot_unity": [
       -0.0,
-      0.345,
-      0.3575
+      0.395,
+      0.3289
      ],
      "tris": 116
     }
    ],
-   "tris": 568
+   "tris": 576
   },
   "Enemy_Totem": {
    "budget": 600,
@@ -691,11 +691,11 @@
     1,
     1
    ],
-   "height": 1.3373,
+   "height": 1.26,
    "icon": "Assets/Sprites/BilliardRogue/Icons/Enemy_Totem.png",
    "parts": [
     {
-     "emissive_faces": 0,
+     "emissive_faces": 18,
      "name": "Base",
      "parent": null,
      "path": "Base",
@@ -704,7 +704,7 @@
       0.0,
       -0.0
      ],
-     "tris": 322
+     "tris": 400
     },
     {
      "emissive_faces": 0,
@@ -731,7 +731,21 @@
      "tris": 44
     }
    ],
-   "tris": 498
+   "tris": 576
   }
- }
+ },
+ "order": [
+  "Enemy_Slime",
+  "Enemy_Bat",
+  "Enemy_Skeleton",
+  "Enemy_ShieldKnight",
+  "Enemy_Mage",
+  "Enemy_Healer",
+  "Enemy_Bomber",
+  "Enemy_Totem",
+  "Enemy_BoneWall",
+  "Boss_KingSlime",
+  "Boss_BoneLich",
+  "Boss_CrystalGolem"
+ ]
 }

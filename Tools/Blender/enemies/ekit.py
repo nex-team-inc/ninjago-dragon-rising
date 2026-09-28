@@ -470,6 +470,7 @@ class Model:
         self.budget = budget
         self.footprint = footprint
         self.parts = []
+        self.icon_view = None  # optional (yaw_deg, pitch_deg) override of the default icon camera
 
     def part(self, name, pivot=(0, 0, 0), parent=None):
         p = Part(name, pivot, parent)

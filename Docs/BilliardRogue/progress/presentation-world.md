@@ -18,7 +18,12 @@ usage-limit kill: read this file + `git log -- Starter/Assets/Scripts/BilliardRo
 - [x] Look iteration with the real ToonLit + post stack (shots `v5_*`..`v7_*`): `EnvironmentLooks` (Editor) calibrates the layout presets
       (seeded once; builder re-seed reproduces the tuned assets exactly), `ActLightingPreset.additionalLightIntensity` (blended, drives the
       act lights through DioramaAnimator), danger idle glow 0.45 -> 0.9. EditMode tests 4/4 green.
-- [ ] Waiting on Rendering: Volume_Act2 grade crushes red to 0 (danger row invisible in Act 2) — see Requests
+- [x] DangerRowPulse drives the inlay emission for real (M_DangerTile ships with _EmissionStrength 0: the pulse now sets it to 1 and
+      scales _EmissionColor, which also works on the URP Lit placeholder); orange-red colour, idle 0.55, pulse 0.8..2 — reads in every act
+      even under the current Act 2 grade (shots `v10_*`, crops `crop_v10.png`).
+- [x] Act transitions that change the diorama swap behind a fog veil (EnvironmentConfig.swapVeilFogDensity, peak at t = 0.5, god rays
+      fade with it); verified frame by frame in `veil_sheet2.png`. Lazily instantiated dioramas start hidden.
+- [ ] Waiting on Rendering: Volume_Act2 grade crushes red (warm torch pools / enemy reds lose colour) — see Requests
 
 ## Decisions
 
@@ -43,6 +48,7 @@ usage-limit kill: read this file + `git log -- Starter/Assets/Scripts/BilliardRo
 - `ArenaView` (Arena.prefab root, next to ArenaLayout): `Initialize(ArenaConfig)` (called by the controller), `Layout`, `DangerRow`,
   `ApplySurfaces(...)`, `SetDangerLevel(float level01)`.
 - `DangerRowPulse.SetDangerLevel(float level01)`: 0 = empty (dim steady glow), 1 = occupied (fast bright pulse).
+- `ActLightingPreset.additionalLightIntensity` (per-act multiplier on the act lights, blended in transitions).
 - `EnvironmentBuilder.Run()`, `EnvironmentBuilder.WireScene(GameObject world)` (for MainSceneBuilder), `EnvironmentBuilder.WorldLightingPath`.
 - Global shader colour `_WorldRimColor` (ActLightingPreset.rimColor).
 

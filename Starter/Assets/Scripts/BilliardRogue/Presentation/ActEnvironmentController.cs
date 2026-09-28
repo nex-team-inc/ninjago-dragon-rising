@@ -12,7 +12,7 @@ namespace Nex.BilliardRogue
     /// Applies an act's world look (TDD §8): shows its diorama (Env_Act{n}), swaps the arena surface materials,
     /// spawns its ambient particles and blends sun (hard shadows), trilight ambient, fog, rim/light tints, god rays
     /// and the post-processing profile (faded in on a blend volume, then handed to WorldCameraRig.SetVolumeProfile)
-    /// from the current look over a short unscaled DOTween. ApplyTitle shows the cozy golden Title variant on a backdrop
+    /// from the current look over a short unscaled DOTween; a diorama change swaps behind a brief fog veil. ApplyTitle shows the cozy golden Title variant on a backdrop
     /// act. Lives on WorldLighting.prefab under World; the scene references (arena, camera rig, placed dioramas) are
     /// wired by EnvironmentBuilder.WireScene.
     /// </summary>
@@ -48,6 +48,10 @@ namespace Nex.BilliardRogue
         EnvironmentLook from;
         EnvironmentLook to;
         ActEnvironment? shown;
+        ActEnvironment? pendingDiorama;
+        GameObject? pendingAmbient;
+        Color pendingParticleTint;
+        bool veiling;
         Tween? transition;
         VolumeProfile? pendingProfile;
         bool volumeBlending;
@@ -103,26 +107,32 @@ namespace Nex.BilliardRogue
 
         #region Transition
 
+        // A diorama change during a timed transition hides behind a fog veil (EnvironmentConfig.swapVeilFogDensity) that
+        // peaks at the half-way point, where the dioramas swap; otherwise the look simply blends.
         void Show(ActDefinition act, ActLightingPreset lighting, VolumeProfile? profile, float seconds)
         {
             var diorama = Diorama(act);
-            if (shown != diorama)
-            {
-                if (shown != null) shown.SetVisible(false);
-                diorama.SetVisible(true);
-                shown = diorama;
-                arena.ApplySurfaces(diorama.ArenaSurfaces);
-                ApplyLook(current);
-            }
-
-            diorama.EnsureAmbientParticles(act.AmbientParticlesPrefab, lighting.particleTint);
-
             if (transition != null) transition.Kill();
             transition = null;
+            SwapPendingDiorama();
             CompleteVolumeBlend();
             from = current;
             to = EnvironmentLook.From(lighting);
             BeginVolumeBlend(profile);
+            veiling = false;
+            if (shown != diorama)
+            {
+                pendingDiorama = diorama;
+                pendingAmbient = act.AmbientParticlesPrefab;
+                pendingParticleTint = lighting.particleTint;
+                veiling = seconds > 0f && shown != null;
+                if (!veiling) SwapPendingDiorama();
+            }
+            else
+            {
+                diorama.EnsureAmbientParticles(act.AmbientParticlesPrefab, lighting.particleTint);
+            }
+
             if (seconds <= 0f)
             {
                 HandleTransitionStep(1f);
@@ -141,6 +151,15 @@ namespace Nex.BilliardRogue
         void HandleTransitionStep(float t)
         {
             current = EnvironmentLook.Lerp(from, to, t);
+            if (veiling)
+            {
+                // Additive god rays ignore fog: fade them out with the veil.
+                var veil = Mathf.Sin(Mathf.PI * Mathf.Clamp01(t));
+                current.fogDensity += config.SwapVeilFogDensity * veil;
+                current.godRayIntensity *= 1f - veil;
+                if (t >= 0.5f) SwapPendingDiorama();
+            }
+
             ApplyLook(current);
             if (volumeBlending) blendVolume.weight = Mathf.Clamp01(t);
         }
@@ -148,9 +167,25 @@ namespace Nex.BilliardRogue
         void HandleTransitionComplete()
         {
             current = to;
+            veiling = false;
+            SwapPendingDiorama();
             ApplyLook(current);
             CompleteVolumeBlend();
             transition = null;
+        }
+
+        // Shows the pending diorama with the act's surfaces, ambient particles and the look on screen (never untinted).
+        void SwapPendingDiorama()
+        {
+            if (pendingDiorama == null) return;
+            if (shown != null) shown.SetVisible(false);
+            shown = pendingDiorama;
+            pendingDiorama = null;
+            shown.SetVisible(true);
+            arena.ApplySurfaces(shown.ArenaSurfaces);
+            shown.EnsureAmbientParticles(pendingAmbient, pendingParticleTint);
+            pendingAmbient = null;
+            ApplyLook(current);
         }
 
         void ApplyLook(in EnvironmentLook look)
@@ -218,6 +253,7 @@ namespace Nex.BilliardRogue
             var instance = Instantiate(act.EnvironmentPrefab, arenaTransform.position, arenaTransform.rotation, arenaTransform.parent);
             var created = instance.GetComponent<ActEnvironment>();
             created.Initialize(config);
+            created.SetVisible(false);
             dioramas.Add(created);
             return created;
         }

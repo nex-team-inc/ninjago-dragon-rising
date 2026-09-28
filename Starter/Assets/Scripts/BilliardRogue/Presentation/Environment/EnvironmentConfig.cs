@@ -26,6 +26,8 @@ namespace Nex.BilliardRogue
         [Tooltip("Seconds to blend into the Title look.")]
         [SerializeField, Range(0f, 5f)] float titleTransitionSeconds = 1f;
         [SerializeField] Ease transitionEase = Ease.InOutSine;
+        [Tooltip("Extra fog density at the middle of a transition that changes the diorama (the dioramas swap behind it). 0.07 hides ~95% of the scene at the camera distance.")]
+        [SerializeField, Range(0f, 0.2f)] float swapVeilFogDensity = 0.07f;
 
         [Header("Fog")]
         [Tooltip("Fog falloff for ActLightingPreset.fogDensity. The camera is ~22-30 m from the floor, so ExponentialSquared keeps the arena clear while the far background hazes.")]
@@ -59,6 +61,7 @@ namespace Nex.BilliardRogue
         public float ActTransitionSeconds => actTransitionSeconds;
         public float TitleTransitionSeconds => titleTransitionSeconds;
         public Ease TransitionEase => transitionEase;
+        public float SwapVeilFogDensity => swapVeilFogDensity;
         public FogMode FogMode => fogMode;
         public float FireFlickerAmount => fireFlickerAmount;
         public float FireFlickerSpeed => fireFlickerSpeed;

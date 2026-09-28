@@ -6,14 +6,15 @@ using UnityEngine;
 namespace Nex.BilliardRogue
 {
     /// <summary>
-    /// Emissive pulse of the danger-row inlays. Presentation-Core reports how threatened the row is through
-    /// SetDangerLevel (0 = empty: steady dim glow, 1 = fully occupied: fast bright pulse). All inlays share one
-    /// runtime material instance so they stay in one SRP batch; the pulse runs on unscaled time so hit-stop and
-    /// pause never freeze it. The component starts disabled and enables itself in Initialize.
+    /// Emissive pulse of the danger-row inlays (M_DangerTile emission is script-driven, TDD §16). Presentation-Core
+    /// reports how threatened the row is through SetDangerLevel (0 = empty: steady dim glow, 1 = fully occupied: fast
+    /// bright pulse). All inlays share one runtime material instance so they stay in one SRP batch; the pulse runs on
+    /// unscaled time so hit-stop and pause never freeze it. The component starts disabled and enables itself in Initialize.
     /// </summary>
     public sealed class DangerRowPulse : MonoBehaviour
     {
         static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
+        static readonly int EmissionStrengthId = Shader.PropertyToID("_EmissionStrength");
         const float SettledEpsilon = 0.001f;
 
         [Tooltip("Inlay renderers (DangerInlay_Emissive parts), one per column.")]
@@ -43,6 +44,9 @@ namespace Nex.BilliardRogue
                 material = instance;
             }
 
+            // M_DangerTile ships with _EmissionStrength 0; the pulse scales _EmissionColor instead, which also drives the
+            // URP Lit placeholder when Rendering's material is missing.
+            material.SetFloat(EmissionStrengthId, 1f);
             targetLevel = 0f;
             level = 0f;
             settledIdle = false;

@@ -179,6 +179,9 @@ namespace Nex.BilliardRogue.Editor
             var go = Ui(name, parent);
             Place(go, anchor, pos, rectSize);
             var preview = key == null ? numbersPreview : English(key);
+            // A key with placeholders is a smart string that throws when formatted without its arguments, which
+            // LocalizeStringEvent does on OnEnable: its layers start disabled and TextLabel.SetKey enables them.
+            var startEnabled = key == null || !placeholder.IsMatch(english.GetValueOrDefault(key, ""));
             var layers = new List<Object>();
             var localized = new List<Object>();
             if (shadow)
@@ -187,12 +190,12 @@ namespace Nex.BilliardRogue.Editor
                 var shadowText = Text(go.transform, "Shadow", preview, size, Theme.TextShadow, align, wrap, bold);
                 ((RectTransform)shadowText.transform).anchoredPosition = new Vector2(offset, -offset);
                 layers.Add(shadowText);
-                if (key != null) localized.Add(Bind(shadowText, key));
+                if (key != null) localized.Add(Bind(shadowText, key, startEnabled));
             }
 
             var face = Text(go.transform, "Face", preview, size, color, align, wrap, bold);
             layers.Add(face);
-            if (key != null) localized.Add(Bind(face, key));
+            if (key != null) localized.Add(Bind(face, key, startEnabled));
             var label = go.AddComponent<TextLabel>();
             UiFields.SetArray(label, "layers", layers);
             UiFields.SetArray(label, "localized", localized);
@@ -218,9 +221,10 @@ namespace Nex.BilliardRogue.Editor
             return tmp;
         }
 
-        NexLocalizedString Bind(TextMeshProUGUI tmp, string key)
+        NexLocalizedString Bind(TextMeshProUGUI tmp, string key, bool startEnabled = true)
         {
             var localized = tmp.gameObject.AddComponent<NexLocalizedString>();
+            localized.enabled = startEnabled;
             var so = new SerializedObject(localized);
             var reference = so.FindProperty("m_StringReference");
             reference.FindPropertyRelative("m_TableReference.m_TableCollectionName").stringValue = tableReference;

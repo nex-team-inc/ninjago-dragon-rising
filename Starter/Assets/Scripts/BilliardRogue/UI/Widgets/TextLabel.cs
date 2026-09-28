@@ -25,6 +25,16 @@ namespace Nex.BilliardRogue
 
         public TMP_Text Face => layers[layers.Length - 1];
 
+        // Layers bound to a key with placeholders are built disabled (UiPrefabKit): LocalizeStringEvent formats its
+        // entry on OnEnable, and a smart string without its arguments throws. Apply enables them with the arguments.
+        void Awake()
+        {
+            foreach (var label in localized)
+            {
+                label.StringReference.Arguments = arguments;
+            }
+        }
+
         public Color Color
         {
             get => Face.color;
@@ -104,9 +114,17 @@ namespace Nex.BilliardRogue
                 var reference = label.StringReference;
                 reference.Arguments = arguments;
                 var before = reference.TableEntryReference;
-                // A changed entry refreshes by itself (with the arguments above); an unchanged one does not.
                 label.SetEntry(key);
-                if (reference.TableEntryReference.Equals(before)) label.RefreshString();
+                if (!label.enabled)
+                {
+                    // First arguments for a placeholder key: OnEnable registers and formats with them.
+                    label.enabled = true;
+                }
+                else if (reference.TableEntryReference.Equals(before))
+                {
+                    // A changed entry refreshes by itself (with the arguments above); an unchanged one does not.
+                    label.RefreshString();
+                }
             }
         }
     }

@@ -18,9 +18,18 @@ Already done by revise 1 (verified against staging + Starter, which match byte f
   (Environment's ARENA_FLOOR_REQUESTS in make_layouts.py). FLOOR_LIMITS build check; surfaces.json floorMetrics.
 - [x] Frame_Panel wood grain, uniform bar fills, mock-up arrows + cursor, build_art2d manifest-based stale guard (947d1345).
 
+- [x] Particles at game scale (particles_gamescale.png); Leaf + Debris get a 1 px dark contour (294dab07).
+- [x] Final clean rebuild: build_art2d --check DETERMINISTIC, 96 files; foreign UI files (Portrait_*, make_ui_extra
+  Icon_*) untouched. V/U, logo, mock-up, panel, bars re-checked on the contact sheets.
+
+## Integrator
+- Surfaces (incl. RuinFloor / HollowFloor + M_Surface_*) are already in Starter (synced at 06:33, 54917f4b).
+- Still to sync from staging: Particles/Debris.png, Particles/Leaf.png, UI/Bar_Fill_Hp.png, UI/Bar_Fill_Boss.png,
+  UI/Frame_Panel.png, UI/Logo_BilliardRogue.png, UI/ui_slices.json -> ImportSettingsBuilder, UiViews, VfxPrefabs.
+- TDD 14.2 surface list should add RuinFloor, HollowFloor; TDD 16 still says M_Surface_* `_Tiling 1` (builder uses 0.5).
+
 ## Next
-- [ ] Particles at game scale over the act floors.
-- [ ] Final regenerate + contact sheet review; update this note.
+- (none in scope) Optional: MossyBrick wall-band moss; per-act Env_FloorTile bevel colour (Environment).
 
 ## Findings
 - In game, every *_Surface kit piece uses its own mesh box UVs (1 UV = 1 m, offset 0.5) and M_Surface_* have

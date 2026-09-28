@@ -8,11 +8,25 @@ namespace Nex.BilliardRogue
     [CreateAssetMenu(fileName = "PacingConfig", menuName = "Nex/Billiard Rogue/Pacing Config", order = 53)]
     public sealed class PacingConfig : ScriptableObject
     {
+        const int AimGuideSettingCount = 3;
+
         [Header("Shots")]
         [SerializeField, Range(0f, 2f)] float shotCooldown = 0.35f;
         [Tooltip("Seconds of straggler flight (no balls left to shoot) before fast-forward kicks in.")]
         [SerializeField, Range(0f, 10f)] float fastForwardDelay = 2.5f;
         [SerializeField, Range(1f, 4f)] float fastForwardScale = 2f;
+
+        [Header("Turn")]
+        [Tooltip("Seconds after the last ball exits before the enemy phase starts.")]
+        [SerializeField, Range(0f, 2f)] float turnEndGrace = 0.3f;
+        [Tooltip("HP fraction at or below which the low-HP warning plays at turn start and when damage crosses it.")]
+        [SerializeField, Range(0f, 1f)] float lowHpFraction = 0.25f;
+
+        [Header("Aim guide")]
+        [Tooltip("Guide length in sim units for PlayerPreference.aimGuideLength 0 (short), 1 (normal), 2 (long).")]
+        [SerializeField] float[] aimGuideLengths = { 5f, 9f, 16f };
+        [SerializeField, Range(0, 8)] int aimGuideMaxBounces = 2;
+        [SerializeField, Range(4, 64)] int aimGuideMaxPoints = 24;
 
         [Header("Enemy phase")]
         [SerializeField, Range(0.05f, 2f)] float statusTickDuration = 0.35f;
@@ -39,6 +53,9 @@ namespace Nex.BilliardRogue
         [SerializeField, Range(0f, 2f)] float lastEnemySlowMoDuration = 0.3f;
         [SerializeField, Range(0.05f, 1f)] float lastEnemySlowMoScale = 0.3f;
 
+        [Header("Music")]
+        [SerializeField, Range(0.1f, 3f)] float bgmCrossfadeSeconds = 0.8f;
+
         [Header("Reward")]
         [SerializeField, Range(0f, 1f)] float rewardRevealStagger = 0.25f;
         [SerializeField, Range(0f, 2f)] float rewardPickDuration = 0.6f;
@@ -46,6 +63,10 @@ namespace Nex.BilliardRogue
         public float ShotCooldown => shotCooldown;
         public float FastForwardDelay => fastForwardDelay;
         public float FastForwardScale => fastForwardScale;
+        public float TurnEndGrace => turnEndGrace;
+        public float LowHpFraction => lowHpFraction;
+        public int AimGuideMaxBounces => aimGuideMaxBounces;
+        public int AimGuideMaxPoints => aimGuideMaxPoints;
         public float StatusTickDuration => statusTickDuration;
         public float AbilityDuration => abilityDuration;
         public float EnemyHopDuration => enemyHopDuration;
@@ -64,7 +85,16 @@ namespace Nex.BilliardRogue
         public float HitStopBoss => hitStopBoss;
         public float LastEnemySlowMoDuration => lastEnemySlowMoDuration;
         public float LastEnemySlowMoScale => lastEnemySlowMoScale;
+        public float BgmCrossfadeSeconds => bgmCrossfadeSeconds;
         public float RewardRevealStagger => rewardRevealStagger;
         public float RewardPickDuration => rewardPickDuration;
+
+        /// <summary>Aim guide length (sim units) for a PlayerPreference.aimGuideLength setting; out-of-range settings use normal.</summary>
+        public float AimGuideLength(int setting)
+        {
+            if (aimGuideLengths.Length == 0) return 9f;
+            var index = setting >= 0 && setting < AimGuideSettingCount && setting < aimGuideLengths.Length ? setting : Mathf.Min(1, aimGuideLengths.Length - 1);
+            return aimGuideLengths[index];
+        }
     }
 }

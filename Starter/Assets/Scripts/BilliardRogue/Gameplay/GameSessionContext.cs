@@ -18,8 +18,16 @@ namespace Nex.BilliardRogue
         /// <summary>One input per player, index = player index.</summary>
         public IShotInput[] inputs = Array.Empty<IShotInput>();
         public RunPersistence persistence = null!;
-        public RunAnalytics analytics = null!;
+        /// <summary>Null only in headless smoke runs, where no AnalyticsManager exists.</summary>
+        public RunAnalytics? analytics;
         public TimeScaleController timeScale = null!;
         public PixelWorldDisplay display = null!;
+        /// <summary>
+        /// Editor smoke runs without a scene: the session never touches board, display, SfxManager, BgmManager,
+        /// CherryIntegrationManager or PlayerDataManager (the aim guide length falls back to normal).
+        /// </summary>
+        public bool headless;
+        /// <summary>Replaces PlayerDataManager.Instance.DebugSettings (headless runs, tests).</summary>
+        public DebugSettings? debugSettings;
     }
 }

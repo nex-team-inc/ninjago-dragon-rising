@@ -327,7 +327,10 @@ Rules: prefabs/scenes are regenerated from code (don't hand-tweak generated pref
 
 ## 14. Asset naming contracts (builders load by path; missing asset → builder uses a primitive placeholder and logs a warning)
 
-### 14.1 Models (`Assets/Models/BilliardRogue/...`, FBX, 1 unit = 1 m = 1 cell, pivot at bottom-center, +Z forward (faces the player/camera = sim "down"), Y up)
+### 14.1 Models (`Assets/Models/BilliardRogue/...`, FBX, 1 unit = 1 m = 1 cell, pivot at bottom-center, Y up, **model faces Unity +Z** — standard forward)
+World convention: `ArenaLayout` maps sim y (up the arena) → world **+Z**; the camera sits south (low Z, high Y) looking north/down. Enemies therefore face the camera by being rotated 180° around Y by `EnemyView`; the cat faces +Z (toward enemies) when striking and turns 3/4 toward the camera when idle.
+Readability: the world renders at 640×360, so one cell is only ~25–30 px on screen — bold silhouettes, big eyes, 2–3 strong colour blocks per model, no thin details. Budgets: enemy ≤ 600 tris, boss ≤ 1500, hero ≤ 900, prop ≤ 300, environment piece ≤ 800.
+Pipeline: offline outputs are generated into the gitignored staging mirror `Tools/Staging/Assets/...` (same sub-paths as `Starter/Assets/...`); the integration step copies them into `Starter/Assets/` so Unity imports everything once with the right import settings.
 Each FBX root has **named child parts** so presentation can animate rigid parts by code (no skeletal rigs):
 | File | Parts (child names) | Footprint |
 |---|---|---|

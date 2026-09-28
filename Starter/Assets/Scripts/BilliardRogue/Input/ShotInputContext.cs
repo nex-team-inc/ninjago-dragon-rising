@@ -12,8 +12,11 @@ namespace Nex.BilliardRogue
         public ControlConfig control = null!;
         /// <summary>Arena clamp for every input and the bot's private PredictPath simulator.</summary>
         public GameRules rules = null!;
-        /// <summary>PlayerPreference.leftHandedCue at creation; ShotInputRouter.SetLeftHanded applies later changes.</summary>
-        public bool leftHanded;
+        /// <summary>
+        /// Polled every frame so a Settings change mid-run applies at once, e.g.
+        /// <c>() =&gt; PlayerDataManager.Instance.PlayerPreference.leftHandedCue</c>.
+        /// </summary>
+        public Func<bool> leftHanded = RightHanded;
         /// <summary>The run the bot aims at; null outside gameplay (calibration), where the bot shoots straight up.</summary>
         public Func<RunState?> run = NoRun;
         /// <summary>Optional: lets the debug input aim at the mouse on the arena (WorldCamera renders full screen).</summary>
@@ -22,5 +25,7 @@ namespace Nex.BilliardRogue
         public ArenaLayout? layout;
 
         static RunState? NoRun() => null;
+
+        static bool RightHanded() => false;
     }
 }

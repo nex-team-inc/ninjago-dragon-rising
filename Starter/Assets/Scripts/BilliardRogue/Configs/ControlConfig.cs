@@ -77,8 +77,8 @@ namespace Nex.BilliardRogue
         [SerializeField, Range(3, 128)] int botSampleCount = 24;
         [Tooltip("Candidate launch positions along the launch line.")]
         [SerializeField, Range(1, 16)] int botLaunchSamples = 5;
-        [Tooltip("Candidates scored per frame (spreads the search over frames).")]
-        [SerializeField, Range(1, 256)] int botCandidatesPerFrame = 12;
+        [Tooltip("Candidates scored per frame (spreads the search over frames; ~0.1 ms each on a desktop CPU).")]
+        [SerializeField, Range(1, 256)] int botCandidatesPerFrame = 4;
         [Tooltip("Predicted path length in sim units.")]
         [SerializeField, Range(4f, 80f)] float botPathLength = 30f;
         [Tooltip("Predicted reflections per candidate.")]

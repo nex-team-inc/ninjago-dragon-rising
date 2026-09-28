@@ -30,6 +30,7 @@ namespace Nex.BilliardRogue
         IShotInput bot = null!;
         IShotInput active = null!;
         ControlConfig config = null!;
+        Func<bool>? leftHandedSource;
         float untrackedSeconds;
 
         public int PlayerIndex { get; private set; }
@@ -42,7 +43,8 @@ namespace Nex.BilliardRogue
         /// <summary>Wires this prefab's paw, debug and bot inputs and starts routing.</summary>
         public void Initialize(int playerIndex, OnePlayerDetectionEngine engine, ShotInputContext ctx)
         {
-            pawInput.Initialize(playerIndex, engine, ctx.control, ctx.rules.arena, ctx.leftHanded);
+            leftHandedSource = ctx.leftHanded;
+            pawInput.Initialize(playerIndex, engine, ctx.control, ctx.rules.arena, leftHandedSource());
             debugInput.Initialize(playerIndex, ctx.control, ctx.rules.arena, ctx.worldCamera, ctx.layout);
             botInput.Initialize(playerIndex, ctx.rules, ctx.run, ctx.control);
             Initialize(playerIndex, pawInput, debugInput, botInput, ctx.control);
@@ -79,17 +81,11 @@ namespace Nex.BilliardRogue
 
         #endregion
 
-        #region Public Methods
-
-        /// <summary>Applies a changed PlayerPreference.leftHandedCue to this player's paw input.</summary>
-        public void SetLeftHanded(bool leftHanded) => pawInput.SetLeftHanded(leftHanded);
-
-        #endregion
-
         #region Routing
 
         void Update()
         {
+            if (leftHandedSource != null) pawInput.SetLeftHanded(leftHandedSource());
             var source = SelectSource();
             if (source != ActiveSource) Select(source, announce: true);
             UpdateTracking(Time.unscaledDeltaTime);

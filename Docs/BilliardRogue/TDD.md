@@ -182,7 +182,8 @@ public delegate void BallVisitor(in BallView view);   // readonly struct BallVie
 public sealed class EnemyPhaseResolver { public EnemyPhaseResolver(GameRules rules, BoardOps ops); public void Resolve(RunState run, SimRandom rng, List<SimEvent> events); } // status ticks → abilities → advance → danger attacks → spawn next wave; events carry `step` (0..4) for staged animation
 public sealed class RunFactory { public RunState NewRun(GameRules rules, int seed, int numPlayers); public void BeginStage(GameRules rules, RunState run, SimRandom rng, List<SimEvent> events); public bool IsStageCleared(RunState run); public bool AdvanceToNextStage(GameRules rules, RunState run) /* false when run complete = victory */; }
 ```
-`DamageSource` struct: `{ BallType ballType; int ballId; bool isStatusTick; bool isExplosion; bool isChain; }`.
+`DamageSource` struct: `{ BallType ballType; int ballId; bool isStatusTick; bool isExplosion; bool isChain; bool isCrit; }`.
+**Implemented (2026-09-28, `109f1fca`).** `BoardOps` also exposes `IsFootprintFree`, `EnemyAt`, `SpawnWaveRow`, `ApplyStatus`, `HealEnemy`, `DamageCrate`, `CollectPickup`, `DamagePlayer`, `HealPlayer`; `RunFactory` adds `CompleteStage`; `StatusStacks.burnSpreads` added. Binding rule decisions (footprints, cadence, freeze, escorts, pickups, splitter/bomb/piercer semantics) are in `HANDOFF.md` §3–§4.
 
 ### 3.5 Events (`SimEvent` struct, appended to a caller-owned `List<SimEvent>`; no allocations)
 ```csharp

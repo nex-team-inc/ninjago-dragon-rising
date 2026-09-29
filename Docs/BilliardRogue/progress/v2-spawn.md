@@ -16,8 +16,8 @@ The perf agent (`final-perf.md`) shares the Editor: short `Tools/editor_lock.sh 
 - [x] 5. §6: control readout hidden by default everywhere (renamed setting so a saved "on" from the old default is dropped).
 - [x] 6. Editor: recompile, act upgrade, LocalizationSeeder + FontAssetsBuilder (no prefab change needed: the incoming
       ribbon reuses the turn ribbon), EditMode tests, sim smoke, play smoke screenshots.
-- [ ] 7. APK + device.
-- [ ] 8. Docs (HANDOFF §4, ControlDemo.md), commit.
+- [x] 7. APK + device.
+- [x] 8. Docs (HANDOFF §4, ControlDemo.md, CURSOR_HANDOFF item 7), commit.
 
 ## Log
 - Sim done: `SpawnBatch`/`BatchEntry` + `StagePlan.batches`, `RunState.nextBatchIndex/nextBatchTurn`, `BoardSpawning`
@@ -38,5 +38,14 @@ The perf agent (`final-perf.md`) shares the Editor: short `Tools/editor_lock.sh 
 - Editor: EditMode "Nex.BilliardRogue" 169/169. Play smoke (seed 2929/3131): stage 1 opens with 10 enemies in rows 1–6
   + 2 pickups, "Enemies incoming!" ribbon, turn 1; KillAll on turn 1 → phase jumps to turn 4 with batch 2 popping in,
   banner "Turn 4 — shoot!", analytics turn_start 1 / turn_end 1 / turn_start 4 / turn_end 4; boss stage 3: King Slime at
-  cols 3–4 rows 0–1 + 10 escorts in rows 0–6; bot: cadence batch on turn 4. Console: no game warnings or errors.
+  cols 2–3 rows 0–1 (0-based) + 10 escorts in rows 0–6; bot: cadence batch on turn 4. Console: no game warnings or errors.
   Shots in scratch `spawn/shots/`.
+- Build All 19/19 (regenerated shared UI prefabs + Main scene committed in dc4f84f3, as perf's checkpoint asked), EditMode
+  169/169, play sanity after it (10 enemies rows 0–6, readout alpha 0 / setting off). `ControlDemoBuild.Run()`: Succeeded,
+  247,676,948 bytes, 85 s, 0 errors. Device 10.4.6.137: install -r Success, launched, no Unity E/W lines in logcat after
+  22 s (`[Perf]` 59.9 fps on the title), title screen shot (scratch `spawn/device.png`), app left on the title. The
+  device holds a v1 in-progress run ("Continue — Act 1 · Stage 2"): it continues through `StageSchedule.UpgradeLegacyStage`
+  (covered by `BatchSpawnTests.AV1SaveMidStageContinuesWithBatches`, not exercised on the device).
+
+## Next
+Done.

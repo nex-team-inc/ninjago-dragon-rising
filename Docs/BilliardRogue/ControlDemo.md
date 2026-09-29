@@ -26,6 +26,7 @@ both on once in Debug Settings.
 | **Batches of 10 every 3 turns** | A batch has **at least 10 enemies** (fewer only when the free cells run out) plus 2 pickups. A stage has 3 batches: on turn 1, turn 4 and turn 7. Enemies still move down one row per enemy phase and attack from the danger row. | Watch the turn banner: new enemies arrive with turns 4 and 7. |
 | **No empty turns** | When the field is empty (Bone Walls do not count), your turn ends right away, and if the stage still has a batch it arrives immediately. The turn counter jumps to that batch's turn, so after clearing the field on turn 2 the next banner reads **Turn 4**. With no batch left, an empty field clears the stage. | Clear the field before turn 4. |
 | **Boss stages** | The boss appears at the top centre (2×2, rows 1–2) together with the first escort batch. More escort batches (10 each, fewer when the board is full) arrive every 3 turns while the boss lives, and none after it dies. The bosses' own summons are unchanged. | Debug Settings **Run: Force Start Stage** 3, 7 or 11, or `DebugHooks.GotoStage(3)`. |
+| **Board sounds** | Hits, bounces, launches, enemy steps and deaths, pickups and the pop-ins now make sound. A bug had silenced every sound effect on the board before (the HUD and menu sounds were fine). | Shoot a ball. |
 | **Debug overlay hidden** | The control readout (the debug canvas in the lower right) is **off by default** in every build, this demo included. The **Debug: Show Control Readout** toggle still brings it back. A value saved by an older demo is ignored once, so the readout starts hidden after the update. The debug printer stays off by default too. | Open Debug Settings and turn **Debug: Show Control Readout** on. |
 
 The numbers are config values: `ActRules.minEnemiesPerBatch` (10), `spawnEveryNTurns` (3), `batchesPerStage` (3),
@@ -82,18 +83,19 @@ about 10 fps while Unity is not the focused window, so click the Game view befor
 | | |
 |---|---|
 | APK | `/Users/simonbut/project/VibeProject3/Builds/Android/BilliardRogue_ControlDemo.apk` (gitignored, `/[Bb]uilds/`) |
-| Size | 247,668,481 bytes (about 236 MiB). The first build was 209,729,060 bytes; the development `libil2cpp.so` alone is 139 MB |
+| Size | 247,676,948 bytes (about 236 MiB). The first build was 209,729,060 bytes; the development `libil2cpp.so` alone is 139 MB |
 | App id | `team.nex.starter.staging` (the starter's id, unchanged), version 1.0 (1), label "Starter" |
 | Contents | `Assets/Scenes/BilliardRogue/Main.unity` only (index 0), Addressables content in `assets/aa` |
 | Player | Development build, IL2CPP, `arm64-v8a` only (`lib/arm64-v8a/libil2cpp.so`), OpenGL ES 3, min SDK 30, target SDK 36 |
 | Defines | the project's Android defines + `BR_CONTROL_DEMO;ENABLE_DEBUG_SETTINGS`, for this build only. `ProjectSettings.asset` is restored afterwards |
-| Demo defaults | `BR_CONTROL_DEMO`: practice mode and the control readout start on |
+| Demo defaults | `BR_CONTROL_DEMO`: practice mode starts on; the control readout starts off (GDD v2 §6) |
 | Build time | cold: 315 s (Addressables 93 s + player 221 s). Incremental after a code change: 52–92 s |
 | Summary | `Builds/Android/BilliardRogue_ControlDemo.build.json` (result, size, timings, errors), rewritten on every build |
 
-The build dates from 2026-09-29 13:00 HKT (commit 26bb1159). It includes the control lab (practice mode, the readout
-and live tuning) and all of v2: the easier strike, Hype, balls-only rewards and the paw pick. It is installed on the
-Playground at 10.4.6.137, where it starts on the title screen with no Unity errors in logcat. `aapt dump badging`: package `team.nex.starter.staging`, `native-code: 'arm64-v8a'`, leanback
+The build dates from 2026-09-29 14:13 HKT (commit dc4f84f3, 85 s incremental). It includes the control lab (practice
+mode, the readout and live tuning), all of v2 (the easier strike, Hype, balls-only rewards and the paw pick), the
+second-playtest changes (batch pop-in spawning, skipped empty turns, readout hidden by default) and perf pass 3. It is
+installed on the Playground at 10.4.6.137, where it starts on the title screen with no Unity errors or warnings in logcat. `aapt dump badging`: package `team.nex.starter.staging`, `native-code: 'arm64-v8a'`, leanback
 launchable `com.unity3d.player.UnityPlayerActivity`.
 
 ### Install and launch
@@ -114,8 +116,9 @@ fails with `INSTALL_FAILED_UPDATE_INCOMPATIBLE`. In that case, uninstall the old
 `adb uninstall team.nex.starter.staging`. This also deletes that app's saved data.
 
 On the device, play the same way as in the Editor: **New Run**, **1 Player**, calibration, then the test strike.
-Stand 2–3 m from the Playground camera. If Debug Settings were saved on this device with practice mode or the readout
-turned off, they stay off. Turn them back on in Debug Settings.
+Stand 2–3 m from the Playground camera. If Debug Settings were saved on this device with practice mode turned off, it
+stays off; turn it back on in Debug Settings. The readout starts hidden even where an older demo saved it on (the setting
+was renamed); turn it on with **Debug: Show Control Readout** when you want it.
 
 ## 3. Reading the control readout
 
@@ -179,6 +182,8 @@ Please note the Debug Settings scales you used. A photo of the readout at the mo
   MOVE! prompt come too early, too late or too often? What does the readout's `BODY` row show while you dance?
 - **Paw pick (v2).** Can you put both paws on the ball you want? Is 0.8 s of holding too long or too short? Did a
   ball ever get picked by accident?
+- **Spawning (second playtest).** Are 10 enemies every 3 turns too many or too few? Can you tell where the next ones
+  appear, and is the pop-in fast enough? Did a turn ever start with nothing to shoot?
 
 ## Rebuild
 
@@ -213,7 +218,9 @@ Asset Hunter Pro's per-build logs (`Starter/SerializedBuildInfo/`) are gitignore
 | Practice mode | `PlayerData/DebugSettings.cs` (`practiceMode`), `Gameplay/SessionServices.cs` (`GodMode`, `InfiniteBalls`, `HoldEnemiesBeforeDangerRow`), `Simulation/EnemyAdvance.cs` |
 | Readout | `UI/Debug/ControlReadoutOverlay.cs`, `UI/Debug/ControlReadoutPanel.cs`, prefab from `Editor/ControlReadoutBuilder.cs` (run by `FlowPrefabsBuilder`); data from `StrikeDetector.Readout` and `PawShotInput` |
 | Live tuning | `Input/ControlTuning.cs`, `Configs/ControlConfig.cs` (`StrikeSettingsFor`, `AimMinCutoffFor`, `LaunchRangeFor`), read in `Flow/PlayerShotInputFactory.cs` |
-| Demo defaults | `#if BR_CONTROL_DEMO` initializers in `PlayerData/DebugSettings.cs` |
+| Demo defaults | `#if BR_CONTROL_DEMO` initializers in `PlayerData/DebugSettings.cs` (the readout is `showControlReadout`, off everywhere) |
+| Batch spawning (v2 §5) | `Simulation/StageGenerator.cs` (batch plan), `Simulation/BoardSpawning.cs` (free-cell placement, via `BoardOps.SpawnBatch`), `Simulation/StageSchedule.cs` (cadence, skipped turns, v1 save upgrade), values in `ActRules` (Act assets upgraded by `Editor/ActSpawnRulesUpgrade.cs`) |
+| Pop-in + "Enemies incoming!" | `Presentation/BatchSpawnPlayer.cs`, `Gameplay/BatchArrivals.cs` (stage-start pop-in after the intro), `UI/Hud/GameplayHud.ShowIncomingBanner`, timings in `PacingConfig` (`batchSpawnStagger`, `incomingBannerDuration`) |
 | Strike (v2) | `Input/Core/StrikeDetector.cs`, `Input/Core/StrikeTypes.cs`, values in `Configs/ControlConfig.cs` (asset upgraded by `Editor/ControlConfigV2Upgrade.cs`) |
 | Motion energy + paw pointer | `Input/MotionEnergyMeter.cs`, `Input/Core/MotionEnergyFilter.cs`, `Input/PawPointer.cs`, `Input/Core/PawPointerMath.cs`, routed by `Input/RoutedBodyInput.cs` (`ShotInputRouter.MotionEnergy` / `.PawPointer`) |
 | Hype | `Gameplay/HypeController.cs` (energy → Hype, tiers, MOVE prompt), `Configs/HypeConfig.cs` + `HypeConfig.asset`, `Simulation/BallSimulator.SetHype` (speed, damage), `Presentation/HypeJuice.cs` + `HypeAuraView.cs` (look), `UI/Hud/HypeMeterWidget.cs` + `MovePromptWidget.cs` |

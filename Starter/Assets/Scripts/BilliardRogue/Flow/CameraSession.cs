@@ -29,10 +29,20 @@ namespace Nex.BilliardRogue
         public DetectionManager Detection =>
             detection != null ? detection : throw new InvalidOperationException("CameraSession is not running.");
 
+        /// <summary>Player count of the running session, or of the last started one after Stop (0 before the first start).</summary>
         public int NumPlayers { get; private set; }
         public bool IsRunning { get; private set; }
         public bool IsPaused { get; private set; }
         public bool ReloadSceneOnPlayerCountChange => reloadSceneOnPlayerCountChange;
+
+        /// <summary>
+        /// TDD D1: a calibration for numPlayers follows a session started for another count. Every flow stops the
+        /// camera before the next calibration, so this compares against the last started count, not a running one.
+        /// </summary>
+        public static bool IsPlayerCountChange(int lastStartedNumPlayers, int numPlayers)
+        {
+            return lastStartedNumPlayers != 0 && lastStartedNumPlayers != numPlayers;
+        }
 
         #region Life Cycle
 
@@ -64,7 +74,10 @@ namespace Nex.BilliardRogue
                 return;
             }
 
-            if (IsRunning) Stop();
+            if (IsRunning)
+            {
+                Stop();
+            }
 
             NumPlayers = numPlayers;
             var instance = Instantiate(detectionPrefab, root);
@@ -121,14 +134,16 @@ namespace Nex.BilliardRogue
         /// <summary>App / pause-view pause: stops pose detection and the preview texture.</summary>
         public void Pause()
         {
-            if (!IsRunning || IsPaused) return;
+            if (!IsRunning) return;
+            if (IsPaused) return;
             IsPaused = true;
             Detection.PauseDetection();
         }
 
         public void UnPause()
         {
-            if (!IsRunning || !IsPaused) return;
+            if (!IsRunning) return;
+            if (!IsPaused) return;
             IsPaused = false;
             Detection.UnPauseDetection();
         }

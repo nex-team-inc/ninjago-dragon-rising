@@ -1,6 +1,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Nex.BilliardRogue.Simulation;
 using UnityEngine;
@@ -19,6 +20,7 @@ namespace Nex.BilliardRogue
         readonly RunFlowContext ctx;
         readonly RunFactory runFactory = new();
         readonly Func<bool> viewManagerInTransition;
+        readonly List<RogueView> coveredViews = new();
         int unlockTierAtRunStart;
 
         public RunFlow(RunFlowContext aCtx)
@@ -45,7 +47,7 @@ namespace Nex.BilliardRogue
             if (IsBusy) return;
             LastNumPlayers = numPlayers;
             var camera = ctx.camera;
-            if (camera.IsRunning && camera.NumPlayers != numPlayers && camera.ReloadSceneOnPlayerCountChange)
+            if (camera.ReloadSceneOnPlayerCountChange && CameraSession.IsPlayerCountChange(camera.NumPlayers, numPlayers))
             {
                 await ReloadMainSceneAsync(numPlayers, isContinue);
                 return;
@@ -104,8 +106,13 @@ namespace Nex.BilliardRogue
             // the views they reveal stay faded out (KeepHidden) so neither PlayerMode nor the title flashes. The
             // whole swap happens under the curtain: calibration faded to it, GameplayView raised the same colour at
             // Initialize and fades it out once the stage intro band is on top.
-            var covered = UnityEngine.Object.FindObjectsByType<RogueView>(FindObjectsSortMode.None);
-            foreach (var view in covered) view.KeepHidden = true;
+            coveredViews.Clear();
+            ctx.viewManager.CollectStackViews(coveredViews);
+            foreach (var view in coveredViews)
+            {
+                view.KeepHidden = true;
+            }
+
             try
             {
                 using (ctx.viewManager.CreateTransaction())
@@ -120,17 +127,27 @@ namespace Nex.BilliardRogue
             }
             finally
             {
-                foreach (var view in covered)
+                // Only the Title survives the unwind; the popped views are destroyed.
+                foreach (var view in coveredViews)
                 {
-                    if (view != null) view.KeepHidden = false;
+                    if (view != null)
+                    {
+                        view.KeepHidden = false;
+                    }
                 }
+
+                coveredViews.Clear();
             }
         }
 
         RunState CreateNewRun(int numPlayers)
         {
             var seed = NextSeed != 0 ? NextSeed : PlayerDataManager.Instance.DebugSettings.fixedSeed;
-            if (seed == 0) seed = UnityEngine.Random.Range(1, int.MaxValue);
+            if (seed == 0)
+            {
+                seed = UnityEngine.Random.Range(1, int.MaxValue);
+            }
+
             NextSeed = 0;
             // The session's TurnController calls persistence.BeginRun at its first stage (runsStarted + first save);
             // doing it here as well counted every new run twice on the title.

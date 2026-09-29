@@ -119,7 +119,10 @@ namespace Nex.BilliardRogue
         {
             if (!IsActive) return;
             if (CurrentStep is not (Step.Tutorial or Step.TestStrike)) return;
-            if (DebugInput.GetKeyDown(KeyCode.S)) stepSkip.TrySetResult();
+            if (DebugInput.GetKeyDown(KeyCode.S))
+            {
+                stepSkip.TrySetResult();
+            }
         }
 
         void OnDestroy()
@@ -181,7 +184,8 @@ namespace Nex.BilliardRogue
         async UniTask RunStepsAsync(CancellationToken ct)
         {
             flowStartTime = Time.realtimeSinceStartup;
-            skipAll = PlayerDataManager.Instance.DebugSettings.skipCalibration;
+            // |=: DebugHooks.SkipCalibration may already have run during the push animation.
+            skipAll |= PlayerDataManager.Instance.DebugSettings.skipCalibration;
 
             BeginStep(Step.Starting);
             await cameraSession.StartAsync(numPlayers, ct);
@@ -242,7 +246,11 @@ namespace Nex.BilliardRogue
             {
                 playerReady[i] = false;
                 inputs[i] = shotInputFactory(i, cameraSession.GetEngine(i), inputRoot);
-                if (inputs[i] == null) hasInput = false;
+                if (inputs[i] == null)
+                {
+                    hasInput = false;
+                }
+
                 SetPlayerStatus(i, false);
             }
 
@@ -276,7 +284,10 @@ namespace Nex.BilliardRogue
             {
                 for (var i = 0; i < numPlayers; i++)
                 {
-                    if (playerReady[i] || !inputs[i]!.TryConsumeStrike(out _)) continue;
+                    if (playerReady[i]) continue;
+                    var input = inputs[i]!;
+                    SetPlayerTracked(i, input.IsTracking);
+                    if (!input.TryConsumeStrike(out _)) continue;
                     playerReady[i] = true;
                     readyCount++;
                     SetPlayerStatus(i, true);
@@ -325,6 +336,12 @@ namespace Nex.BilliardRogue
         {
             if (playerIndex >= playerCards.Length) return;
             playerCards[playerIndex].Set(playerIndex, ready);
+        }
+
+        void SetPlayerTracked(int playerIndex, bool tracked)
+        {
+            if (playerIndex >= playerCards.Length) return;
+            playerCards[playerIndex].SetTracked(playerIndex, tracked);
         }
 
         #endregion

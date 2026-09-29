@@ -93,7 +93,9 @@ their cost lives in `Nex.Platform`; only the enum-name strings were ours (now ca
 - [x] Before measurements (1P: A, B, C, E)
 - [x] Code fixes above; compile_check green
 - [x] Build All, after measurements (pass 1 and pass 2), deep-profile GC attribution; pass 2 committed (7f6da517)
-- [ ] EditMode tests, audio check: folded into pass 3 below
+- [x] EditMode tests, audio check: folded into pass 3 (audio: DSP buffer 1024, 32 real / 512 virtual voices, SFX ADPCM
+      decompress-on-load + BGM Vorbis streaming per D9, one AudioSource playing in every gameplay sample = the BGM; no
+      change needed)
 
 # Pass 3 — GPU on Mali-G52 (device title ~40 fps, frames alternating 17/33 ms at vsync 60)
 

@@ -64,7 +64,7 @@ namespace Nex.BilliardRogue
             if (!line.enabled) line.enabled = true;
             phase += Time.unscaledDeltaTime / Mathf.Max(0.05f, settings.auraPulsePeriod);
             var pulse = 0.5f + 0.5f * Mathf.Sin(phase * Mathf.PI * 2f);
-            var strength = fade * (1f - settings.auraPulseAmount + settings.auraPulseAmount * pulse);
+            var strength = settings.auraAlpha * fade * (1f - settings.auraPulseAmount + settings.auraPulseAmount * pulse);
             line.widthMultiplier = baseWidth * (0.6f + 0.4f * fade) * (1f + 0.5f * settings.auraPulseAmount * pulse);
             var c = new Color(color.r, color.g, color.b, strength);
             line.startColor = c;

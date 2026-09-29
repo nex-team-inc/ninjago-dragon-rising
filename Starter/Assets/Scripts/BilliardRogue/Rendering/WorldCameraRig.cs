@@ -11,7 +11,8 @@ namespace Nex.BilliardRogue
     /// Root of WorldCameraRig.prefab (TDD §17): the World camera under its pose pivot, the world post-process Volume,
     /// the feature-override Volume and the Screen-Space-Camera canvas that shows the low-res world behind the UI.
     /// Initialize with the UI RootCamera (assigned at runtime by Flow); afterwards act controllers swap the volume
-    /// profile and quality / DebugSettings toggles switch bloom, tilt-shift, shadows and pixelation.
+    /// profile and quality / DebugSettings toggles switch bloom, tilt-shift, shadows and pixelation. Weak GPUs get the
+    /// low tier (HD2DVisualConfig.DetectTier): the Volume_LowTier volume lightens bloom and tilt-shift.
     /// </summary>
     public sealed class WorldCameraRig : MonoBehaviour
     {
@@ -22,6 +23,8 @@ namespace Nex.BilliardRogue
         [SerializeField] Volume worldVolume = null!;
         [Tooltip("Higher-priority volume whose Bloom / Tilt Shift overrides switch those effects off (quality, debug).")]
         [SerializeField] Volume featureOverrideVolume = null!;
+        [Tooltip("Volume_LowTier (bloom mip chain / resolution, tilt-shift taps); enabled only in the low tier.")]
+        [SerializeField] Volume lowTierVolume = null!;
         [SerializeField] Canvas displayCanvas = null!;
         [SerializeField] RawImage display = null!;
         [SerializeField] PixelWorldDisplay pixelDisplay = null!;
@@ -37,12 +40,15 @@ namespace Nex.BilliardRogue
         bool qualityBloom = true;
         bool qualityTiltShift = true;
         bool qualityShadows = true;
+        RenderQualityTier detectedTier;
         bool initialized;
 
         public Camera WorldCamera => worldCamera;
         public Transform CameraPivot => cameraPivot;
         public PixelWorldDisplay Display => pixelDisplay;
         public Volume WorldVolume => worldVolume;
+        /// <summary>Tier in use (detected from the GPU, or the DebugSettings.renderTier override).</summary>
+        public RenderQualityTier Tier { get; private set; }
 
         #region Life Cycle
 
@@ -67,6 +73,7 @@ namespace Nex.BilliardRogue
                 qualityShadows = quality.shadows;
             }
 
+            detectedTier = config.DetectTier(SystemInfo.graphicsDeviceName, SystemInfo.graphicsShaderLevel);
             initialized = true;
             ApplyToggles();
         }
@@ -115,6 +122,7 @@ namespace Nex.BilliardRogue
             var tiltShift = qualityTiltShift;
             var shadows = qualityShadows;
             var pixelation = config.PixelationEnabled;
+            var tier = detectedTier;
 #if ENABLE_DEBUG_SETTINGS || DEVELOPMENT_BUILD || UNITY_EDITOR
             if (PlayerDataManager.Instance != null)
             {
@@ -122,8 +130,19 @@ namespace Nex.BilliardRogue
                 bloom &= !debug.disableBloom;
                 tiltShift &= !debug.disableTiltShift;
                 pixelation &= !debug.disablePixelation;
+                tier = debug.renderTier switch
+                {
+                    1 => RenderQualityTier.Full,
+                    2 => RenderQualityTier.Low,
+                    _ => tier,
+                };
             }
 #endif
+            Tier = tier;
+            var low = tier == RenderQualityTier.Low;
+            lowTierVolume.enabled = low;
+            tiltShift &= !low || config.LowTierTiltShift;
+            shadows &= !low || config.LowTierShadows;
             if (bloomOff != null) bloomOff.active = !bloom;
             if (tiltShiftOff != null) tiltShiftOff.active = !tiltShift;
             cameraData.renderShadows = shadows;

@@ -11,7 +11,8 @@ namespace Nex.BilliardRogue.Editor
     /// <summary>
     /// Builds the world post-process profiles (TDD §17) into Assets/Settings/BilliardRogue/Volumes: Volume_Default,
     /// Volume_Title (golden hour), Volume_Act1 (golden hour ruins), Volume_Act2 (deep blue night), Volume_Act3
-    /// (violet-cyan magic) and Volume_FeatureOverrides (bloom / tilt-shift off switches used by WorldCameraRig).
+    /// (violet-cyan magic), Volume_FeatureOverrides (bloom / tilt-shift off switches used by WorldCameraRig) and
+    /// Volume_LowTier (the weak-GPU tier's lighter bloom and tilt-shift, values from HD2DVisualConfig).
     /// Base bloom / vignette / tilt-shift values come from HD2DVisualConfig; the act moods are authored here.
     /// Fills ActDefinition.volumeProfile when the slot is still empty.
     /// </summary>
@@ -20,6 +21,7 @@ namespace Nex.BilliardRogue.Editor
         public const string VolumeRoot = RenderPipelineBuilder.SettingsRoot + "/Volumes";
         public const string DefaultProfilePath = VolumeRoot + "/Volume_Default.asset";
         public const string FeatureOverridesPath = VolumeRoot + "/Volume_FeatureOverrides.asset";
+        public const string LowTierPath = VolumeRoot + "/Volume_LowTier.asset";
         const string VisualConfigPath = BuilderAssets.ConfigRoot + "/HD2DVisualConfig.asset";
         const string ActConfigFormat = BuilderAssets.ConfigRoot + "/Acts/Act_{0}.asset";
 
@@ -73,6 +75,7 @@ namespace Nex.BilliardRogue.Editor
                 BuildLook(VolumeRoot + "/Volume_Act3.asset", visual, VioletCyanMagic(), report),
             };
             BuildFeatureOverrides(report);
+            BuildLowTier(visual, report);
             FillActProfiles(acts, defaultProfile, report);
             AssetDatabase.SaveAssets();
             return report.ToString();
@@ -214,6 +217,24 @@ namespace Nex.BilliardRogue.Editor
             tiltShift.intensity.value = 0f;
             EditorUtility.SetDirty(profile);
             report.Append(created ? " created Volume_FeatureOverrides" : " updated Volume_FeatureOverrides");
+        }
+
+        // Only the cost parameters override, so every act keeps its own bloom look; the rig enables it in the low tier.
+        static void BuildLowTier(HD2DVisualConfig visual, StringBuilder report)
+        {
+            var profile = BuilderAssets.LoadOrCreate<VolumeProfile>(LowTierPath, out var created);
+            var bloom = Component<Bloom>(profile, overrides: false);
+            bloom.maxIterations.overrideState = true;
+            bloom.maxIterations.value = visual.LowTierBloomMaxIterations;
+            bloom.downscale.overrideState = true;
+            bloom.downscale.value = visual.LowTierBloomQuarterResolution ? BloomDownscaleMode.Quarter : BloomDownscaleMode.Half;
+            bloom.highQualityFiltering.overrideState = true;
+            bloom.highQualityFiltering.value = false;
+            var tiltShift = Component<TiltShiftVolume>(profile, overrides: false);
+            tiltShift.sampleCount.overrideState = true;
+            tiltShift.sampleCount.value = visual.LowTierTiltShiftSampleCount;
+            EditorUtility.SetDirty(profile);
+            report.Append(created ? " created Volume_LowTier" : " updated Volume_LowTier");
         }
 
         static void FillActProfiles(VolumeProfile[] acts, VolumeProfile fallback, StringBuilder report)

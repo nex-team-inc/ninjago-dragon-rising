@@ -209,7 +209,9 @@ namespace Nex.BilliardRogue.Editor
         {
             var name = Path.GetFileNameWithoutExtension(path);
             var inUi = path.Contains("/UI/");
-            if (!slices.TryGetValue(name, out var slice))
+            // The composed overlay backdrop (UiOverlaySpriteComposer) imports like the vignette it is made from.
+            var sliceName = name == UiOverlaySpriteComposer.ComposedName ? "Overlay_Vignette" : name;
+            if (!slices.TryGetValue(sliceName, out var slice))
             {
                 slice = (Vector4.zero, false);
                 if (inUi && name.StartsWith("Frame_", StringComparison.Ordinal)) report.Warnings.Add($"{name}: frame without a ui_slices.json entry");

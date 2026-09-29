@@ -121,16 +121,23 @@ Per-frame 1080p work (the world itself is 642x362 + post, ~1/9 of a 1080p pass p
 - PlayerSettings.enableFrameTimingStats = false.
 
 ## Plan (resume here)
-- [ ] 1. UI straight to the backbuffer: RootCamera Base (clear black, HDR/MSAA off, no shadows/post, culls World +
-      WorldVolume) in the view-manager variant (FlowPrefabsBuilder); Main Camera becomes an AudioListener holder
-      without a Camera (MainSceneBuilder); a rendering contract test.
-- [ ] 2. PlayerSettings via RenderPipelineBuilder: Frame Timing Stats on, Android Blit Type Auto.
-- [ ] 3. Overlay fill: Dim + Vignette composed into one sprite (one full-screen layer instead of two); title /
-      calibration vignette as a hollow 9-slice (centre is transparent); HUD columns leave while the reward view is up
-      (also the v2 label overlap fix).
-- [ ] 4. Low-end GPU tier: HD2DVisualConfig names (Mali-G52) + shader level, Volume_LowTier (bloom lighter, tilt-shift
-      fewer taps) enabled by WorldCameraRig, DebugSettings.renderTier override (0 auto / 1 full / 2 low).
-- [ ] 5. `[Perf]` FrameTimingLogger (dev builds, DebugSettings.logFrameTiming, on in BR_CONTROL_DEMO).
-- [ ] 6. CPU/GC: DebugPrinter disables itself while the printer is off; re-measure menus + gameplay.
-- [ ] 7. Paw-pick analytics input "motion"; RewardView screenshot.
-- [ ] 8. Build All, EditMode tests, after numbers, device steps, commit.
+- [x] 1. UI straight to the backbuffer: RootCamera Base (clear black, HDR/MSAA off, no shadows/post, culls World +
+      WorldVolume) in the view-manager variant (FlowPrefabsBuilder); the Main Camera is gone, an `AudioListener` object
+      keeps the listener (MainSceneBuilder); `RenderingPerfContractTests` (6 tests).
+- [x] 2. PlayerSettings via RenderPipelineBuilder: Frame Timing Stats on, Android Blit Type Auto (ProjectSettings.asset).
+- [x] 3. Overlay fill: `UiOverlaySpriteComposer` composes Dim + Vignette (UiTheme sprites and tints, Gamma blend) into
+      `Overlay_DimVignette.png`, `UiPrefabKit.DimLayers` draws it as one layer (Pause, Reward, Tracking lost, Summary,
+      Player mode, Settings); HUD columns + PiP leave while the reward view is up (`GameplayView.ChooseRewardAsync`), which
+      also fixes the v2 label overlap. Dropped: hollow 9-slice title vignette (saves ~0.2 of a layer, needs a sprite border
+      that the make_ui.py slice validator rejects for a gradient).
+- [x] 4. Low-end GPU tier: `HD2DVisualConfig.DetectTier` (names Mali-G52/G51/G31, shader level <= 35), `Volume_LowTier`
+      (bloom 3 iterations, HQ off, optional quarter res; tilt-shift 2 taps), `WorldCameraRig.lowTierVolume` (priority 50),
+      `DebugSettings.renderTier` (0 auto / 1 full / 2 low). Verified in play mode: renderTier 2 -> tier Low, volume on,
+      evaluated bloom it=3, tilt taps=2; auto on the Mac = Full.
+- [x] 5. `FrameTimingLogger` on WorldCameraRig.prefab; `DebugSettings.logFrameTiming` (on in BR_CONTROL_DEMO). Verified
+      in the Editor: `[Perf] logger on: gpu=... frameTiming=on tier=...` then one line per 5 s.
+- [x] 6. DebugPrinter sleeps (disabled) while enableDebugPrinter is off and wakes on `PlayerDataManager.DebugSettingsSaved`:
+      title GC 368 -> 16 B/frame (ES3 coroutine left), gameplay 736 -> 368 (MDK `Jazz.DebugFrameManager.OnGUI` left).
+- [x] 7. Paw-pick analytics: `RogueView.TrackButton(button, index, input)`, RewardView sends "motion" / "remote" / "debug".
+- [ ] 8. Full EditMode tests, gameplay scenario numbers, device steps, commit (the pass-3 code is committed at the
+      milestone; the spawn agent works in parallel, so shared generated prefabs are left to its Build All).

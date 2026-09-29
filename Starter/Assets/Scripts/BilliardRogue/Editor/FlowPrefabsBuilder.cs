@@ -4,6 +4,7 @@ using System.Text;
 using Nex.KeyboardNavigation;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.UI;
 using Key = Nex.KeyboardNavigation.KeyboardNavigationController.Key;
 
@@ -11,9 +12,9 @@ namespace Nex.BilliardRogue.Editor
 {
     /// <summary>
     /// Builds the Flow prefabs (TDD §17): BilliardRogueViewManager (variant of the starter MainViewManager with the
-    /// secret code), GameplayPip, CalibrationView, GameplayView, the control lab readout (ControlReadoutBuilder) and
-    /// BilliardRogueCoordinator. Prefabs are regenerated
-    /// over their existing paths (GUIDs stay); other modules' prefabs are referenced by path and tolerated when missing.
+    /// secret code; its RootCamera is the Base UI camera), GameplayPip, CalibrationView, GameplayView, the control lab
+    /// readout (ControlReadoutBuilder) and BilliardRogueCoordinator. Prefabs are regenerated over their existing paths
+    /// (GUIDs stay); other modules' prefabs are referenced by path and tolerated when missing.
     /// CLI: unity command eval 'return Nex.BilliardRogue.Editor.FlowPrefabsBuilder.Run();'
     /// </summary>
     public static class FlowPrefabsBuilder
@@ -91,7 +92,31 @@ namespace Nex.BilliardRogue.Editor
             }
 
             so.ApplyModifiedPropertiesWithoutUndo();
+            ConfigureUiCamera(instance.GetComponentInChildren<Camera>(true));
             FlowUiFactory.SavePrefab(instance, ViewManagerPath);
+        }
+
+        // Every UI canvas renders on the RootCamera, so it is the only screen camera: a Base camera drawing straight into
+        // the backbuffer. The starter's Overlay-on-Main-Camera stack always renders through a 1080p intermediate plus a
+        // final blit, and HDR, MSAA or post on this camera would bring the intermediate back (final-perf.md pass 3).
+        // World layers are culled: the world renders only through WorldCamera into the low-res target (TDD D2).
+        static void ConfigureUiCamera(Camera camera)
+        {
+            camera.clearFlags = CameraClearFlags.SolidColor;
+            camera.backgroundColor = Color.black;
+            camera.allowHDR = false;
+            camera.allowMSAA = false;
+            camera.cullingMask = RenderPipelineBuilder.CullingMaskWithoutWorld();
+            var data = camera.GetUniversalAdditionalCameraData();
+            data.renderType = CameraRenderType.Base;
+            data.cameraStack.Clear();
+            data.renderPostProcessing = false;
+            data.renderShadows = false;
+            data.antialiasing = AntialiasingMode.None;
+            data.requiresColorOption = CameraOverrideOption.Off;
+            data.requiresDepthOption = CameraOverrideOption.Off;
+            data.dithering = false;
+            data.stopNaN = false;
         }
 
         #endregion

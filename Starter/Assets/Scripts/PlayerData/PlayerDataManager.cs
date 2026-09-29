@@ -123,11 +123,15 @@ namespace Nex
 
         public DebugSettings DebugSettings { get; private set; } = null!;
 
+        /// <summary>After the debug settings were saved or reset (the Debug Settings panel), so sleeping debug tools re-check.</summary>
+        public event Action? DebugSettingsSaved;
+
         public void SaveDebugSettings()
         {
 #if !DISABLE_PERSISTENCE
             ES3.Save(debugSettingsDataKey, DebugSettings);
 #endif
+            DebugSettingsSaved?.Invoke();
         }
 
         void LoadDebugSettings()
@@ -152,6 +156,7 @@ namespace Nex
 #if !DISABLE_PERSISTENCE
             ES3.Save(debugSettingsDataKey, DebugSettings);
 #endif
+            DebugSettingsSaved?.Invoke();
         }
 
         #endregion

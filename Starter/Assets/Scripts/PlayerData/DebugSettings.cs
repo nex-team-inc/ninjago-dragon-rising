@@ -59,6 +59,14 @@ namespace Nex
         [DebugOrder(50), Description("Render: Disable Pixelation")] public bool disablePixelation;
         [DebugOrder(51), Description("Render: Disable Tilt-Shift")] public bool disableTiltShift;
         [DebugOrder(52), Description("Render: Disable Bloom")] public bool disableBloom;
+        [DebugOrder(53), Description("Render: Quality Tier (0 = auto by GPU, 1 = full, 2 = low)"), NumericSteps(IntSteps = 1, IntMin = 0, IntMax = 2)]
+        public int renderTier;
+        // [Perf] line every few seconds (FrameTimingLogger): fps, CPU main / render thread and GPU ms, GC, draw counts.
+#if BR_CONTROL_DEMO
+        [DebugOrder(54), Description("Debug: Log Frame Timing ([Perf] in logcat)")] public bool logFrameTiming = true;
+#else
+        [DebugOrder(54), Description("Debug: Log Frame Timing ([Perf] in logcat)")] public bool logFrameTiming;
+#endif
 
         // Method rows close the panel first, then run; gameplay registers the handlers in DebugHooks.
         [DebugOrder(60), Description("Run: Kill All Enemies")]

@@ -156,9 +156,21 @@ namespace Nex.BilliardRogue.Editor
             return image;
         }
 
-        /// <summary>Full-screen dim + vignette pair for overlays.</summary>
+        /// <summary>Overlay_DimVignette (UiOverlaySpriteComposer), set by UiViewsBuilder before the views are built.</summary>
+        public Sprite? DimVignette { get; set; }
+
+        /// <summary>
+        /// Full-screen dim + vignette for overlays: one layer with the composed sprite; the two-layer pair only when it
+        /// could not be composed (missing art).
+        /// </summary>
         public void DimLayers(Transform content)
         {
+            if (DimVignette != null)
+            {
+                StretchImage(content, "DimVignette", DimVignette).preserveAspect = false;
+                return;
+            }
+
             StretchImage(content, "Dim", Theme.Dim, 0f, Fill.Simple, Theme.DimColor).preserveAspect = false;
             StretchImage(content, "Vignette", Theme.Vignette, 0f, Fill.Simple, Theme.VignetteColor).preserveAspect = false;
         }

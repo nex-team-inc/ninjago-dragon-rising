@@ -66,6 +66,7 @@ namespace Nex.BilliardRogue.Editor
             var theme = EnsureTheme(out var themeWarnings);
             var kit = new UiPrefabKit(theme);
             kit.Warnings.UnionWith(themeWarnings);
+            kit.DimVignette = UiOverlaySpriteComposer.Compose(theme, kit.Warnings);
             BuilderAssets.EnsureFolder(ViewsFolder);
             BuilderAssets.EnsureFolder(UiFolder);
 

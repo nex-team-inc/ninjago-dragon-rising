@@ -14,8 +14,9 @@ namespace Nex.BilliardRogue.Editor
     /// <summary>
     /// Builds Assets/Prefabs/BilliardRogue/World/WorldCameraRig.prefab (TDD §17): WorldCameraRig root + PixelWorldDisplay,
     /// CameraPivot (pose from ArenaConfig) → WorldCamera (Base, World layer only, post on, WorldVolume mask, World
-    /// renderer, never in a CameraChainItem), WorldVolume + FeatureOverrideVolume (layer WorldVolume), and the
-    /// WorldDisplayCanvas (Screen Space-Camera, plane distance 295; the UI camera is assigned at runtime by Flow).
+    /// renderer, never in a CameraChainItem), WorldVolume + LowTierVolume + FeatureOverrideVolume (layer WorldVolume),
+    /// the WorldDisplayCanvas (Screen Space-Camera, plane distance 295; the UI camera is assigned at runtime by Flow) and
+    /// the development-build FrameTimingLogger.
     /// </summary>
     public static class WorldCameraRigBuilder
     {
@@ -68,7 +69,7 @@ namespace Nex.BilliardRogue.Editor
                 Debug.LogWarning("[WorldCameraRigBuilder] World / WorldVolume layers missing (run RenderPipelineBuilder first); the camera culls everything.");
             }
 
-            var root = new GameObject("WorldCameraRig", typeof(WorldCameraRig), typeof(PixelWorldDisplay));
+            var root = new GameObject("WorldCameraRig", typeof(WorldCameraRig), typeof(PixelWorldDisplay), typeof(FrameTimingLogger));
             if (worldLayer >= 0) root.layer = worldLayer;
 
             var pivot = new GameObject("CameraPivot").transform;
@@ -90,6 +91,9 @@ namespace Nex.BilliardRogue.Editor
 
             var camera = BuildCamera(pivot, worldLayer, volumeLayer, fov, report);
             var worldVolume = BuildVolume(root.transform, "WorldVolume", volumeLayer, 0f, VolumeProfilesBuilder.DefaultProfilePath);
+            // Between the act looks (0, grade blend 1) and the feature switches (100): only its cost parameters override.
+            var lowTierVolume = BuildVolume(root.transform, "LowTierVolume", volumeLayer, 50f, VolumeProfilesBuilder.LowTierPath);
+            lowTierVolume.enabled = false;
             var overrideVolume = BuildVolume(root.transform, "FeatureOverrideVolume", volumeLayer, 100f, VolumeProfilesBuilder.FeatureOverridesPath);
             var canvas = BuildDisplayCanvas(root.transform, out var display);
 
@@ -99,6 +103,7 @@ namespace Nex.BilliardRogue.Editor
             so.FindProperty("cameraPivot").objectReferenceValue = pivot;
             so.FindProperty("worldVolume").objectReferenceValue = worldVolume;
             so.FindProperty("featureOverrideVolume").objectReferenceValue = overrideVolume;
+            so.FindProperty("lowTierVolume").objectReferenceValue = lowTierVolume;
             so.FindProperty("displayCanvas").objectReferenceValue = canvas;
             so.FindProperty("display").objectReferenceValue = display;
             so.FindProperty("pixelDisplay").objectReferenceValue = root.GetComponent<PixelWorldDisplay>();
@@ -107,6 +112,10 @@ namespace Nex.BilliardRogue.Editor
             if (visual == null) Debug.LogWarning("[WorldCameraRigBuilder] HD2DVisualConfig.asset missing (ConfigAssetsBuilder); config slot left empty.");
             so.FindProperty("config").objectReferenceValue = visual;
             so.ApplyModifiedPropertiesWithoutUndo();
+
+            var logger = new SerializedObject(root.GetComponent<FrameTimingLogger>());
+            logger.FindProperty("rig").objectReferenceValue = rig;
+            logger.ApplyModifiedPropertiesWithoutUndo();
             return root;
         }
 

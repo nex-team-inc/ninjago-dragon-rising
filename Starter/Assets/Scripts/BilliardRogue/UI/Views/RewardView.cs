@@ -28,6 +28,7 @@ namespace Nex.BilliardRogue
         }
 
         static readonly string[] methodButtons = { "ball_paws", "ball_remote", "ball_debug" };
+        static readonly string[] methodInputs = { "motion", "remote", "debug" };
 
         [Header("Balls")]
         [Tooltip("Exactly three slots, direct children of optionsGroup.")]
@@ -272,7 +273,7 @@ namespace Nex.BilliardRogue
             if (!interactable) return;
             if (index >= shownCount) return;
             interactable = false;
-            TrackButton(methodButtons[(int)method], index);
+            TrackButton(methodButtons[(int)method], index, methodInputs[(int)method]);
             choice?.TrySetResult(index);
         }
 

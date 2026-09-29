@@ -8,14 +8,13 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.Rendering;
-using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
 
 namespace Nex.BilliardRogue.Editor
 {
     /// <summary>
     /// Builds Assets/Scenes/BilliardRogue/Main.unity (TDD §17): SingletonSpawner as in GameUIExample, the inactive
-    /// initializer, the view manager variant, the coordinator, Main Camera (UI only, RootCamera stacked), the world
+    /// initializer, the view manager variant (its RootCamera is the only screen camera), the coordinator, the world
     /// prefab instances and the EventSystem, then puts the scene first in Build Settings. Idempotent: an existing
     /// scene is rebuilt in place (its GUID survives); missing prefabs of other modules are skipped with a warning.
     /// CLI: unity command eval 'return Nex.BilliardRogue.Editor.MainSceneBuilder.Run();'
@@ -121,8 +120,8 @@ namespace Nex.BilliardRogue.Editor
             var viewManagerInstance = InstantiatePrefab(FlowPrefabsBuilder.ViewManagerPath, "Flow", null);
             var viewManager = viewManagerInstance != null ? viewManagerInstance.GetComponent<ViewManager>() : null;
             var rootCamera = viewManagerInstance != null ? viewManagerInstance.GetComponentInChildren<Camera>(true) : null;
-            var mainCamera = BuildMainCamera(rootCamera);
-            if (rootCamera != null) SetBaseCameras(rootCamera, mainCamera);
+            BuildAudioListener();
+            if (rootCamera != null) ClearBaseCameras(rootCamera);
 
             var world = new GameObject("World");
             InstantiatePrefab(WorldCameraRigPath, "Rendering", world.transform);
@@ -199,54 +198,22 @@ namespace Nex.BilliardRogue.Editor
             return "";
         }
 
-        // Starter-style UI base camera: orthographic, no post-processing, RootCamera stacked, World layers culled
-        // (the world renders through WorldCamera into the low-res RT, TDD D2).
-        static Camera BuildMainCamera(Camera? rootCamera)
+        // No Main Camera: the view manager's RootCamera is the only screen camera (a Base camera straight to the
+        // backbuffer, FlowPrefabsBuilder) and the world renders through WorldCamera into the low-res RT (TDD D2). A second
+        // Base camera would put the UI back into a 1080p camera stack (intermediate texture + final blit, final-perf.md
+        // pass 3). The scene keeps one AudioListener.
+        static void BuildAudioListener()
         {
-            var go = new GameObject("Main Camera") { tag = "MainCamera" };
-            var camera = go.AddComponent<Camera>();
-            go.AddComponent<AudioListener>();
-            camera.orthographic = true;
-            camera.orthographicSize = 5f;
-            camera.depth = -1f;
-            camera.clearFlags = CameraClearFlags.SolidColor;
-            camera.backgroundColor = Color.black;
-            camera.allowHDR = false;
-            camera.allowMSAA = false;
-            camera.cullingMask = CullingMaskWithoutWorld();
-            var data = camera.GetUniversalAdditionalCameraData();
-            data.renderType = CameraRenderType.Base;
-            data.renderPostProcessing = false;
-            data.renderShadows = false;
-            if (rootCamera != null) data.cameraStack.Add(rootCamera);
-            return camera;
+            new GameObject("AudioListener").AddComponent<AudioListener>();
         }
 
-        static int CullingMaskWithoutWorld()
-        {
-            var mask = ~0;
-            foreach (var layerName in new[] { "World", "WorldVolume" })
-            {
-                var layer = LayerMask.NameToLayer(layerName);
-                if (layer < 0)
-                {
-                    Debug.LogWarning($"[MainSceneBuilder] Layer '{layerName}' missing (run RenderPipelineBuilder); Main Camera keeps rendering it.");
-                    continue;
-                }
-
-                mask &= ~(1 << layer);
-            }
-
-            return mask;
-        }
-
-        static void SetBaseCameras(Camera rootCamera, Camera mainCamera)
+        // The background-blur chain (starter CameraChainItem) retargets its base cameras; the RootCamera is its own base now
+        // and no view asks for the blur (TDD D3).
+        static void ClearBaseCameras(Camera rootCamera)
         {
             var chain = rootCamera.GetComponent<CameraChainItem>();
             var so = new SerializedObject(chain);
-            var baseCameras = so.FindProperty("baseCameras");
-            baseCameras.arraySize = 1;
-            baseCameras.GetArrayElementAtIndex(0).objectReferenceValue = mainCamera;
+            so.FindProperty("baseCameras").arraySize = 0;
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 

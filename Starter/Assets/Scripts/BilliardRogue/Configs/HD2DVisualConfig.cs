@@ -53,6 +53,24 @@ namespace Nex.BilliardRogue
         [Header("Quality")]
         [SerializeField] QualityOverride[] qualityOverrides = Array.Empty<QualityOverride>();
 
+        [Header("Low-end GPU tier (Volume_LowTier)")]
+        [Tooltip("SystemInfo.graphicsDeviceName substrings (case-insensitive) that get the low tier; the Nex Playground is a Mali-G52.")]
+        [SerializeField] string[] lowTierGpuNames = { "Mali-G52", "Mali-G51", "Mali-G31" };
+        [Tooltip("GPUs at or below this SystemInfo.graphicsShaderLevel also get the low tier (35 = OpenGL ES 3.0 class).")]
+        [SerializeField, Range(0, 50)] int lowTierMaxShaderLevel = 35;
+        [Tooltip("Bloom mip chain length in the low tier.")]
+        [SerializeField, Range(2, 8)] int lowTierBloomMaxIterations = 3;
+        [Tooltip("Low tier bloom starts at quarter instead of half the world resolution (cheaper, wider glow).")]
+        [SerializeField] bool lowTierBloomQuarterResolution;
+        [Tooltip("Gaussian taps per side of each half-resolution tilt-shift blur pass in the low tier.")]
+        [SerializeField, Range(1, 8)] int lowTierTiltShiftSampleCount = 2;
+        [Tooltip("Keep the tilt-shift blur in the low tier.")]
+        [SerializeField] bool lowTierTiltShift = true;
+        [Tooltip("Keep the main-light shadows in the low tier.")]
+        [SerializeField] bool lowTierShadows = true;
+
+        #region Accessors
+
         public Vector2Int RenderResolution => renderResolution;
         public int MarginTexels => marginTexels;
         public bool PixelSnapping => pixelSnapping;
@@ -70,5 +88,32 @@ namespace Nex.BilliardRogue
         public float VignetteIntensity => vignetteIntensity;
         public float ShadowDistance => shadowDistance;
         public QualityOverride[] QualityOverrides => qualityOverrides;
+        public int LowTierBloomMaxIterations => lowTierBloomMaxIterations;
+        public bool LowTierBloomQuarterResolution => lowTierBloomQuarterResolution;
+        public int LowTierTiltShiftSampleCount => lowTierTiltShiftSampleCount;
+        public bool LowTierTiltShift => lowTierTiltShift;
+        public bool LowTierShadows => lowTierShadows;
+
+        #endregion
+
+        #region Public Methods
+
+        /// <summary>Tier for this GPU: Low for a listed device name or a shader level at or below lowTierMaxShaderLevel.</summary>
+        public RenderQualityTier DetectTier(string graphicsDeviceName, int graphicsShaderLevel)
+        {
+            if (graphicsShaderLevel <= lowTierMaxShaderLevel) return RenderQualityTier.Low;
+            for (var i = 0; i < lowTierGpuNames.Length; i++)
+            {
+                var name = lowTierGpuNames[i];
+                if (name.Length > 0 && graphicsDeviceName.IndexOf(name, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return RenderQualityTier.Low;
+                }
+            }
+
+            return RenderQualityTier.Full;
+        }
+
+        #endregion
     }
 }

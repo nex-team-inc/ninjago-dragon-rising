@@ -13,7 +13,8 @@ namespace Nex.BilliardRogue.Editor
     /// Configures the URP asset and renderers for the HD-2D rig (TDD §0a D2, research/urp-hd2d-rendering.md §2.3, §8):
     /// HDR on, Forward, 4 per-object lights, one 1024 hard-shadow cascade fitted to the arena, no depth/opaque
     /// textures, MSAA off, HDR grading LUT; a dedicated World renderer (renderer list index 1) carrying the
-    /// TiltShiftFeature; layers World / WorldVolume; quality levels trimmed for low-end Android. Idempotent.
+    /// TiltShiftFeature; layers World / WorldVolume; quality levels trimmed for low-end Android; Frame Timing Stats on
+    /// and Android Blit Type Auto. Idempotent.
     /// </summary>
     public static class RenderPipelineBuilder
     {
@@ -59,8 +60,28 @@ namespace Nex.BilliardRogue.Editor
             report.Append($" worldRendererIndex={worldIndex}");
 
             TuneQualityLevels(report);
+            ConfigurePlayer(report);
             AssetDatabase.SaveAssets();
             return report.ToString();
+        }
+
+        /// <summary>Every layer except World / WorldVolume: the UI camera must never cull or light the world objects.</summary>
+        public static int CullingMaskWithoutWorld()
+        {
+            var mask = ~0;
+            foreach (var layerName in new[] { WorldLayerName, WorldVolumeLayerName })
+            {
+                var layer = LayerMask.NameToLayer(layerName);
+                if (layer < 0)
+                {
+                    Debug.LogWarning($"[RenderPipelineBuilder] Layer '{layerName}' missing (run RenderPipelineBuilder); the UI camera keeps rendering it.");
+                    continue;
+                }
+
+                mask &= ~(1 << layer);
+            }
+
+            return mask;
         }
 
         /// <summary>Index of WorldRenderer.asset in the URP renderer list, or -1 before Run() has registered it.</summary>
@@ -251,6 +272,28 @@ namespace Nex.BilliardRogue.Editor
             var property = level.FindPropertyRelative(name);
             if (property == null) missing.Add(name);
             return property;
+        }
+
+        #endregion
+
+        #region Player settings
+
+        // FrameTimingManager (the [Perf] logger's CPU / GPU times) needs Frame Timing Stats in players. Blit Type Always
+        // makes the Android player render into its own offscreen buffer and copy it to the 1920x1080 surface every frame,
+        // one more full-screen 1080p pass on the Mali-G52; Auto blits only when the surface and rendering sizes differ.
+        static void ConfigurePlayer(StringBuilder report)
+        {
+            if (!PlayerSettings.enableFrameTimingStats)
+            {
+                PlayerSettings.enableFrameTimingStats = true;
+                report.Append(" frameTimingStats=on");
+            }
+
+            if (PlayerSettings.Android.blitType != AndroidBlitType.Auto)
+            {
+                PlayerSettings.Android.blitType = AndroidBlitType.Auto;
+                report.Append(" androidBlitType=Auto");
+            }
         }
 
         #endregion

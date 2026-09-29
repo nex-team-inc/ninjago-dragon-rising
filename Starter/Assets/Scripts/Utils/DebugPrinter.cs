@@ -13,11 +13,14 @@ namespace Nex
         [SerializeField] int fontSize = 40;
         [SerializeField] Font font = null!;
 
-        protected override DebugPrinter GetThis() => this;
-
         readonly Dictionary<string, string> textByKey = new();
         GUIStyle? textStyle;
         Texture2D? backgroundTexture;
+        bool subscribed;
+
+        #region Life Cycle
+
+        protected override DebugPrinter GetThis() => this;
 
         void OnDisable()
         {
@@ -28,6 +31,20 @@ namespace Nex
             }
             textStyle = null;
         }
+
+        protected override void OnDestroy()
+        {
+            if (subscribed && PlayerDataManager.Instance != null)
+            {
+                PlayerDataManager.Instance.DebugSettingsSaved -= Wake;
+            }
+
+            base.OnDestroy();
+        }
+
+        #endregion
+
+        #region Helpers
 
         void CreateStyleIfNeeded()
         {
@@ -54,6 +71,10 @@ namespace Nex
             }
         }
 
+        #endregion
+
+        #region Public Methods
+
         public void Print(string key, string message)
         {
             textByKey[key] = message;
@@ -70,11 +91,27 @@ namespace Nex
             textByKey.Clear();
         }
 
+        #endregion
+
+        #region IMGUI
+
+        void Wake() => enabled = true;
+
         void OnGUI()
         {
-            if (PlayerDataManager.Instance == null ||
-                !PlayerDataManager.Instance.DebugSettings.enableDebugPrinter)
+            var playerData = PlayerDataManager.Instance;
+            if (playerData == null) return;
+            if (!playerData.DebugSettings.enableDebugPrinter)
             {
+                // Any enabled OnGUI costs an IMGUI layout + repaint pass (and garbage) every frame even when it draws
+                // nothing, so the printer sleeps until the debug settings are saved again.
+                if (!subscribed)
+                {
+                    playerData.DebugSettingsSaved += Wake;
+                    subscribed = true;
+                }
+
+                enabled = false;
                 return;
             }
 
@@ -88,5 +125,7 @@ namespace Nex
 
             GUI.Label(new Rect(10, 10, size.x, size.y), text, textStyle);
         }
+
+        #endregion
     }
 }

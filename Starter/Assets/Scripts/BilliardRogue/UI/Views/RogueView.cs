@@ -114,10 +114,13 @@ namespace Nex.BilliardRogue
 
         #region Feedback
 
-        /// <summary>Button pressed: analytics ui_button_click + select sound. Call after the IsActive guard.</summary>
-        protected void TrackButton(string button, int index = -1)
+        /// <summary>
+        /// Button pressed: analytics ui_button_click + select sound. Call after the IsActive guard. input names how it
+        /// was pressed ("remote" = remote / keyboard / mouse, "motion" = body tracking, "debug" = CLI / debug hooks).
+        /// </summary>
+        protected void TrackButton(string button, int index = -1, string input = "remote")
         {
-            RunAnalytics.UiAction(AnalyticsScreenName, button, index);
+            RunAnalytics.UiAction(AnalyticsScreenName, button, index, input);
             UiTheme.PlaySfx(theme.SelectSfx);
         }
 

@@ -46,6 +46,9 @@ namespace Nex.BilliardRogue
             // (a no-op whenever the act is already shown).
             context.environment.ApplyAct(context.config.Acts[run.actIndex]);
             await UniTask.WaitWhile(overlaysBlocked, cancellationToken: ct);
+            // The three balls span the width of the screen: the HUD columns (and with them the PiP feed) leave, and the
+            // stage intro that follows every reward brings them back.
+            SetHudRevealed(false);
             var view = Instantiate(rewardViewPrefab);
             view.Initialize(context.config.Pacing, context.display.WorldCamera);
             // Motion pick (GDD v2 §4): in 2P the chooser alternates per reward (by stage); its paws drive the cat arms.

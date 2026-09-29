@@ -396,6 +396,7 @@ namespace Nex.BilliardRogue.InputCore.Tests
             feed.MoveCue(ballPaw, start, end, 60f);
             Assert.AreEqual(1, feed.strikes);
             Assert.IsTrue(feed.last.byLineCross);
+            Assert.IsTrue(feed.detector.Readout.lastStrikeByLineCross);
         }
 
         [Test]

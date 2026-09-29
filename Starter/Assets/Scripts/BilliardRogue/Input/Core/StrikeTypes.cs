@@ -89,6 +89,8 @@ namespace Nex.BilliardRogue
         public int strikeCount;
         public float lastStrikeSpeed;
         public bool lastStrikeWasPower;
+        /// <summary>The last strike fired by passing the ball paw's line (not by contact).</summary>
+        public bool lastStrikeByLineCross;
         /// <summary>Incremented per reported miss; lastMiss* describe the latest one.</summary>
         public int missCount;
         public StrikeMiss lastMiss;

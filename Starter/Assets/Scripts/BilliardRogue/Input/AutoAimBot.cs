@@ -20,9 +20,10 @@ namespace Nex.BilliardRogue
     {
         const float MinStrikePower = 0.4f;
         const int SeedSalt = 7919;
-        // Perlin noise mostly spans 0.25..0.75; this window stretches it so both ends of the range are reached.
-        const float NoiseLow = 0.3f;
-        const float NoiseHigh = 0.7f;
+        // Perlin noise mostly spans 0.2..0.8; this window stretches it so both ends of the range are reached while
+        // the middle tiers still get most of the time.
+        const float NoiseLow = 0.25f;
+        const float NoiseHigh = 0.75f;
         const float NoiseRowPerPlayer = 17.3f;
 
         enum Phase
@@ -60,8 +61,7 @@ namespace Nex.BilliardRogue
             {
                 if (config == null) return 0f;
                 var noise = Mathf.PerlinNoise(Time.unscaledTime * config.BotMotionFrequencyHz, (PlayerIndex + 1) * NoiseRowPerPlayer);
-                var t = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(NoiseLow, NoiseHigh, noise));
-                return Mathf.Lerp(config.BotMotionMin, config.BotMotionMax, t);
+                return Mathf.Lerp(config.BotMotionMin, config.BotMotionMax, Mathf.InverseLerp(NoiseLow, NoiseHigh, noise));
             }
         }
 

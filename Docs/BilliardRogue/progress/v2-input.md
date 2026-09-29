@@ -27,8 +27,44 @@ Starter/Assets/Scripts/BilliardRogue/Configs/ControlConfig.cs Starter/Assets/Scr
       (StrikeDetector 29, MotionEnergyFilter 9, PawPointerMath 3, AimHistory 4). ControlConfigV2Upgrade ran
       (35→19, 5→9, arm 10→14, rearm 0.35→0.25, power ×2→×3.5, full 120→110); PlayerShotInput.prefab rebuilt
       (meter + pointer wired).
-- [ ] 7b. Play-mode check with the debug source (H / mouse energy, mouse paws, bot energy).
+- [x] 7b. Play mode (scratchpad `v2input/verify.sh` + `V2InputVerify.cs`; gameplay itself hit another agent's
+      in-progress GameplayHud NRE, so the check ran at the calibration test strike, where the routers exist):
+      Debug source → MotionEnergy / PawPointer non-null, v2 strike settings live (19 / 9 / 60° / 12 / 14 / 0.25);
+      debug energy from a synthetic mouse wiggle 0.15 → 0.86 in 0.2 s, 0.03 after 1.5 s release; Bot source →
+      energy wandered 0.05..1.00 over 12 s (all tiers, some time under 0.2); meter untracked / 0 and body pointer
+      untracked without camera frames; paws "none" with the mouse outside the Game view. Console: only the Editor's
+      camera timeout / socket errors. EditMode 45/45 after the readout flag.
+
+## API
+
+```csharp
+ShotInputRouter.MotionEnergy : IMotionEnergy   // stable RoutedBodyInput; cache it
+ShotInputRouter.PawPointer   : IPawPointer     // same object
+ShotInputRouter.BodyMotion   : MotionEnergyMeter?  // readout: Energy01, IsTracked, Intensity01, MeanExcessSpeed, DetectedNodes
+// Routing: Paw → body meter / body pointer; Debug → max(body, H key or mouse speed) / body pointer, else the mouse
+// (both paws = mouse ± debugPawOffset01, only inside the Game view); Bot → max(body, Perlin 0.05..1) / body pointer.
+MotionEnergyMeter.Initialize(int playerIndex, OnePlayerDetectionEngine engine, ControlConfig config)
+PawPointer.Initialize(int playerIndex, OnePlayerDetectionEngine engine, ControlConfig config)
+// Both are initialized by ShotInputRouter.Initialize(playerIndex, engine, ctx): no coordinator change needed.
+MotionEnergyFilter(int nodeCount, MotionEnergySettings) .AddSample/.MarkNoBody/.Tick/.Smooth   (Input/Core)
+PawPointerMath.ToScreen01(Vector2 handInches, Vector2 center, Vector2 halfRange)               (Input/Core)
+StrikeSettings.angleToleranceDeg / .lineCrossMaxOffset; StrikeResult.byLineCross; StrikeReadout.lastStrikeByLineCross
+ControlConfig: StrikeAngleToleranceDeg, LineCrossMaxOffsetInches, MotionEnergySettings, MotionAttack/ReleaseSeconds,
+  PawPointerCenterInches, PawPointerHalfRangeInches, PawPointerMinCutoff/Beta, DebugMotionFullScreensPerSec,
+  DebugPawOffset01, BotMotionFrequencyHz/Min/Max
+Editor: ControlConfigV2Upgrade.Run() (menu "Nex/Billiard Rogue/Upgrade Control Config (v2)"), idempotent
+```
 
 ## Requests (for the integrator)
 
-- (pending)
+1. Hype (gameplay owner): cache `router.MotionEnergy` per player; Hype source = max over players of `Energy01`
+   (co-op, GDD v2 §3) while ≥ 1 ball is in flight, else 0. Energy already has the 0.1 s attack / 0.5 s release.
+2. Reward pick (GameplayView / RewardView owner): `rewardView.SetPawPointer(routers[chooser].PawPointer, chooser,
+   numPlayers)`. In the Editor (Debug source) both paws follow the mouse while it is inside the Game view; with the
+   bot and no body the pointer reports no paws, so automated runs keep using `DebugHooks.ChooseReward`.
+3. Control readout (`UI/Debug/ControlReadoutPanel` owner): add a Hype line, e.g.
+   `ENERGY {router.MotionEnergy.Energy01:0.00}  BODY {meter.Energy01:0.00} {meter.DetectedNodes}/11 {meter.MeanExcessSpeed:0} in/s`
+   (meter = `router.BodyMotion`), and show `(line)` after STRIKE when `StrikeReadout.lastStrikeByLineCross`.
+   The contact tuning row now also scales the line-cross offset.
+4. `Docs/BilliardRogue/ControlDemo.md` (doc owner): Editor keys — hold **H** (or move the mouse fast) to simulate
+   Hype; strikes are easier (19 in/s, 9 in contact, passing beside the left paw counts).

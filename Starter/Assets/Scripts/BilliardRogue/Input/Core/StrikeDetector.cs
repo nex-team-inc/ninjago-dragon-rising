@@ -246,6 +246,7 @@ namespace Nex.BilliardRogue
             readout.strikeCount++;
             readout.lastStrikeSpeed = peakSpeed;
             readout.lastStrikeWasPower = result.isPowerShot;
+            readout.lastStrikeByLineCross = byLineCross;
             SetState(StrikeState.Cooldown, time);
             return true;
         }

@@ -9,7 +9,8 @@ namespace Nex.BilliardRogue
     /// turns up the arena to strike with the cue, flinches when hurt, dances on victory and slumps on defeat.
     /// While balls fly it dances with Hype (GDD v2 §3) and strikes a big pose when a Hype tier is reached.
     /// Rigid parts (Cat_Hero.fbx: Body, Head, EarL/R, Tail, PawL/R, Cape) are animated by code; P1/P2 palettes
-    /// swap the model material (M_Palette / M_Palette_CatP2).
+    /// swap the model material (M_Palette / M_Palette_CatP2). JuiceConfig.cat.visible off hides every renderer and
+    /// skips the pose animation; the cat still walks, so its anchors keep marking the player's spot.
     /// </summary>
     public sealed class CatView : MonoBehaviour
     {
@@ -35,6 +36,8 @@ namespace Nex.BilliardRogue
         JuiceConfig.CatSettings settings = null!;
         JuiceConfig.HypeSettings hypeSettings = null!;
         MaterialPropertyBlock block = null!;
+        Renderer[] renderers = System.Array.Empty<Renderer>();
+        bool visible = true;
         int playerIndex;
         float currentX01 = 0.5f;
         float targetX01 = 0.5f;
@@ -54,6 +57,8 @@ namespace Nex.BilliardRogue
         Quaternion cueBaseRotation;
 
         public int PlayerIndex => playerIndex;
+        /// <summary>JuiceConfig.cat.visible: effects that decorate the cat's poses skip a hidden cat.</summary>
+        public bool IsVisible => visible;
         public Vector3 Position { get; private set; }
         public Vector3 LabelAnchor => Position + Vector3.up * (labelHeight * layout.CellSize * settings.modelScale);
         public Vector3 Center => Position + Vector3.up * (0.5f * layout.CellSize * settings.modelScale);
@@ -86,6 +91,8 @@ namespace Nex.BilliardRogue
             defeated = false;
             strikeT = hurtT = victoryT = poseT = 1f;
             hype = 0f;
+            if (renderers.Length == 0) renderers = GetComponentsInChildren<Renderer>(true);
+            ApplyVisibility();
             SetActive(false);
             Place();
         }
@@ -94,6 +101,7 @@ namespace Nex.BilliardRogue
         {
             // The scene cats exist before any run: BoardPresenter.Initialize wires them at the first GameplayView.
             if (settings == null) return;
+            if (settings.visible != visible) ApplyVisibility();
             var dt = Time.deltaTime;
             phase += dt;
             if (!defeated)
@@ -103,6 +111,7 @@ namespace Nex.BilliardRogue
             }
 
             Place();
+            if (!visible) return;
             var walking = !Mathf.Approximately(currentX01, targetX01);
             var yaw = settings.idleYaw;
             var cueOffset = Vector3.zero;
@@ -240,6 +249,15 @@ namespace Nex.BilliardRogue
         #endregion
 
         #region Helpers
+
+        void ApplyVisibility()
+        {
+            visible = settings.visible;
+            for (var i = 0; i < renderers.Length; i++)
+            {
+                renderers[i].enabled = visible;
+            }
+        }
 
         void Place()
         {

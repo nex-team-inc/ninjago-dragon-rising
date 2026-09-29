@@ -144,7 +144,7 @@ namespace Nex.BilliardRogue
             for (var i = 0; i < cats.Length; i++)
             {
                 var cat = cats[i];
-                if (!cat.gameObject.activeInHierarchy) continue;
+                if (!cat.gameObject.activeInHierarchy || !cat.IsVisible) continue;
                 cat.PlayTierPose(newTier);
                 eventPlayer.PlayVfx(VfxManager.VisualEffect.LevelUpBurst, cat.Center, settings.tierPoseVfxScale * (0.6f + 0.2f * newTier));
             }

@@ -82,7 +82,7 @@ namespace Nex.BilliardRogue
             player.PlaySfx(SfxManager.SoundEffect.Victory);
             for (var i = 0; i < cats.Length; i++)
             {
-                if (!cats[i].gameObject.activeSelf) continue;
+                if (!cats[i].gameObject.activeSelf || !cats[i].IsVisible) continue;
                 cats[i].PlayVictory();
                 player.PlayVfx(VfxManager.VisualEffect.LevelUpBurst, cats[i].Center, 1.5f);
             }

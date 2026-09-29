@@ -2,6 +2,7 @@
 
 using System;
 using UnityEngine;
+using UnityEngine.Localization;
 using UnityEngine.Localization.Settings;
 
 namespace Nex.BilliardRogue
@@ -82,7 +83,9 @@ namespace Nex.BilliardRogue
             var code = next.Identifier.Code;
             PlayerDataManager.Instance.ScopedPlayerPreferenceUpdate(preference => preference.localeCode = code);
             Changed("language", code);
-            RefreshLanguage();
+            // Not RefreshLanguage: the locale change restarts InitializationOperation, so its IsDone gate would skip
+            // the label and leave the previous language's name on the row.
+            ShowLanguage(next);
         }
 
         void HandleVolume(SettingRow row, int direction)
@@ -163,6 +166,11 @@ namespace Nex.BilliardRogue
             if (!LocalizationSettings.InitializationOperation.IsDone) return;
             var locale = LocalizationSettings.SelectedLocale;
             if (locale == null) return;
+            ShowLanguage(locale);
+        }
+
+        void ShowLanguage(Locale locale)
+        {
             languageRow.ValueLabel!.SetKey(LanguageKeyPrefix + locale.Identifier.Code);
         }
 

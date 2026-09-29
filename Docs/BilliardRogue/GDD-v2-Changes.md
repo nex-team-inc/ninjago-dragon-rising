@@ -83,3 +83,16 @@ These override GDD.md where they conflict. Every number is a default in a config
 ## 12. Balance with 3-shot turns and 3 HP (`Tools/sim_smoke_eval.cs`, 6 seeds)
 - Tuned: 2 batches per normal stage, `hpScalePerStage` 0.08, bosses at 65 % HP (King Slime 46, Bone Lich 85, Crystal Golem 130).
 - 1P aimed bot: 0/6 without Hype (dies in act 2), 3/6 with Hype 0.5; 1P casual (30 % random shots) with Hype 0.5: 0/6. 2P co-op with Hype 0.5: 2/6 aimed, 2/6 casual. Hype and ball power are being redesigned next (playtest 4 items B and C); rebalance after them.
+
+## 13. POWER charges from the combo, not body motion (playtest 4)
+- Replaces §3: moving the body no longer charges anything and the "MOVE!" prompt is gone. Every enemy hit while balls fly adds to the flight's combo (every ball in the air counts, both players in 2P, status ticks and blasts included); `HypeConfig.comboForFullPower` hits (24) give full POWER along `comboToPower` (linear). The multipliers, tiers and juice of §3 are unchanged (speed × lerp(1, 1.8), damage × lerp(1, 2.5) with at least +1 from tier 2, hit-stop, meter "×1.4!" / "×1.9!!" / "MAX!!!").
+- POWER drops to 0 once nothing flies; a shot fired while the last one's balls still fly keeps the combo going.
+- The "x{n} COMBO" float now counts the flight's combo (the POWER charge) instead of each ball's own hits: first at 5, then every 5 (`JuiceConfig.comboShowThreshold` / `comboShowEvery`), rainbow from 25 (`numbers.comboRainbowAt`), once full POWER is reached. A ball's own consecutive hits still raise its hit pitch and number pop.
+
+## 14. Every shot is a volley of the whole bag (playtest 4)
+- Each of a player's `shotsPerTurn` (3) shots launches **every ball in the bag**, in bag order along the aim locked at the strike, `PacingConfig.volleyInterval` (0.09 s) apart, so every reward ball adds firepower from the next shot. A volley stops launching once the field is empty or the stage is cleared. +1 Ball pickups grant a shared bonus shot (a whole volley) for the current turn only. The bag rotation (`RunState.nextBagIndex`) is gone; old saves load without it.
+- The HUD panel reads "Shots" (shots left / shots this turn) and shows the bag as the volley.
+
+## 15. Balance with volleys and combo POWER (`Tools/sim_smoke_eval.cs`, 12 seeds)
+- With the §12 values the volley bot won every run and was never hit (1–4 turns a stage), because the player's damage grows about 15× over a run (bag 4 → 12, ball levels, fuller combos). Enemy HP now doubles at the base and grows 90 % of it per stage (`hpScalePerStage` 0.9; Slime 8, Bat 4, Bomber 8, Healer 10, Mage 10, Shield Knight 12, Skeleton 14, Totem 20, Bone Wall 8). Bosses: King Slime 92, Bone Lich 140 and casting every 3 turns (a bolt every 2 turns killed most runs in its fight under 3 HP), Crystal Golem 150.
+- Result: 1P aimed 12/12 wins (4.5 turns a stage, 2.3 hits taken a run), 1P casual (half the shots random) 8/12 (5.6 turns, 5.7 hits), 2P aimed 12/12, 2P casual 10/12. Boss fights take about 5 / 6 / 7.5 turns. The harness fires the 2P volleys one after the other, so real co-op (overlapping volleys share the combo) plays a little easier.

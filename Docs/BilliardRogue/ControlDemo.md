@@ -18,6 +18,16 @@ In the Playground APK, practice mode and the readout both start off. Turn the re
 with **Debug: Show Control Readout** (see [Debug Settings](#4-debug-settings-open-it-and-tune)). In the Editor you turn
 both on once in Debug Settings.
 
+## What's new after the fourth playtest (GDD v2 §10–§15)
+
+| | Behaviour now | How to try it |
+|---|---|---|
+| **Every shot is a volley** | You have **3 shots a turn**, and each shot launches **every ball in your bag**, one after another along the aim you struck. Every ball you win makes every later shot stronger. The panel in the top right reads **Shots 3/3**. A +1 Ball pickup gives one extra volley this turn. | Strike once and watch the whole bag stream out. |
+| **POWER comes from combos** | No dancing: every enemy hit while balls fly adds to the combo, and **24 hits give full POWER** (balls up to 1.8× faster and 2.5× stronger). The meter in the lower left shows `×1.4!`, `×1.9!!` and `MAX!!!`; the board shows **x5 COMBO**, **x10 COMBO**, … and turns rainbow at full POWER. POWER drops to 0 once all balls are back; shooting again while balls still fly keeps the combo going. | Aim a volley into a crowd. |
+| **3 HP** | You have 3 HP, and every attack takes exactly 1: an enemy on the red danger row, a Mage's bolt or the Bone Lich's bolt. A stage clear and a heal pickup each heal 1, and a boss clear refills. | Let an enemy reach the red row. |
+| **2 players shoot together** | Both players shoot at the same time from their own spot, each with 3 shots, their own cue and aim line. Enemies have double HP. | Start a 2-player run. |
+| **Tougher enemies** | Enemy HP is doubled and grows faster every stage to keep up with the volleys, so HP numbers climb into the hundreds late in a run. | Play into act 2. |
+
 ## What's new after the second playtest (GDD v2 §5–§6)
 
 | | Behaviour now | How to try it |
@@ -42,17 +52,16 @@ The spec is `GDD-v2-Changes.md`. What changes when you play:
 | | v2 behaviour | How to try it |
 |---|---|---|
 | **Easier strike** | A strike starts when the right paw moves toward the left paw at **19 in/s** or more (v1: 35), heading within 60° of it. It fires on contact within **9 in** (v1: 5), or when the right paw **passes the left paw's line** no more than 12 in beside it. Re-arm is **0.25 s**, and the paws must first be **14 in** apart. A power shot needs 3.5× the threshold (about 66 in/s, close to v1's 70). | Thrust the right paw at the left paw. It no longer has to touch. The readout log shows `STRIKE … (line)` when the strike fired by passing the left paw. |
-| **Hype: dance while the ball flies** | While at least one ball flies, whole-body motion (hands, elbows, shoulders, hips, knees, head) charges **Hype** 0..1. In 2P the more active player counts. Hype makes every flying ball up to **1.8× faster** and up to **2.5× stronger** (+1 damage at least from tier 2). It also brings more hit-stop, shake, sparks, bigger damage numbers, a glowing, growing ball with a tier-coloured trail, and a pink arena aura at MAX. Hype resets when no ball flies and never changes the aim. | Shoot, then dance, jump or wave your arms until the ball comes back. The **POWER** meter in the lower left shows `×1.4!` (tier 1, 0.25), `×1.9!!` (tier 2, 0.55) and `MAX!!!` (tier 3, 0.85), each with a sound. If you stand still for 1 s with Hype under 0.2, a big **MOVE!** prompt with a dancing cat appears above the launch line. |
-| **Rewards are balls only** | Every reward offers 3 different balls: a big ball picture, its name and a 1–3 word effect ("Burns", "Chain zap", …). A new ball joins the bag. When the bag is full, only balls you own are offered, and a pick levels one up (`Lv 1 → Lv 2`). Heal and Max HP cards are gone. Instead, every stage clear heals 4 HP. | Clear a stage. |
+| **POWER (was Hype)** | Replaced after the fourth playtest: POWER now charges from the combo, not from body motion, and the MOVE! prompt is gone (see above). The effects are the same: every flying ball up to **1.8× faster** and **2.5× stronger** (+1 damage at least from tier 2), plus more hit-stop, shake, sparks, bigger damage numbers, a glowing ball with a tier-coloured trail and a pink arena aura at MAX. | Aim a volley into a crowd and watch the **POWER** meter. |
+| **Rewards are balls only** | Every reward offers 3 different balls: a big ball picture, its name and a 1–3 word effect ("Burns", "Chain zap", …). A new ball joins the bag. When the bag is full, only balls you own are offered, and a pick levels one up (`Lv 1 → Lv 2`). Heal and Max HP cards are gone. Instead, every stage clear heals (1 of your 3 HP since the fourth playtest). | Clear a stage. |
 | **Pick a ball with your hands** | Two cat arms rise from the bottom corners, and each paw follows your hand. Put **both paws on the same ball** and hold them there: a ring fills in 0.8 s, then the paws grab the ball and pull it down. Moving a paw away drains the ring. A paw must move a little after the view opens before a hold counts, so resting hands never pick by accident. The remote still works: **Left/Right + OK**. In 2P the players take turns choosing (P1, then P2, …). A "P2 picks!" banner shows whose turn it is, and only that player's arms show: P1 orange, P2 charcoal. | Bring both hands together over one ball and keep them still. |
-| **Readout: Hype row** | `ENERGY 0.62`: the motion energy the game uses. `BODY 0.58 11/11 23in/s`: the body meter itself, with its energy, the body nodes it sees (of 11), and their mean speed above the jitter deadzone. `BODY -` means the body is not tracked. | Watch it while you move. |
+| **Readout: Hype row** | `ENERGY 0.62`: the body's motion energy (shown for reference; POWER no longer uses it since the fourth playtest). `BODY 0.58 11/11 23in/s`: the body meter itself, with its energy, the body nodes it sees (of 11), and their mean speed above the jitter deadzone. `BODY -` means the body is not tracked. | Watch it while you move. |
 
 In the Editor without a body:
-- Hold **H**, or move the mouse fast, to simulate Hype.
 - The mouse drives both paws in the reward view while it is inside the Game view. Wiggle it a little first, so the
   hold arms.
-- The auto-aim bot (**Flow: Auto Aim Bot**) simulates a wandering energy that reaches every tier.
-- `DebugHooks.SetHype(0.6f)` forces Hype while balls fly, and `-1` turns it off.
+- Debug Settings **Run: Force POWER while balls fly** (0..1), or `DebugHooks.SetHype(0.6f)`, forces POWER while balls
+  fly, and `-1` turns it off.
 
 ## 1. Try it in the Editor (Mac webcam)
 
@@ -178,8 +187,8 @@ Please note the Debug Settings scales you used. A photo of the readout at the mo
 - **Tracking.** How often did `NO TRACKING: PAWS` appear, and at what distance and lighting? Which pose lost it?
 - **The pose itself.** Is the left-paw-ball, right-paw-cue pose comfortable over a few minutes? What would feel more
   natural?
-- **Hype (v2).** Which moves reach `MAX!!!`, and how tiring is it? Does the ball feel faster and stronger? Does the
-  MOVE! prompt come too early, too late or too often? What does the readout's `BODY` row show while you dance?
+- **Volleys and POWER (fourth playtest).** Does a volley feel strong, and does a new ball feel like it matters? How
+  often do you reach `MAX!!!`? Are the COMBO floats readable with a full bag? Is 3 HP too few, and which attacks hit you?
 - **Paw pick (v2).** Can you put both paws on the ball you want? Is 0.8 s of holding too long or too short? Did a
   ball ever get picked by accident?
 - **Spawning (second playtest).** Are 10 enemies every 3 turns too many or too few? Can you tell where the next ones

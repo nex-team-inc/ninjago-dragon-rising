@@ -2,15 +2,15 @@
 
 A barely playable build for trying the paw controls:
 
-- **Left paw**: moves the cat and the ball along the launch line.
-- **Right paw**: aims the cue. The aim is the direction from the right paw to the left paw.
-- **Strike**: thrust the right paw fast into the left paw to shoot.
+- **Upper paw** (either hand, whichever is higher): holds the ball and moves it along the launch line.
+- **Lower paw**: the cue. The aim is the direction from the lower paw to the upper paw.
+- **Strike**: thrust the lower paw fast up into the upper paw to shoot.
 
 The demo adds three things to the normal game:
 
 | | What it does |
 |---|---|
-| **Practice mode** | God mode: a run never ends. Off by default since playtest 4 (the player loses HP as in the game); turns still end after 3 shots and the enemies still advance. |
+| **Practice mode** | God mode: a run never ends. Off by default since playtest 4 (the player loses HP as in the game); turns still end after the turn's shot and the enemies still advance. |
 | **Control readout** | A panel in the lower right corner, one per player. It shows what the body tracking sees and why a thrust did or did not shoot. It appears during the calibration test strike and during gameplay once you turn it on (hidden by default since the second playtest). |
 | **Live tuning** | Debug Settings rows that scale the strike speed, the contact distance, the aim smoothing and the launch range while you play. |
 
@@ -18,12 +18,20 @@ In the Playground APK, practice mode and the readout both start off. Turn the re
 with **Debug: Show Control Readout** (see [Debug Settings](#4-debug-settings-open-it-and-tune)). In the Editor you turn
 both on once in Debug Settings.
 
+## What's new after the fifth playtest (GDD v2 §16–§18)
+
+| | Behaviour now | How to try it |
+|---|---|---|
+| **Upper paw = ball, lower paw = cue** | Roles follow height, not hands: whichever paw is higher holds the ball and the lower one is the cue, so either hand can shoot. The roles swap only when the lower paw stays at least 4 in above the other for 0.25 s, and never in the middle of a strike (a thrust that ends above the ball paw does not swap them). The left-handed setting is gone. The calibration card shows the new pose. | Hold one paw high, thrust the other up into it. Then swap which hand is up. |
+| **One shot a turn** | Each player has **1 shot a turn** (still a volley of the whole bag). The panel reads **Shots 1/1**; a +1 Ball pickup still adds a bonus volley. Enemy HP was lowered to match (see §18). | Shoot once: the enemies step forward right after. |
+| **Dance again, with energy** | While your balls fly, dancing fills the POWER bar (up to 1.8× faster, 2.5× stronger balls). The bar never drops on its own and resets at the start of every turn. Dancing **costs energy**: a full bar costs 12, you start a run with 12, every enemy you defeat gives 1 (a boss 10), and you hold at most 30. With no energy dancing does nothing and the meter says **No energy!**. The energy count is at the top right of the POWER panel. **MOVE!** only appears when you have energy to spend. | Shoot, then dance. Save energy by standing still if you want a full bar for a boss. |
+
 ## What's new after the fourth playtest (GDD v2 §10–§15)
 
 | | Behaviour now | How to try it |
 |---|---|---|
-| **Every shot is a volley** | You have **3 shots a turn**, and each shot launches **every ball in your bag**, one after another along the aim you struck. Every ball you win makes every later shot stronger. The panel in the top right reads **Shots 3/3**. A +1 Ball pickup gives one extra volley this turn. | Strike once and watch the whole bag stream out. |
-| **POWER comes from combos** | No dancing: every enemy hit while balls fly adds to the combo, and **24 hits give full POWER** (balls up to 1.8× faster and 2.5× stronger). The meter in the lower left shows `×1.4!`, `×1.9!!` and `MAX!!!`; the board shows **x5 COMBO**, **x10 COMBO**, … and turns rainbow at full POWER. POWER drops to 0 once all balls are back; shooting again while balls still fly keeps the combo going. | Aim a volley into a crowd. |
+| **Every shot is a volley** | You have **3 shots a turn** (1 since the fifth playtest), and each shot launches **every ball in your bag**, one after another along the aim you struck. Every ball you win makes every later shot stronger. The panel in the top right reads **Shots 3/3**. A +1 Ball pickup gives one extra volley this turn. | Strike once and watch the whole bag stream out. |
+| **POWER comes from combos** | Replaced after the fifth playtest (dancing with energy, above). No dancing: every enemy hit while balls fly adds to the combo, and **24 hits give full POWER** (balls up to 1.8× faster and 2.5× stronger). The meter in the lower left shows `×1.4!`, `×1.9!!` and `MAX!!!`; the board shows **x5 COMBO**, **x10 COMBO**, … and turns rainbow at full POWER. POWER drops to 0 once all balls are back; shooting again while balls still fly keeps the combo going. | Aim a volley into a crowd. |
 | **3 HP** | You have 3 HP, and every attack takes exactly 1: an enemy on the red danger row, a Mage's bolt or the Bone Lich's bolt. A stage clear and a heal pickup each heal 1, and a boss clear refills. | Let an enemy reach the red row. |
 | **2 players shoot together** | Both players shoot at the same time from their own spot, each with 3 shots, their own cue and aim line. Enemies have double HP. | Start a 2-player run. |
 | **Tougher enemies** | Enemy HP is doubled and grows faster every stage to keep up with the volleys, so HP numbers climb into the hundreds late in a run. | Play into act 2. |
@@ -51,8 +59,8 @@ The spec is `GDD-v2-Changes.md`. What changes when you play:
 
 | | v2 behaviour | How to try it |
 |---|---|---|
-| **Easier strike** | A strike starts when the right paw moves toward the left paw at **19 in/s** or more (v1: 35), heading within 60° of it. It fires on contact within **9 in** (v1: 5), or when the right paw **passes the left paw's line** no more than 12 in beside it. Re-arm is **0.25 s**, and the paws must first be **14 in** apart. A power shot needs 3.5× the threshold (about 66 in/s, close to v1's 70). | Thrust the right paw at the left paw. It no longer has to touch. The readout log shows `STRIKE … (line)` when the strike fired by passing the left paw. |
-| **POWER (was Hype)** | Replaced after the fourth playtest: POWER now charges from the combo, not from body motion, and the MOVE! prompt is gone (see above). The effects are the same: every flying ball up to **1.8× faster** and **2.5× stronger** (+1 damage at least from tier 2), plus more hit-stop, shake, sparks, bigger damage numbers, a glowing ball with a tier-coloured trail and a pink arena aura at MAX. | Aim a volley into a crowd and watch the **POWER** meter. |
+| **Easier strike** | A strike starts when the cue paw moves toward the ball paw at **19 in/s** or more (v1: 35), heading within 60° of it. It fires on contact within **9 in** (v1: 5), or when the cue paw **passes the ball paw's line** no more than 12 in beside it. Re-arm is **0.25 s**, and the paws must first be **14 in** apart. A power shot needs 3.5× the threshold (about 66 in/s, close to v1's 70). | Thrust the cue paw at the ball paw. It no longer has to touch. The readout log shows `STRIKE … (line)` when the strike fired by passing the ball paw. |
+| **POWER (was Hype)** | Charged by the combo after the fourth playtest, and by dancing again after the fifth, now paid with energy (see above). The effects are the same: every flying ball up to **1.8× faster** and **2.5× stronger** (+1 damage at least from tier 2), plus more hit-stop, shake, sparks, bigger damage numbers, a glowing ball with a tier-coloured trail and a pink arena aura at MAX. | Aim a volley into a crowd and watch the **POWER** meter. |
 | **Rewards are balls only** | Every reward offers 3 different balls: a big ball picture, its name and a 1–3 word effect ("Burns", "Chain zap", …). A new ball joins the bag. When the bag is full, only balls you own are offered, and a pick levels one up (`Lv 1 → Lv 2`). Heal and Max HP cards are gone. Instead, every stage clear heals (1 of your 3 HP since the fourth playtest). | Clear a stage. |
 | **Pick a ball with your hands** | Two cat arms rise from the bottom corners, and each paw follows your hand. Put **both paws on the same ball** and hold them there: a ring fills in 0.8 s, then the paws grab the ball and pull it down. Moving a paw away drains the ring. A paw must move a little after the view opens before a hold counts, so resting hands never pick by accident. The remote still works: **Left/Right + OK**. In 2P the players take turns choosing (P1, then P2, …). A "P2 picks!" banner shows whose turn it is, and only that player's arms show: P1 orange, P2 charcoal. | Bring both hands together over one ball and keep them still. |
 | **Readout: Hype row** | `ENERGY 0.62`: the body's motion energy (shown for reference; POWER no longer uses it since the fourth playtest). `BODY 0.58 11/11 23in/s`: the body meter itself, with its energy, the body nodes it sees (of 11), and their mean speed above the jitter deadzone. `BODY -` means the body is not tracked. | Watch it while you move. |
@@ -76,11 +84,11 @@ In the Editor without a body:
 6. Choose **New Run**, then **1 Player**. Calibration runs four steps: move into the frame, raise a hand, a short pose
    tutorial, then a **test strike**.
 7. The pose:
-   - Raise the **left paw** in front of your chest. This paw is the ball.
-   - Hold the **right paw** below the left paw and to its right. This paw is the cue.
-   - Thrust the right paw into the left paw. One strike passes the test, and then gameplay starts.
-   - In the game, move the left paw sideways to move the cat. Move the right paw around the left paw to aim. Pull
-     the paws apart, then thrust again for the next ball.
+   - Raise one paw in front of your chest. The **upper paw** is the ball.
+   - Hold the other paw below it. The **lower paw** is the cue.
+   - Thrust the lower paw up into the upper paw. One strike passes the test, and then gameplay starts.
+   - In the game, move the upper paw sideways to move the ball. Move the lower paw around below it to aim. Pull
+     the paws apart, then thrust again for the next shot.
 
 In the Editor, when your paws are not tracked, the game switches to mouse and keyboard, and the readout header shows
 `P1 DEBUG`. It switches back to `P1 PAW` as soon as tracking returns. The keys are: arrows move the cat, **A**/**D**
@@ -138,16 +146,16 @@ panel is on top and P2's is below. The panel hides while pause, rewards, stage i
 |---|---|
 | `P1 PAW` / `P1 DEBUG` / `P1 BOT` | The input the game is using right now: body tracking, mouse and keyboard, or the auto-aim bot. The body values below always come from the camera, even while another input is active. |
 | `TRACKED` / `ACQUIRING` / `NO TRACKING: PAWS` / `NO TRACKING: CAMERA` | Body tracking state. `PAWS`: camera frames arrive, but the chest, both elbows and both wrists are not all visible. `CAMERA`: no camera frames. `ACQUIRING`: the paws were just found (about 0.2 s). |
-| `X 0.42` | Launch position, from 0 (left wall) to 1 (right wall). It comes from the left paw's sideways offset from the chest. |
+| `X 0.42` | Launch position, from 0 (left wall) to 1 (right wall). It comes from the upper (ball) paw's sideways offset from the chest. |
 | `AIM 87°` | Aim angle. 90° is straight up. It is clamped to 12°–168°. |
-| `R-HAND` / `L-HAND` | Which paw is the cue. Left-handed swaps the paws. |
-| `SPEED 42 in/s` + `NEED 19` + bar | How fast the right paw closes in on the left paw, in inches per second, measured relative to your body size. `NEED` is the strike threshold. On the bar, the white tick is the threshold, the pink tick is the power-shot speed (3.5x the threshold), and the faint mark is the peak of the last second. The fill is yellow below the threshold, green above it, and pink at power speed. |
-| `DIST 12.3 in` + `CONTACT 9.0` + bar | Distance between the paws. The paws must come within `CONTACT` for a strike, or the right paw must pass the left paw's line. On the bar, the white tick is the contact distance and the grey tick is the arm distance (14 in): the paws must open past it before the next strike. |
+| `BALL L` / `BALL R` | Which paw is up and holds the ball (the other one is the cue). |
+| `SPEED 42 in/s` + `NEED 19` + bar | How fast the cue paw closes in on the ball paw, in inches per second, measured relative to your body size. `NEED` is the strike threshold. On the bar, the white tick is the threshold, the pink tick is the power-shot speed (3.5x the threshold), and the faint mark is the peak of the last second. The fill is yellow below the threshold, green above it, and pink at power speed. |
+| `DIST 12.3 in` + `CONTACT 9.0` + bar | Distance between the paws. The paws must come within `CONTACT` for a strike, or the cue paw must pass the ball paw's line. On the bar, the white tick is the contact distance and the grey tick is the arm distance (14 in): the paws must open past it before the next strike. |
 | `ARMED` / `THRUST` / `COOLDOWN 0.21s` / `OPEN PAWS` | Strike detector state. `ARMED`: ready. `THRUST`: a fast approach is in progress. `COOLDOWN`: re-arm delay after a strike (0.25 s). `OPEN PAWS`: pull the paws apart past the arm distance first. |
 | `STRIKES 3` | Strikes detected since this input was created. The count restarts when gameplay begins after calibration. |
 | `LAST 42 in/s POWER` | Peak speed of the last strike, and whether it was a power shot. |
 | `ENERGY 0.62` + `BODY 0.58 11/11 23in/s` | Hype input (v2). `ENERGY` is the motion energy the game uses: the body meter, or the debug key, mouse or bot simulation if that is higher. It turns pink from 0.25, and red when nothing is tracked. `BODY` is the camera's own meter: energy, body nodes seen out of 11, and mean node speed above the 8 in/s jitter deadzone. 30 in/s gives full energy. |
-| Log (newest on top) | `STRIKE 42 in/s [POWER] [(line)]`: a strike fired, by contact or, with `(line)`, by passing the left paw. `missed: too slow 21 in/s`: the paws touched, but the thrust peaked at 21 in/s, below the threshold. `missed: paws too far 8.1 in`: a fast thrust stopped 8.1 in short of contact. `missed: short thrust`: the paws touched fast, but the thrust started too close (under 4 in of travel). `cooldown`: a fast touch within 0.25 s of the last strike. `not armed: open paws`: a fast touch before the paws were pulled apart. `dropped: no tracking`: a strike arrived while tracking was not confirmed. `expired: not fired`: a strike was detected but the game could not fire it in time (for example during the shot cooldown, the enemy phase or a hand-off). |
+| Log (newest on top) | `STRIKE 42 in/s [POWER] [(line)]`: a strike fired, by contact or, with `(line)`, by passing the ball paw. `missed: too slow 21 in/s`: the paws touched, but the thrust peaked at 21 in/s, below the threshold. `missed: paws too far 8.1 in`: a fast thrust stopped 8.1 in short of contact. `missed: short thrust`: the paws touched fast, but the thrust started too close (under 4 in of travel). `cooldown`: a fast touch within 0.25 s of the last strike. `not armed: open paws`: a fast touch before the paws were pulled apart. `dropped: no tracking`: a strike arrived while tracking was not confirmed. `expired: not fired`: a strike was detected but the game could not fire it in time (for example during the shot cooldown, the enemy phase or a hand-off). |
 
 ## 4. Debug Settings: open it and tune
 
@@ -165,7 +173,6 @@ Try these rows first:
 | **Input: Contact Distance x** | The log says `missed: paws too far`. Raise it. | 1.3–1.6. It also scales the 12 in line-cross distance, and the arm distance grows with it when needed. |
 | **Input: Aim Smoothing x** | The aim guide shakes while you hold still. Raise it. The aim lags behind your paw. Lower it. | 1.5–2 (steadier), 0.6–0.8 (quicker) |
 | **Input: Launch Range x** | You must stretch too far to reach the walls. Lower it. The cat is too twitchy. Raise it. | 0.7–0.8 (less arm travel), 1.2 (calmer) |
-| **Input: Toggle Left-Handed Cue** | You play with the right paw as the ball. This is also in Settings > Left-handed cue. | — |
 | **Cheat: Practice Mode** / **Debug: Show Control Readout** | Turn the demo helpers off or on. | — |
 
 All four scales range from 0.25 to 3, in steps of 0.05, and 1 is the default. Leave **Flow: Auto Aim Bot** and
@@ -175,18 +182,22 @@ All four scales range from 0.25 to 3, in steps of 0.05, and 1 is the default. Le
 
 Please note the Debug Settings scales you used. A photo of the readout at the moment something felt wrong helps a lot.
 
-- **Strike sensitivity.** Too sensitive: it fires when you didn't mean it to, for example while moving the left paw
+- **Strike sensitivity.** Too sensitive: it fires when you didn't mean it to, for example while moving the ball paw
   or while resetting the paws. Not sensitive enough: thrusts that don't fire. Which log line appeared (`too slow` with
   its speed, `paws too far` with its distance, `cooldown`, `open paws`)? How hard do you have to thrust, and is a
   power shot reachable?
 - **Aim jitter.** Does the aim guide shake while you hold still? Does the aim jump when you thrust? Does it lag
-  behind the right paw?
-- **Launch range.** Can you reach both walls comfortably? Where does the cat sit when your left paw rests in front
+  behind the cue paw?
+- **Launch range.** Can you reach both walls comfortably? Where does the cat sit when your ball paw rests in front
   of your chest?
 - **Latency.** How long from the thrust to the ball launch? How long before the cat and the aim follow your paws?
 - **Tracking.** How often did `NO TRACKING: PAWS` appear, and at what distance and lighting? Which pose lost it?
 - **The pose itself.** Is the left-paw-ball, right-paw-cue pose comfortable over a few minutes? What would feel more
   natural?
+- **Upper / lower paw (fifth playtest).** Does the ball stay with the hand you expect? Did the roles ever swap
+  when you did not want them to, for example right after a strike?
+- **Dance and energy (fifth playtest).** Is 12 energy for a full bar too stingy or too generous? Do you notice
+  **No energy!**, and does saving energy for a boss feel worth it?
 - **Volleys and POWER (fourth playtest).** Does a volley feel strong, and does a new ball feel like it matters? How
   often do you reach `MAX!!!`? Are the COMBO floats readable with a full bag? Is 3 HP too few, and which attacks hit you?
 - **Paw pick (v2).** Can you put both paws on the ball you want? Is 0.8 s of holding too long or too short? Did a

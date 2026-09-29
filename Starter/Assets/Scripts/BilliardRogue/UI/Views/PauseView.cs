@@ -54,7 +54,8 @@ namespace Nex.BilliardRogue
 
         void HandleResume()
         {
-            if (!IsActive || leaving) return;
+            if (!IsActive) return;
+            if (leaving) return;
             TrackButton("resume");
             Resume();
         }
@@ -70,7 +71,8 @@ namespace Nex.BilliardRogue
 
         void HandleSettings()
         {
-            if (!IsActive || leaving) return;
+            if (!IsActive) return;
+            if (leaving) return;
             TrackButton("settings");
             var settings = Instantiate(settingsViewPrefab);
             settings.SettingChanged += RelaySettingChanged;
@@ -79,7 +81,8 @@ namespace Nex.BilliardRogue
 
         void HandleSaveQuit()
         {
-            if (!IsActive || leaving) return;
+            if (!IsActive) return;
+            if (leaving) return;
             leaving = true;
             TrackButton("save_quit");
             Manager.AnnouncePauseViewHomeClicked();

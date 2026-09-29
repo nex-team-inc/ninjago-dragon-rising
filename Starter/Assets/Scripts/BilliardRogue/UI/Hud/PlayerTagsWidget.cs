@@ -35,7 +35,11 @@ namespace Nex.BilliardRogue
 
         public void Set(int playerIndex, int numPlayers)
         {
-            if (playerIndex == active && numPlayers == players) return;
+            if (playerIndex == active && numPlayers == players)
+            {
+                return;
+            }
+
             active = playerIndex;
             players = numPlayers;
             gameObject.SetActive(numPlayers > 1);

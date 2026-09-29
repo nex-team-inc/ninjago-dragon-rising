@@ -51,7 +51,8 @@ namespace Nex.BilliardRogue
                 links[i].color = i < step ? theme.Positive : theme.Disabled;
             }
 
-            if (step < 0 || step >= pips.Length) return;
+            if (step < 0) return;
+            if (step >= pips.Length) return;
             pulse = pips[step].rectTransform.DOScale(theme.ChipPulseScale, theme.ChipPulseDuration).SetEase(Ease.InOutSine)
                 .SetLoops(-1, LoopType.Yoyo).SetUpdate(true).SetLink(gameObject);
         }

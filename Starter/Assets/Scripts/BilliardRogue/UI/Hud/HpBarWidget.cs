@@ -34,7 +34,11 @@ namespace Nex.BilliardRogue
 
         public void Set(int hp, int maxHp)
         {
-            if (hp == current && maxHp == maximum) return;
+            if (hp == current && maxHp == maximum)
+            {
+                return;
+            }
+
             var first = current < 0;
             var damaged = !first && hp < current;
             var healed = !first && hp > current;
@@ -58,9 +62,21 @@ namespace Nex.BilliardRogue
                     .SetDelay(damaged ? theme.BarTweenDuration : 0f).SetUpdate(true).SetLink(gameObject);
             }
 
-            if (damaged) PlayDamage();
-            if (healed) Flash(theme.Positive);
-            if (!damaged && !healed) numbers.Color = low ? theme.Danger : theme.TextPrimary;
+            if (damaged)
+            {
+                PlayDamage();
+            }
+
+            if (healed)
+            {
+                Flash(theme.Positive);
+            }
+
+            if (!damaged && !healed)
+            {
+                numbers.Color = low ? theme.Danger : theme.TextPrimary;
+            }
+
             UpdateHeartPulse();
         }
 

@@ -68,7 +68,11 @@ namespace Nex.BilliardRogue
         {
             var anyRun = meta.runsStarted > 0;
             runsLabel.gameObject.SetActive(anyRun);
-            if (anyRun) runsLabel.SetKey(LocKeys.Title.Runs, meta.runsStarted, meta.runsWon);
+            if (anyRun)
+            {
+                runsLabel.SetKey(LocKeys.Title.Runs, meta.runsStarted, meta.runsWon);
+            }
+
             if (meta.bestStageNumber >= SimConstants.StageCount)
             {
                 bestLabel.SetKey(LocKeys.Title.BestVictory);
@@ -93,8 +97,16 @@ namespace Nex.BilliardRogue
 
         public override bool OnControlButton(TopLevelControlPanel.ButtonKind buttonKind)
         {
-            if (!IsActive) return false;
-            if (buttonKind != TopLevelControlPanel.ButtonKind.Exit) return false;
+            if (!IsActive)
+            {
+                return false;
+            }
+
+            if (buttonKind != TopLevelControlPanel.ButtonKind.Exit)
+            {
+                return false;
+            }
+
             TrackButton("exit");
             ExitRequested?.Invoke();
             return true;

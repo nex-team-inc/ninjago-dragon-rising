@@ -41,8 +41,16 @@ namespace Nex.BilliardRogue
         void Awake()
         {
             baseScale = pulseTarget.localScale;
-            if (frame != null) normalSprite = frame.sprite;
-            if (cursor != null) cursorBase = cursor.anchoredPosition;
+            if (frame != null)
+            {
+                normalSprite = frame.sprite;
+            }
+
+            if (cursor != null)
+            {
+                cursorBase = cursor.anchoredPosition;
+            }
+
             accentBaseColors = new Color[accentGraphics.Length];
             for (var i = 0; i < accentGraphics.Length; i++)
             {
@@ -80,7 +88,8 @@ namespace Nex.BilliardRogue
             focused = value;
             ApplyStatic(value);
             StopTweens();
-            if (!value || !isActiveAndEnabled) return;
+            if (!value) return;
+            if (!isActiveAndEnabled) return;
 
             var grow = (theme.FocusScale - 1f) * scaleWeight;
             pulseTarget.localScale = baseScale * (1f + grow);
@@ -97,9 +106,21 @@ namespace Nex.BilliardRogue
 
         void ApplyStatic(bool on)
         {
-            if (frame != null && focusedSprite != null) frame.sprite = on ? focusedSprite : normalSprite;
-            if (glow != null) glow.SetActive(on);
-            if (cursor != null) cursor.gameObject.SetActive(on);
+            if (frame != null && focusedSprite != null)
+            {
+                frame.sprite = on ? focusedSprite : normalSprite;
+            }
+
+            if (glow != null)
+            {
+                glow.SetActive(on);
+            }
+
+            if (cursor != null)
+            {
+                cursor.gameObject.SetActive(on);
+            }
+
             for (var i = 0; i < accentGraphics.Length; i++)
             {
                 accentGraphics[i].color = on ? theme.Accent : accentBaseColors[i];
@@ -113,7 +134,10 @@ namespace Nex.BilliardRogue
             pulse = null;
             bob = null;
             pulseTarget.localScale = baseScale;
-            if (cursor != null) cursor.anchoredPosition = cursorBase;
+            if (cursor != null)
+            {
+                cursor.anchoredPosition = cursorBase;
+            }
         }
 
         #endregion

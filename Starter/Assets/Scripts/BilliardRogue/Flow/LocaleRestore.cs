@@ -19,7 +19,11 @@ namespace Nex.BilliardRogue
             await LocalizationSettings.InitializationOperation.ToUniTask(cancellationToken: ct);
 
             var code = preference.localeCode;
-            if (string.IsNullOrEmpty(code)) code = FromSystemLanguage(Application.systemLanguage);
+            if (string.IsNullOrEmpty(code))
+            {
+                code = FromSystemLanguage(Application.systemLanguage);
+            }
+
             if (code == null) return;
 
             var locale = LocalizationSettings.AvailableLocales.GetLocale(code);

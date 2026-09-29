@@ -119,7 +119,11 @@ namespace Nex.BilliardRogue
                 }
 
                 var state = i < nextIndex ? SlotState.Fired : i == nextIndex ? SlotState.Next : SlotState.Waiting;
-                if (state == SlotState.Next) next = i;
+                if (state == SlotState.Next)
+                {
+                    next = i;
+                }
+
                 SetState(i, state);
             }
 
@@ -134,7 +138,10 @@ namespace Nex.BilliardRogue
             if (armed == powerArmed) return;
             powerArmed = armed;
             heroFrame.color = armed ? theme.Danger : Color.white;
-            if (armed) Punch();
+            if (armed)
+            {
+                Punch();
+            }
         }
 
         #endregion
@@ -145,7 +152,11 @@ namespace Nex.BilliardRogue
         {
             var type = ball?.type;
             var level = ball?.level ?? -1;
-            if (type == heroType && level == heroShownLevel) return;
+            if (type == heroType && level == heroShownLevel)
+            {
+                return;
+            }
+
             var changed = heroType != null && type != null;
             heroType = type;
             heroShownLevel = level;
@@ -159,7 +170,10 @@ namespace Nex.BilliardRogue
             heroIcon.sprite = balls.Get(ball.type).Icon;
             heroName.SetKey(LocKeys.Ball.Name(ball.type));
             heroLevel.SetKey(LocKeys.Reward.Level, ball.level);
-            if (changed) Punch();
+            if (changed)
+            {
+                Punch();
+            }
         }
 
         void Punch()
@@ -190,7 +204,11 @@ namespace Nex.BilliardRogue
         {
             if (slot == pulsedSlot) return;
             pulse?.Kill();
-            if (pulsedSlot >= 0) frames[pulsedSlot].transform.localScale = Vector3.one;
+            if (pulsedSlot >= 0)
+            {
+                frames[pulsedSlot].transform.localScale = Vector3.one;
+            }
+
             pulsedSlot = slot;
             nextMarker.gameObject.SetActive(slot >= 0);
             if (slot < 0) return;

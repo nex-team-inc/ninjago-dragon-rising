@@ -23,7 +23,11 @@ namespace Nex.BilliardRogue
         /// <summary>Removes and returns the pending step, or null when none is stored.</summary>
         public static PendingFlowState? Take(PlayerDataManager.AppViewState state)
         {
-            if (!state.HasValidNextViewStateOrClear(View.ViewIdentifier.Calibration)) return null;
+            if (!state.HasValidNextViewStateOrClear(View.ViewIdentifier.Calibration))
+            {
+                return null;
+            }
+
             var pending = (PendingFlowState)state.NextViewState;
             state.NextViewState = null;
             return pending;

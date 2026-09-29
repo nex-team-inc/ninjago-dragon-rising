@@ -106,7 +106,11 @@ namespace Nex.BilliardRogue
 #if ENABLE_DEBUG_SETTINGS || DEVELOPMENT_BUILD || UNITY_EDITOR
         static string Report(string name, bool? accepted)
         {
-            if (accepted == null) return NotRegistered(name);
+            if (accepted == null)
+            {
+                return NotRegistered(name);
+            }
+
             return accepted.Value ? $"{name}: ok" : $"{name}: rejected";
         }
 

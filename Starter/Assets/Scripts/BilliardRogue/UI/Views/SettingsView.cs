@@ -115,8 +115,14 @@ namespace Nex.BilliardRogue
             var value = !(leftHanded ? preference.leftHandedCue : preference.screenShake);
             PlayerDataManager.Instance.ScopedPlayerPreferenceUpdate(p =>
             {
-                if (leftHanded) p.leftHandedCue = value;
-                else p.screenShake = value;
+                if (leftHanded)
+                {
+                    p.leftHandedCue = value;
+                }
+                else
+                {
+                    p.screenShake = value;
+                }
             });
             RefreshToggle(row, value);
             Changed(leftHanded ? "left_handed_cue" : "screen_shake", value ? "on" : "off");

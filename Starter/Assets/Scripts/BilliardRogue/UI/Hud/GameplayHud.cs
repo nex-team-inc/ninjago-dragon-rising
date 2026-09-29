@@ -83,13 +83,21 @@ namespace Nex.BilliardRogue
             ballQueue.Set(bag, nextIndex, extraBalls);
             if (extraBalls == bonusBalls) return;
             bonusBalls = extraBalls;
-            if (extraBalls > 0) bonusBallsChip.Label.SetKey(LocKeys.Hud.BonusBalls, extraBalls);
+            if (extraBalls > 0)
+            {
+                bonusBallsChip.Label.SetKey(LocKeys.Hud.BonusBalls, extraBalls);
+            }
+
             bonusBallsChip.SetVisible(extraBalls > 0);
         }
 
         public void SetBallsRemaining(int remaining, int total)
         {
-            if (remaining == ballsRemaining && total == ballsTotal) return;
+            if (remaining == ballsRemaining && total == ballsTotal)
+            {
+                return;
+            }
+
             ballsRemaining = remaining;
             ballsTotal = total;
             ballsCounter.SetNumbers("{0}/{1}", remaining, total);
@@ -100,7 +108,11 @@ namespace Nex.BilliardRogue
         public void SetStage(int actIndex, int stageInAct, bool isBoss)
         {
             bossStageChip.SetVisible(isBoss);
-            if (actIndex == stageAct && stageInAct == stageIndex) return;
+            if (actIndex == stageAct && stageInAct == stageIndex)
+            {
+                return;
+            }
+
             stageAct = actIndex;
             stageIndex = stageInAct;
             stageLabel.SetKey(LocKeys.Hud.Stage, actIndex + 1, stageInAct + 1);
@@ -153,7 +165,8 @@ namespace Nex.BilliardRogue
 
         public void SetTrackingWarning(int playerIndex, bool lost)
         {
-            if (playerIndex < 0 || playerIndex >= trackingWarnings.Length) return;
+            if (playerIndex < 0) return;
+            if (playerIndex >= trackingWarnings.Length) return;
             trackingWarnings[playerIndex].SetVisible(lost);
         }
 

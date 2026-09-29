@@ -46,11 +46,19 @@ namespace Nex.BilliardRogue
         {
             Kill();
             content.interactable = true;
-            if (popTarget != null) popTarget.localScale = Vector3.one * theme.PresentScaleFrom;
+            if (popTarget != null)
+            {
+                popTarget.localScale = Vector3.one * theme.PresentScaleFrom;
+            }
+
             if (!animate)
             {
                 content.alpha = 1f;
-                if (popTarget != null) popTarget.localScale = Vector3.one;
+                if (popTarget != null)
+                {
+                    popTarget.localScale = Vector3.one;
+                }
+
                 return;
             }
 
@@ -72,14 +80,21 @@ namespace Nex.BilliardRogue
 
         public override async UniTask EnterBackground(ViewIdentifier childViewIdentifier, bool animate = true)
         {
-            if (hideWhenCovered) await FadeContent(0f, animate);
+            if (hideWhenCovered)
+            {
+                await FadeContent(0f, animate);
+            }
+
             await base.EnterBackground(childViewIdentifier, animate);
         }
 
         public override async UniTask EnterForeground(ViewIdentifier childViewIdentifier, bool animate = true)
         {
             await base.EnterForeground(childViewIdentifier, animate);
-            if (hideWhenCovered && !KeepHidden) await FadeContent(1f, animate);
+            if (hideWhenCovered && !KeepHidden)
+            {
+                await FadeContent(1f, animate);
+            }
         }
 
         /// <summary>
@@ -133,7 +148,11 @@ namespace Nex.BilliardRogue
         {
             var sequence = DOTween.Sequence().SetUpdate(true).SetLink(gameObject);
             sequence.Join(content.DOFade(alpha, duration).SetEase(fadeEase));
-            if (popTarget != null) sequence.Join(popTarget.DOScale(scale, duration).SetEase(scaleEase));
+            if (popTarget != null)
+            {
+                sequence.Join(popTarget.DOScale(scale, duration).SetEase(scaleEase));
+            }
+
             return sequence;
         }
 

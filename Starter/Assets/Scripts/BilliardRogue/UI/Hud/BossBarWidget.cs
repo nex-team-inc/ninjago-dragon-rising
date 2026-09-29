@@ -46,7 +46,11 @@ namespace Nex.BilliardRogue
                 current = -1;
             }
 
-            if (hp == current && maxHp == maximum) return;
+            if (hp == current && maxHp == maximum)
+            {
+                return;
+            }
+
             var hit = current >= 0 && hp < current;
             var first = current < 0;
             current = hp;
@@ -77,7 +81,11 @@ namespace Nex.BilliardRogue
             if (visible == show) return;
             visible = show;
             fadeTween?.Kill();
-            if (show) gameObject.SetActive(true);
+            if (show)
+            {
+                gameObject.SetActive(true);
+            }
+
             fadeTween = group.DOFade(show ? 1f : 0f, theme.PresentDuration).SetUpdate(true).SetLink(gameObject)
                 .OnComplete(show ? null : Hide);
         }

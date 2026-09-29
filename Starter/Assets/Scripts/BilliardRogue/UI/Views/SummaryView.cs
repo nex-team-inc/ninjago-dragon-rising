@@ -120,7 +120,8 @@ namespace Nex.BilliardRogue
                 {
                     var definition = balls.Get((BallType)type);
                     var tier = definition.Rules.unlockTier;
-                    if (tier <= tierBefore || tier > tierAfter) continue;
+                    if (tier <= tierBefore) continue;
+                    if (tier > tierAfter) continue;
                     unlockIcons[shown].sprite = definition.Icon;
                     unlockNames[shown].SetKey(LocKeys.Ball.Name((BallType)type));
                     shown++;

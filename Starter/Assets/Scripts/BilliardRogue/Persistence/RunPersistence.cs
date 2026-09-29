@@ -13,17 +13,20 @@ namespace Nex.BilliardRogue
     public sealed class RunPersistence
     {
         readonly IRunStore store;
+        readonly GameRules? rules;
 
         /// <summary>Raised after every run save (BeginRun, SaveTurnBoundary).</summary>
         public event Action<RunState>? Saved;
 
-        public RunPersistence(PlayerDataManager playerData) : this(new PlayerDataRunStore(playerData))
+        public RunPersistence(PlayerDataManager playerData, GameRules? aRules = null) : this(new PlayerDataRunStore(playerData), aRules)
         {
         }
 
-        public RunPersistence(IRunStore aStore)
+        /// <summary>With rules, Load fits a run saved under older HP rules to them (RunFactory.FitHpToRules).</summary>
+        public RunPersistence(IRunStore aStore, GameRules? aRules = null)
         {
             store = aStore;
+            rules = aRules;
         }
 
         #region Run
@@ -44,6 +47,7 @@ namespace Nex.BilliardRogue
                 return null;
             }
 
+            if (rules != null) RunFactory.FitHpToRules(rules, run);
             return run;
         }
 

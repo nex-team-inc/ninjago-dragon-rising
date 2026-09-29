@@ -82,8 +82,8 @@ namespace Nex.BilliardRogue
 
         public async UniTask StartMainAsync()
         {
-            persistence = new RunPersistence(PlayerDataManager.Instance);
             rules = RulesFactory.Build(config);
+            persistence = new RunPersistence(PlayerDataManager.Instance, rules);
             cameraSession.Initialize(detectionManagerPrefab, detectionEnginePrefab, detectionRoot);
             // The world display sits behind every view, so the rig and the Title look exist before the first push.
             worldCameraRig.Initialize(rootCamera);

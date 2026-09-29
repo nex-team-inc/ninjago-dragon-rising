@@ -193,5 +193,32 @@ namespace Nex.BilliardRogue.Simulation.Tests
             Assert.AreEqual(1, back.pendingRewards.Count);
             Assert.AreEqual(2, back.numPlayers);
         }
+
+        [Test]
+        public void ARunSavedWithAnOlderMaxHpContinuesWithTheCurrentMaxAndTheSameShare()
+        {
+            rules.balance.playerMaxHp = 3;
+            var run = SimTest.NewRun(rules);
+            run.playerMaxHp = 40;
+            run.playerHp = 40;
+            Assert.IsTrue(RunFactory.FitHpToRules(rules, run));
+            Assert.AreEqual(3, run.playerMaxHp);
+            Assert.AreEqual(3, run.playerHp);
+
+            run.playerMaxHp = 40;
+            run.playerHp = 20;
+            RunFactory.FitHpToRules(rules, run);
+            Assert.AreEqual(2, run.playerHp, "half of 40 → 1.5 of 3, rounded");
+
+            run.playerMaxHp = 40;
+            run.playerHp = 1;
+            RunFactory.FitHpToRules(rules, run);
+            Assert.AreEqual(1, run.playerHp, "a live run keeps at least 1 HP");
+
+            run.playerHp = 2;
+            Assert.IsFalse(RunFactory.FitHpToRules(rules, run), "a run saved under the current rules is untouched");
+            Assert.AreEqual(2, run.playerHp);
+            Assert.AreEqual(3, run.playerMaxHp);
+        }
     }
 }

@@ -40,6 +40,20 @@ namespace Nex.BilliardRogue.Simulation
         }
 
         /// <summary>
+        /// A run saved under a larger BalanceRules.playerMaxHp (GDD v2 §10 cut it to 3) continues with the current
+        /// maximum, its HP keeping its share of it (at least 1). Returns true when the run changed.
+        /// </summary>
+        public static bool FitHpToRules(GameRules rules, RunState run)
+        {
+            var max = Math.Max(1, rules.balance.playerMaxHp);
+            if (run.playerMaxHp <= max) return false;
+            var share = (float)run.playerHp / run.playerMaxHp;
+            run.playerMaxHp = max;
+            run.playerHp = Mathf.Clamp(Mathf.RoundToInt(share * max), 1, max);
+            return true;
+        }
+
+        /// <summary>
         /// Generates run.stage for the current act/stage (StageGenerator), clears the board, copies the plan's field
         /// objects (same ids; crates without hp get balance.crateHp; board.nextId = max id + 1), resets
         /// turnInStage/nextWaveIndex/nextBatchIndex/extraBalls and spawns the stage's first turn (GDD v2 §5): a boss stage

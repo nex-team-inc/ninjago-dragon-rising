@@ -14,7 +14,8 @@ namespace Nex.BilliardRogue.Editor
     /// ribbons at the top centre; the centre band (x 480..1440) stays free for the arena.
     /// Left: camera panel (header + P1/P2 chips + the 384x216 screen the PiP feed overlay covers) → stage/turn → HP →
     /// tracking warnings. Right (vertical layout, so the boss bar collapses on normal stages): boss bar → ball queue
-    /// (sized to the turn's shots) → chips.
+    /// (sized to the turn's shots) → chips. Hype meter at the bottom of the left column, MOVE! prompt above the arena
+    /// bottom (UiHypeBuilder).
     /// </summary>
     public static class UiHudBuilder
     {
@@ -66,6 +67,7 @@ namespace Nex.BilliardRogue.Editor
                 Chip(kit, warnings.transform, "WarningP2", LocKeys.Hud.TrackingWarningPlayer, theme.Danger, new Vector2(ColumnWidth, 64f), true),
             };
             UiFields.SetArray(hud, "trackingWarnings", warningChips);
+            UiHypeBuilder.BuildMeter(kit, left.transform, hud, 1080f - 2f * Margin);
 
             var right = kit.Ui("RightColumn", root.transform);
             Kit.Place(right, Kit.TopRight, new Vector2(-Margin, -Margin), new Vector2(ColumnWidth, 1080f - 2f * Margin));
@@ -82,6 +84,7 @@ namespace Nex.BilliardRogue.Editor
             UiFields.Set(hud, "powerChip", Chip(kit, chips.transform, "PowerReady", LocKeys.Hud.PowerArmed, theme.Danger, new Vector2(ColumnWidth, 64f), true));
             UiFields.Set(hud, "fastForwardChip", Chip(kit, chips.transform, "FastForward", LocKeys.Hud.FastForward, theme.TextPrimary, new Vector2(ColumnWidth, 64f), true));
 
+            UiHypeBuilder.BuildMovePrompt(kit, root.transform, hud);
             UiFields.Set(hud, "turnBanner", Ribbon(kit, root.transform, "TurnBanner", LocKeys.Hud.TurnBanner, new Vector2(0f, -40f), 704f));
             UiFields.Set(hud, "shooterBanner", Ribbon(kit, root.transform, "ShooterBanner", LocKeys.Hud.ShooterBanner, new Vector2(0f, -152f), 576f));
             return UiViewsBuilder.SaveRoot(root, path);
@@ -289,7 +292,7 @@ namespace Nex.BilliardRogue.Editor
 
         #region Pieces
 
-        static (Image Fill, Image Ghost) Bar(Kit kit, Transform parent, Sprite? fillSprite, Vector2 pos, float width)
+        internal static (Image Fill, Image Ghost) Bar(Kit kit, Transform parent, Sprite? fillSprite, Vector2 pos, float width)
         {
             var background = kit.Image(parent, "Bar", kit.Theme.BarBackground, Kit.TopLeft, pos, new Vector2(width, 42f), Fill.Sliced);
             var ghost = kit.StretchImage(background.transform, "Ghost", fillSprite, 9f, Fill.Horizontal, new Color(1f, 1f, 1f, 0.4f));
@@ -330,7 +333,7 @@ namespace Nex.BilliardRogue.Editor
         /// Own canvas for a subtree that changes at runtime (bar tweens, counters, chips, banners), so its rebuilds
         /// leave the static HUD frames alone. Same shader channels as the root: TMP needs them on every canvas.
         /// </summary>
-        static void IsolateCanvas(GameObject go)
+        internal static void IsolateCanvas(GameObject go)
         {
             go.AddComponent<Canvas>().additionalShaderChannels = (AdditionalCanvasShaderChannels)27;
         }

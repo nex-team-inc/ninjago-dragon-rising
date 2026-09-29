@@ -36,6 +36,10 @@ namespace Nex.BilliardRogue
         [SerializeField] HudChip powerChip = null!;
         [SerializeField] HudChip fastForwardChip = null!;
 
+        [Header("Hype (GDD v2 §3)")]
+        [SerializeField] HypeMeterWidget hypeMeter = null!;
+        [SerializeField] MovePromptWidget movePrompt = null!;
+
         [Header("Ribbons")]
         [SerializeField] HudBanner turnBanner = null!;
         [SerializeField] HudBanner shooterBanner = null!;
@@ -121,6 +125,7 @@ namespace Nex.BilliardRogue
         public void SetActivePlayer(int playerIndex, int numPlayers)
         {
             playerTags.Set(playerIndex, numPlayers);
+            movePrompt.SetPlayer(playerIndex);
         }
 
         public void SetBossHp(bool visible, int hp, int maxHp, EnemyType type)
@@ -133,14 +138,16 @@ namespace Nex.BilliardRogue
             fastForwardChip.SetVisible(on);
         }
 
-        // Implemented by the UI module (GDD v2 §3).
+        /// <summary>Hype meter: hype01 in 0..1, tier 0..3 (a higher tier plays its stinger). Cheap to call every frame.</summary>
         public void SetHype(float hype01, int tier)
         {
+            hypeMeter.Set(hype01, tier);
         }
 
-        // Implemented by the UI module (GDD v2 §3).
+        /// <summary>"MOVE!" prompt with the dancing cat near the arena bottom. Cheap to call every frame.</summary>
         public void ShowMovePrompt(bool visible)
         {
+            movePrompt.SetVisible(visible);
         }
 
         public void SetPowerArmed(bool armed)

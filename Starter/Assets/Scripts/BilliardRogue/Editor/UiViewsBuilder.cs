@@ -42,6 +42,12 @@ namespace Nex.BilliardRogue.Editor
             ("rewardHeal", SpritesIcons + "Reward_Heal.png"), ("rewardMaxHp", SpritesIcons + "Reward_MaxHp.png"),
             ("cameraGlyph", SpritesUi + "Icon_Camera.png"), ("paw", SpritesUi + "Icon_Paw.png"), ("cue", SpritesUi + "Icon_Cue.png"),
             ("strike", SpritesUi + "Icon_Strike.png"),
+            // Reward motion pick + Hype meter (Tools/Textures/make_arms.py).
+            ("armP1", SpritesUi + "Arm_P1.png"), ("armP2", SpritesUi + "Arm_P2.png"),
+            ("pawOpenP1", SpritesUi + "Paw_P1_Open.png"), ("pawGrabP1", SpritesUi + "Paw_P1_Grab.png"),
+            ("pawOpenP2", SpritesUi + "Paw_P2_Open.png"), ("pawGrabP2", SpritesUi + "Paw_P2_Grab.png"),
+            ("ringHold", SpritesUi + "Ring_Hold.png"), ("glowDisc", SpritesUi + "Glow_Disc.png"),
+            ("shadowBall", SpritesUi + "Shadow_Ball.png"), ("hypeFill", SpritesUi + "Bar_Fill_Hype.png"),
         };
 
         [MenuItem("Nex/Billiard Rogue/UI Views", priority = 60)]
@@ -50,7 +56,12 @@ namespace Nex.BilliardRogue.Editor
             Debug.Log(Run());
         }
 
-        public static string Run()
+        public static string Run() => Build(true);
+
+        /// <summary>Rebuilds only RewardView and GameplayHud (the v2 motion UI); the other prefabs stay untouched.</summary>
+        public static string RunRewardAndHud() => Build(false);
+
+        static string Build(bool all)
         {
             var theme = EnsureTheme(out var themeWarnings);
             var kit = new UiPrefabKit(theme);
@@ -59,15 +70,23 @@ namespace Nex.BilliardRogue.Editor
             BuilderAssets.EnsureFolder(UiFolder);
 
             var built = new List<string>();
-            var settings = UiMenuViewsBuilder.BuildSettings(kit, ViewPath("SettingsView"));
-            built.Add(UiMenuViewsBuilder.BuildTitle(kit, ViewPath("TitleView")));
-            built.Add(UiMenuViewsBuilder.BuildPlayerMode(kit, ViewPath("PlayerModeView")));
-            built.Add(ViewPath("SettingsView"));
-            built.Add(UiMenuViewsBuilder.BuildPause(kit, ViewPath("PauseView"), settings));
-            built.Add(UiOverlayViewsBuilder.BuildStageIntro(kit, ViewPath("StageIntroView")));
+            if (all)
+            {
+                var settings = UiMenuViewsBuilder.BuildSettings(kit, ViewPath("SettingsView"));
+                built.Add(UiMenuViewsBuilder.BuildTitle(kit, ViewPath("TitleView")));
+                built.Add(UiMenuViewsBuilder.BuildPlayerMode(kit, ViewPath("PlayerModeView")));
+                built.Add(ViewPath("SettingsView"));
+                built.Add(UiMenuViewsBuilder.BuildPause(kit, ViewPath("PauseView"), settings));
+                built.Add(UiOverlayViewsBuilder.BuildStageIntro(kit, ViewPath("StageIntroView")));
+            }
+
             built.Add(UiOverlayViewsBuilder.BuildReward(kit, ViewPath("RewardView")));
-            built.Add(UiOverlayViewsBuilder.BuildTrackingLost(kit, ViewPath("TrackingLostView")));
-            built.Add(UiOverlayViewsBuilder.BuildSummary(kit, ViewPath("SummaryView")));
+            if (all)
+            {
+                built.Add(UiOverlayViewsBuilder.BuildTrackingLost(kit, ViewPath("TrackingLostView")));
+                built.Add(UiOverlayViewsBuilder.BuildSummary(kit, ViewPath("SummaryView")));
+            }
+
             built.Add(UiHudBuilder.Build(kit, HudPath));
             AssetDatabase.SaveAssets();
 

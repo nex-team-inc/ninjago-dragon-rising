@@ -47,7 +47,11 @@ namespace Nex.BilliardRogue
             context.environment.ApplyAct(context.config.Acts[run.actIndex]);
             await UniTask.WaitWhile(overlaysBlocked, cancellationToken: ct);
             var view = Instantiate(rewardViewPrefab);
-            view.Initialize(context.config.Pacing);
+            view.Initialize(context.config.Pacing, context.display.WorldCamera);
+            // Motion pick (GDD v2 §4): in 2P the chooser alternates per reward (by stage); its paws drive the cat arms.
+            var chooser = run.numPlayers > 1 ? run.stageNumber % run.numPlayers : 0;
+            var router = chooser < context.inputs.Length ? context.inputs[chooser] as ShotInputRouter : null;
+            view.SetPawPointer(router != null ? router.PawPointer : null, chooser, run.numPlayers);
             activeReward = view;
             try
             {

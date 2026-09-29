@@ -10,7 +10,7 @@ using Kit = Nex.BilliardRogue.Editor.UiPrefabKit;
 
 namespace Nex.BilliardRogue.Editor
 {
-    /// <summary>Overlay/result view prefabs: StageIntro, Reward, TrackingLost, Summary (1920x1080 reference units).</summary>
+    /// <summary>Overlay/result view prefabs: StageIntro, Reward (UiRewardViewBuilder), TrackingLost, Summary (1920x1080 reference units).</summary>
     public static class UiOverlayViewsBuilder
     {
         #region Stage intro
@@ -78,96 +78,8 @@ namespace Nex.BilliardRogue.Editor
 
         #region Reward
 
-        public static string BuildReward(Kit kit, string path)
-        {
-            var theme = kit.Theme;
-            var root = UiViewsBuilder.OpenRoot(kit, path, "RewardView");
-            var view = UiViewsBuilder.ViewRoot<RewardView>(kit, root, out var content);
-            var c = content.transform;
-            kit.DimLayers(c);
-            UiMenuViewsBuilder.Banner(kit, c, "Header", LocKeys.Reward.Header, new Vector2(0f, -64f), 832f);
-            var cardsGo = kit.Ui("Cards", c);
-            Kit.Place(cardsGo, Kit.Center, new Vector2(0f, -24f), new Vector2(1424f, 720f));
-            var layout = cardsGo.AddComponent<HorizontalLayoutGroup>();
-            layout.spacing = 64f;
-            layout.childAlignment = TextAnchor.MiddleCenter;
-            layout.childControlWidth = layout.childControlHeight = false;
-            layout.childForceExpandWidth = layout.childForceExpandHeight = false;
-            var group = kit.Group(cardsGo, false, 1);
-            var cards = new List<Object>();
-            for (var i = 0; i < 3; i++)
-            {
-                cards.Add(RewardCard(kit, cardsGo.transform, i));
-            }
-
-            kit.Image(c, "ArrowLeft", theme.ArrowLeft, Kit.Center, new Vector2(-800f, -24f), new Vector2(96f, 96f));
-            kit.Image(c, "ArrowRight", theme.ArrowRight, Kit.Center, new Vector2(800f, -24f), new Vector2(96f, 96f));
-            kit.Label(c, "Hint", LocKeys.Reward.ChooseHint, 32, theme.TextMuted, Kit.Bottom, new Vector2(0f, 40f), new Vector2(1200f, 48f));
-
-            UiFields.SetArray(view, "cards", cards);
-            UiFields.Set(view, "cardsGroup", group);
-            UiFields.Set(view, "keyResponder", group);
-            UiFields.Set(view, "popTarget", cardsGo.transform);
-            return UiViewsBuilder.SaveRoot(root, path);
-        }
-
-        static RewardCard RewardCard(Kit kit, Transform parent, int index)
-        {
-            var theme = kit.Theme;
-            var size = new Vector2(432f, 720f);
-            var go = kit.Ui($"Card{index}", parent);
-            Kit.Place(go, Kit.Center, Vector2.zero, size);
-            var bodyGo = kit.Ui("Body", go.transform);
-            Kit.Stretch(bodyGo);
-            var bodyGroup = bodyGo.AddComponent<CanvasGroup>();
-            var body = bodyGo.transform;
-            var glow = kit.StretchImage(body, "Glow", theme.ButtonFocused, -18f, Fill.Sliced);
-            glow.gameObject.SetActive(false);
-            var frame = kit.StretchImage(body, "Frame", theme.Card, 0f, Fill.Tiled);
-            frame.raycastTarget = true;
-            var f = frame.transform;
-
-            var kindChip = kit.Image(f, "KindChip", theme.Chip, Kit.Top, new Vector2(0f, -48f), new Vector2(288f, 48f), Fill.Sliced);
-            var kind = kit.Label(kindChip.transform, "Label", LocKeys.Reward.KindNewBall, 32, theme.TextPrimary, Kit.Center, new Vector2(0f, 2f), new Vector2(272f, 48f));
-            var slot = kit.Image(f, "IconSlot", theme.Slot, Kit.Center, new Vector2(0f, 150f), new Vector2(216f, 216f), Fill.Sliced);
-            var icon = kit.Image(slot.transform, "Icon", theme.Ball, Kit.Center, Vector2.zero, new Vector2(192f, 192f));
-            var name = kit.Label(f, "Name", LocKeys.Ball.Names[0], 48, theme.TextDark, Kit.Center, new Vector2(0f, 8f), new Vector2(400f, 64f), shadow: false);
-            var level = kit.Label(f, "Level", LocKeys.Reward.Level, 32, theme.TextDark, Kit.Center, new Vector2(0f, -40f), new Vector2(400f, 48f), shadow: false);
-            var starsRow = kit.Ui("Stars", f);
-            Kit.Place(starsRow, Kit.Center, new Vector2(0f, -88f), new Vector2(192f, 48f));
-            var stars = new List<Object>();
-            for (var i = 0; i < SimConstants.MaxBallLevel; i++)
-            {
-                stars.Add(kit.Label(starsRow.transform, $"Star{i}", null, 48, i == 0 ? theme.Accent : theme.Disabled, Kit.Center,
-                    new Vector2(-56f + 56f * i, 0f), new Vector2(48f, 48f), numbersPreview: "★"));
-            }
-
-            var description = kit.Label(f, "Description", LocKeys.Ball.Description(BallType.Basic, 1), 32, theme.TextDark, Kit.Center,
-                new Vector2(0f, -196f), new Vector2(368f, 144f), TextAlignmentOptions.Top, wrap: true, shadow: false);
-            var rarityChip = kit.Image(f, "RarityChip", theme.Chip, Kit.Bottom, new Vector2(0f, 48f), new Vector2(224f, 48f), Fill.Sliced);
-            var rarity = kit.Label(rarityChip.transform, "Label", LocKeys.Reward.RarityCommon, 32, theme.RarityColor(BallRarity.Common),
-                Kit.Center, new Vector2(0f, 2f), new Vector2(208f, 48f));
-
-            var button = kit.PlainButton(go, frame);
-            var cursor = kit.Cursor(body, size.x + 24f);
-            var highlight = kit.Highlight(go, go.transform, null, null, glow.gameObject, cursor);
-            var responder = kit.Responder(go, button, highlight);
-            var card = go.AddComponent<RewardCard>();
-            UiFields.Set(card, "button", button);
-            UiFields.Set(card, "responder", responder);
-            UiFields.Set(card, "body", body);
-            UiFields.Set(card, "bodyGroup", bodyGroup);
-            UiFields.Set(card, "kindLabel", kind);
-            UiFields.Set(card, "icon", icon);
-            UiFields.Set(card, "nameLabel", name);
-            UiFields.Set(card, "levelLabel", level);
-            UiFields.SetArray(card, "stars", stars);
-            UiFields.Set(card, "starsRow", starsRow);
-            UiFields.Set(card, "descriptionLabel", description);
-            UiFields.Set(card, "rarityChip", rarityChip.gameObject);
-            UiFields.Set(card, "rarityLabel", rarity);
-            return card;
-        }
+        /// <summary>Motion reward pick (GDD v2 §4), built by UiRewardViewBuilder.</summary>
+        public static string BuildReward(Kit kit, string path) => UiRewardViewBuilder.Build(kit, path);
 
         #endregion
 

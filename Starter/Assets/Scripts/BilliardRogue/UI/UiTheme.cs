@@ -89,6 +89,18 @@ namespace Nex.BilliardRogue
         [SerializeField] Sprite? paw;
         [SerializeField] Sprite? cue;
         [SerializeField] Sprite? strike;
+        [Tooltip("Reward motion pick (make_arms.py): fur sleeve segments and paw frames per player, hold ring, glow, shadow.")]
+        [SerializeField] Sprite? armP1;
+        [SerializeField] Sprite? armP2;
+        [SerializeField] Sprite? pawOpenP1;
+        [SerializeField] Sprite? pawGrabP1;
+        [SerializeField] Sprite? pawOpenP2;
+        [SerializeField] Sprite? pawGrabP2;
+        [SerializeField] Sprite? ringHold;
+        [SerializeField] Sprite? glowDisc;
+        [SerializeField] Sprite? shadowBall;
+        [Tooltip("Grey bar fill of the HUD Hype meter (tinted per tier).")]
+        [SerializeField] Sprite? hypeFill;
 
         [Header("View motion (unscaled seconds)")]
         [SerializeField, Range(0.05f, 1f)] float presentDuration = 0.26f;
@@ -124,6 +136,43 @@ namespace Nex.BilliardRogue
         [SerializeField, Range(0.05f, 1f)] float rewardRevealDuration = 0.32f;
         [Tooltip("Extra scale of the picked reward card.")]
         [SerializeField, Range(0f, 0.5f)] float rewardPickPunch = 0.14f;
+
+        [Header("Reward motion pick (GDD v2 §4, unscaled seconds)")]
+        [Tooltip("Both paws on one ball for this long picks it.")]
+        [SerializeField, Range(0.2f, 3f)] float rewardHoldSeconds = 0.8f;
+        [Tooltip("Drain speed of the hold fill relative to its fill speed once a paw leaves.")]
+        [SerializeField, Range(0.5f, 6f)] float rewardHoldDrain = 2f;
+        [Tooltip("Paw hit radius as a share of the ball visual radius (generous = easier on TV).")]
+        [SerializeField, Range(0.8f, 2f)] float rewardPawHitScale = 1.25f;
+        [Tooltip("Paw follow sharpness (1/s, exponential smoothing of the tracked hand).")]
+        [SerializeField, Range(2f, 40f)] float rewardPawSharpness = 16f;
+        [SerializeField, Range(1f, 1.5f)] float rewardHoverScale = 1.18f;
+        [SerializeField, Range(0f, 40f)] float rewardBobDistance = 12f;
+        [SerializeField, Range(0.3f, 4f)] float rewardBobPeriod = 1.7f;
+        [Tooltip("Arms rise from below the screen edge after the balls appear.")]
+        [SerializeField, Range(0.05f, 1.5f)] float rewardArmRiseDuration = 0.4f;
+        [Tooltip("Paws travel to the picked ball and close.")]
+        [SerializeField, Range(0.05f, 1f)] float rewardGrabDuration = 0.16f;
+        [SerializeField] SfxManager.SoundEffect rewardHoverSfx = SfxManager.SoundEffect.UiMove;
+        [SerializeField] VfxManager.VisualEffect rewardPickVfx = VfxManager.VisualEffect.LevelUpBurst;
+
+        [Header("Hype meter + MOVE prompt (GDD v2 §3)")]
+        [Tooltip("Meter fill colour per tier 0..3.")]
+        [SerializeField] Color[] hypeTierColors =
+        {
+            new(0.45f, 0.62f, 1f, 1f), new(1f, 0.784f, 0.267f, 1f), new(1f, 0.55f, 0.2f, 1f), new(1f, 0.33f, 0.45f, 1f),
+        };
+        [Tooltip("Stinger when a tier is reached (index = tier - 1).")]
+        [SerializeField] SfxManager.SoundEffect[] hypeTierSfx =
+        {
+            SfxManager.SoundEffect.PickupPower, SfxManager.SoundEffect.PowerShot, SfxManager.SoundEffect.LevelUp,
+        };
+        [Tooltip("Alpha of the meter while Hype is 0 (no ball in flight).")]
+        [SerializeField, Range(0f, 1f)] float hypeIdleAlpha = 0.55f;
+        [SerializeField, Range(0f, 1f)] float hypeTierPunch = 0.3f;
+        [Tooltip("Seconds per dance step of the MOVE prompt cat (sway + paw wave).")]
+        [SerializeField, Range(0.1f, 1f)] float moveDanceBeat = 0.32f;
+        [SerializeField, Range(0f, 45f)] float moveDanceAngle = 14f;
 
         [Header("Sounds")]
         [SerializeField] SfxManager.SoundEffect moveSfx = SfxManager.SoundEffect.UiMove;
@@ -190,6 +239,10 @@ namespace Nex.BilliardRogue
         public Sprite? Paw => paw;
         public Sprite? Cue => cue;
         public Sprite? Strike => strike;
+        public Sprite? RingHold => ringHold;
+        public Sprite? GlowDisc => glowDisc;
+        public Sprite? ShadowBall => shadowBall;
+        public Sprite? HypeFill => hypeFill;
 
         public float PresentDuration => presentDuration;
         public float DismissDuration => dismissDuration;
@@ -212,6 +265,21 @@ namespace Nex.BilliardRogue
         public float SummaryCountUpDuration => summaryCountUpDuration;
         public float RewardRevealDuration => rewardRevealDuration;
         public float RewardPickPunch => rewardPickPunch;
+        public float RewardHoldSeconds => rewardHoldSeconds;
+        public float RewardHoldDrain => rewardHoldDrain;
+        public float RewardPawHitScale => rewardPawHitScale;
+        public float RewardPawSharpness => rewardPawSharpness;
+        public float RewardHoverScale => rewardHoverScale;
+        public float RewardBobDistance => rewardBobDistance;
+        public float RewardBobPeriod => rewardBobPeriod;
+        public float RewardArmRiseDuration => rewardArmRiseDuration;
+        public float RewardGrabDuration => rewardGrabDuration;
+        public SfxManager.SoundEffect RewardHoverSfx => rewardHoverSfx;
+        public VfxManager.VisualEffect RewardPickVfx => rewardPickVfx;
+        public float HypeIdleAlpha => hypeIdleAlpha;
+        public float HypeTierPunch => hypeTierPunch;
+        public float MoveDanceBeat => moveDanceBeat;
+        public float MoveDanceAngle => moveDanceAngle;
 
         public SfxManager.SoundEffect MoveSfx => moveSfx;
         public SfxManager.SoundEffect SelectSfx => selectSfx;
@@ -240,6 +308,17 @@ namespace Nex.BilliardRogue
         };
 
         public Sprite? Portrait(int playerIndex) => playerIndex == 0 ? portraitP1 : portraitP2;
+
+        /// <summary>Fur sleeve segment of the player's cat arm (P1 orange, P2 charcoal).</summary>
+        public Sprite? Arm(int playerIndex) => playerIndex == 0 ? armP1 : armP2;
+
+        public Sprite? PawOpen(int playerIndex) => playerIndex == 0 ? pawOpenP1 : pawOpenP2;
+        public Sprite? PawGrab(int playerIndex) => playerIndex == 0 ? pawGrabP1 : pawGrabP2;
+
+        public Color HypeTierColor(int tier) => hypeTierColors[Mathf.Clamp(tier, 0, hypeTierColors.Length - 1)];
+
+        public SfxManager.SoundEffect HypeTierSfx(int tier) =>
+            tier >= 1 && tier <= hypeTierSfx.Length ? hypeTierSfx[tier - 1] : SfxManager.SoundEffect.None;
 
         public static void PlaySfx(SfxManager.SoundEffect effect)
         {

@@ -62,9 +62,9 @@ namespace Nex.BilliardRogue
             if (enabled) presenter.SetAim(shooterIndex, launchX01, direction, predictedCount, predictedPoints, visible);
         }
 
-        public void SetActiveShooter(int playerIndex, int numPlayers)
+        public void SetPlayers(int numPlayers)
         {
-            if (enabled) presenter.SetActiveShooter(playerIndex, numPlayers);
+            if (enabled) presenter.SetPlayers(numPlayers);
         }
 
         /// <summary>Hype 0..1 for the presenter's juice scaling (GDD v2 §3).</summary>

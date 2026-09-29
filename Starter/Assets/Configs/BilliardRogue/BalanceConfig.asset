@@ -13,18 +13,20 @@ MonoBehaviour:
   m_Name: BalanceConfig
   m_EditorClassIdentifier: Assembly-CSharp::Nex.BilliardRogue.BalanceConfig
   rules:
-    playerMaxHp: 40
+    playerMaxHp: 3
+    damagePerAttack: 1
     shotsPerTurn: 3
     bagCap: 12
     startingBag: 00000000000000000000000000000000
     levelCap: 3
     hpScalePerStage: 0.08
+    coopEnemyHpScale: 2
     attackBonusPerAct: 1
     healRewardAmount: 12
     maxHpRewardAmount: 5
     bossHealFraction: 0.5
-    stageClearHeal: 6
-    pickupHealAmount: 4
+    stageClearHeal: 1
+    pickupHealAmount: 1
     pickupChancePerRow: 0.2
     poisonMax: 5
     crateHp: 3

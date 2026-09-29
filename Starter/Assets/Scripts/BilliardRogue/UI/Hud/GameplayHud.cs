@@ -127,7 +127,7 @@ namespace Nex.BilliardRogue
         public void SetActivePlayer(int playerIndex, int numPlayers)
         {
             playerTags.Set(playerIndex, numPlayers);
-            movePrompt.SetPlayer(playerIndex);
+            movePrompt.SetPlayer(Mathf.Max(0, playerIndex));
         }
 
         public void SetBossHp(bool visible, int hp, int maxHp, EnemyType type)

@@ -7,12 +7,12 @@ using Nex.BilliardRogue.Simulation;
 namespace Nex.BilliardRogue
 {
     /// <summary>
-    /// Firing order within a turn: BalanceRules.shotsPerTurn balls from the bag in order, starting at run.nextBagIndex
-    /// and wrapping around, so every ball keeps its place in the rotation across turns (0 = the whole bag, the v1 rule);
-    /// then the extra Basic shots granted by +1 Ball pickups (run.extraBalls, reset here at turn end per HANDOFF §4).
-    /// Shooters alternate P1, P2, ... per shot (run.activePlayerIndex persists so a continued run keeps the rotation),
-    /// with the PacingConfig shot cooldown in between. The debug infinite-balls cheat cycles the bag instead of ending
-    /// the turn.
+    /// Firing order within a turn: every player has BalanceRules.shotsPerTurn shots (0 = the whole bag once, shared, the
+    /// v1 rule). They come from the bag in order, starting at run.nextBagIndex and wrapping around, so every ball keeps
+    /// its place in the rotation across turns; in 2P the players shoot together and whoever fires takes the next ball.
+    /// Then the extra Basic shots granted by +1 Ball pickups (run.extraBalls, shared, reset here at turn end per
+    /// HANDOFF §4). Each player has the PacingConfig shot cooldown between their shots. The debug infinite-balls cheat
+    /// cycles the bag instead of ending the turn.
     /// </summary>
     public sealed class ShotSequencer
     {
@@ -21,22 +21,29 @@ namespace Nex.BilliardRogue
         readonly float cooldown;
         readonly BallInstance extraBall = new() { type = BallType.Basic, level = 1 };
         readonly List<BallInstance> turnBalls = new();
-        float cooldownRemaining;
+        readonly int[] firedBy;
+        readonly float[] cooldownRemaining;
         int turnStart;
-        int fired;
+        int bagFired;
+        int bonusFired;
 
         public ShotSequencer(RunState aRun, int aShotsPerTurn, float shotCooldown)
         {
             run = aRun;
             shotsPerTurn = Math.Max(0, aShotsPerTurn);
             cooldown = Math.Max(0f, shotCooldown);
+            var players = Math.Max(1, run.numPlayers);
+            firedBy = new int[players];
+            cooldownRemaining = new float[players];
             FillTurnBalls();
         }
 
         public bool Infinite { get; private set; }
 
-        /// <summary>Shots fired so far this turn.</summary>
-        public int Fired => fired;
+        public int Players => firedBy.Length;
+
+        /// <summary>Shots fired so far this turn, every player together.</summary>
+        public int Fired => bagFired + bonusFired;
 
         /// <summary>This turn's bag balls in firing order (the bonus shots follow them); the coming turn's between turns.</summary>
         public IReadOnlyList<BallInstance> TurnBalls => turnBalls;
@@ -45,44 +52,70 @@ namespace Nex.BilliardRogue
         public int TurnBallsVersion { get; private set; }
 
         /// <summary>Position of the next shot in TurnBalls (TurnBalls.Count.. = bonus shots).</summary>
-        public int NextShot => Infinite && turnBalls.Count > 0 ? fired % turnBalls.Count : fired;
+        public int NextShot => Infinite && turnBalls.Count > 0 ? bagFired % turnBalls.Count
+            : bagFired < turnBalls.Count ? bagFired : turnBalls.Count + bonusFired;
 
         /// <summary>Shots available this turn: the turn's bag balls plus the extra balls collected so far.</summary>
         public int Total => turnBalls.Count + run.extraBalls;
 
-        public int Remaining => Infinite ? Total : Math.Max(0, Total - fired);
+        public int Remaining => Infinite ? Total : Math.Max(0, Total - Fired);
 
-        public bool HasBallToFire => Infinite ? turnBalls.Count > 0 : fired < Total;
+        /// <summary>Some player still has a shot this turn.</summary>
+        public bool HasBallToFire
+        {
+            get
+            {
+                for (var p = 0; p < firedBy.Length; p++)
+                {
+                    if (HasShot(p)) return true;
+                }
 
-        public bool CanFire => HasBallToFire && cooldownRemaining <= 0f;
+                return false;
+            }
+        }
+
+        public bool HasShot(int player) => Infinite ? turnBalls.Count > 0 : HasBagShot(player) || bonusFired < run.extraBalls;
+
+        public bool CanFire(int player) => HasShot(player) && cooldownRemaining[player] <= 0f;
 
         public void BeginTurn(bool infiniteBalls)
         {
-            fired = 0;
-            cooldownRemaining = 0f;
+            Array.Clear(firedBy, 0, firedBy.Length);
+            Array.Clear(cooldownRemaining, 0, cooldownRemaining.Length);
+            bagFired = bonusFired = 0;
             Infinite = infiniteBalls;
             FillTurnBalls();
         }
 
         /// <summary>
-        /// Counts the cooldown down in real time (PlayerTurnLoop passes unscaled time, so hit-stop and slow-mo do not
-        /// stretch it; the loop is not ticked while paused).
+        /// Counts the cooldowns down in real time (PlayerTurnLoop passes unscaled time, so hit-stop and slow-mo do not
+        /// stretch them; the loop is not ticked while paused).
         /// </summary>
         public void Tick(float unscaledDeltaTime)
         {
-            if (cooldownRemaining > 0f) cooldownRemaining -= unscaledDeltaTime;
+            for (var p = 0; p < cooldownRemaining.Length; p++)
+            {
+                if (cooldownRemaining[p] > 0f) cooldownRemaining[p] -= unscaledDeltaTime;
+            }
         }
 
-        /// <summary>Returns the ball to fire, advances the queue, starts the cooldown and passes the cue to the next player.</summary>
-        public BallInstance Fire(out int shooter)
+        /// <summary>Returns the ball player fires next and starts their cooldown: the next bag ball while they have bag shots, then a bonus Basic.</summary>
+        public BallInstance Fire(int player)
         {
-            shooter = run.activePlayerIndex;
-            var shot = NextShot;
-            var ball = shot < turnBalls.Count ? turnBalls[shot] : extraBall;
-            fired++;
-            cooldownRemaining = cooldown;
-            run.activePlayerIndex = (run.activePlayerIndex + 1) % Math.Max(1, run.numPlayers);
-            return ball;
+            cooldownRemaining[player] = cooldown;
+            if (Infinite)
+            {
+                return turnBalls[bagFired++ % turnBalls.Count];
+            }
+
+            if (HasBagShot(player))
+            {
+                firedBy[player]++;
+                return turnBalls[bagFired++];
+            }
+
+            bonusFired++;
+            return extraBall;
         }
 
         /// <summary>
@@ -94,16 +127,18 @@ namespace Nex.BilliardRogue
             var bagCount = run.bag.Count;
             if (bagCount > 0)
             {
-                var bagShotsFired = Infinite ? fired : Math.Min(fired, turnBalls.Count);
-                run.nextBagIndex = (turnStart + bagShotsFired) % bagCount;
+                run.nextBagIndex = (turnStart + bagFired) % bagCount;
             }
 
             run.extraBalls = 0;
-            fired = 0;
-            cooldownRemaining = 0f;
+            Array.Clear(firedBy, 0, firedBy.Length);
+            Array.Clear(cooldownRemaining, 0, cooldownRemaining.Length);
+            bagFired = bonusFired = 0;
             Infinite = false;
             FillTurnBalls();
         }
+
+        bool HasBagShot(int player) => bagFired < turnBalls.Count && (shotsPerTurn == 0 || firedBy[player] < shotsPerTurn);
 
         void FillTurnBalls()
         {
@@ -112,7 +147,7 @@ namespace Nex.BilliardRogue
             var bag = run.bag;
             if (bag.Count == 0) return;
             turnStart = run.nextBagIndex % bag.Count;
-            var count = Infinite || shotsPerTurn == 0 ? bag.Count : shotsPerTurn;
+            var count = Infinite || shotsPerTurn == 0 ? bag.Count : shotsPerTurn * firedBy.Length;
             for (var i = 0; i < count; i++)
             {
                 turnBalls.Add(bag[(turnStart + i) % bag.Count]);

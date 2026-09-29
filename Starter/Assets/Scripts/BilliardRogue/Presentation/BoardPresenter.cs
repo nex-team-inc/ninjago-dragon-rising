@@ -56,7 +56,7 @@ namespace Nex.BilliardRogue
         HypeJuice hype = null!;
         float debugHype = -1f;
         Vector2[] fallbackPath = new Vector2[2];
-        int activeShooter;
+        AimGuideView[] aimGuides = System.Array.Empty<AimGuideView>();
         int numPlayers = 1;
 
         public CameraShaker Shaker => cameraShaker;
@@ -83,7 +83,22 @@ namespace Nex.BilliardRogue
                 cats[i].Initialize(i, layout, config.Juice);
             }
 
-            aimGuide.Initialize(layout, config.Juice);
+            // One aim guide per player, since 2P aim together: the prefab carries P1's, the others are copies of it.
+            if (aimGuides.Length != cats.Length)
+            {
+                aimGuides = new AimGuideView[cats.Length];
+                aimGuides[0] = aimGuide;
+                for (var i = 1; i < aimGuides.Length; i++)
+                {
+                    aimGuides[i] = Instantiate(aimGuide, aimGuide.transform.parent);
+                }
+            }
+
+            for (var i = 0; i < aimGuides.Length; i++)
+            {
+                aimGuides[i].Initialize(layout, config.Juice);
+            }
+
             views = new BoardViews(config, rules, layout, enemyPools, ballPool, objectPools, pickupPools, labels, ballPrefab, worldLayer);
             var combo = new ComboPresenter(config.Juice, labels);
             eventPlayer = new BoardEventPlayer(views, labels, combo, cameraShaker, config, layout, cats);
@@ -93,7 +108,7 @@ namespace Nex.BilliardRogue
             ballVisitor = views.OnBall;
             if (hypeAura != null) hypeAura.Initialize(layout, config.Juice);
             hype = new HypeJuice(config.Juice, config.Hype, views, eventPlayer, cameraShaker, labels, cats, hypeAura);
-            SetActiveShooter(0, 1);
+            SetPlayers(1);
         }
 
         void Update()
@@ -188,7 +203,11 @@ namespace Nex.BilliardRogue
         {
             views.ClearAll();
             hype.ResetHype();
-            aimGuide.SetVisible(false);
+            for (var i = 0; i < aimGuides.Length; i++)
+            {
+                aimGuides[i].SetVisible(false);
+            }
+
             arenaView.SetDangerLevel(0f);
         }
 
@@ -219,43 +238,46 @@ namespace Nex.BilliardRogue
 
         public void SetAim(int shooterIndex, float launchX01, Vector2 dir, int predictedCount, Vector2[] predictedPoints, bool visible)
         {
-            var cat = cats[Mathf.Clamp(shooterIndex, 0, cats.Length - 1)];
+            var player = Mathf.Clamp(shooterIndex, 0, cats.Length - 1);
+            var cat = cats[player];
+            var guide = aimGuides[player];
             cat.SetLaunchX(launchX01);
             cat.SetAim(ArenaGeometry.ClampAim(rules.arena, dir), visible);
             if (!visible)
             {
-                aimGuide.SetVisible(false);
+                guide.SetVisible(false);
                 return;
             }
 
             if (predictedCount >= 2)
             {
-                aimGuide.SetPath(predictedCount, predictedPoints);
+                guide.SetPath(predictedCount, predictedPoints);
             }
             else
             {
                 var origin = ArenaGeometry.LaunchOrigin(rules.arena, launchX01);
                 fallbackPath[0] = origin;
                 fallbackPath[1] = origin + ArenaGeometry.ClampAim(rules.arena, dir) * 3f;
-                aimGuide.SetPath(2, fallbackPath);
+                guide.SetPath(2, fallbackPath);
             }
 
-            aimGuide.SetVisible(true);
+            guide.SetVisible(true);
         }
 
-        public void SetActiveShooter(int playerIndex, int aNumPlayers)
+        /// <summary>Every present player shoots together: each has a cat (or cue) and an aim guide in their colour.</summary>
+        public void SetPlayers(int aNumPlayers)
         {
             numPlayers = Mathf.Clamp(aNumPlayers, 1, cats.Length);
-            activeShooter = Mathf.Clamp(playerIndex, 0, numPlayers - 1);
             for (var i = 0; i < cats.Length; i++)
             {
                 var present = i < numPlayers;
                 cats[i].gameObject.SetActive(present);
-                if (present) cats[i].SetActive(i == activeShooter);
+                if (present) cats[i].SetActive(true);
+                aimGuides[i].SetColor(config.Juice.PlayerColor(i));
+                if (!present) aimGuides[i].SetVisible(false);
             }
 
-            aimGuide.SetColor(config.Juice.PlayerColor(activeShooter));
-            eventPlayer.ShooterIndex = activeShooter;
+            eventPlayer.ShooterIndex = 0;
         }
 
         public void PlayStrike(int shooterIndex, bool power)

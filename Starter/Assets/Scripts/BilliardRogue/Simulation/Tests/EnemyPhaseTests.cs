@@ -112,6 +112,28 @@ namespace Nex.BilliardRogue.Simulation.Tests
         }
 
         [Test]
+        public void DamagePerAttackMakesEveryAttackTakeTheSameHp()
+        {
+            rules.balance.damagePerAttack = 1;
+            run.playerHp = run.playerMaxHp = 3;
+            var slime = SimTest.Put(run, ops, EnemyType.Slime, 1, 9);
+            var skeleton = SimTest.Put(run, ops, EnemyType.Skeleton, 5, 9);
+            Assert.Greater(slime.attack + skeleton.attack, 2, "the attack stats alone would deal more");
+
+            var events = SimTest.Resolve(resolver, run, rng);
+            Assert.AreEqual(2, SimTest.Count(events, SimEventKind.PlayerDamaged));
+            foreach (var ev in events)
+            {
+                if (ev.kind == SimEventKind.PlayerDamaged) Assert.AreEqual(1, ev.value);
+            }
+
+            Assert.AreEqual(1, run.playerHp);
+            SimTest.Resolve(resolver, run, rng);
+            Assert.AreEqual(0, run.playerHp, "the third attack takes the last HP");
+            Assert.AreEqual(RunOutcome.Defeat, run.outcome);
+        }
+
+        [Test]
         public void RangedEnemiesTelegraphThenCastAndDoNotAlsoMelee()
         {
             var mage = SimTest.Put(run, ops, EnemyType.Mage, 5, 9);

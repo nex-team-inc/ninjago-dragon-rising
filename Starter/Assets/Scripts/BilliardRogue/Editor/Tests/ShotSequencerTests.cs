@@ -31,7 +31,7 @@ namespace Nex.BilliardRogue.Editor.Tests
             sequencer.BeginTurn(infinite);
             while (sequencer.HasBallToFire && fired.Count < maxShots)
             {
-                fired.Add(sequencer.Fire(out _).type);
+                fired.Add(sequencer.Fire(0).type);
             }
 
             sequencer.EndTurn();
@@ -45,9 +45,9 @@ namespace Nex.BilliardRogue.Editor.Tests
             sequencer.BeginTurn(false);
             Assert.AreEqual(3, sequencer.Total);
             Assert.AreEqual(3, sequencer.Remaining);
-            Assert.AreEqual(BallType.Basic, sequencer.Fire(out _).type);
-            Assert.AreEqual(BallType.Flame, sequencer.Fire(out _).type);
-            Assert.AreEqual(BallType.Frost, sequencer.Fire(out _).type);
+            Assert.AreEqual(BallType.Basic, sequencer.Fire(0).type);
+            Assert.AreEqual(BallType.Flame, sequencer.Fire(0).type);
+            Assert.AreEqual(BallType.Frost, sequencer.Fire(0).type);
             Assert.IsFalse(sequencer.HasBallToFire, "the fourth ball waits for the next turn");
             Assert.AreEqual(0, sequencer.Remaining);
         }
@@ -70,7 +70,7 @@ namespace Nex.BilliardRogue.Editor.Tests
             var run = NewRun(FourBalls);
             var sequencer = new ShotSequencer(run, 3, 0f);
             sequencer.BeginTurn(false);
-            sequencer.Fire(out _);
+            sequencer.Fire(0);
             sequencer.EndTurn();
             Assert.AreEqual(1, run.nextBagIndex);
             CollectionAssert.AreEqual(new[] { BallType.Flame, BallType.Frost, BallType.Bomb }, PlayTurn(sequencer));
@@ -82,13 +82,13 @@ namespace Nex.BilliardRogue.Editor.Tests
             var run = NewRun(new[] { BallType.Flame, BallType.Frost, BallType.Bomb, BallType.Iron });
             var sequencer = new ShotSequencer(run, 3, 0f);
             sequencer.BeginTurn(false);
-            sequencer.Fire(out _);
+            sequencer.Fire(0);
             run.extraBalls = 1;
             Assert.AreEqual(4, sequencer.Total);
-            sequencer.Fire(out _);
-            sequencer.Fire(out _);
+            sequencer.Fire(0);
+            sequencer.Fire(0);
             Assert.IsTrue(sequencer.HasBallToFire, "the pickup reopened the turn");
-            Assert.AreEqual(BallType.Basic, sequencer.Fire(out _).type, "bonus shots are Basic balls");
+            Assert.AreEqual(BallType.Basic, sequencer.Fire(0).type, "bonus shots are Basic balls");
             Assert.IsFalse(sequencer.HasBallToFire);
             sequencer.EndTurn();
             Assert.AreEqual(0, run.extraBalls);
@@ -120,24 +120,44 @@ namespace Nex.BilliardRogue.Editor.Tests
         }
 
         [Test]
-        public void TwoPlayersAlternateAcrossTurns()
+        public void TwoPlayersEachHaveShotsPerTurnAndShootTogether()
         {
             var run = NewRun(FourBalls, numPlayers: 2);
-            var sequencer = new ShotSequencer(run, 3, 0f);
-            var shooters = new List<int>();
-            for (var turn = 0; turn < 2; turn++)
-            {
-                sequencer.BeginTurn(false);
-                while (sequencer.HasBallToFire)
-                {
-                    sequencer.Fire(out var shooter);
-                    shooters.Add(shooter);
-                }
+            var sequencer = new ShotSequencer(run, 3, 0.35f);
+            sequencer.BeginTurn(false);
+            Assert.AreEqual(6, sequencer.Total, "3 shots each");
+            Assert.AreEqual(BallType.Basic, sequencer.Fire(0).type);
+            Assert.IsFalse(sequencer.CanFire(0), "P1 waits out their own cooldown");
+            Assert.IsTrue(sequencer.CanFire(1), "while P2 can shoot at the same moment");
+            Assert.AreEqual(BallType.Flame, sequencer.Fire(1).type, "whoever fires takes the next ball in the bag");
+            sequencer.Tick(1f);
+            sequencer.Fire(0);
+            sequencer.Tick(1f);
+            sequencer.Fire(0);
+            sequencer.Tick(1f);
+            Assert.IsFalse(sequencer.HasShot(0), "P1 used their 3 shots");
+            Assert.IsTrue(sequencer.HasShot(1), "P2 still has 2");
+            Assert.IsTrue(sequencer.HasBallToFire);
+            sequencer.Fire(1);
+            sequencer.Tick(1f);
+            sequencer.Fire(1);
+            Assert.IsFalse(sequencer.HasBallToFire);
+            sequencer.EndTurn();
+            Assert.AreEqual(6 % FourBalls.Length, run.nextBagIndex);
+        }
 
-                sequencer.EndTurn();
-            }
-
-            CollectionAssert.AreEqual(new[] { 0, 1, 0, 1, 0, 1 }, shooters, "an odd shot count per turn still gives both players equal shots");
+        [Test]
+        public void ABonusShotGoesToWhicheverPlayerFiresIt()
+        {
+            var run = NewRun(FourBalls, numPlayers: 2);
+            var sequencer = new ShotSequencer(run, 1, 0f);
+            sequencer.BeginTurn(false);
+            sequencer.Fire(0);
+            run.extraBalls = 1;
+            Assert.IsTrue(sequencer.HasShot(0), "P1's own shot is gone, the shared bonus shot is left");
+            Assert.AreEqual(BallType.Basic, sequencer.Fire(0).type);
+            Assert.IsFalse(sequencer.HasShot(0));
+            Assert.IsTrue(sequencer.HasShot(1), "P2 keeps their own shot");
         }
 
         [Test]

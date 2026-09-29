@@ -12,7 +12,8 @@ namespace Nex.BilliardRogue.Editor.Tests
 {
     /// <summary>
     /// Headless GameSession rules (GameplaySmokeFakes, real config assets): the GDD §9 save points and the committed
-    /// outcome, the shot cooldown gate, the stage-cleared fire guard, the 2P hand-off and the tail tracking check.
+    /// outcome, the shot cooldown gate, the stage-cleared fire guard, the shots per turn, 2P shooting together and the
+    /// tail tracking check.
     /// </summary>
     public class GameplaySessionTests
     {
@@ -41,6 +42,26 @@ namespace Nex.BilliardRogue.Editor.Tests
             public void ResetStrike() => Armed = false;
         }
 
+        /// <summary>Always tracked and always striking; counts the strikes the loop fired.</summary>
+        sealed class EagerInput : IShotInput
+        {
+            public int Strikes;
+            public bool IsTracking => true;
+            public float LaunchX01 { get; set; } = 0.5f;
+            public Vector2 AimDirection => Vector2.up;
+
+            public bool TryConsumeStrike(out StrikeInfo strike)
+            {
+                strike = new StrikeInfo { direction = Vector2.up, power01 = 0.5f };
+                Strikes++;
+                return true;
+            }
+
+            public void ResetStrike()
+            {
+            }
+        }
+
         sealed class Harness : IDisposable
         {
             public readonly GameObject host;
@@ -55,7 +76,7 @@ namespace Nex.BilliardRogue.Editor.Tests
             public UniTask<RunOutcome> outcome;
             public int ticks;
 
-            public Harness(int players, IShotInput? input = null, DebugSettings? debug = null)
+            public Harness(int players, IShotInput? input = null, DebugSettings? debug = null, IShotInput[]? perPlayer = null)
             {
                 config = AssetDatabase.LoadAssetAtPath<BilliardRogueConfig>(ConfigPath);
                 Assert.IsNotNull(config, "run ConfigAssetsBuilder first");
@@ -68,7 +89,7 @@ namespace Nex.BilliardRogue.Editor.Tests
                 var inputs = new IShotInput[players];
                 for (var i = 0; i < players; i++)
                 {
-                    inputs[i] = input ?? new SmokeShotInput(run, rules, 7 + i);
+                    inputs[i] = perPlayer?[i] ?? input ?? new SmokeShotInput(run, rules, 7 + i);
                 }
 
                 session.Initialize(new GameSessionContext
@@ -254,14 +275,28 @@ namespace Nex.BilliardRogue.Editor.Tests
         }
 
         [Test]
-        public void TwoPlayersHandOffOnlyWhileAShotIsLeft()
+        public void TwoPlayersShootTogetherWithTheirOwnShotsAgainstDoubleHpEnemies()
         {
-            using var h = new Harness(2);
+            var p1 = new EagerInput { LaunchX01 = 0.25f };
+            var p2 = new EagerInput { LaunchX01 = 0.75f };
+            using var h = new Harness(2, perPlayer: new IShotInput[] { p1, p2 });
             Assert.IsTrue(h.DriveUntil(() => h.Phase == TurnPhase.PlayerTurn));
-            Assert.IsTrue(h.DriveUntil(() => h.Phase != TurnPhase.PlayerTurn), "first turn played out");
-            var shots = h.run.stats.shots;
-            Assert.Greater(shots, 1);
-            Assert.AreEqual(shots - 1, h.hud.ShooterBanners, "no 'your shot' banner after the turn's last ball");
+            Assert.AreEqual(0, h.run.stageNumber);
+            foreach (var enemy in h.run.board.enemies)
+            {
+                var enemyRules = h.rules.enemies[(int)enemy.type];
+                Assert.AreEqual(Mathf.Max(1, Mathf.RoundToInt(enemyRules.hp * h.rules.balance.coopEnemyHpScale)), enemy.maxHp, enemy.type.ToString());
+                // Immortal, so no shot can clear the field and cut the turn short.
+                enemy.hp = enemy.maxHp = 100000;
+            }
+
+            // No +1 Ball pickups either: each player fires exactly their own shots.
+            h.run.board.pickups.Clear();
+            Assert.IsTrue(h.DriveUntil(() => h.Phase == TurnPhase.EnemyPhase), "the turn ends once both players used their shots");
+            var shots = h.rules.balance.shotsPerTurn;
+            Assert.AreEqual(shots, p1.Strikes, "P1 fired their own shots");
+            Assert.AreEqual(shots, p2.Strikes, "P2 fired theirs in the same turn");
+            Assert.AreEqual(-1, h.hud.ActivePlayer, "the HUD shows both players active");
         }
 
         [Test]

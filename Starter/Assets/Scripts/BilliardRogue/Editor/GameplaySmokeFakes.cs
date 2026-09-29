@@ -45,6 +45,8 @@ namespace Nex.BilliardRogue.Editor
         public bool BossSeen { get; private set; }
         public bool FastForward { get; private set; }
         public int FastForwardOns { get; private set; }
+        /// <summary>Last SetActivePlayer value: 0 in 1P, -1 (everyone) while 2P shoot together.</summary>
+        public int ActivePlayer { get; private set; } = int.MinValue;
 
         public void SetHp(int cur, int max)
         {
@@ -64,9 +66,7 @@ namespace Nex.BilliardRogue.Editor
         {
         }
 
-        public void SetActivePlayer(int playerIndex, int numPlayers)
-        {
-        }
+        public void SetActivePlayer(int playerIndex, int numPlayers) => ActivePlayer = playerIndex;
 
         public void SetBossHp(bool visible, int hp, int maxHp, EnemyType type)
         {

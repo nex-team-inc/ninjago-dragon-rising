@@ -55,15 +55,16 @@ namespace Nex.BilliardRogue.Simulation
 
         /// <summary>
         /// Creates an enemy of type t at (col, row) with stats scaled for the run's stage: hp × (1 + hpScalePerStage ×
-        /// stageNumber) rounded, attack + attackBonusPerAct × actIndex (attack 0 stays 0), footprint and shield face
-        /// from rules. Assigns board.nextId, appends EnemySpawned (value = hp) and returns the state. Does not check
-        /// occupancy.
+        /// stageNumber) × coopEnemyHpScale with two players, rounded; attack + attackBonusPerAct × actIndex (attack 0
+        /// stays 0), footprint and shield face from rules. Assigns board.nextId, appends EnemySpawned (value = hp) and
+        /// returns the state. Does not check occupancy.
         /// </summary>
         public EnemyState SpawnEnemy(RunState run, EnemyType t, int col, int row, List<SimEvent> events)
         {
             var r = rules.enemies[(int)t];
             var balance = rules.balance;
-            var hp = Mathf.Max(1, Mathf.RoundToInt(r.hp * (1f + balance.hpScalePerStage * run.stageNumber)));
+            var coop = run.numPlayers > 1 ? balance.coopEnemyHpScale : 1f;
+            var hp = Mathf.Max(1, Mathf.RoundToInt(r.hp * (1f + balance.hpScalePerStage * run.stageNumber) * coop));
             var attack = r.attack > 0 ? r.attack + balance.attackBonusPerAct * run.actIndex : 0;
             var e = new EnemyState
             {
@@ -226,7 +227,8 @@ namespace Nex.BilliardRogue.Simulation
 
         /// <summary>
         /// Lowers playerHp (never below 0), stats.damageTaken, emits PlayerDamaged (value = dealt, value2 = hp left,
-        /// sourceId). When hp reaches 0 emits PlayerDied once and sets run.outcome = Defeat.
+        /// sourceId). When hp reaches 0 emits PlayerDied once and sets run.outcome = Defeat. With
+        /// balance.damagePerAttack set, every attack takes exactly that much instead of its amount.
         /// </summary>
         public void DamagePlayer(RunState run, int amount, int sourceId, List<SimEvent> events)
         {
@@ -234,6 +236,7 @@ namespace Nex.BilliardRogue.Simulation
             {
                 return;
             }
+            if (rules.balance.damagePerAttack > 0) amount = rules.balance.damagePerAttack;
             var dealt = Mathf.Min(amount, run.playerHp);
             run.playerHp -= dealt;
             run.stats.damageTaken += dealt;

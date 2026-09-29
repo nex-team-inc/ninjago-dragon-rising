@@ -91,7 +91,7 @@ namespace Nex.BilliardRogue.Editor
                          & Check(report, "hits-landed", harness.run.stats.hits > 0)
                          & Check(report, "saves", saves >= 3 && store.Saves == saves)
                          & Check(report, "hud-turn-banners", harness.hud.TurnBanners >= 2)
-                         & Check(report, "hud-shooter-banners", players == 1 || harness.hud.ShooterBanners > 0)
+                         & Check(report, "hud-players-together", harness.hud.ActivePlayer == (players == 1 ? 0 : -1))
                          & Check(report, "hud-hp", harness.hud.MaxHp == harness.run.playerMaxHp);
                 report.Append(" | new-run: ticks=").Append(harness.ticks).Append(" turns=").Append(harness.run.stats.turns)
                     .Append(" shots=").Append(harness.run.stats.shots).Append(" hits=").Append(harness.run.stats.hits)

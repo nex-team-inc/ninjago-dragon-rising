@@ -23,7 +23,8 @@ namespace Nex.BilliardRogue
         EnemyType bossType;
         bool powerArmed;
         bool fastForward;
-        int activePlayer = -1;
+        // -1 is a real value (every player active), so "nothing pushed yet" needs its own sentinel.
+        int activePlayer = int.MinValue;
         int queueIndex = -1;
         int queueExtra = -1;
         int queueVersion = -1;
@@ -81,11 +82,13 @@ namespace Nex.BilliardRogue
             hud.SetBallsRemaining(left, all);
         }
 
+        /// <summary>1P: P1. 2P shoot together, so every player is active (-1).</summary>
         public void RefreshActivePlayer()
         {
-            if (run.activePlayerIndex == activePlayer) return;
-            activePlayer = run.activePlayerIndex;
-            hud.SetActivePlayer(activePlayer, run.numPlayers);
+            var shooter = run.numPlayers > 1 ? -1 : 0;
+            if (shooter == activePlayer) return;
+            activePlayer = shooter;
+            hud.SetActivePlayer(shooter, run.numPlayers);
         }
 
         public void RefreshPower()
@@ -155,8 +158,6 @@ namespace Nex.BilliardRogue
         }
 
         public void ShowTurnBanner(int turn) => hud.ShowTurnBanner(turn);
-
-        public void ShowShooterBanner(int playerIndex) => hud.ShowShooterBanner(playerIndex);
 
         public void ShowIncomingBanner() => hud.ShowIncomingBanner();
 

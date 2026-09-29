@@ -10,6 +10,8 @@
 var report = new System.Text.StringBuilder();
 // 0 = every shot aimed; 0.5 = half the shots go at a random angle from a random launch point (a casual player).
 var randomShotChance = 0.0;
+// 2 = co-op: both players shoot their shotsPerTurn each turn (fired one after the other here) against coopEnemyHpScale HP.
+var players = 1;
 var batchSizes = new List<int>(); var batchMaxRow = -1; var batchDrops = 0; var skippedTurns = 0; var skipEvents = 0; var forbiddenSpawns = 0;
 var lastSpawnRow = -1;
 void Tally(List<Nex.BilliardRogue.Simulation.SimEvent> evs)
@@ -120,7 +122,7 @@ try
 
     foreach (var seed in seeds)
     {
-        var run = factory.NewRun(rules, seed, 1);
+        var run = factory.NewRun(rules, seed, players);
         var rng = new Nex.BilliardRogue.Simulation.SimRandom(run.rngState);
         factory.BeginStage(rules, run, rng, events);
         Tally(events); TallyRows(run, events);
@@ -136,9 +138,10 @@ try
             if (run.board.enemies.Count > maxEnemies) maxEnemies = run.board.enemies.Count;
             if (run.playerHp < minHp) minHp = run.playerHp;
             sequencer.BeginTurn(false);
-            while (sequencer.HasBallToFire && run.board.enemies.Count > 0)
+            for (var shooter = 0; sequencer.HasBallToFire && run.board.enemies.Count > 0; shooter = (shooter + 1) % players)
             {
-                var ball = sequencer.Fire(out _);
+                if (!sequencer.HasShot(shooter)) continue;
+                var ball = sequencer.Fire(shooter);
                 var (origin, dir) = Aim(run, bot);
                 if (bot.NextDouble() < randomShotChance)
                 {
@@ -146,7 +149,7 @@ try
                     var randomAngle = (arena.minAimAngleDeg + (180f - 2f * arena.minAimAngleDeg) * (float)bot.NextDouble()) * Mathf.Deg2Rad;
                     dir = new Vector2(Mathf.Cos(randomAngle), Mathf.Sin(randomAngle));
                 }
-                sim.Launch(run, ball, origin, dir, bot.NextDouble() < 0.2, 0, events);
+                sim.Launch(run, ball, origin, dir, bot.NextDouble() < 0.2, shooter, events);
                 events.Clear();
                 var steps = 0; var hits = 0;
                 while (sim.ActiveCount > 0 && steps < 3600)
@@ -199,7 +202,7 @@ try
         report.AppendLine($"seed {seed}: outcome={run.outcome} act={run.actIndex + 1} stageInAct={run.stageInAct} stageNumber={run.stageNumber} turns={turns} turnsPerStage=[{string.Join(",", turnsPerStage)}] hp={run.playerHp}/{run.playerMaxHp} minHp={Mathf.Min(minHp, run.playerHp)} damageTaken={run.stats.damageTaken} bag=[{bag}] kills={run.stats.kills} shots={shots} bestCombo={run.stats.bestCombo} maxHitsPerShot={maxHits} worstFlight={maxSteps}f({maxSteps / 60f:F1}s) flightsOver7s={over7} flightsOver8s={over8} stuck={stuck} enemiesAtEnd={run.board.enemies.Count} maxEnemiesOnBoard={maxEnemies}");
     }
     report.AppendLine($"batches: count={batchSizes.Count} enemiesPerBatch min={(batchSizes.Count > 0 ? batchSizes.Min() : 0)} avg={(batchSizes.Count > 0 ? batchSizes.Average() : 0):F1} max={(batchSizes.Count > 0 ? batchSizes.Max() : 0)} under10={batchSizes.Count(n => n < 10)} dropped={batchDrops} lowestSpawnRow={batchMaxRow} (last allowed {lastSpawnRow}) spawnsInForbiddenRows={forbiddenSpawns} skipEvents={skipEvents} turnsSkipped={skippedTurns}");
-    report.AppendLine($"all seeds: shotsPerTurn={rules.balance.shotsPerTurn} randomShotChance={randomShotChance} shots={globalShots} worstFlight={globalWorstFrames / 60f:F2}s maxHitsPerShot={globalMaxHits} flightsOver7s={globalOver7} flightsOver8s={globalOver8} elapsed={watch.ElapsedMilliseconds} ms");
+    report.AppendLine($"all seeds: players={players} shotsPerTurn={rules.balance.shotsPerTurn} maxHp={rules.balance.playerMaxHp} damagePerAttack={rules.balance.damagePerAttack} randomShotChance={randomShotChance} shots={globalShots} worstFlight={globalWorstFrames / 60f:F2}s maxHitsPerShot={globalMaxHits} flightsOver7s={globalOver7} flightsOver8s={globalOver8} elapsed={watch.ElapsedMilliseconds} ms");
 }
 catch (Exception ex)
 {

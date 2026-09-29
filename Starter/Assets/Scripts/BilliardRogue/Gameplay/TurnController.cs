@@ -170,7 +170,7 @@ namespace Nex.BilliardRogue
             savedAtBoundary = false;
             var turn = run.turnInStage + 1;
             loop.BeginTurn();
-            services.Board.SetActiveShooter(run.activePlayerIndex, run.numPlayers);
+            services.Board.SetPlayers(run.numPlayers);
             services.Hud.RefreshAll();
             services.Hud.ShowTurnBanner(turn);
             services.Audio.Sfx(SfxManager.SoundEffect.TurnStart);

@@ -6,7 +6,10 @@ using UnityEngine.UI;
 
 namespace Nex.BilliardRogue
 {
-    /// <summary>P1 / P2 tags in the player colours (2-player runs only): the active shooter is full size and bouncing.</summary>
+    /// <summary>
+    /// P1 / P2 tags in the player colours (2-player runs only): the active shooter is full size and bouncing; with
+    /// playerIndex -1 (the players shoot together) every tag is full size.
+    /// </summary>
     public sealed class PlayerTagsWidget : MonoBehaviour
     {
         [SerializeField] UiTheme theme = null!;
@@ -47,11 +50,12 @@ namespace Nex.BilliardRogue
             if (numPlayers <= 1) return;
             for (var i = 0; i < tags.Length; i++)
             {
-                var on = i == playerIndex;
+                var on = playerIndex < 0 || i == playerIndex;
                 tags[i].localScale = Vector3.one * (on ? 1f : inactiveScale);
                 tagGroups[i].alpha = on ? 1f : inactiveAlpha;
             }
 
+            if (playerIndex < 0) return;
             bounce = tags[playerIndex].DOScale(theme.ChipPulseScale, theme.ChipPulseDuration).SetEase(Ease.InOutSine)
                 .SetLoops(-1, LoopType.Yoyo).SetUpdate(true).SetLink(gameObject);
         }

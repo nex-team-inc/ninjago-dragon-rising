@@ -15,16 +15,26 @@ MonoBehaviour:
   shotCooldown: 0.35
   fastForwardDelay: 2.5
   fastForwardScale: 2
+  turnEndGrace: 0.3
+  lowHpFraction: 0.34
+  aimGuideLengths:
+  - 5
+  - 9
+  - 16
+  aimGuideMaxBounces: 2
+  aimGuideMaxPoints: 24
   statusTickDuration: 0.35
   abilityDuration: 0.45
   enemyHopDuration: 0.4
   enemyAttackDuration: 0.35
   enemyStagger: 0.04
   waveSpawnDuration: 0.4
+  batchSpawnStagger: 0.06
   fastEnemyPhaseScale: 0.25
   stageIntroDuration: 1.4
   shooterBannerDuration: 1
   turnBannerDuration: 0.8
+  incomingBannerDuration: 0.9
   stageClearDuration: 1.2
   bossIntroDuration: 0.8
   defeatDuration: 1.6
@@ -33,5 +43,6 @@ MonoBehaviour:
   hitStopBoss: 0.06
   lastEnemySlowMoDuration: 0.3
   lastEnemySlowMoScale: 0.3
+  bgmCrossfadeSeconds: 0.8
   rewardRevealStagger: 0.25
   rewardPickDuration: 0.6

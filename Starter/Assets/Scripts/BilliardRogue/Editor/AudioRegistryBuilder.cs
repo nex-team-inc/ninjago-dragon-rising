@@ -28,6 +28,9 @@ namespace Nex.BilliardRogue.Editor
         const float PeakToleranceDb = 0.5f;
         // ADPCM's adaptive step size moves sharp transients by about a dB; larger drifts are real import problems.
         const float AdpcmPeakToleranceDb = 1.5f;
+        // ADPCM slope-limits a click-like attack (the 8-bit jump layer of BallLaunch), so its sample peak can come out
+        // ~3 dB under the built PCM peak while the loudness is unchanged; only a louder clip means re-normalization.
+        const float AdpcmTransientLossDb = 4f;
         const int AdpcmBlockSamples = 64;
 
         sealed class Report
@@ -170,7 +173,8 @@ namespace Nex.BilliardRogue.Editor
 
                 report.LevelsVerified++;
                 var difference = peakDb - expectedPeakDb;
-                if (Mathf.Abs(difference) > (IsAdpcm(importer) ? AdpcmPeakToleranceDb : PeakToleranceDb))
+                var tolerance = !IsAdpcm(importer) ? PeakToleranceDb : difference > 0f ? AdpcmPeakToleranceDb : AdpcmTransientLossDb;
+                if (Mathf.Abs(difference) > tolerance)
                 {
                     var hint = difference > 0f ? "re-normalized on import" : "quieter than built";
                     report.ImportErrors.Add($"{name}: imported peak {peakDb:F1} dBFS, built {expectedPeakDb:F1} ({difference:+0.0;-0.0} dB, {hint})");

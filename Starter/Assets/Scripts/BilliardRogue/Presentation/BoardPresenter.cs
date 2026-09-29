@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Nex.BilliardRogue.Simulation;
+using Nex.Util;
 using UnityEngine;
 
 namespace Nex.BilliardRogue
@@ -17,14 +18,11 @@ namespace Nex.BilliardRogue
     public sealed class BoardPresenter : MonoBehaviour
     {
         [Header("Pools (WorldPrefabsBuilder)")]
-        [Tooltip("Indexed by EnemyType.")]
-        [SerializeField] EnemyViewPool[] enemyPools = System.Array.Empty<EnemyViewPool>();
+        [SerializeField] EnumDictionary<EnemyType, EnemyViewPool> enemyPools = new();
         [SerializeField] BallViewPool ballPool = null!;
         [SerializeField] BallView ballPrefab = null!;
-        [Tooltip("Indexed by FieldObjectType.")]
-        [SerializeField] FieldObjectViewPool[] objectPools = System.Array.Empty<FieldObjectViewPool>();
-        [Tooltip("Indexed by PickupType.")]
-        [SerializeField] PickupViewPool[] pickupPools = System.Array.Empty<PickupViewPool>();
+        [SerializeField] EnumDictionary<FieldObjectType, FieldObjectViewPool> objectPools = new();
+        [SerializeField] EnumDictionary<PickupType, PickupViewPool> pickupPools = new();
 
         [Header("Board")]
         [SerializeField] AimGuideView aimGuide = null!;

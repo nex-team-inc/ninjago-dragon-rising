@@ -54,9 +54,17 @@ namespace Nex
         {
             if (IsCameraMutedProperty.Value == value) return;
 
+            // Without a guard controller (game scene opened directly) the fake property is the one being read.
+            var cameraGuardController = CameraGuardController.Instance;
+            if (cameraGuardController == null)
+            {
+                fakeIsMutedProperty.Value = value;
+                return;
+            }
+
             if (typeof(CameraGuardController).GetField("mutableMuted", BindingFlags.NonPublic | BindingFlags.Instance)
                     is { } mutableMutedField &&
-                mutableMutedField.GetValue(CameraGuardController.Instance) is AsyncReactiveProperty<bool> mutableMuted)
+                mutableMutedField.GetValue(cameraGuardController) is AsyncReactiveProperty<bool> mutableMuted)
             {
                 mutableMuted.Value = value;
             }

@@ -35,8 +35,6 @@ namespace Nex.BilliardRogue
         /// <summary>Player whose paws stayed untracked past ControlConfig.trackingLostSeconds, -1 otherwise.</summary>
         public int TrackingLostPlayer { get; private set; } = -1;
 
-        public float TrackingLostSeconds => trackingLostSeconds;
-
         #region Turn Boundaries
 
         public void BeginTurn()

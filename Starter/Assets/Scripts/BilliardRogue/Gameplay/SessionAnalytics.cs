@@ -59,7 +59,5 @@ namespace Nex.BilliardRogue
         {
             inner?.RunEnd(outcome, stageNumber, turns, seconds, kills);
         }
-
-        public void TrackingLost(int player, float seconds) => inner?.TrackingLost(player, seconds);
     }
 }

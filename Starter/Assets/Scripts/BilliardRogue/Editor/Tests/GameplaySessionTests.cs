@@ -192,6 +192,15 @@ namespace Nex.BilliardRogue.Editor.Tests
         }
 
         [Test]
+        public void StrikeExpiryOutlastsTheShotCooldown()
+        {
+            var config = AssetDatabase.LoadAssetAtPath<BilliardRogueConfig>(ConfigPath);
+            Assert.IsNotNull(config, "run ConfigAssetsBuilder first");
+            // A strike made during the cooldown stays pending until the cooldown ends; a shorter expiry would drop it.
+            Assert.GreaterOrEqual(config.Control.StrikeExpirySeconds, config.Pacing.ShotCooldown + 0.1f);
+        }
+
+        [Test]
         public void NoShotAfterTheStageFellMidTurn()
         {
             var input = new ArmedInput();

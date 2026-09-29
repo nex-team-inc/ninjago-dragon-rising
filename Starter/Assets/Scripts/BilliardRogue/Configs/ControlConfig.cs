@@ -53,8 +53,8 @@ namespace Nex.BilliardRogue
         [SerializeField, Range(20f, 400f)] float fullPowerSpeedInchesPerSec = 120f;
         [Tooltip("Raw camera samples further apart than this are a tracking gap (no speed is measured across it).")]
         [SerializeField, Range(0.05f, 1f)] float maxSampleGapSeconds = 0.25f;
-        [Tooltip("A strike nobody consumed within this time is dropped (pause, enemy phase, the other player's turn).")]
-        [SerializeField, Range(0.05f, 2f)] float strikeExpirySeconds = 0.3f;
+        [Tooltip("A strike nobody consumed within this time is dropped (pause, enemy phase, the other player's turn). Must exceed PacingConfig.shotCooldown, or a strike made during the cooldown expires before it can fire.")]
+        [SerializeField, Range(0.05f, 2f)] float strikeExpirySeconds = 0.6f;
 
         [Header("Tracking")]
         [Tooltip("Chest and both paws must stay visible this long before tracking counts as regained.")]

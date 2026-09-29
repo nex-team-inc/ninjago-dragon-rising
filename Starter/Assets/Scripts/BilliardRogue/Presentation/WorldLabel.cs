@@ -1,6 +1,8 @@
 #nullable enable
 
 using System;
+using Nex.BilliardRogue.Simulation;
+using Nex.Util;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -20,8 +22,7 @@ namespace Nex.BilliardRogue
         [SerializeField] TextMeshProUGUI hpText = null!;
         [Tooltip("Dark rounded pill behind the HP number (sized to the text by SetHp).")]
         [SerializeField] Image? hpPill;
-        [Tooltip("Indexed by StatusType: Burn, Poison, Freeze.")]
-        [SerializeField] Image[] statusIcons = Array.Empty<Image>();
+        [SerializeField] EnumDictionary<StatusType, Image> statusIcons = new();
         [SerializeField] Image telegraphIcon = null!;
 
         EnemyView? enemy;
@@ -82,9 +83,9 @@ namespace Nex.BilliardRogue
 
         public void SetStatus(int burn, int poison, bool frozen)
         {
-            SetIcon(0, burn > 0);
-            SetIcon(1, poison > 0);
-            SetIcon(2, frozen);
+            statusIcons[StatusType.Burn].enabled = burn > 0;
+            statusIcons[StatusType.Poison].enabled = poison > 0;
+            statusIcons[StatusType.Freeze].enabled = frozen;
         }
 
         public void SetTelegraph(Sprite? icon)
@@ -116,19 +117,14 @@ namespace Nex.BilliardRogue
                 hpPill.color = settings.hpPillColor;
             }
 
-            for (var i = 0; i < statusIcons.Length; i++)
+            var statuses = EnumDictionary<StatusType, Image>.allKeys;
+            for (var i = 0; i < statuses.Length; i++)
             {
-                statusIcons[i].enabled = false;
+                statusIcons[statuses[i]].enabled = false;
             }
 
             telegraphIcon.enabled = false;
             rect.anchoredPosition = new Vector2(-9999f, -9999f);
-        }
-
-        void SetIcon(int index, bool on)
-        {
-            if (index >= statusIcons.Length) return;
-            statusIcons[index].enabled = on;
         }
 
         #endregion

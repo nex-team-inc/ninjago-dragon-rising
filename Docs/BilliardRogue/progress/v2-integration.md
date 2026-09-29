@@ -15,10 +15,17 @@ Owner key: `integration` (editor lock label). Spec: `GDD-v2-Changes.md`; inputs:
 - [x] 3. `ControlDemoBuild.Run()` → `Builds/Android/BilliardRogue_ControlDemo.apk` (Succeeded, 0 errors, 91 s).
 - [x] 4. Device 10.4.6.137: install -r Success, launched, no Unity E/W lines or exceptions in logcat after 22 s, title screen shot
       (scratch `v2/device_title.png`), app left on the title.
-- [ ] 5. `ControlDemo.md` v2 section. Commit.
+- [x] 5. `ControlDemo.md`: "What's new in v2" section (strike, Hype, rewards, paw pick, readout row, Editor keys), v2 values in the
+      readout table, APK facts, v2 code map, v2 feedback questions.
 
 ## Next
-Step 5: ControlDemo.md v2 section, then commit and final report. Scratch scripts: `v2/s1_build.sh`, `s2_tests.sh`, `s3_play.sh`, `s4_hype.sh`, `IntegVerify.cs`.
+Done. Known gaps below.
+
+## Known gaps
+- `ui_button_click` for a paw pick reports `"input": "remote"` (the analytics layer's last input kind); `button` = `ball_paws` is right.
+- Real mouse-driven paws in the Editor and real body Hype were not exercised (scripted `IPawPointer` and forced / bot Hype instead);
+  both need a person in front of the Playground camera.
+- `DebugHooks.SetHype` does not preview the board look while aiming (by design: Hype shows only while balls fly). Scratch scripts: `v2/s1_build.sh`, `s2_tests.sh`, `s3_play.sh`, `s4_hype.sh`, `IntegVerify.cs`.
 
 ## Requests
 (none yet)

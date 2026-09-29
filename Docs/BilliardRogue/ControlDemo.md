@@ -17,6 +17,25 @@ The demo adds three things to the normal game:
 In the Playground APK, practice mode and the readout are on from the start. In the Editor you turn them on once in
 Debug Settings (see [Debug Settings](#4-debug-settings-open-it-and-tune)).
 
+## What's new in v2 (after the first device playtest)
+
+The spec is `GDD-v2-Changes.md`. What changes when you play:
+
+| | v2 behaviour | How to try it |
+|---|---|---|
+| **Easier strike** | A strike starts when the right paw moves toward the left paw at **19 in/s** or more (v1: 35), heading within 60° of it. It fires on contact within **9 in** (v1: 5), or when the right paw **passes the left paw's line** no more than 12 in beside it. Re-arm is **0.25 s**, and the paws must first be **14 in** apart. A power shot needs 3.5× the threshold (about 66 in/s, close to v1's 70). | Thrust the right paw at the left paw. It no longer has to touch. The readout log shows `STRIKE … (line)` when the strike fired by passing the left paw. |
+| **Hype: dance while the ball flies** | While at least one ball flies, whole-body motion (hands, elbows, shoulders, hips, knees, head) charges **Hype** 0..1. In 2P the more active player counts. Hype makes every flying ball up to **1.8× faster** and up to **2.5× stronger** (+1 damage at least from tier 2). It also brings more hit-stop, shake, sparks, bigger damage numbers, a glowing, growing ball with a tier-coloured trail, and a pink arena aura at MAX. Hype resets when no ball flies and never changes the aim. | Shoot, then dance, jump or wave your arms until the ball comes back. The **POWER** meter in the lower left shows `×1.4!` (tier 1, 0.25), `×1.9!!` (tier 2, 0.55) and `MAX!!!` (tier 3, 0.85), each with a sound. If you stand still for 1 s with Hype under 0.2, a big **MOVE!** prompt with a dancing cat appears above the launch line. |
+| **Rewards are balls only** | Every reward offers 3 different balls: a big ball picture, its name and a 1–3 word effect ("Burns", "Chain zap", …). A new ball joins the bag. When the bag is full, only balls you own are offered, and a pick levels one up (`Lv 1 → Lv 2`). Heal and Max HP cards are gone. Instead, every stage clear heals 4 HP. | Clear a stage. |
+| **Pick a ball with your hands** | Two cat arms rise from the bottom corners, and each paw follows your hand. Put **both paws on the same ball** and hold them there: a ring fills in 0.8 s, then the paws grab the ball and pull it down. Moving a paw away drains the ring. A paw must move a little after the view opens before a hold counts, so resting hands never pick by accident. The remote still works: **Left/Right + OK**. In 2P the players take turns choosing (P1, then P2, …). A "P2 picks!" banner shows whose turn it is, and only that player's arms show: P1 orange, P2 charcoal. | Bring both hands together over one ball and keep them still. |
+| **Readout: Hype row** | `ENERGY 0.62`: the motion energy the game uses. `BODY 0.58 11/11 23in/s`: the body meter itself, with its energy, the body nodes it sees (of 11), and their mean speed above the jitter deadzone. `BODY -` means the body is not tracked. | Watch it while you move. |
+
+In the Editor without a body:
+- Hold **H**, or move the mouse fast, to simulate Hype.
+- The mouse drives both paws in the reward view while it is inside the Game view. Wiggle it a little first, so the
+  hold arms.
+- The auto-aim bot (**Flow: Auto Aim Bot**) simulates a wandering energy that reaches every tier.
+- `DebugHooks.SetHype(0.6f)` forces Hype while balls fly, and `-1` turns it off.
+
 ## 1. Try it in the Editor (Mac webcam)
 
 1. Open `/Users/simonbut/project/VibeProject3/Starter` in Unity 6000.3.9f1.
@@ -46,17 +65,18 @@ about 10 fps while Unity is not the focused window, so click the Game view befor
 | | |
 |---|---|
 | APK | `/Users/simonbut/project/VibeProject3/Builds/Android/BilliardRogue_ControlDemo.apk` (gitignored, `/[Bb]uilds/`) |
-| Size | 247,632,739 bytes (about 236 MiB). The first build was 209,729,060 bytes; the development `libil2cpp.so` alone is 139 MB |
+| Size | 247,668,481 bytes (about 236 MiB). The first build was 209,729,060 bytes; the development `libil2cpp.so` alone is 139 MB |
 | App id | `team.nex.starter.staging` (the starter's id, unchanged), version 1.0 (1), label "Starter" |
 | Contents | `Assets/Scenes/BilliardRogue/Main.unity` only (index 0), Addressables content in `assets/aa` |
 | Player | Development build, IL2CPP, `arm64-v8a` only (`lib/arm64-v8a/libil2cpp.so`), OpenGL ES 3, min SDK 30, target SDK 36 |
 | Defines | the project's Android defines + `BR_CONTROL_DEMO;ENABLE_DEBUG_SETTINGS`, for this build only. `ProjectSettings.asset` is restored afterwards |
 | Demo defaults | `BR_CONTROL_DEMO`: practice mode and the control readout start on |
-| Build time | cold: 315 s (Addressables 93 s + player 221 s). Incremental after a code change: 52–87 s |
+| Build time | cold: 315 s (Addressables 93 s + player 221 s). Incremental after a code change: 52–92 s |
 | Summary | `Builds/Android/BilliardRogue_ControlDemo.build.json` (result, size, timings, errors), rewritten on every build |
 
-The build dates from 2026-09-29 12:03 HKT (commit eac8d293). It includes the control lab: practice mode, the readout
-and live tuning. `aapt dump badging`: package `team.nex.starter.staging`, `native-code: 'arm64-v8a'`, leanback
+The build dates from 2026-09-29 13:00 HKT (commit 26bb1159). It includes the control lab (practice mode, the readout
+and live tuning) and all of v2: the easier strike, Hype, balls-only rewards and the paw pick. It is installed on the
+Playground at 10.4.6.137, where it starts on the title screen with no Unity errors in logcat. `aapt dump badging`: package `team.nex.starter.staging`, `native-code: 'arm64-v8a'`, leanback
 launchable `com.unity3d.player.UnityPlayerActivity`.
 
 ### Install and launch
@@ -92,12 +112,13 @@ panel is on top and P2's is below. The panel hides while pause, rewards, stage i
 | `X 0.42` | Launch position, from 0 (left wall) to 1 (right wall). It comes from the left paw's sideways offset from the chest. |
 | `AIM 87°` | Aim angle. 90° is straight up. It is clamped to 12°–168°. |
 | `R-HAND` / `L-HAND` | Which paw is the cue. Left-handed swaps the paws. |
-| `SPEED 42 in/s` + `NEED 35` + bar | How fast the right paw closes in on the left paw, in inches per second, measured relative to your body size. `NEED` is the strike threshold. On the bar, the white tick is the threshold, the pink tick is the power-shot speed (2x the threshold), and the faint mark is the peak of the last second. The fill is yellow below the threshold, green above it, and pink at power speed. |
-| `DIST 12.3 in` + `CONTACT 5.0` + bar | Distance between the paws. The paws must come within `CONTACT` for a strike. On the bar, the white tick is the contact distance and the grey tick is the arm distance (10 in): the paws must open past it before the next strike. |
-| `ARMED` / `THRUST` / `COOLDOWN 0.21s` / `OPEN PAWS` | Strike detector state. `ARMED`: ready. `THRUST`: a fast approach is in progress. `COOLDOWN`: re-arm delay after a strike (0.35 s). `OPEN PAWS`: pull the paws apart past the arm distance first. |
+| `SPEED 42 in/s` + `NEED 19` + bar | How fast the right paw closes in on the left paw, in inches per second, measured relative to your body size. `NEED` is the strike threshold. On the bar, the white tick is the threshold, the pink tick is the power-shot speed (3.5x the threshold), and the faint mark is the peak of the last second. The fill is yellow below the threshold, green above it, and pink at power speed. |
+| `DIST 12.3 in` + `CONTACT 9.0` + bar | Distance between the paws. The paws must come within `CONTACT` for a strike, or the right paw must pass the left paw's line. On the bar, the white tick is the contact distance and the grey tick is the arm distance (14 in): the paws must open past it before the next strike. |
+| `ARMED` / `THRUST` / `COOLDOWN 0.21s` / `OPEN PAWS` | Strike detector state. `ARMED`: ready. `THRUST`: a fast approach is in progress. `COOLDOWN`: re-arm delay after a strike (0.25 s). `OPEN PAWS`: pull the paws apart past the arm distance first. |
 | `STRIKES 3` | Strikes detected since this input was created. The count restarts when gameplay begins after calibration. |
 | `LAST 42 in/s POWER` | Peak speed of the last strike, and whether it was a power shot. |
-| Log (newest on top) | `STRIKE 42 in/s [POWER]`: a strike fired. `missed: too slow 21 in/s`: the paws touched, but the thrust peaked at 21 in/s, below the threshold. `missed: paws too far 8.1 in`: a fast thrust stopped 8.1 in short of contact. `missed: short thrust`: the paws touched fast, but the thrust started too close (under 4 in of travel). `cooldown`: a fast touch within 0.35 s of the last strike. `not armed: open paws`: a fast touch before the paws were pulled apart. `dropped: no tracking`: a strike arrived while tracking was not confirmed. `expired: not fired`: a strike was detected but the game could not fire it in time (for example during the shot cooldown, the enemy phase or a hand-off). |
+| `ENERGY 0.62` + `BODY 0.58 11/11 23in/s` | Hype input (v2). `ENERGY` is the motion energy the game uses: the body meter, or the debug key, mouse or bot simulation if that is higher. It turns pink from 0.25, and red when nothing is tracked. `BODY` is the camera's own meter: energy, body nodes seen out of 11, and mean node speed above the 8 in/s jitter deadzone. 30 in/s gives full energy. |
+| Log (newest on top) | `STRIKE 42 in/s [POWER] [(line)]`: a strike fired, by contact or, with `(line)`, by passing the left paw. `missed: too slow 21 in/s`: the paws touched, but the thrust peaked at 21 in/s, below the threshold. `missed: paws too far 8.1 in`: a fast thrust stopped 8.1 in short of contact. `missed: short thrust`: the paws touched fast, but the thrust started too close (under 4 in of travel). `cooldown`: a fast touch within 0.25 s of the last strike. `not armed: open paws`: a fast touch before the paws were pulled apart. `dropped: no tracking`: a strike arrived while tracking was not confirmed. `expired: not fired`: a strike was detected but the game could not fire it in time (for example during the shot cooldown, the enemy phase or a hand-off). |
 
 ## 4. Debug Settings: open it and tune
 
@@ -112,7 +133,7 @@ Try these rows first:
 | Row | Try it when | Values to try |
 |---|---|---|
 | **Input: Strike Speed x** | Thrusts don't fire and the log says `missed: too slow`. Lower it. Strikes fire by accident. Raise it. | 0.7–0.8 (easier), 1.2–1.4 (harder). It scales the threshold and the power-shot speed together. |
-| **Input: Contact Distance x** | The log says `missed: paws too far`. Raise it. | 1.3–1.6. The arm distance grows with it when needed. |
+| **Input: Contact Distance x** | The log says `missed: paws too far`. Raise it. | 1.3–1.6. It also scales the 12 in line-cross distance, and the arm distance grows with it when needed. |
 | **Input: Aim Smoothing x** | The aim guide shakes while you hold still. Raise it. The aim lags behind your paw. Lower it. | 1.5–2 (steadier), 0.6–0.8 (quicker) |
 | **Input: Launch Range x** | You must stretch too far to reach the walls. Lower it. The cat is too twitchy. Raise it. | 0.7–0.8 (less arm travel), 1.2 (calmer) |
 | **Input: Toggle Left-Handed Cue** | You play with the right paw as the ball. This is also in Settings > Left-handed cue. | — |
@@ -137,6 +158,10 @@ Please note the Debug Settings scales you used. A photo of the readout at the mo
 - **Tracking.** How often did `NO TRACKING: PAWS` appear, and at what distance and lighting? Which pose lost it?
 - **The pose itself.** Is the left-paw-ball, right-paw-cue pose comfortable over a few minutes? What would feel more
   natural?
+- **Hype (v2).** Which moves reach `MAX!!!`, and how tiring is it? Does the ball feel faster and stronger? Does the
+  MOVE! prompt come too early, too late or too often? What does the readout's `BODY` row show while you dance?
+- **Paw pick (v2).** Can you put both paws on the ball you want? Is 0.8 s of holding too long or too short? Did a
+  ball ever get picked by accident?
 
 ## Rebuild
 
@@ -172,3 +197,8 @@ Asset Hunter Pro's per-build logs (`Starter/SerializedBuildInfo/`) are gitignore
 | Readout | `UI/Debug/ControlReadoutOverlay.cs`, `UI/Debug/ControlReadoutPanel.cs`, prefab from `Editor/ControlReadoutBuilder.cs` (run by `FlowPrefabsBuilder`); data from `StrikeDetector.Readout` and `PawShotInput` |
 | Live tuning | `Input/ControlTuning.cs`, `Configs/ControlConfig.cs` (`StrikeSettingsFor`, `AimMinCutoffFor`, `LaunchRangeFor`), read in `Flow/PlayerShotInputFactory.cs` |
 | Demo defaults | `#if BR_CONTROL_DEMO` initializers in `PlayerData/DebugSettings.cs` |
+| Strike (v2) | `Input/Core/StrikeDetector.cs`, `Input/Core/StrikeTypes.cs`, values in `Configs/ControlConfig.cs` (asset upgraded by `Editor/ControlConfigV2Upgrade.cs`) |
+| Motion energy + paw pointer | `Input/MotionEnergyMeter.cs`, `Input/Core/MotionEnergyFilter.cs`, `Input/PawPointer.cs`, `Input/Core/PawPointerMath.cs`, routed by `Input/RoutedBodyInput.cs` (`ShotInputRouter.MotionEnergy` / `.PawPointer`) |
+| Hype | `Gameplay/HypeController.cs` (energy → Hype, tiers, MOVE prompt), `Configs/HypeConfig.cs` + `HypeConfig.asset`, `Simulation/BallSimulator.SetHype` (speed, damage), `Presentation/HypeJuice.cs` + `HypeAuraView.cs` (look), `UI/Hud/HypeMeterWidget.cs` + `MovePromptWidget.cs` |
+| Reward pick | `UI/Views/RewardView.cs`, `UI/Views/RewardPawPicker.cs`, `UI/Widgets/RewardBallOption.cs` + `PawArm.cs`, `Simulation/RewardGenerator.cs` (balls only), hold tuning in `UiTheme` (`rewardHoldSeconds`, `rewardPawArmDistance`) |
+| Readout Hype row | `UI/Debug/ControlReadoutEnergyRow.cs` |

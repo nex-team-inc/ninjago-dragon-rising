@@ -239,6 +239,8 @@ namespace Nex.BilliardRogue
         // GameSession.RequestPause owns the pause analytics; this only adds the camera and the overlay.
         void BeginPause()
         {
+            // Also the tracking-lost overlay's Back (IsActive is false there): one pause at a time, none after the run.
+            if (paused || runEnded) return;
             RevealWorld();
             paused = true;
             session.RequestPause(true);

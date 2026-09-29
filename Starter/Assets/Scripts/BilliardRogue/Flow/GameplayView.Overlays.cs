@@ -66,7 +66,9 @@ namespace Nex.BilliardRogue
             var input = context.inputs[playerIndex];
             var lostAt = Time.realtimeSinceStartup;
             var view = Instantiate(trackingLostViewPrefab);
-            view.Initialize(playerIndex, context.run.numPlayers, () => input.IsTracking);
+            // Back on the overlay pauses over it, so Save & Quit stays reachable when the player never returns; after
+            // Resume the tracking-lost hold keeps the sim frozen.
+            view.Initialize(playerIndex, context.run.numPlayers, () => input.IsTracking, BeginPause);
             await manager.PushView(view);
             try
             {

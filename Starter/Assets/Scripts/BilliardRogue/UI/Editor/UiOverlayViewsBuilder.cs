@@ -203,7 +203,8 @@ namespace Nex.BilliardRogue.Editor
             UiFields.Set(view, "portrait", portrait);
             UiFields.Set(view, "waitingGroup", waiting);
             UiFields.Set(view, "resumingGroup", resuming);
-            UiFields.Set(view, "keyResponder", null);
+            // Nothing to navigate; Escape/remote Back → top-level Back → TrackingLostView.OnBackButton → pause menu.
+            UiFields.Set(view, "keyResponder", FlowUiFactory.CreateGraphWithBackProxy(root.transform, null, TopLevelControlPanel.ControlConfig.Back));
             UiFields.Set(view, "popTarget", panel.transform);
             return UiViewsBuilder.SaveRoot(root, path);
         }

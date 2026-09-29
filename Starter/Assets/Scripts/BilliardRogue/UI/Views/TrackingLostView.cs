@@ -10,7 +10,9 @@ namespace Nex.BilliardRogue
 {
     /// <summary>
     /// "Step back into view" overlay for one player. Closes itself once isTracked() holds (after a short
-    /// "Found you! Resuming…"), or on RequestClose(). Usage: Instantiate → Initialize → PushView → WaitClosedAsync.
+    /// "Found you! Resuming…"), or on RequestClose(). Back (remote/Escape, through the back-proxy key responder)
+    /// raises requestPause, so the pause menu (Resume / Save &amp; Quit) opens over it even when a player never
+    /// returns. Usage: Instantiate → Initialize → PushView → WaitClosedAsync.
     /// </summary>
     public sealed class TrackingLostView : RogueView
     {
@@ -24,17 +26,22 @@ namespace Nex.BilliardRogue
         [SerializeField] GameObject resumingGroup = null!;
 
         Func<bool> isTracked = () => false;
+        Action? requestPause;
         bool started;
         bool closeRequested;
 
         public override ViewIdentifier Identifier => ViewIdentifier.TrackingLost;
-        public override TopLevelControlPanel.ControlConfig Controls => TopLevelControlPanel.ControlConfig.None;
+        public override TopLevelControlPanel.ControlConfig Controls => TopLevelControlPanel.ControlConfig.Back;
         public override string AnalyticsScreenName => "tracking_lost";
 
-        /// <summary>playerIndex is 0-based; isTracked is polled every frame while the view is on top.</summary>
-        public void Initialize(int playerIndex, int numPlayers, Func<bool> isTracked)
+        /// <summary>
+        /// playerIndex is 0-based; isTracked is polled every frame while the view is on top; requestPause runs on Back
+        /// (the opener pushes the pause view over this one).
+        /// </summary>
+        public void Initialize(int playerIndex, int numPlayers, Func<bool> isTracked, Action? requestPause = null)
         {
             this.isTracked = isTracked;
+            this.requestPause = requestPause;
             bodyLabel.SetKey(LocKeys.TrackingLost.Body, playerIndex + 1);
             playerChip.SetActive(numPlayers > 1);
             playerChipLabel.SetKey(LocKeys.Hud.PlayerTag, playerIndex + 1);
@@ -48,6 +55,13 @@ namespace Nex.BilliardRogue
         public void RequestClose()
         {
             closeRequested = true;
+        }
+
+        public override void OnBackButton()
+        {
+            if (!IsActive || closeRequested || requestPause == null) return;
+            TrackBack();
+            requestPause();
         }
 
         public override void ViewDidBecomeTopView(bool afterPush)
@@ -84,6 +98,5 @@ namespace Nex.BilliardRogue
             portrait.rectTransform.DOScale(theme.ChipPulseScale, theme.ChipPulseDuration).SetEase(Ease.InOutSine)
                 .SetLoops(-1, LoopType.Yoyo).SetUpdate(true).SetLink(gameObject);
         }
-
     }
 }

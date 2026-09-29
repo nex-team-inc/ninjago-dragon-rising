@@ -47,6 +47,7 @@ namespace Nex.BilliardRogue
         public RectTransform Body => body;
         public CanvasGroup BodyGroup => bodyGroup;
         public RectTransform Visual => visual;
+        public RectTransform Floater => floater;
         public Image Glow => glow;
         public float Radius => radius;
 

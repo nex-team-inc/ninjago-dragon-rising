@@ -21,8 +21,8 @@ namespace Nex.BilliardRogue.Editor
         const float BallSpacing = 520f;
         static readonly Vector2 optionSize = new(480f, 600f);
         /// <summary>Shoulders sit below the bottom edge, inset from the corners (arms layer space: origin at the centre).</summary>
-        static readonly Vector2 shoulderLeft = new(-700f, -640f);
-        static readonly Vector2 shoulderRight = new(700f, -640f);
+        static readonly Vector2 shoulderLeft = new(-760f, -640f);
+        static readonly Vector2 shoulderRight = new(760f, -640f);
         const float ArmScale = 4f;            // sleeve 24 px and paw 36x40 px at 4x
 
         public static string Build(Kit kit, string path)
@@ -51,8 +51,8 @@ namespace Nex.BilliardRogue.Editor
             Kit.Stretch(armsGo);
             var arms = new List<Object>
             {
-                Arm(kit, armsGo.transform, "ArmLeft", shoulderLeft, new Vector2(40f, 300f)),
-                Arm(kit, armsGo.transform, "ArmRight", shoulderRight, new Vector2(-40f, 300f)),
+                Arm(kit, armsGo.transform, "ArmLeft", shoulderLeft, new Vector2(0f, 260f)),
+                Arm(kit, armsGo.transform, "ArmRight", shoulderRight, new Vector2(0f, 260f)),
             };
 
             kit.Label(c, "PawHint", LocKeys.Reward.PawHint, 48, theme.TextPrimary, Kit.Bottom, new Vector2(0f, 96f), new Vector2(1000f, 64f));
@@ -92,8 +92,8 @@ namespace Nex.BilliardRogue.Editor
             Kit.Place(visual, Kit.Center, Vector2.zero, new Vector2(BallSize, BallSize), Kit.Center);
             var v = visual.transform;
             var glow = kit.Image(v, "Glow", theme.GlowDisc, Kit.Center, Vector2.zero, new Vector2(384f, 384f));
-            var track = kit.Image(v, "HoldTrack", theme.RingHold, Kit.Center, Vector2.zero, new Vector2(320f, 320f), color: new Color(0.1f, 0.12f, 0.24f, 0.7f));
-            var fill = kit.Image(v, "HoldFill", theme.RingHold, Kit.Center, Vector2.zero, new Vector2(320f, 320f), color: theme.Accent);
+            var track = kit.Image(v, "HoldTrack", theme.RingHold, Kit.Center, Vector2.zero, new Vector2(296f, 296f), color: new Color(0.1f, 0.12f, 0.24f, 0.7f));
+            var fill = kit.Image(v, "HoldFill", theme.RingHold, Kit.Center, Vector2.zero, new Vector2(296f, 296f), color: theme.Accent);
             fill.type = Image.Type.Filled;
             fill.fillMethod = Image.FillMethod.Radial360;
             fill.fillOrigin = (int)Image.Origin360.Top;
@@ -101,13 +101,13 @@ namespace Nex.BilliardRogue.Editor
             fill.fillAmount = 0f;
             fill.enabled = false;
             track.enabled = false;
-            var focusRing = kit.Image(v, "FocusRing", theme.RingHold, Kit.Center, Vector2.zero, new Vector2(296f, 296f), color: new Color(1f, 1f, 1f, 0.9f));
+            var focusRing = kit.Image(v, "FocusRing", theme.RingHold, Kit.Center, Vector2.zero, new Vector2(280f, 280f), color: new Color(1f, 1f, 1f, 0.9f));
             focusRing.gameObject.SetActive(false);
             var ball = kit.Image(v, "Ball", theme.Ball, Kit.Center, Vector2.zero, new Vector2(BallSize, BallSize));
 
             var f = floater.transform;
-            var name = kit.Label(f, "Name", LocKeys.Ball.Names[0], 64, theme.TextPrimary, Kit.Center, new Vector2(0f, 236f), new Vector2(480f, 80f), bold: true);
-            var shortLabel = kit.Label(f, "Short", LocKeys.Ball.Short(BallType.Basic), 48, theme.Accent, Kit.Center, new Vector2(0f, 172f), new Vector2(480f, 64f));
+            var name = kit.Label(f, "Name", LocKeys.Ball.Names[0], 64, theme.TextPrimary, Kit.Center, new Vector2(0f, 256f), new Vector2(480f, 80f), bold: true);
+            var shortLabel = kit.Label(f, "Short", LocKeys.Ball.Short(BallType.Basic), 48, theme.Accent, Kit.Center, new Vector2(0f, 196f), new Vector2(480f, 64f));
             var chip = kit.Image(f, "Chip", theme.Chip, Kit.Center, new Vector2(0f, -BallSize * 0.5f - 88f), new Vector2(320f, 64f), Fill.Sliced);
             var chipLabel = kit.Label(chip.transform, "Label", LocKeys.Reward.KindNewBall, 32, theme.RarityColor(BallRarity.Common), Kit.Center,
                 new Vector2(0f, 2f), new Vector2(304f, 48f));

@@ -93,6 +93,7 @@ namespace Nex.BilliardRogue
             arms[0].Follow(tracked ? left : arms[0].RestPosition + new Vector2(0f, sway), theme.RewardPawSharpness, dt, rise);
             arms[1].Follow(tracked ? right : arms[1].RestPosition - new Vector2(0f, sway), theme.RewardPawSharpness, dt, rise);
             if (!interactable || !IsActive) return;
+            if (tracked) picker.Observe(left, right);
             StepPicker(tracked, dt);
         }
 
@@ -131,7 +132,7 @@ namespace Nex.BilliardRogue
                 hoverAmounts[i] = 0f;
             }
 
-            picker.Reset(shownCount);
+            picker.Reset(shownCount, theme.RewardPawArmDistance);
             optionsGroup.SetInitialActiveIndex(shownCount == 3 ? 1 : 0);
             choice = new UniTaskCompletionSource<int>();
             using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, destroyCancellationToken);
@@ -347,12 +348,18 @@ namespace Nex.BilliardRogue
                 sequence.Join(options[i].Body.DOScale(0.85f, duration * 0.5f).SetEase(Ease.InQuad));
             }
 
-            sequence.Insert(grab + duration * 0.35f, DOTween.To(() => rise, value =>
+            // The paws pull the ball down with them as the arms sink below the screen edge.
+            var at = grab + duration * 0.5f;
+            var retract = duration * 0.6f;
+            var root = (RectTransform)chosen.transform;
+            sequence.Insert(at, DOTween.To(() => rise, value =>
             {
                 rise = value;
                 arms[0].Snap(arms[0].PawPosition, rise);
                 arms[1].Snap(arms[1].PawPosition, rise);
-            }, 0f, duration).SetEase(Ease.InBack));
+            }, 0f, retract).SetEase(Ease.InBack));
+            sequence.Insert(at, root.DOAnchorPosY(root.anchoredPosition.y - arms[0].DropDistance, retract).SetEase(Ease.InBack));
+            sequence.Insert(at, chosen.Floater.DOScale(0.7f, retract).SetEase(Ease.InQuad));
             return sequence;
         }
 

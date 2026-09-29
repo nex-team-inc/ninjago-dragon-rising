@@ -30,6 +30,7 @@ namespace Nex.BilliardRogue.Editor.Tests
             var steps = Mathf.CeilToInt(seconds / Dt);
             for (var i = 0; i < steps; i++)
             {
+                if (tracked) picker.Observe(left, right);
                 var picked = picker.Step(tracked, left, right, Dt, Hold, Drain);
                 if (picked >= 0) return picked;
             }
@@ -69,6 +70,23 @@ namespace Nex.BilliardRogue.Editor.Tests
             Assert.AreEqual(-1, Run(picker, new Vector2(-500f, 0f), new Vector2(500f, 0f), Hold));
             Assert.AreEqual(0f, picker.Fill(1));
             Assert.AreEqual(-1, picker.BothHover);
+        }
+
+        [Test]
+        public void PawsRestingOnABallWhenTheViewOpensPickOnlyAfterMoving()
+        {
+            var picker = new RewardPawPicker();
+            picker.Reset(3, 60f);
+            for (var i = 0; i < 3; i++)
+            {
+                picker.SetBall(i, new Vector2((i - 1) * 500f, 0f), 150f);
+            }
+
+            Assert.AreEqual(-1, Run(picker, Vector2.zero, Vector2.zero, Hold * 3f));
+            Assert.AreEqual(1, picker.Hovered);
+            Assert.IsFalse(picker.Armed);
+            Assert.AreEqual(1, Run(picker, new Vector2(0f, 80f), new Vector2(0f, 80f), Hold * 1.1f));
+            Assert.IsTrue(picker.Armed);
         }
 
         [Test]

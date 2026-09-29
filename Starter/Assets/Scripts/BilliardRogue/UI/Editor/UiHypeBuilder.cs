@@ -17,7 +17,7 @@ namespace Nex.BilliardRogue.Editor
     public static class UiHypeBuilder
     {
         const float Inset = 32f;
-        const float MeterHeight = 176f;
+        const float MeterHeight = 208f;
         const float BarWidth = UiHudBuilder.ColumnWidth - 2f * Inset;
         static readonly float[] tierThresholds = { 0.25f, 0.55f, 0.85f };
 
@@ -51,7 +51,7 @@ namespace Nex.BilliardRogue.Editor
             }
 
             var callout = kit.Ui("Callout", p);
-            Kit.Place(callout, Kit.Top, new Vector2(0f, -144f), new Vector2(BarWidth, 64f), Kit.Center);
+            Kit.Place(callout, Kit.Top, new Vector2(0f, -150f), new Vector2(BarWidth, 64f), Kit.Center);
             var calloutLabel = kit.Label(callout.transform, "Label", LocKeys.Hud.HypeTier1, 48, theme.Accent, Kit.Center, Vector2.zero,
                 new Vector2(BarWidth, 64f), bold: true);
 

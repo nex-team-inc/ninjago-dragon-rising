@@ -8,7 +8,8 @@ namespace Nex.BilliardRogue
     /// Dual-paw hold logic of the reward motion pick (GDD v2 §4), free of Unity objects so EditMode tests can drive it.
     /// Each frame: the balls' centres/radii and the two paw positions (same space); a paw hovers the nearest ball
     /// within its radius; while both paws hover the same ball its fill grows to 1 in holdSeconds and picks it; every
-    /// other fill drains (drainRate x the fill speed).
+    /// other fill drains (drainRate x the fill speed). Fills only count once a raw paw (Observe) moved armDistance
+    /// from where it was first seen, so paws (or the Editor mouse) resting on a ball when the view opens never pick by themselves.
     /// </summary>
     public sealed class RewardPawPicker
     {
@@ -18,6 +19,10 @@ namespace Nex.BilliardRogue
         readonly float[] radii = new float[MaxBalls];
         readonly float[] fills = new float[MaxBalls];
         int count;
+        float armDistance;
+        bool hasStart;
+        Vector2 startLeft;
+        Vector2 startRight;
 
         /// <summary>Ball under the left / right paw, -1 for none.</summary>
         public int LeftHover { get; private set; } = -1;
@@ -29,11 +34,17 @@ namespace Nex.BilliardRogue
         /// <summary>Emphasised ball: both paws, else any paw (left first), -1 for none.</summary>
         public int Hovered => BothHover >= 0 ? BothHover : LeftHover >= 0 ? LeftHover : RightHover;
 
+        /// <summary>True once a paw moved armDistance since it was first tracked (or armDistance is 0).</summary>
+        public bool Armed { get; private set; }
+
         public float Fill(int index) => index >= 0 && index < count ? fills[index] : 0f;
 
-        public void Reset(int ballCount)
+        public void Reset(int ballCount, float armDistance = 0f)
         {
             count = Mathf.Clamp(ballCount, 0, MaxBalls);
+            this.armDistance = armDistance;
+            Armed = armDistance <= 0f;
+            hasStart = false;
             for (var i = 0; i < MaxBalls; i++)
             {
                 fills[i] = 0f;
@@ -62,7 +73,7 @@ namespace Nex.BilliardRogue
             var picked = -1;
             for (var i = 0; i < count; i++)
             {
-                if (i == BothHover)
+                if (i == BothHover && Armed)
                 {
                     fills[i] = Mathf.Min(1f, fills[i] + rate);
                     if (fills[i] >= 1f) picked = i;
@@ -74,6 +85,25 @@ namespace Nex.BilliardRogue
             }
 
             return picked;
+        }
+
+        /// <summary>
+        /// Raw (unsmoothed) tracked paw positions, called every tracked frame before Step: arms the picker once either
+        /// paw moved armDistance from where it was first seen (the displayed paws glide in from rest, so they can't).
+        /// </summary>
+        public void Observe(Vector2 left, Vector2 right)
+        {
+            if (Armed) return;
+            if (!hasStart)
+            {
+                hasStart = true;
+                startLeft = left;
+                startRight = right;
+                return;
+            }
+
+            var limit = armDistance * armDistance;
+            Armed = (left - startLeft).sqrMagnitude >= limit || (right - startRight).sqrMagnitude >= limit;
         }
 
         int HitTest(Vector2 paw)

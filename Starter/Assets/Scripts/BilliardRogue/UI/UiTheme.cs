@@ -146,6 +146,8 @@ namespace Nex.BilliardRogue
         [SerializeField, Range(0.8f, 2f)] float rewardPawHitScale = 1.25f;
         [Tooltip("Paw follow sharpness (1/s, exponential smoothing of the tracked hand).")]
         [SerializeField, Range(2f, 40f)] float rewardPawSharpness = 16f;
+        [Tooltip("A paw must move this far (units) after the view opens before a hold counts (no accidental picks).")]
+        [SerializeField, Range(0f, 400f)] float rewardPawArmDistance = 60f;
         [SerializeField, Range(1f, 1.5f)] float rewardHoverScale = 1.18f;
         [SerializeField, Range(0f, 40f)] float rewardBobDistance = 12f;
         [SerializeField, Range(0.3f, 4f)] float rewardBobPeriod = 1.7f;
@@ -269,6 +271,7 @@ namespace Nex.BilliardRogue
         public float RewardHoldDrain => rewardHoldDrain;
         public float RewardPawHitScale => rewardPawHitScale;
         public float RewardPawSharpness => rewardPawSharpness;
+        public float RewardPawArmDistance => rewardPawArmDistance;
         public float RewardHoverScale => rewardHoverScale;
         public float RewardBobDistance => rewardBobDistance;
         public float RewardBobPeriod => rewardBobPeriod;

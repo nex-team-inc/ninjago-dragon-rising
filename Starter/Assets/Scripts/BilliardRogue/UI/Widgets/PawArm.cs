@@ -38,6 +38,9 @@ namespace Nex.BilliardRogue
 
         public Vector2 RestPosition => home + restOffset;
 
+        /// <summary>How far the paw sinks at rise 0 (the arm fully below the screen edge).</summary>
+        public float DropDistance => restOffset.y + minLength;
+
         void Awake()
         {
             home = shoulder.localPosition;
@@ -80,7 +83,7 @@ namespace Nex.BilliardRogue
         /// <summary>rise 0 = shoulder and paw pulled below the screen edge, 1 = in place.</summary>
         void Apply(float rise)
         {
-            var drop = (1f - rise) * (restOffset.y + minLength);
+            var drop = (1f - rise) * DropDistance;
             var root = home + new Vector2(0f, -drop);
             shoulder.localPosition = root;
             var reach = current + new Vector2(0f, -drop) - root;

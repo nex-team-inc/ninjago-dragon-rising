@@ -29,4 +29,5 @@ You are the Cursor agent, started automatically by `Tools/handoff/claude_limit_w
 | 5b | **v2-E Integration + device**: apply the v2 agents' Requests, Build All, EditMode tests, play-mode smoke (Hype, reward pick with both paws / remote Enter, 2P banner), rebuild the demo APK, install + launch on 10.4.6.137 (leave on title), update `ControlDemo.md` | done (26bb1159, 742242f7; v2 APK installed on the device) | `progress/v2-integration.md` (known gaps listed there) |
 | 6 | Perf (60 fps on Mali-G52; title measured ~40 fps in the dev build) — Editor-side work only; do NOT install on the device while the user is testing | in progress (Claude agent) | `progress/final-perf.md` |
 
+| 7 | v2 spawning: random pop-in batches (>=10 every 3 turns, not in the nearest 3 rows), skip empty turns, debug overlay hidden; rebuild APK + install on the device | in progress (Claude agent) | `GDD-v2-Changes.md` §5-§6; `progress/v2-spawn.md` |
 If an item's progress note says another agent is mid-way, continue it from the note. If every item is done or blocked, write your notes and stop.

@@ -92,8 +92,12 @@ namespace Nex.BilliardRogue
         [Serializable]
         public sealed class CatSettings
         {
-            [Tooltip("Show the cat knight on the launch line. Off: the ball and the aim guide alone mark the shot; hurt and heal numbers still rise from the cat's spot.")]
+            [Tooltip("Show the cat knight on the launch line. Off: only its cue shows, lying behind the waiting ball along the aim; hurt and heal numbers still rise from the cat's spot.")]
             public bool visible;
+            [Tooltip("Without the cat: gap between the waiting ball and the cue tip at rest, in cells.")]
+            [Range(0f, 1f)] public float cueGap = 0.14f;
+            [Tooltip("Without the cat: the cue's butt rises this many degrees above the tip, like a real billiard cue.")]
+            [Range(0f, 30f)] public float cueTiltDeg = 9f;
             [Tooltip("Walk speed along the launch line in cells per second.")]
             [Range(0.5f, 20f)] public float walkSpeed = 7f;
             [Tooltip("Idle yaw in degrees (180 = facing the camera, 135 = 3/4 view).")]

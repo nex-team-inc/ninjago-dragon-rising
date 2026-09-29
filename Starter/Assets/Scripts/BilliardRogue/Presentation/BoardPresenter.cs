@@ -221,6 +221,7 @@ namespace Nex.BilliardRogue
         {
             var cat = cats[Mathf.Clamp(shooterIndex, 0, cats.Length - 1)];
             cat.SetLaunchX(launchX01);
+            cat.SetAim(ArenaGeometry.ClampAim(rules.arena, dir), visible);
             if (!visible)
             {
                 aimGuide.SetVisible(false);

@@ -9,8 +9,9 @@ namespace Nex.BilliardRogue
     /// turns up the arena to strike with the cue, flinches when hurt, dances on victory and slumps on defeat.
     /// While balls fly it dances with Hype (GDD v2 §3) and strikes a big pose when a Hype tier is reached.
     /// Rigid parts (Cat_Hero.fbx: Body, Head, EarL/R, Tail, PawL/R, Cape) are animated by code; P1/P2 palettes
-    /// swap the model material (M_Palette / M_Palette_CatP2). JuiceConfig.cat.visible off hides every renderer and
-    /// skips the pose animation; the cat still walks, so its anchors keep marking the player's spot.
+    /// swap the model material (M_Palette / M_Palette_CatP2). JuiceConfig.cat.visible off hides the cat and skips its
+    /// pose animation (it still walks, so its anchors keep marking the player's spot); only the cue shows, lying behind
+    /// the waiting ball along the aim while a shot waits, and thrusting on the strike.
     /// </summary>
     public sealed class CatView : MonoBehaviour
     {
@@ -37,6 +38,11 @@ namespace Nex.BilliardRogue
         JuiceConfig.HypeSettings hypeSettings = null!;
         MaterialPropertyBlock block = null!;
         Renderer[] renderers = System.Array.Empty<Renderer>();
+        Renderer[] cueRenderers = System.Array.Empty<Renderer>();
+        float cueTipLocalZ;
+        Vector2 aimDirection = Vector2.up;
+        bool aimVisible;
+        bool cueShown;
         bool visible = true;
         int playerIndex;
         float currentX01 = 0.5f;
@@ -91,7 +97,13 @@ namespace Nex.BilliardRogue
             defeated = false;
             strikeT = hurtT = victoryT = poseT = 1f;
             hype = 0f;
-            if (renderers.Length == 0) renderers = GetComponentsInChildren<Renderer>(true);
+            if (renderers.Length == 0)
+            {
+                renderers = GetComponentsInChildren<Renderer>(true);
+                cueRenderers = cue.GetComponentsInChildren<Renderer>(true);
+                cueTipLocalZ = MeasureCueTip();
+            }
+
             ApplyVisibility();
             SetActive(false);
             Place();
@@ -111,7 +123,12 @@ namespace Nex.BilliardRogue
             }
 
             Place();
-            if (!visible) return;
+            if (!visible)
+            {
+                PlaceCue(dt);
+                return;
+            }
+
             var walking = !Mathf.Approximately(currentX01, targetX01);
             var yaw = settings.idleYaw;
             var cueOffset = Vector3.zero;
@@ -195,7 +212,16 @@ namespace Nex.BilliardRogue
         {
             active = isActive;
             pennant.gameObject.SetActive(isActive);
-            if (!isActive) targetX01 = playerIndex == 0 ? settings.waitingX01 : 1f - settings.waitingX01;
+            if (isActive) return;
+            targetX01 = playerIndex == 0 ? settings.waitingX01 : 1f - settings.waitingX01;
+            aimVisible = false;
+        }
+
+        /// <summary>The shooter's aim (sim space, normalized) and whether a ball waits to be shot: the cue follows it without the cat.</summary>
+        public void SetAim(Vector2 direction, bool shotReady)
+        {
+            aimDirection = direction;
+            aimVisible = shotReady;
         }
 
         public bool IsActive => active;
@@ -257,6 +283,68 @@ namespace Nex.BilliardRogue
             {
                 renderers[i].enabled = visible;
             }
+
+            // With the cat the cue stays in its paw; without it PlaceCue shows the cue only while a shot waits.
+            cueShown = visible;
+            if (visible) return;
+            // The cue hangs under the model: an unposed model keeps its scale steady.
+            model.localRotation = Quaternion.identity;
+            model.localPosition = Vector3.zero;
+            model.localScale = Vector3.one * settings.modelScale;
+        }
+
+        /// <summary>Without the cat: the cue lies behind the waiting ball along the aim, butt raised, and thrusts on a strike.</summary>
+        void PlaceCue(float dt)
+        {
+            if (strikeT < 1f) strikeT = Mathf.Min(1f, strikeT + dt / settings.strikeDuration);
+            var shown = active && aimVisible && !defeated;
+            if (shown != cueShown)
+            {
+                cueShown = shown;
+                for (var i = 0; i < cueRenderers.Length; i++)
+                {
+                    cueRenderers[i].enabled = shown;
+                }
+            }
+
+            if (!shown) return;
+            var rules = layout.Rules;
+            var origin = Simulation.ArenaGeometry.LaunchOrigin(rules, targetX01);
+            var ball = layout.ToWorld(origin, rules.ballRadius);
+            var flat = layout.ToWorld(origin + aimDirection, rules.ballRadius) - ball;
+            flat.y = 0f;
+            if (flat.sqrMagnitude < 1e-6f) return;
+            flat.Normalize();
+            // Pointing down at the ball by the tilt, so the butt rises behind it.
+            var tilt = settings.cueTiltDeg * Mathf.Deg2Rad;
+            var forward = flat * Mathf.Cos(tilt) - Vector3.up * Mathf.Sin(tilt);
+            // The strike thrusts the tip through the ball's spot and draws it back; at rest it breathes a little.
+            var reach = rules.ballRadius + settings.cueGap - Easing.Punch(strikeT) * settings.cuePullBack + Mathf.Sin(phase * 2.4f) * 0.02f;
+            var tip = ball - forward * (reach * layout.CellSize);
+            cue.SetPositionAndRotation(tip - forward * (cueTipLocalZ * cue.lossyScale.z), Quaternion.LookRotation(forward, Vector3.up));
+        }
+
+        /// <summary>The cue tip's distance along the cue's +Z (TDD §14.1: the cue points along +Z), in its own space.</summary>
+        float MeasureCueTip()
+        {
+            var tip = 0f;
+            var toCue = cue.worldToLocalMatrix;
+            foreach (var filter in cue.GetComponentsInChildren<MeshFilter>(true))
+            {
+                if (filter.sharedMesh == null) continue;
+                var bounds = filter.sharedMesh.bounds;
+                var toCueFromMesh = toCue * filter.transform.localToWorldMatrix;
+                for (var corner = 0; corner < 8; corner++)
+                {
+                    var point = new Vector3(
+                        (corner & 1) == 0 ? bounds.min.x : bounds.max.x,
+                        (corner & 2) == 0 ? bounds.min.y : bounds.max.y,
+                        (corner & 4) == 0 ? bounds.min.z : bounds.max.z);
+                    tip = Mathf.Max(tip, toCueFromMesh.MultiplyPoint3x4(point).z);
+                }
+            }
+
+            return tip;
         }
 
         void Place()

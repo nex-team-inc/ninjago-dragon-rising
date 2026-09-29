@@ -21,7 +21,6 @@ namespace Nex.BilliardRogue
         readonly RunFactory runFactory = new();
         readonly Func<bool> viewManagerInTransition;
         readonly List<RogueView> coveredViews = new();
-        int unlockTierAtRunStart;
 
         public RunFlow(RunFlowContext aCtx)
         {
@@ -99,8 +98,6 @@ namespace Nex.BilliardRogue
             });
             gameplay.RunEnded += HandleRunEnded;
             ActiveGameplay = gameplay;
-            // "Unlocked by this run" for the summary: the tier before this run's boss kills moved it.
-            unlockTierAtRunStart = ctx.persistence.MetaProgress.highestUnlockTier;
 
             // Title stays the root below Gameplay: PlayerMode and Calibration go without activating in between, and
             // the views they reveal stay faded out (KeepHidden) so neither PlayerMode nor the title flashes. The
@@ -151,7 +148,11 @@ namespace Nex.BilliardRogue
             NextSeed = 0;
             // The session's TurnController calls persistence.BeginRun at its first stage (runsStarted + first save);
             // doing it here as well counted every new run twice on the title.
-            return runFactory.NewRun(ctx.rules, seed, numPlayers);
+            var run = runFactory.NewRun(ctx.rules, seed, numPlayers);
+            // "Unlocked by this run" for the summary: the tier before this run's boss kills move it. Saved with the
+            // run, so a continued run still reports the balls it unlocked before its Save & Quit.
+            run.unlockTierAtRunStart = ctx.persistence.MetaProgress.highestUnlockTier;
+            return run;
         }
 
         #endregion
@@ -177,7 +178,7 @@ namespace Nex.BilliardRogue
             }
 
             BgmManager.Instance.CrossFadeTo(BgmManager.BgmType.Reward, cancellationToken: ctx.lifetime).Forget();
-            var summary = ctx.summaryView(run, ctx.persistence.MetaProgress, newRecord, unlockTierAtRunStart);
+            var summary = ctx.summaryView(run, ctx.persistence.MetaProgress, newRecord, run.unlockTierAtRunStart);
             using (ctx.viewManager.CreateTransaction())
             {
                 while (ctx.viewManager.TopViewIdentifier != View.ViewIdentifier.Gameplay)

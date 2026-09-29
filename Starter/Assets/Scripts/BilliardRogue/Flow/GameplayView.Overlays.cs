@@ -42,6 +42,9 @@ namespace Nex.BilliardRogue
 
         public async UniTask<int> ChooseRewardAsync(IReadOnlyList<RewardOption> options, RunState run, CancellationToken ct)
         {
+            // A run continued at its reward never passed the stage intro: give it the cleared stage's act look
+            // (a no-op whenever the act is already shown).
+            context.environment.ApplyAct(context.config.Acts[run.actIndex]);
             await UniTask.WaitWhile(overlaysBlocked, cancellationToken: ct);
             var view = Instantiate(rewardViewPrefab);
             view.Initialize(context.config.Pacing);

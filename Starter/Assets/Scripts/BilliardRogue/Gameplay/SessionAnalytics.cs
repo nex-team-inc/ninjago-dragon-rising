@@ -33,9 +33,10 @@ namespace Nex.BilliardRogue
             inner?.ShotFired(ballType, level, angleDeg, power, shooter);
         }
 
-        public void ShotResult(BallType ballType, int hits, int damage, int bounces, int kills, int combo)
+        /// <summary>One ball's result; hypeAverage / hypeMax over its flight (0..1), hypeDamage = damage Hype added.</summary>
+        public void ShotResult(BallType ballType, int hits, int damage, int bounces, int kills, int combo, float hypeAverage, float hypeMax, int hypeDamage)
         {
-            inner?.ShotResult(ballType, hits, damage, bounces, kills, combo);
+            inner?.ShotResult(ballType, hits, damage, bounces, kills, combo, hypeAverage, hypeMax, hypeDamage);
         }
 
         public void TurnEnd(int stage, int turn, int enemiesAdvanced, int damageTaken, int hp)

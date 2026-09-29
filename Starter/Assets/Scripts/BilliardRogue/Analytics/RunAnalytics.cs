@@ -128,12 +128,14 @@ namespace Nex.BilliardRogue
             });
         }
 
-        public void ShotResult(BallType ballType, int hits, int damage, int bounces, int kills, int combo)
+        /// <summary>Per ball: hype_avg / hype_max are Hype 0..1 over the flight, hype_damage the damage Hype added (GDD v2 §3).</summary>
+        public void ShotResult(BallType ballType, int hits, int damage, int bounces, int kills, int combo, float hypeAverage, float hypeMax, int hypeDamage)
         {
             Track("ball_result", new GameAnalyticsProperties
             {
                 ["ball_type"] = BallTypeNames[(int)ballType], ["hits"] = hits, ["damage"] = damage, ["bounces"] = bounces,
-                ["kills"] = kills, ["max_combo"] = combo,
+                ["kills"] = kills, ["max_combo"] = combo, ["hype_avg"] = Round2(hypeAverage), ["hype_max"] = Round2(hypeMax),
+                ["hype_damage"] = hypeDamage,
             });
         }
 
@@ -206,6 +208,8 @@ namespace Nex.BilliardRogue
         #region Helpers
 
         static float Round1(float value) => Mathf.Round(value * 10f) / 10f;
+
+        static float Round2(float value) => Mathf.Round(value * 100f) / 100f;
 
         static string[] Describe(IReadOnlyList<RewardOption> options)
         {

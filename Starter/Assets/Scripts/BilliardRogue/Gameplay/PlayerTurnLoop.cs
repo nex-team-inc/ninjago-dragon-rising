@@ -15,6 +15,7 @@ namespace Nex.BilliardRogue
     {
         readonly SessionServices services;
         readonly TurnFeedback feedback;
+        readonly HypeController hype;
         readonly Vector2[] aimPoints;
         float stragglerSeconds;
         float graceRemaining;
@@ -27,10 +28,14 @@ namespace Nex.BilliardRogue
         {
             services = aServices;
             feedback = new TurnFeedback(aServices);
+            hype = new HypeController(aServices);
             aimPoints = new Vector2[Mathf.Max(2, aServices.Pacing.AimGuideMaxPoints)];
         }
 
         public bool IsTurnDone { get; private set; }
+
+        /// <summary>Hype from body motion while balls fly (GDD v2 §3).</summary>
+        public HypeController Hype => hype;
 
         /// <summary>Player whose paws stayed untracked past ControlConfig.trackingLostSeconds, -1 otherwise.</summary>
         public int TrackingLostPlayer { get; private set; } = -1;
@@ -61,6 +66,7 @@ namespace Nex.BilliardRogue
             services.Tracker.Flush();
             services.Board.SetAim(services.Run.activePlayerIndex, 0.5f, Vector2.up, 0, aimPoints, false);
             SetFastForward(false);
+            hype.Reset();
             services.TimeScale.ResetEffects();
             services.Sequencer.EndTurn();
             handOffPending = false;
@@ -106,6 +112,7 @@ namespace Nex.BilliardRogue
                 Fire(strike);
             }
 
+            hype.Tick(unscaledDeltaTime, scaledDeltaTime);
             if (scaledDeltaTime > 0f) services.Sim.Step(scaledDeltaTime);
             Drain();
             TryHandOff();

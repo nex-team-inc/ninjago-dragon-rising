@@ -50,6 +50,12 @@ namespace Nex.BilliardRogue
             if (enabled) presenter.SetActiveShooter(playerIndex, numPlayers);
         }
 
+        /// <summary>Hype 0..1 for the presenter's juice scaling (GDD v2 §3).</summary>
+        public void SetHype(float hype01)
+        {
+            if (enabled) presenter.SetHype(hype01);
+        }
+
         public void PlayStrike(int shooterIndex, bool power)
         {
             if (enabled) presenter.PlayStrike(shooterIndex, power);

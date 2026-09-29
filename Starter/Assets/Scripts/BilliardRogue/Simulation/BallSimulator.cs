@@ -24,6 +24,9 @@ namespace Nex.BilliardRogue.Simulation
         float accumulator;
         int nextBallId = 1;
         int activeCount;
+        float hypeSpeed = 1f;
+        float hypeDamage = 1f;
+        int hypeMinBonus;
 
         #region Life Cycle
 
@@ -43,6 +46,12 @@ namespace Nex.BilliardRogue.Simulation
 
         /// <summary>Number of balls (including minis) still in flight.</summary>
         public int ActiveCount => activeCount;
+
+        /// <summary>Current Hype speed multiplier (1 = none), as clamped by SetHype.</summary>
+        public float HypeSpeedMultiplier => hypeSpeed;
+
+        /// <summary>Current Hype damage multiplier (1 = none), as clamped by SetHype.</summary>
+        public float HypeDamageMultiplier => hypeDamage;
 
         #region Public Methods
 
@@ -90,10 +99,13 @@ namespace Nex.BilliardRogue.Simulation
                 accumulator = 0f;
                 return;
             }
-            var h = 1f / rules.arena.substepsPerSecond;
+            // Hype speeds balls up: split every substep so no ball moves further per substep than at 1× (no tunnelling).
+            var split = HypeSubstepSplit();
+            var h = 1f / (rules.arena.substepsPerSecond * split);
+            var maxSteps = MaxSubstepsPerStep * split;
             accumulator += dt;
             var steps = 0;
-            while (accumulator >= h && steps < MaxSubstepsPerStep)
+            while (accumulator >= h && steps < maxSteps)
             {
                 accumulator -= h;
                 steps++;
@@ -103,7 +115,7 @@ namespace Nex.BilliardRogue.Simulation
                     if (b.active) Substep(run, b, h, events);
                 }
             }
-            if (steps == MaxSubstepsPerStep) accumulator = 0f;
+            if (steps == maxSteps) accumulator = 0f;
         }
 
         /// <summary>Visits every active ball (id, type, level, position, velocity, isMini, radius) for presentation.</summary>
@@ -160,15 +172,29 @@ namespace Nex.BilliardRogue.Simulation
             return count;
         }
 
-        /// <summary>Removes every ball without emitting events (stage transitions, abandon).</summary>
         /// <summary>
         /// Hype from body motion (GDD v2 §3), applied every step to all balls in flight: speed and damage multipliers
-        /// (1 = no change). Implemented by the Simulation/Gameplay module.
+        /// (1 = no change). Speed is clamped to 1..balance.maxHypeSpeedMultiplier and scales every ball's current speed
+        /// (mud still slows on top; the aim guide never uses it); Step re-derives the substep length from it. Damage
+        /// (≥ 1) scales every ball hit (direct, chain, explosion, crate), rounded half up; EnemyHit.hypeBonus reports
+        /// the added part. Stays in effect until changed; Clear resets it. Deterministic: the same (dt, hype) call
+        /// sequence gives the same events.
         /// </summary>
         public void SetHype(float speedMultiplier, float damageMultiplier)
         {
+            SetHype(speedMultiplier, damageMultiplier, 0);
         }
 
+        /// <summary>SetHype with a floor on the added damage per hit (GDD v2 §3: at least +1 from Hype tier 2).</summary>
+        public void SetHype(float speedMultiplier, float damageMultiplier, int minBonusDamage)
+        {
+            hypeSpeed = Mathf.Clamp(float.IsNaN(speedMultiplier) ? 1f : speedMultiplier, 1f, Mathf.Max(1f, rules.balance.maxHypeSpeedMultiplier));
+            hypeDamage = float.IsNaN(damageMultiplier) ? 1f : Mathf.Max(1f, damageMultiplier);
+            hypeMinBonus = Mathf.Max(0, minBonusDamage);
+            hitResolver.SetHype(hypeDamage, hypeMinBonus);
+        }
+
+        /// <summary>Removes every ball without emitting events (stage transitions, abandon) and resets Hype.</summary>
         public void Clear()
         {
             for (var i = 0; i < Capacity; i++)
@@ -177,6 +203,7 @@ namespace Nex.BilliardRogue.Simulation
             }
             activeCount = 0;
             accumulator = 0f;
+            SetHype(1f, 1f, 0);
         }
 
         #endregion
@@ -195,7 +222,7 @@ namespace Nex.BilliardRogue.Simulation
                 // The pull lost against the geometry (a ball resting on enemy top faces converges to vertical): drop
                 // straight out through everything so the flight ends within TopWallY / ballSpeed.
                 b.direction = Vector2.down;
-                b.position.y -= a.ballSpeed * h;
+                b.position.y -= a.ballSpeed * hypeSpeed * h;
                 if (b.position.y < 0f) Exit(b, events);
                 return;
             }
@@ -298,12 +325,19 @@ namespace Nex.BilliardRogue.Simulation
         int CrateDamage(BallSlot b)
         {
             var stats = hitResolver.LevelStats(b.type, b.level);
-            return Mathf.Max(1, b.isMini ? stats.splitDamage : stats.damage);
+            return hitResolver.Hyped(Mathf.Max(1, b.isMini ? stats.splitDamage : stats.damage), out _);
         }
 
         float CurrentSpeed(BallSlot b)
         {
-            return b.slowTimer > 0f ? b.speed * rules.balance.mudSlowFactor : b.speed;
+            var speed = b.speed * hypeSpeed;
+            return b.slowTimer > 0f ? speed * rules.balance.mudSlowFactor : speed;
+        }
+
+        /// <summary>Substeps per base substep: ⌈hype speed⌉, so the distance per substep never exceeds the 1× one.</summary>
+        int HypeSubstepSplit()
+        {
+            return hypeSpeed <= 1f ? 1 : Mathf.CeilToInt(hypeSpeed - 0.0001f);
         }
 
         void Exit(BallSlot b, List<SimEvent> events)

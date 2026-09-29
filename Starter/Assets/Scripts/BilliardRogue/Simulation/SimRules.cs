@@ -116,9 +116,13 @@ namespace Nex.BilliardRogue.Simulation
         public int levelCap = 3;
         public float hpScalePerStage = 0.16f;
         public int attackBonusPerAct = 1;
+        /// <summary>Legacy v1 Heal card amount; v2 rolls only balls, but a v1 save may still hold a pending Heal card.</summary>
         public int healRewardAmount = 12;
+        /// <summary>Legacy v1 Max HP card amount (see healRewardAmount).</summary>
         public int maxHpRewardAmount = 5;
         public float bossHealFraction = 0.5f;
+        /// <summary>HP healed after every stage clear (GDD v2 §1: replaces the Heal card); a boss adds bossHealFraction.</summary>
+        public int stageClearHeal = 4;
         public int pickupHealAmount = 4;
         public float pickupChancePerRow = 0.2f;
         public int poisonMax = 5;
@@ -128,8 +132,13 @@ namespace Nex.BilliardRogue.Simulation
         public float portalLockSeconds = 0.25f;
         public int powerShotBonusDamage = 1;
         public int powerPickupMultiplier = 2;
-        /// <summary>Offer Basic as a new-ball reward card while ability balls are available (it stays the last resort).</summary>
+        /// <summary>Offer Basic as a reward ball while ability balls are available (off: Basic is only the last resort).</summary>
         public bool offerBasicBall;
+        /// <summary>
+        /// Upper clamp for BallSimulator.SetHype's speed multiplier; the substep count is re-derived from it so a faster
+        /// ball never moves further per substep than an unhyped one.
+        /// </summary>
+        public float maxHypeSpeedMultiplier = 3f;
     }
 
     [Serializable]

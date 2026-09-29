@@ -10,7 +10,9 @@ namespace Nex.BilliardRogue
     /// Aggregates the player-turn events of every fired ball (hits, damage, wall bounces, kills, best combo) into one
     /// RunAnalytics.ShotResult per ball when it exits. Splitter minis carry ids the tracker never saw launched, so
     /// they are attributed to the newest parent that still has open minis; kills are attributed to the last ball
-    /// that hit the enemy in the same event batch (EnemyKilled carries no ball id). Fixed slots: no allocation.
+    /// that hit the enemy in the same event batch (EnemyKilled carries no ball id). Hype (GDD v2 §3): SampleHype
+    /// accumulates the flight-time average and the maximum per open ball, EnemyHit.hypeBonus the damage Hype added.
+    /// Fixed slots: no allocation.
     /// </summary>
     public sealed class ShotResultTracker
     {
@@ -27,6 +29,10 @@ namespace Nex.BilliardRogue
             public int kills;
             public int combo;
             public int openMinis;
+            public float hypeSeconds;
+            public float hypeSum;
+            public float hypeMax;
+            public int hypeDamage;
         }
 
         readonly Entry[] entries = new Entry[Capacity];
@@ -77,6 +83,20 @@ namespace Nex.BilliardRogue
             }
         }
 
+        /// <summary>Adds one frame of Hype (flight time dt, scaled) to every open ball.</summary>
+        public void SampleHype(float hype01, float dt)
+        {
+            if (dt <= 0f) return;
+            for (var i = 0; i < Capacity; i++)
+            {
+                var entry = entries[i];
+                if (!entry.active) continue;
+                entry.hypeSeconds += dt;
+                entry.hypeSum += hype01 * dt;
+                if (hype01 > entry.hypeMax) entry.hypeMax = hype01;
+            }
+        }
+
         /// <summary>Reports every open entry (turn end, stage jump).</summary>
         public void Flush()
         {
@@ -101,6 +121,7 @@ namespace Nex.BilliardRogue
             if (entry == null) return;
             entry.hits++;
             entry.damage += ev.value;
+            entry.hypeDamage += ev.hypeBonus;
         }
 
         void OnKilled(in SimEvent ev)
@@ -157,6 +178,10 @@ namespace Nex.BilliardRogue
                 entry.kills = 0;
                 entry.combo = 0;
                 entry.openMinis = 0;
+                entry.hypeSeconds = 0f;
+                entry.hypeSum = 0f;
+                entry.hypeMax = 0f;
+                entry.hypeDamage = 0;
                 return;
             }
         }
@@ -190,7 +215,9 @@ namespace Nex.BilliardRogue
 
         void Report(Entry entry)
         {
-            analytics.ShotResult(entry.type, entry.hits, entry.damage, entry.bounces, entry.kills, entry.combo);
+            var hypeAverage = entry.hypeSeconds > 0f ? entry.hypeSum / entry.hypeSeconds : 0f;
+            analytics.ShotResult(entry.type, entry.hits, entry.damage, entry.bounces, entry.kills, entry.combo,
+                hypeAverage, entry.hypeMax, entry.hypeDamage);
             entry.active = false;
         }
 

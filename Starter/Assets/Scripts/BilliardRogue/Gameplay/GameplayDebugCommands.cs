@@ -30,6 +30,7 @@ namespace Nex.BilliardRogue
         readonly Func<bool> killAll;
         readonly Func<bool> clearStage;
         readonly Func<bool> addEveryBall;
+        readonly Func<float, bool> setHype;
         readonly Func<string> state;
 
         public GameplayDebugCommands(SessionServices aServices, TurnController aTurns)
@@ -41,6 +42,7 @@ namespace Nex.BilliardRogue
             killAll = KillAll;
             clearStage = ClearStage;
             addEveryBall = AddEveryBall;
+            setHype = SetHype;
             state = State;
         }
 
@@ -53,6 +55,7 @@ namespace Nex.BilliardRogue
             DebugHooks.KillAllHandler = killAll;
             DebugHooks.ClearStageHandler = clearStage;
             DebugHooks.AddEveryBallHandler = addEveryBall;
+            DebugHooks.SetHypeHandler = setHype;
             DebugHooks.StateHandler = state;
         }
 
@@ -63,6 +66,7 @@ namespace Nex.BilliardRogue
             if (ReferenceEquals(DebugHooks.KillAllHandler, killAll)) DebugHooks.KillAllHandler = null;
             if (ReferenceEquals(DebugHooks.ClearStageHandler, clearStage)) DebugHooks.ClearStageHandler = null;
             if (ReferenceEquals(DebugHooks.AddEveryBallHandler, addEveryBall)) DebugHooks.AddEveryBallHandler = null;
+            if (ReferenceEquals(DebugHooks.SetHypeHandler, setHype)) DebugHooks.SetHypeHandler = null;
             if (ReferenceEquals(DebugHooks.StateHandler, state)) DebugHooks.StateHandler = null;
             if (printing) ClearSimDebug();
         }
@@ -152,6 +156,13 @@ namespace Nex.BilliardRogue
             return true;
         }
 
+        // Negative clears the override (DebugSettings.forceHype / body motion apply again).
+        bool SetHype(float hype01)
+        {
+            turns.Loop.Hype.DebugOverride = hype01 < 0f ? -1f : Math.Min(1f, hype01);
+            return true;
+        }
+
         string State()
         {
             var run = services.Run;
@@ -168,6 +179,7 @@ namespace Nex.BilliardRogue
                 .Append(" wavesLeft=").Append(run.stage.waves.Count - run.nextWaveIndex)
                 .Append(" outcome=").Append(run.outcome)
                 .Append(" timeScale=").Append(services.TimeScale.GameplayTimeScale)
+                .Append(" hype=").Append(turns.Loop.Hype.Hype.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)).Append(" tier=").Append(turns.Loop.Hype.Tier)
                 .Append(" bag=");
             for (var i = 0; i < run.bag.Count; i++)
             {

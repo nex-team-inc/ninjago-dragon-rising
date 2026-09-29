@@ -34,9 +34,11 @@ namespace Nex.BilliardRogue.Editor
             var control = BuilderAssets.LoadOrCreate<ControlConfig>($"{Root}/ControlConfig.asset", out var controlCreated);
             var pacing = BuilderAssets.LoadOrCreate<PacingConfig>($"{Root}/PacingConfig.asset", out var pacingCreated);
             var juice = BuilderAssets.LoadOrCreate<JuiceConfig>($"{Root}/JuiceConfig.asset", out var juiceCreated);
+            var hype = BuilderAssets.LoadOrCreate<HypeConfig>($"{Root}/HypeConfig.asset", out var hypeCreated);
             var visual = BuilderAssets.LoadOrCreate<HD2DVisualConfig>($"{Root}/HD2DVisualConfig.asset", out var visualCreated);
             if (visualCreated) FillVisualDefaults(visual);
-            var singles = (arenaCreated ? 1 : 0) + (balanceCreated ? 1 : 0) + (controlCreated ? 1 : 0) + (pacingCreated ? 1 : 0) + (juiceCreated ? 1 : 0) + (visualCreated ? 1 : 0);
+            var singles = (arenaCreated ? 1 : 0) + (balanceCreated ? 1 : 0) + (controlCreated ? 1 : 0) + (pacingCreated ? 1 : 0) + (juiceCreated ? 1 : 0) + (visualCreated ? 1 : 0)
+                          + (hypeCreated ? 1 : 0);
             report.Append($", singles +{singles}");
 
             var ballCatalog = BuilderAssets.LoadOrCreate<BallCatalog>($"{Root}/BallCatalog.asset", out _);
@@ -49,7 +51,7 @@ namespace Nex.BilliardRogue.Editor
             report.Append($", catalog slots wired {ballsWired}+{enemiesWired}");
 
             var root = BuilderAssets.LoadOrCreate<BilliardRogueConfig>($"{Root}/BilliardRogueConfig.asset", out _);
-            var rootWired = WireRoot(root, ballCatalog, enemyCatalog, fieldObjectCatalog, acts, arena, balance, control, pacing, juice, visual);
+            var rootWired = WireRoot(root, ballCatalog, enemyCatalog, fieldObjectCatalog, acts, arena, balance, control, pacing, hype, juice, visual);
             report.Append($", root slots wired {rootWired}");
 
             AssetDatabase.SaveAssets();
@@ -95,7 +97,8 @@ namespace Nex.BilliardRogue.Editor
         }
 
         static int WireRoot(BilliardRogueConfig root, BallCatalog balls, EnemyCatalog enemies, FieldObjectCatalog fieldObjects, ActDefinition[] acts,
-            ArenaConfig arena, BalanceConfig balance, ControlConfig control, PacingConfig pacing, JuiceConfig juice, HD2DVisualConfig visual)
+            ArenaConfig arena, BalanceConfig balance, ControlConfig control, PacingConfig pacing, HypeConfig hype, JuiceConfig juice,
+            HD2DVisualConfig visual)
         {
             var so = new SerializedObject(root);
             var wired = 0;
@@ -106,6 +109,7 @@ namespace Nex.BilliardRogue.Editor
             if (BuilderAssets.FillIfNull(so, "balance", balance)) wired++;
             if (BuilderAssets.FillIfNull(so, "control", control)) wired++;
             if (BuilderAssets.FillIfNull(so, "pacing", pacing)) wired++;
+            if (BuilderAssets.FillIfNull(so, "hype", hype)) wired++;
             if (BuilderAssets.FillIfNull(so, "juice", juice)) wired++;
             if (BuilderAssets.FillIfNull(so, "visual", visual)) wired++;
 

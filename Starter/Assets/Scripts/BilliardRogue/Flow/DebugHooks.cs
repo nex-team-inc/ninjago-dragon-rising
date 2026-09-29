@@ -29,6 +29,8 @@ namespace Nex.BilliardRogue
         public static Func<bool>? KillAllHandler;
         public static Func<bool>? ClearStageHandler;
         public static Func<bool>? AddEveryBallHandler;
+        /// <summary>hype01 (0..1; negative = off) → accepted. Overrides the body-motion Hype while balls fly.</summary>
+        public static Func<float, bool>? SetHypeHandler;
         /// <summary>Human-readable summary of the flow/run state.</summary>
         public static Func<string>? StateHandler;
 
@@ -45,6 +47,7 @@ namespace Nex.BilliardRogue
             KillAllHandler = null;
             ClearStageHandler = null;
             AddEveryBallHandler = null;
+            SetHypeHandler = null;
             StateHandler = null;
         }
 
@@ -62,6 +65,8 @@ namespace Nex.BilliardRogue
         public static string KillAll() => Run(nameof(KillAll), KillAllHandler);
         public static string ClearStage() => Run(nameof(ClearStage), ClearStageHandler);
         public static string AddEveryBall() => Run(nameof(AddEveryBall), AddEveryBallHandler);
+        /// <summary>Forces Hype to hype01 while balls fly (-1 = back to body motion / DebugSettings.forceHype).</summary>
+        public static string SetHype(float hype01) => Run(nameof(SetHype), SetHypeHandler, hype01);
 
         public static string State()
         {

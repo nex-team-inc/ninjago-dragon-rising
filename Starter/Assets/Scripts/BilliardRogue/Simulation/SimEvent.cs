@@ -25,6 +25,8 @@ namespace Nex.BilliardRogue.Simulation
         public Vector2 position;
         public Vector2 position2;
         public bool flag;
+        /// <summary>EnemyHit from a flying ball: the part of value added by Hype (BallSimulator.SetHype), 0 without Hype.</summary>
+        public int hypeBonus;
     }
 
     /// <summary>Who dealt damage, so BoardOps can apply poison bonuses, crits and attribution consistently.</summary>
@@ -36,6 +38,8 @@ namespace Nex.BilliardRogue.Simulation
         public bool isExplosion;
         public bool isChain;
         public bool isCrit;
+        /// <summary>Damage the Hype multiplier added to amount (reported as SimEvent.hypeBonus on the EnemyHit).</summary>
+        public int hypeBonus;
     }
 
     /// <summary>

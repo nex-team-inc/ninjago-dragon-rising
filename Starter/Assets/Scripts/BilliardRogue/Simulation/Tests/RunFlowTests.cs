@@ -122,6 +122,37 @@ namespace Nex.BilliardRogue.Simulation.Tests
         }
 
         [Test]
+        public void EveryStageClearHealsAndABossClearAddsItsFraction()
+        {
+            var events = new List<SimEvent>();
+            var run = SimTest.NewRun(rules);
+            run.playerMaxHp = 30;
+            run.playerHp = 10;
+            factory.CompleteStage(rules, run, events);
+            Assert.AreEqual(10 + rules.balance.stageClearHeal, run.playerHp);
+            Assert.AreEqual(1, SimTest.Count(events, SimEventKind.PlayerHealed));
+            Assert.AreEqual(rules.balance.stageClearHeal, events.Find(e => e.kind == SimEventKind.PlayerHealed).value);
+
+            events.Clear();
+            run.playerHp = run.playerMaxHp - 1;
+            factory.CompleteStage(rules, run, events);
+            Assert.AreEqual(run.playerMaxHp, run.playerHp, "clamped to max HP");
+
+            events.Clear();
+            run.playerHp = run.playerMaxHp;
+            factory.CompleteStage(rules, run, events);
+            Assert.AreEqual(0, SimTest.Count(events, SimEventKind.PlayerHealed), "nothing to heal at full HP");
+
+            events.Clear();
+            run.stage.isBoss = true;
+            run.playerHp = 5;
+            factory.CompleteStage(rules, run, events);
+            var expected = 5 + rules.balance.stageClearHeal + Mathf.RoundToInt(run.playerMaxHp * rules.balance.bossHealFraction);
+            Assert.AreEqual(Mathf.Min(run.playerMaxHp, expected), run.playerHp);
+            Assert.AreEqual(1, SimTest.Count(events, SimEventKind.PlayerHealed), "one heal event");
+        }
+
+        [Test]
         public void RewardRollStoresTheRngStateSoASaveResumesTheSameRun()
         {
             var run = factory.NewRun(rules, 5, 1);

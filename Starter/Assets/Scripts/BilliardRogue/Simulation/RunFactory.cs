@@ -111,8 +111,9 @@ namespace Nex.BilliardRogue.Simulation
         }
 
         /// <summary>
-        /// Call once when IsStageCleared turns true: leftover pickups vanish (PickupExpired), a boss stage heals
-        /// balance.bossHealFraction of max HP (PlayerHealed), emits StageCleared (value = stageNumber, flag = boss)
+        /// Call once when IsStageCleared turns true: leftover pickups vanish (PickupExpired), the player heals
+        /// balance.stageClearHeal plus, on a boss stage, balance.bossHealFraction of max HP (one PlayerHealed, clamped to
+        /// max HP; none at full HP), emits StageCleared (value = stageNumber, flag = boss)
         /// and sets awaitingReward unless this was the final stage.
         /// </summary>
         public void CompleteStage(GameRules rules, RunState run, List<SimEvent> events)
@@ -129,10 +130,9 @@ namespace Nex.BilliardRogue.Simulation
                 });
             }
             pickups.Clear();
-            if (run.stage.isBoss)
-            {
-                OpsFor(rules).HealPlayer(run, Mathf.RoundToInt(run.playerMaxHp * rules.balance.bossHealFraction), events);
-            }
+            var heal = Mathf.Max(0, rules.balance.stageClearHeal);
+            if (run.stage.isBoss) heal += Mathf.RoundToInt(run.playerMaxHp * rules.balance.bossHealFraction);
+            if (heal > 0) OpsFor(rules).HealPlayer(run, heal, events);
             events.Add(new SimEvent { kind = SimEventKind.StageCleared, value = run.stageNumber, flag = run.stage.isBoss });
             run.awaitingReward = !IsFinalStage(rules, run);
         }

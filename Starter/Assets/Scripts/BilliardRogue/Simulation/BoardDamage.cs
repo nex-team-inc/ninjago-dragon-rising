@@ -95,6 +95,8 @@ namespace Nex.BilliardRogue.Simulation
                 total++;
             }
             var dealt = Mathf.Min(total, e.hp);
+            // Hype's share of what was actually dealt (the part an overkill would have wasted does not count).
+            var hypeBonus = src.hypeBonus > 0 ? dealt - Mathf.Min(Mathf.Max(0, total - src.hypeBonus), e.hp) : 0;
             e.hp -= dealt;
             run.stats.damageDealt += dealt;
             if (!src.isStatusTick && !src.isExplosion && !src.isChain)
@@ -106,6 +108,7 @@ namespace Nex.BilliardRogue.Simulation
             hit.ballType = src.ballType;
             hit.flag = src.isCrit;
             hit.value2 = e.hp;
+            hit.hypeBonus = hypeBonus;
             events.Add(hit);
             if (rules.enemies[(int)e.type].isBoss && !e.bossHalfTriggered && e.hp > 0 && e.hp * 2 <= e.maxHp)
             {

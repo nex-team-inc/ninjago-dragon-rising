@@ -20,6 +20,8 @@ namespace Nex.BilliardRogue
         [SerializeField] BalanceConfig balance = null!;
         [SerializeField] ControlConfig control = null!;
         [SerializeField] PacingConfig pacing = null!;
+        [Tooltip("Hype from body motion while balls fly (GDD v2 §3).")]
+        [SerializeField] HypeConfig hype = null!;
 
         [Header("Presentation")]
         [SerializeField] JuiceConfig juice = null!;
@@ -33,6 +35,8 @@ namespace Nex.BilliardRogue
         public BalanceConfig Balance => balance;
         public ControlConfig Control => control;
         public PacingConfig Pacing => pacing;
+        /// <summary>Null only on a root asset not yet re-wired by ConfigAssetsBuilder (HypeController then uses defaults).</summary>
+        public HypeConfig? Hype => hype;
         public JuiceConfig Juice => juice;
         public HD2DVisualConfig Visual => visual;
     }

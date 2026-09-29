@@ -29,29 +29,23 @@ namespace Nex.BilliardRogue.Simulation.Tests
         }
 
         [Test]
-        public void RollOffersExactlyThreeDistinctOptions()
+        public void RollOffersExactlyThreeDistinctNewBalls()
         {
             var rules = TestRules.Create();
             for (var seed = 0; seed < SeedCount; seed++)
             {
                 for (var act = 0; act < SimConstants.ActCount; act++)
                 {
-                    var run = MakeRun(rules, 14);
+                    var run = MakeRun(rules, 5 + seed % 20);
                     run.actIndex = act;
                     var options = Roll(rules, run, 2, seed);
                     Assert.AreEqual(3, options.Count);
-                    var kinds = new HashSet<RewardKind>();
                     var types = new HashSet<BallType>();
                     foreach (var option in options)
                     {
-                        if (option.kind == RewardKind.NewBall || option.kind == RewardKind.UpgradeBall)
-                        {
-                            Assert.IsTrue(types.Add(option.ballType), $"ball type {option.ballType} offered twice");
-                        }
-                        else
-                        {
-                            Assert.IsTrue(kinds.Add(option.kind), $"{option.kind} offered twice");
-                        }
+                        Assert.AreEqual(RewardKind.NewBall, option.kind, "below the bag cap every option adds a ball");
+                        Assert.IsTrue(types.Add(option.ballType), $"ball type {option.ballType} offered twice");
+                        Assert.AreNotEqual(BallType.Basic, option.ballType, "Basic while ability balls are available");
                     }
                 }
             }
@@ -74,16 +68,20 @@ namespace Nex.BilliardRogue.Simulation.Tests
         }
 
         [Test]
-        public void NoHealAtFullHpWhenAlternativesExist()
+        public void BasicIsOnlyTheLastResort()
         {
             var rules = TestRules.Create();
-            for (var seed = 0; seed < SeedCount; seed++)
+            foreach (var ball in rules.balls)
             {
-                var options = Roll(rules, MakeRun(rules, rules.balance.playerMaxHp), 0, seed);
-                foreach (var option in options)
-                {
-                    Assert.AreNotEqual(RewardKind.Heal, option.kind);
-                }
+                ball.unlockTier = ball.type == BallType.Basic || ball.type == BallType.Flame ? 0 : 9;
+            }
+
+            for (var seed = 0; seed < 20; seed++)
+            {
+                var options = Roll(rules, MakeRun(rules, 20), 0, seed);
+                Assert.AreEqual(2, options.Count, "only Flame and Basic are unlocked");
+                Assert.AreEqual(BallType.Flame, options[0].ballType, "the ability ball comes first");
+                Assert.AreEqual(BallType.Basic, options[1].ballType);
             }
         }
 
@@ -105,21 +103,96 @@ namespace Nex.BilliardRogue.Simulation.Tests
         }
 
         [Test]
-        public void UpgradeTargetsABagEntryBelowTheLevelCap()
+        public void AtTheBagCapOnlyOwnedTypesLevelUpTheirLowestCopy()
         {
             var rules = TestRules.Create();
             for (var seed = 0; seed < SeedCount; seed++)
             {
                 var run = MakeRun(rules, 20);
-                run.bag[0].level = rules.balance.levelCap;
-                foreach (var option in Roll(rules, run, 2, seed))
+                run.bag.Clear();
+                var owned = new[] { BallType.Basic, BallType.Flame, BallType.Frost, BallType.Iron, BallType.Piercer };
+                while (run.bag.Count < rules.balance.bagCap)
                 {
-                    if (option.kind != RewardKind.UpgradeBall) continue;
-                    Assert.AreNotEqual(0, option.bagIndex);
-                    Assert.AreEqual(run.bag[option.bagIndex].type, option.ballType);
+                    var type = owned[run.bag.Count % owned.Length];
+                    run.bag.Add(new BallInstance { type = type, level = 1 + (run.bag.Count / owned.Length) % rules.balance.levelCap });
+                }
+
+                // Iron is maxed everywhere: it can no longer level up.
+                foreach (var ball in run.bag)
+                {
+                    if (ball.type == BallType.Iron) ball.level = rules.balance.levelCap;
+                }
+
+                var options = Roll(rules, run, 0, seed);
+                Assert.AreEqual(3, options.Count, "Flame, Frost and Piercer can level up (Piercer despite its unlock tier)");
+                var types = new HashSet<BallType>();
+                foreach (var option in options)
+                {
+                    Assert.AreEqual(RewardKind.UpgradeBall, option.kind);
+                    Assert.IsTrue(types.Add(option.ballType));
+                    Assert.AreNotEqual(BallType.Iron, option.ballType);
+                    Assert.AreNotEqual(BallType.Basic, option.ballType, "Basic while ability balls can level up");
+                    Assert.AreEqual(RewardGenerator.LowestLevelIndex(rules, run, option.ballType), option.bagIndex);
                     Assert.AreEqual(run.bag[option.bagIndex].level + 1, option.amount);
                 }
             }
+        }
+
+        [Test]
+        public void AFullyMaxedBagAtTheCapGetsNoOption()
+        {
+            var rules = TestRules.Create();
+            var run = MakeRun(rules, 20);
+            while (run.bag.Count < rules.balance.bagCap)
+            {
+                run.bag.Add(new BallInstance { type = BallType.Flame });
+            }
+
+            foreach (var ball in run.bag)
+            {
+                ball.level = rules.balance.levelCap;
+            }
+
+            Assert.AreEqual(0, Roll(rules, run, 2, 3).Count);
+        }
+
+        [Test]
+        public void PickingAnOwnedTypeAtTheCapLevelsUpItsLowestCopy()
+        {
+            var rules = TestRules.Create();
+            var generator = new RewardGenerator();
+            var run = MakeRun(rules, 10);
+            while (run.bag.Count < rules.balance.bagCap)
+            {
+                run.bag.Add(new BallInstance { type = BallType.Frost, level = 2 });
+            }
+
+            run.bag[run.bag.Count - 1].level = 1;
+            var lowest = run.bag.Count - 1;
+            Assert.IsTrue(RewardGenerator.TryMakeBallOption(rules, run, BallType.Frost, out var option));
+            Assert.AreEqual(RewardKind.UpgradeBall, option.kind);
+            Assert.AreEqual(lowest, option.bagIndex);
+            Assert.AreEqual(2, option.amount, "Lv 1 → Lv 2");
+            Assert.IsFalse(RewardGenerator.TryMakeBallOption(rules, run, BallType.Thunder, out _), "not owned at the cap");
+
+            generator.Apply(rules, run, option);
+            Assert.AreEqual(rules.balance.bagCap, run.bag.Count);
+            Assert.AreEqual(2, run.bag[lowest].level);
+
+            // A NewBall of an owned type at the cap (forced debug ball, stale card) levels up instead of adding.
+            generator.Apply(rules, run, new RewardOption { kind = RewardKind.NewBall, ballType = BallType.Frost });
+            Assert.AreEqual(rules.balance.bagCap, run.bag.Count);
+            Assert.AreEqual(3, run.bag[FirstIndexOf(run, BallType.Frost)].level);
+        }
+
+        static int FirstIndexOf(RunState run, BallType type)
+        {
+            for (var i = 0; i < run.bag.Count; i++)
+            {
+                if (run.bag[i].type == type) return i;
+            }
+
+            return -1;
         }
 
         [Test]

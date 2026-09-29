@@ -23,6 +23,8 @@ namespace Nex.BilliardRogue.Simulation
         readonly BoardOps ops;
         readonly List<EnemyState> areaTargets = new(32);
         readonly int[] chainVisited = new int[MaxChainTargets];
+        float hypeDamageMultiplier = 1f;
+        int hypeMinBonus;
 
         #region Life Cycle
 
@@ -42,6 +44,25 @@ namespace Nex.BilliardRogue.Simulation
             return levels[Mathf.Clamp(level - 1, 0, levels.Length - 1)];
         }
 
+        /// <summary>Hype damage scaling for every ball hit (direct, chain, explosion): see BallSimulator.SetHype.</summary>
+        public void SetHype(float damageMultiplier, int minBonusDamage)
+        {
+            hypeDamageMultiplier = damageMultiplier;
+            hypeMinBonus = minBonusDamage;
+        }
+
+        /// <summary>
+        /// damage × the Hype multiplier, rounded half up (deterministic, unlike banker's rounding), plus at least
+        /// hypeMinBonus when that is set; bonus = what Hype added.
+        /// </summary>
+        public int Hyped(int damage, out int bonus)
+        {
+            bonus = 0;
+            if (damage <= 0 || (hypeDamageMultiplier <= 1f && hypeMinBonus <= 0)) return damage;
+            bonus = Mathf.Max(hypeMinBonus, (int)System.Math.Floor(damage * hypeDamageMultiplier + 0.5f) - damage);
+            return damage + bonus;
+        }
+
         public HitOutcome Resolve(RunState run, BallSlot b, EnemyState e, Vector2 normal, List<SimEvent> events)
         {
             if (e.shieldFace != Face.None && BallCollision.FaceFromNormal(normal) == e.shieldFace)
@@ -50,9 +71,9 @@ namespace Nex.BilliardRogue.Simulation
                 return HitOutcome.Reflect;
             }
             var stats = LevelStats(b.type, b.level);
-            var damage = ComputeDamage(run, b, e, stats, out var isCrit);
+            var damage = Hyped(ComputeDamage(run, b, e, stats, out var isCrit), out var hypeBonus);
             var center = ArenaGeometry.FootprintCenter(rules.arena, e.col, e.row, e.width, e.height);
-            var src = new DamageSource { ballType = b.type, ballId = b.id, isCrit = isCrit };
+            var src = new DamageSource { ballType = b.type, ballId = b.id, isCrit = isCrit, hypeBonus = hypeBonus };
             ops.DamageEnemy(run, e, damage, src, events);
             b.combo++;
             if (b.combo > run.stats.bestCombo) run.stats.bestCombo = b.combo;
@@ -133,7 +154,8 @@ namespace Nex.BilliardRogue.Simulation
             var visitedCount = 0;
             chainVisited[visitedCount++] = first.id;
             var rangeSq = stats.chainRange * stats.chainRange;
-            var src = new DamageSource { ballType = b.type, ballId = b.id, isChain = true };
+            var chainDamage = Hyped(stats.chainDamage, out var hypeBonus);
+            var src = new DamageSource { ballType = b.type, ballId = b.id, isChain = true, hypeBonus = hypeBonus };
             for (var link = 0; link < stats.chainCount && visitedCount < MaxChainTargets; link++)
             {
                 EnemyState? best = null;
@@ -154,7 +176,7 @@ namespace Nex.BilliardRogue.Simulation
                 if (best == null) break;
                 chainVisited[visitedCount++] = best.id;
                 events.Add(new SimEvent { kind = SimEventKind.ChainLightning, ballId = b.id, targetId = best.id, ballType = b.type, position = from, position2 = bestCenter });
-                ops.DamageEnemy(run, best, stats.chainDamage, src, events);
+                ops.DamageEnemy(run, best, chainDamage, src, events);
                 from = bestCenter;
             }
         }
@@ -172,12 +194,13 @@ namespace Nex.BilliardRogue.Simulation
             {
                 if (InArea(enemies[i], col, row, radius, stats.areaCross)) areaTargets.Add(enemies[i]);
             }
-            var src = new DamageSource { ballType = b.type, ballId = b.id, isExplosion = true };
+            var areaDamage = Hyped(stats.areaDamage, out var hypeBonus);
+            var src = new DamageSource { ballType = b.type, ballId = b.id, isExplosion = true, hypeBonus = hypeBonus };
             for (var i = 0; i < areaTargets.Count; i++)
             {
                 var target = areaTargets[i];
                 if (target.hp <= 0) continue;
-                ops.DamageEnemy(run, target, stats.areaDamage, src, events);
+                ops.DamageEnemy(run, target, areaDamage, src, events);
             }
             areaTargets.Clear();
         }

@@ -1,6 +1,7 @@
 #nullable enable
 
 using Nex.BilliardRogue.Simulation;
+using UnityEngine;
 
 namespace Nex.BilliardRogue
 {
@@ -28,6 +29,9 @@ namespace Nex.BilliardRogue
         int queueBagCount = -1;
         int remaining = -1;
         int total = -1;
+        float hype = -1f;
+        int hypeTier = -1;
+        bool movePrompt;
 
         public HudBinder(IGameplayHud aHud, RunState aRun, RunSimulation aSim, ShotSequencer aSequencer)
         {
@@ -131,6 +135,24 @@ namespace Nex.BilliardRogue
         }
 
         public void SetTrackingWarning(int playerIndex, bool lost) => hud.SetTrackingWarning(playerIndex, lost);
+
+        /// <summary>Hype meter; pushed when the tier changes or the value moves by at least 0.01 (or reaches 0 / 1).</summary>
+        public void SetHype(float hype01, int tier)
+        {
+            var changed = tier != hypeTier || Mathf.Abs(hype01 - hype) >= 0.01f
+                          || (hype01 <= 0f && hype > 0f) || (hype01 >= 1f && hype < 1f);
+            if (!changed) return;
+            hype = hype01;
+            hypeTier = tier;
+            hud.SetHype(hype01, tier);
+        }
+
+        public void ShowMovePrompt(bool visible)
+        {
+            if (visible == movePrompt) return;
+            movePrompt = visible;
+            hud.ShowMovePrompt(visible);
+        }
 
         public void ShowTurnBanner(int turn) => hud.ShowTurnBanner(turn);
 

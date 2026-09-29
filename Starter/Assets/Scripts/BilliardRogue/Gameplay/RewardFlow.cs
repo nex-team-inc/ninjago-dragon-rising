@@ -9,9 +9,11 @@ using UnityEngine;
 namespace Nex.BilliardRogue
 {
     /// <summary>
-    /// The between-stage reward: rolls the three cards (or re-displays run.pendingRewards after a continue),
-    /// applies the debug forceRewardBall / unlockAllBalls settings, saves before and after the pick so a killed app
-    /// resumes at the choice, and logs reward_offered / reward_chosen.
+    /// The between-stage reward (GDD v2 §1: balls only): rolls the ball options (or re-displays run.pendingRewards
+    /// after a continue; a v1 save's pending Heal / Max HP cards are re-rolled as balls), applies the debug
+    /// forceRewardBall / unlockAllBalls settings, saves before and after the pick so a killed app resumes at the
+    /// choice, and logs reward_offered / reward_chosen. With no option left (the whole bag maxed at bagCap) the choice
+    /// is skipped.
     /// </summary>
     public sealed class RewardFlow
     {
@@ -28,7 +30,7 @@ namespace Nex.BilliardRogue
         {
             var run = services.Run;
             services.Audio.PlayMusic(BgmManager.BgmType.Reward);
-            if (run.pendingRewards.Count == 0)
+            if (run.pendingRewards.Count == 0 || HasLegacyCard(run.pendingRewards))
             {
                 // The boss kill that ends the stage unlocks balls for this very reward, not the next one.
                 services.Persistence.RefreshUnlocks(run);
@@ -41,6 +43,7 @@ namespace Nex.BilliardRogue
             }
 
             services.Persistence.SaveTurnBoundary(run);
+            if (run.pendingRewards.Count == 0) return UniTask.FromResult(-1);
             services.Analytics.RewardOffered(run.pendingRewards);
             return services.FlowHost.ChooseRewardAsync(run.pendingRewards, run, ct);
         }
@@ -64,12 +67,31 @@ namespace Nex.BilliardRogue
             services.Persistence.SaveTurnBoundary(run);
         }
 
+        // The forced ball becomes the first option (a level-up at bagCap); a duplicate of its type is dropped.
         void ForceRewardBall(List<RewardOption> options)
         {
             var forced = services.Debug.forceRewardBall;
-            if (forced < 0 || forced >= SimConstants.BallTypeCount || options.Count == 0) return;
-            if (services.Run.bag.Count >= services.Rules.balance.bagCap) return;
-            options[0] = new RewardOption { kind = RewardKind.NewBall, ballType = (BallType)forced };
+            if (forced < 0 || forced >= SimConstants.BallTypeCount) return;
+            var type = (BallType)forced;
+            if (!RewardGenerator.TryMakeBallOption(services.Rules, services.Run, type, out var option)) return;
+            for (var i = options.Count - 1; i >= 0; i--)
+            {
+                if (options[i].ballType == type) options.RemoveAt(i);
+            }
+
+            options.Insert(0, option);
+            if (options.Count > RewardGenerator.OptionCount) options.RemoveAt(options.Count - 1);
+        }
+
+        static bool HasLegacyCard(List<RewardOption> options)
+        {
+            for (var i = 0; i < options.Count; i++)
+            {
+                var kind = options[i].kind;
+                if (kind != RewardKind.NewBall && kind != RewardKind.UpgradeBall) return true;
+            }
+
+            return false;
         }
     }
 }

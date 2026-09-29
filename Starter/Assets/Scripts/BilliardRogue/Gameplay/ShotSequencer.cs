@@ -46,10 +46,13 @@ namespace Nex.BilliardRogue
             Infinite = infiniteBalls;
         }
 
-        /// <summary>Counts the cooldown down in gameplay time (frozen by hit-stop and pause).</summary>
-        public void Tick(float scaledDeltaTime)
+        /// <summary>
+        /// Counts the cooldown down in real time (PlayerTurnLoop passes unscaled time, so hit-stop and slow-mo do not
+        /// stretch it; the loop is not ticked while paused).
+        /// </summary>
+        public void Tick(float unscaledDeltaTime)
         {
-            if (cooldownRemaining > 0f) cooldownRemaining -= scaledDeltaTime;
+            if (cooldownRemaining > 0f) cooldownRemaining -= unscaledDeltaTime;
         }
 
         /// <summary>Returns the ball to fire, advances the queue, starts the cooldown and passes the cue to the next player.</summary>

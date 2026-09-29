@@ -28,3 +28,16 @@ Goal: a barely playable Android development APK, so the user can try the paw con
 
 Note: no code read `BR_CONTROL_DEMO` when the APK was built. Rebuild after demo code guarded by that define lands.
 The rebuild takes about 30 s.
+
+## Control lab (practice mode, control readout, live tuning): in progress
+
+Resume: read this section + `git log --oneline -15`. Editor work goes through `Tools/editor_lock.sh demo …`.
+
+- [x] 0. Paused perf pass edits reviewed and committed (7f6da517: shadow flags in the builders, board teardown guard).
+- [ ] 1. `DebugSettings.practiceMode`: god mode + infinite balls, enemies stop one row above the danger row.
+- [ ] 2. Control readout overlay (`showControlDebug`): calibration test strike + gameplay, right column.
+- [ ] 3. Live tuning rows (strike speed, contact distance, aim smoothing, launch range) + left-handed row.
+- [ ] 4. `#if BR_CONTROL_DEMO` defaults (showControlDebug, practiceMode on).
+- [ ] 5. Editor verification (screenshots in scratchpad `demo/`), EditMode tests.
+- [ ] 6. APK rebuild.
+- [ ] 7. `Docs/BilliardRogue/ControlDemo.md` how-to.

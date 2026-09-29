@@ -84,8 +84,7 @@ namespace Nex.BilliardRogue
                     continue;
                 }
 
-                var rise = number.Rise * Easing.OutQuad(number.Age / number.Lifetime);
-                Project(number.Rect, number.WorldPosition, number.Jitter + new Vector2(0f, rise));
+                Project(number.Rect, number.WorldPosition, number.Offset);
             }
         }
 
@@ -145,21 +144,69 @@ namespace Nex.BilliardRogue
 
         #region Numbers & floats
 
-        public void ShowNumber(Vector3 world, int value, NumberKind kind)
+        /// <summary>
+        /// A damage or heal number (JuiceConfig.numbers). Ball hits (Normal, Crit) wear the ball's colour, grow and pop
+        /// harder with damage and with the ball's combo, a killing blow flashes a pale shine and crits cycle the rainbow;
+        /// Hype tiers add size and pop and tint the shine. Numbers arc away from the hit; heals rise straight up.
+        /// </summary>
+        public void ShowNumber(Vector3 world, int value, NumberKind kind, BallType ballType = BallType.Basic, bool killingBlow = false, int combo = 1)
         {
-            var size = kind == NumberKind.Crit ? juice.CritNumberSize : juice.DamageNumberSize;
-            var text = kind == NumberKind.Heal ? texts.Heal(value) : NumberStrings.Get(value);
-            var color = ColorFor(kind);
-            var pop = 0f;
-            // Hype (GDD v2 §3): ball damage numbers grow, pop harder and take the tier colour.
-            if (hypeTier > 0 && (kind == NumberKind.Normal || kind == NumberKind.Crit))
+            var n = juice.Numbers;
+            var hits = juice.Sequences;
+            var ballHit = kind == NumberKind.Normal || kind == NumberKind.Crit;
+            var color = kind == NumberKind.Normal ? n.ballColors[ballType] : Opaque(ColorFor(kind));
+            var heavy = value >= hits.midDamage;
+            var size = juice.DamageNumberSize + (value >= hits.hardDamage ? 2f : heavy ? 1f : 0f) * n.sizeStep;
+            var pop = ballHit ? Mathf.Lerp(n.popSmall, n.popBig, Mathf.InverseLerp(1f, hits.hardDamage, value)) : n.popSmall;
+            var highlight = Color.Lerp(color, Color.white, n.highlight);
+            if (ballHit)
             {
-                size += hypeTier * hypeSizePerTier;
-                pop = hypeTier * hypePopPerTier;
-                if (kind == NumberKind.Normal) color = Color.Lerp(color, hypeColor, hypeTint);
+                pop += Mathf.Min(n.popComboMax, (combo - 1) * n.popPerCombo);
+                // Hype (GDD v2 §3): bigger numbers, harder pops, the tier colour in their shine.
+                if (hypeTier > 0)
+                {
+                    size += hypeTier * hypeSizePerTier;
+                    pop += hypeTier * hypePopPerTier;
+                    highlight = Color.Lerp(highlight, hypeColor, hypeTint);
+                }
             }
 
-            Show(text, color, size, world, juice.DamageNumberLifetime, juice.DamageNumberRise, true, pop);
+            if (kind == NumberKind.Crit) size = Mathf.Max(size, juice.CritNumberSize) + n.critSizeBonus;
+            if (killingBlow)
+            {
+                size += n.killSizeBonus;
+                pop += n.killPopBonus;
+                highlight = n.killHighlight;
+            }
+
+            var text = kind == NumberKind.Heal ? texts.Heal(value) : NumberStrings.Get(value);
+            if (kind == NumberKind.Heal)
+            {
+                var heal = FloatStyle(color, size);
+                heal.highlight = highlight;
+                Show(text, heal, world);
+                return;
+            }
+
+            var lingers = heavy || kind == NumberKind.Crit || killingBlow;
+            var side = Random.Range(n.launchSide.x, n.launchSide.y) * (Random.value < 0.5f ? -1f : 1f);
+            Show(text, new NumberStyle
+            {
+                color = color,
+                highlight = highlight,
+                outline = Color.Lerp(n.outlineColor, color, n.outlineTint),
+                size = Mathf.Min(size, n.maxSize),
+                pop = pop,
+                lifetime = juice.DamageNumberLifetime * (lingers ? n.bigLifetimeScale : 1f),
+                start = new Vector2(Random.Range(-juice.Labels.numberJitter, juice.Labels.numberJitter), 0f),
+                velocity = new Vector2(side, Random.Range(n.launchUp.x, n.launchUp.y)),
+                gravity = n.gravity,
+                tilt = -Mathf.Sign(side) * n.tilt * (lingers ? 1.5f : 1f),
+                shake = heavy || kind == NumberKind.PlayerHurt ? n.shake : 0f,
+                flashSeconds = n.flashSeconds,
+                rainbowSpeed = kind == NumberKind.Crit ? n.rainbowSpeed : 0f,
+                rainbowPhase = Random.value,
+            }, world);
         }
 
         /// <summary>Hype tier (0 = none) and its colour for the next damage numbers (HypeJuice).</summary>
@@ -174,12 +221,24 @@ namespace Nex.BilliardRogue
 
         public void ShowText(Vector3 world, string text, Color color)
         {
-            Show(text, color, juice.Labels.floatTextSize, world, juice.Labels.floatLifetime, juice.Labels.floatRise, false);
+            Show(text, FloatStyle(color, juice.Labels.floatTextSize), world);
         }
 
-        public void ShowCombo(Vector3 world, int combo, Color color)
+        /// <summary>COMBO text: warm at the show threshold, hotter as the combo grows, the rainbow from comboRainbowAt; rimmed in the shooter's colour.</summary>
+        public void ShowCombo(Vector3 world, int combo, Color playerColor)
         {
-            Show(texts.Combo(combo), color, juice.Labels.comboTextSize, world, juice.Labels.floatLifetime, juice.Labels.floatRise, false);
+            var n = juice.Numbers;
+            var style = FloatStyle(Color.Lerp(n.comboLow, n.comboHigh, Mathf.InverseLerp(juice.ComboShowThreshold, n.comboRainbowAt, combo)),
+                juice.Labels.comboTextSize);
+            style.outline = Color.Lerp(n.outlineColor, Opaque(playerColor), 0.35f);
+            style.pop = n.popSmall + Mathf.Min(n.popComboMax, combo * n.popPerCombo);
+            if (combo >= n.comboRainbowAt)
+            {
+                style.rainbowSpeed = n.rainbowSpeed;
+                style.rainbowPhase = Random.value;
+            }
+
+            Show(texts.Combo(combo), style, world);
         }
 
         public Color ColorFor(NumberKind kind)
@@ -219,13 +278,35 @@ namespace Nex.BilliardRogue
             return label;
         }
 
-        void Show(string text, Color color, float size, Vector3 world, float lifetime, float rise, bool jitter, float pop = 0f)
+        void Show(string text, in NumberStyle style, Vector3 world)
         {
             var number = numberPool.Get();
-            var j = jitter ? new Vector2(Random.Range(-juice.Labels.numberJitter, juice.Labels.numberJitter), 0f) : Vector2.zero;
-            number.Show(text, color, size, world, lifetime, rise, j, pop);
+            number.Show(text, style, world);
             numbers.Add(number);
         }
+
+        /// <summary>A floating word or heal: rises straight up, slowing to a stop at floatRise when it expires.</summary>
+        NumberStyle FloatStyle(Color color, float size)
+        {
+            var n = juice.Numbers;
+            var lifetime = juice.Labels.floatLifetime;
+            var rise = juice.Labels.floatRise;
+            color = Opaque(color);
+            return new NumberStyle
+            {
+                color = color,
+                highlight = Color.Lerp(color, Color.white, n.highlight),
+                outline = Color.Lerp(n.outlineColor, color, n.outlineTint),
+                size = size,
+                pop = n.popSmall,
+                lifetime = lifetime,
+                velocity = new Vector2(0f, 2f * rise / lifetime),
+                gravity = 2f * rise / (lifetime * lifetime),
+                flashSeconds = n.flashSeconds,
+            };
+        }
+
+        static Color Opaque(Color color) => new(color.r, color.g, color.b, 1f);
 
         void Project(RectTransform target, Vector3 world, Vector2 offset)
         {

@@ -140,12 +140,13 @@ namespace Nex.BilliardRogue
             if (isTick) return;
             var definition = config.Balls.Get(ev.ballType);
             var damage = ev.value;
-            labels.ShowNumber(world, damage, ev.flag ? NumberKind.Crit : NumberKind.Normal);
+            var hitCombo = views.TryGetBall(ev.ballId, out var b) && b.IsMini ? 1 : ComboOf(ev.ballId);
+            labels.ShowNumber(world, damage, ev.flag ? NumberKind.Crit : NumberKind.Normal, ev.ballType, ev.value2 <= 0, hitCombo);
             if (ev.flag) labels.ShowText(world + Vector3.up * 0.25f, labels.Texts.Crit, juice.CritDamageColor);
             var s = juice.Sequences;
             var isBoss = view != null && view.IsBoss;
             var sfx = ev.flag ? SfxManager.SoundEffect.CritHit : damage >= s.hardDamage ? SfxManager.SoundEffect.BallHitHard : damage >= s.midDamage ? SfxManager.SoundEffect.BallHitMid : definition.HitSfx;
-            var pitch = combo.Pitch(views.TryGetBall(ev.ballId, out var b) && b.IsMini ? 1 : ComboOf(ev.ballId));
+            var pitch = combo.Pitch(hitCombo);
             PlaySfx(isBoss ? SfxManager.SoundEffect.BossHit : sfx, pitch, 1f);
             PlayVfx(ev.flag ? VfxManager.VisualEffect.CritSpark : definition.HitVfx, world, (ev.flag ? s.critVfxScale : 1f) * hypeVfxScale);
             if (hypeSparkTier > 0) PlayHypeSparks(world);

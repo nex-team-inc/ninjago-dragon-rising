@@ -139,8 +139,9 @@ namespace Nex.BilliardRogue
             public Color hpFullColor = new(0.66f, 1f, 0.6f);
             public Color hpMidColor = new(1f, 0.9f, 0.4f);
             public Color hpLowColor = new(1f, 0.38f, 0.32f);
-            [Range(8f, 96f)] public float floatTextSize = 30f;
-            [Range(8f, 96f)] public float comboTextSize = 26f;
+            [Tooltip("Font size of floating words (CRIT, BLOCK, FROZEN, ...); keep a multiple of 16 so the pixel font stays crisp.")]
+            [Range(8f, 96f)] public float floatTextSize = 32f;
+            [Range(8f, 96f)] public float comboTextSize = 48f;
             [Tooltip("Random horizontal jitter of damage numbers in canvas pixels.")]
             [Range(0f, 80f)] public float numberJitter = 18f;
             [Range(0f, 200f)] public float floatRise = 46f;
@@ -205,7 +206,7 @@ namespace Nex.BilliardRogue
             [Range(0f, 32f)] public float numberSizePerTier = 16f;
             [Tooltip("Extra pop overshoot per tier (0.25 = the number peaks 25% larger).")]
             [Range(0f, 1f)] public float numberPopPerTier = 0.22f;
-            [Tooltip("Normal damage numbers blend toward the tier colour by this much.")]
+            [Tooltip("The shine (top of the gradient) of ball damage numbers blends toward the tier colour by this much.")]
             [Range(0f, 1f)] public float numberTint = 0.8f;
 
             [Header("Tier-3 aura (arena rim)")]
@@ -254,10 +255,13 @@ namespace Nex.BilliardRogue
         [SerializeField] Color healColor = new(0.45f, 1f, 0.5f);
         [SerializeField] Color burnColor = new(1f, 0.55f, 0.15f);
         [SerializeField] Color poisonColor = new(0.75f, 0.4f, 1f);
-        [SerializeField, Range(8f, 96f)] float damageNumberSize = 32f;
-        [SerializeField, Range(8f, 128f)] float critNumberSize = 48f;
+        [Tooltip("Font size of a light ball hit (numbers.sizeStep is added at mid and at hard damage); keep a multiple of 16.")]
+        [SerializeField, Range(8f, 96f)] float damageNumberSize = 48f;
+        [SerializeField, Range(8f, 128f)] float critNumberSize = 64f;
         [SerializeField, Range(0.2f, 2f)] float damageNumberLifetime = 0.7f;
         [SerializeField, Range(0f, 200f)] float damageNumberRise = 60f;
+        [Tooltip("Colours, gradient, outline, size / pop by damage and the arcing motion of the damage numbers.")]
+        [SerializeField] DamageNumberSettings numbers = new();
 
         [Header("Combo")]
         [Tooltip("Pitch added per successive hit of one ball.")]
@@ -303,6 +307,7 @@ namespace Nex.BilliardRogue
         public float CritNumberSize => critNumberSize;
         public float DamageNumberLifetime => damageNumberLifetime;
         public float DamageNumberRise => damageNumberRise;
+        public DamageNumberSettings Numbers => numbers;
         public float ComboPitchStep => comboPitchStep;
         public float ComboPitchMax => comboPitchMax;
         public int ComboShowThreshold => comboShowThreshold;

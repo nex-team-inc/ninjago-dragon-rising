@@ -45,10 +45,61 @@ MonoBehaviour:
   healColor: {r: 0.45, g: 1, b: 0.5, a: 1}
   burnColor: {r: 1, g: 0.55, b: 0.15, a: 1}
   poisonColor: {r: 0.75, g: 0.4, b: 1, a: 1}
-  damageNumberSize: 32
-  critNumberSize: 48
+  damageNumberSize: 48
+  critNumberSize: 64
   damageNumberLifetime: 0.7
   damageNumberRise: 60
+  numbers:
+    ballColors:
+      pairs:
+      - key: 0
+        value: {r: 1, g: 0.8, b: 0.24, a: 1}
+      - key: 1
+        value: {r: 1, g: 0.42, b: 0.12, a: 1}
+      - key: 2
+        value: {r: 0.38, g: 0.88, b: 1, a: 1}
+      - key: 3
+        value: {r: 0.92, g: 1, b: 0.3, a: 1}
+      - key: 4
+        value: {r: 1, g: 0.28, b: 0.16, a: 1}
+      - key: 5
+        value: {r: 0.78, g: 0.48, b: 1, a: 1}
+      - key: 6
+        value: {r: 0.3, g: 1, b: 0.82, a: 1}
+      - key: 7
+        value: {r: 0.74, g: 0.82, b: 0.96, a: 1}
+      - key: 8
+        value: {r: 0.52, g: 1, b: 0.24, a: 1}
+      - key: 9
+        value: {r: 1, g: 0.2, b: 0.36, a: 1}
+      - key: 10
+        value: {r: 1, g: 0.48, b: 0.8, a: 1}
+      - key: 11
+        value: {r: 1, g: 0.94, b: 0.55, a: 1}
+    highlight: 0.6
+    outlineColor: {r: 0.05, g: 0.04, b: 0.1, a: 1}
+    outlineTint: 0.18
+    flashSeconds: 0.07
+    sizeStep: 16
+    maxSize: 112
+    popSmall: 0.35
+    popBig: 1
+    popPerCombo: 0.06
+    popComboMax: 0.5
+    bigLifetimeScale: 1.35
+    launchUp: {x: 210, y: 300}
+    launchSide: {x: 40, y: 130}
+    gravity: 700
+    tilt: 12
+    shake: 5
+    killHighlight: {r: 1, g: 1, b: 0.9, a: 1}
+    killSizeBonus: 16
+    killPopBonus: 0.4
+    critSizeBonus: 16
+    rainbowSpeed: 1.5
+    comboLow: {r: 1, g: 0.85, b: 0.2, a: 1}
+    comboHigh: {r: 1, g: 0.25, b: 0.6, a: 1}
+    comboRainbowAt: 12
   comboPitchStep: 0.06
   comboPitchMax: 2
   comboShowThreshold: 3
@@ -108,6 +159,7 @@ MonoBehaviour:
     idleYaw: 140
     standOffset: 0.5
     modelScale: 1.35
+    standSideOffset: 0.62
     waitingX01: 0.06
     strikeDuration: 0.28
     cuePullBack: 0.32
@@ -130,8 +182,8 @@ MonoBehaviour:
     hpFullColor: {r: 0.66, g: 1, b: 0.6, a: 1}
     hpMidColor: {r: 1, g: 0.9, b: 0.4, a: 1}
     hpLowColor: {r: 1, g: 0.38, b: 0.32, a: 1}
-    floatTextSize: 30
-    comboTextSize: 26
+    floatTextSize: 32
+    comboTextSize: 48
     numberJitter: 18
     floatRise: 46
     floatLifetime: 0.9
@@ -149,3 +201,43 @@ MonoBehaviour:
     hardDamage: 10
     critVfxScale: 1.5
     explosionVfxScalePerRadius: 1
+  hype:
+    tier1: 0.25
+    tier2: 0.55
+    tier3: 0.85
+    riseTime: 0.08
+    fallTime: 0.35
+    tier1Color: {r: 1, g: 0.82, b: 0.08, a: 1}
+    tier2Color: {r: 1, g: 0.28, b: 0.02, a: 1}
+    tier3Color: {r: 1, g: 0.08, b: 0.55, a: 1}
+    glowMax: 2.2
+    sizeMax: 1.15
+    trailTimeMax: 2
+    trailWidthMax: 1.35
+    trailTint: 0.85
+    hitVfxScaleMax: 2
+    shakeMax: 2.5
+    shakeCapPixels: 16
+    extraSparksTier: 2
+    extraSparkScale: 0.8
+    numberSizePerTier: 16
+    numberPopPerTier: 0.22
+    numberTint: 0.8
+    auraWidth: 0.26
+    auraAlpha: 0.7
+    auraHeight: 0.08
+    auraPulsePeriod: 0.42
+    auraPulseAmount: 0.45
+    auraFade: 0.2
+    danceMin: 0.05
+    danceBeatsMin: 1.8
+    danceBeatsMax: 3.6
+    danceBounce: 0.22
+    danceYaw: 28
+    danceRoll: 10
+    danceSquash: 0.12
+    danceTailSpeed: 2.5
+    tierPoseDuration: 0.7
+    tierPoseJump: 0.75
+    tierPoseScale: 0.28
+    tierPoseVfxScale: 1.2

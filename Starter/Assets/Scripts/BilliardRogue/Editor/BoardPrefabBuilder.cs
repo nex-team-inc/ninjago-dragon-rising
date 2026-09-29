@@ -118,10 +118,17 @@ namespace Nex.BilliardRogue.Editor
 
             var number = NewRect("DamageNumber", null, new Vector2(200f, 60f));
             var numberView = number.AddComponent<DamageNumber>();
+            // The outline font's glyphs are the text's dilated by 1 px on the same metrics: created first, it draws under
+            // the text as its dark edge (DamageNumber drops it one font pixel for depth).
+            var outlineFont = WorldPrefabModels.LoadFont("BilliardPixelBoldOutline_TMP");
+            if (outlineFont == null) WorldPrefabModels.Warn("BilliardPixelBoldOutline_TMP missing (FontAssetsBuilder); damage numbers draw their outline with the text font.");
+            var outline = NewText("Outline", number.transform, outlineFont != null ? outlineFont : font, 32f, Vector2.zero, new Vector2(200f, 60f));
+            outline.color = new Color(0.05f, 0.04f, 0.1f, 1f);
             var text = NewText("Text", number.transform, font, 32f, Vector2.zero, new Vector2(200f, 60f));
             var numberSo = new SerializedObject(numberView);
             numberSo.FindProperty("rect").objectReferenceValue = number.GetComponent<RectTransform>();
             numberSo.FindProperty("text").objectReferenceValue = text;
+            numberSo.FindProperty("outline").objectReferenceValue = outline;
             numberSo.ApplyModifiedPropertiesWithoutUndo();
             WorldPrefabModels.SavePrefab(number, NumberPath);
 

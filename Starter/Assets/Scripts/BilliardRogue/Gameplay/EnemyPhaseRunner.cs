@@ -65,6 +65,16 @@ namespace Nex.BilliardRogue
             return defeated;
         }
 
+        /// <summary>
+        /// Closes the turn that cleared the stage: the resolver never runs for it (so turnInStage was not advanced),
+        /// yet GDD §11 wants a turn_end for every turn_start.
+        /// </summary>
+        public void EndWithoutPhase()
+        {
+            var run = services.Run;
+            services.Analytics.TurnEnd(run.stageNumber, run.turnInStage + 1, 0, 0, run.playerHp);
+        }
+
         #endregion
 
         #region Helpers

@@ -99,6 +99,42 @@ namespace Nex.BilliardRogue.Simulation
 
         #endregion
 
+        #region Telegraphs
+
+        /// <summary>
+        /// The warning an enemy carries between phases (EnemyAbilityTelegraph.value code, -1 = none): the cadence-N
+        /// action that fires in its next phase, by the rules Resolve telegraphs with, so a continued run rebuilds
+        /// the icons its events had set. An enemy frozen for the next phase skips its actions and shows none.
+        /// </summary>
+        public static int PendingTelegraph(GameRules rules, EnemyState e)
+        {
+            if (e.hp <= 0 || e.status.frozenTurns > 0)
+            {
+                return -1;
+            }
+            var r = rules.enemies[(int)e.type];
+            var next = e.turnCounter + 1;
+            // Resolve emits the spawn telegraph after the ability one, so it is the icon left showing when both fire.
+            if (r.spawnCount > 0 && Telegraphs(next, r.spawnEveryNTurns))
+            {
+                return TelegraphSpawn;
+            }
+            if (r.ranged)
+            {
+                return Telegraphs(next, r.abilityEveryNTurns) ? TelegraphCast : -1;
+            }
+            if (r.healAmount > 0)
+            {
+                return Telegraphs(next, r.abilityEveryNTurns) ? TelegraphHeal : -1;
+            }
+            return r.abilityValue > 0 && Telegraphs(next, r.abilityEveryNTurns) ? TelegraphQuake : -1;
+        }
+
+        // Every-phase actions (N <= 1) are never telegraphed.
+        static bool Telegraphs(int nextCounter, int every) => every > 1 && nextCounter % every == 0;
+
+        #endregion
+
         #region Internal
 
         internal static bool IsDue(int turnCounter, int every) => every > 0 && turnCounter % every == 0;

@@ -61,8 +61,14 @@ namespace Nex.BilliardRogue
         public void SaveTurnBoundary(RunState run)
         {
             store.SaveRun(run);
-            if (UpdateUnlockTier(run)) store.SaveMetaProgress();
+            RefreshUnlocks(run);
             Saved?.Invoke(run);
+        }
+
+        /// <summary>Applies the run's boss kills to the unlock tier now (the reward after a boss must roll with it).</summary>
+        public void RefreshUnlocks(RunState run)
+        {
+            if (UpdateUnlockTier(run)) store.SaveMetaProgress();
         }
 
         #endregion

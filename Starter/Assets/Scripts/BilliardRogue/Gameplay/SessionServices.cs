@@ -50,6 +50,9 @@ namespace Nex.BilliardRogue
         public ShotSequencer Sequencer { get; }
         public ShotResultTracker Tracker { get; }
 
+        /// <summary>Editor smoke run without a scene: no singletons (DebugPrinter, PlayerDataManager) exist.</summary>
+        public bool Headless => headless;
+
         /// <summary>PlayerPreference.aimGuideLength (0 short, 1 normal, 2 long); normal in headless runs.</summary>
         public int AimGuideSetting => headless ? 1 : PlayerDataManager.Instance.PlayerPreference.aimGuideLength;
 

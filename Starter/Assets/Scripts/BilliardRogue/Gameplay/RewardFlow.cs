@@ -30,6 +30,8 @@ namespace Nex.BilliardRogue
             services.Audio.PlayMusic(BgmManager.BgmType.Reward);
             if (run.pendingRewards.Count == 0)
             {
+                // The boss kill that ends the stage unlocks balls for this very reward, not the next one.
+                services.Persistence.RefreshUnlocks(run);
                 var tier = services.Debug.unlockAllBalls ? int.MaxValue : services.Persistence.MetaProgress.highestUnlockTier;
                 services.Sim.RollRewards(tier, rolled);
                 ForceRewardBall(rolled);

@@ -160,6 +160,8 @@ namespace Nex.BilliardRogue.Simulation
         public RunOutcome outcome;
         public bool awaitingReward;
         public List<RewardOption> pendingRewards = new();
+        /// <summary>MetaProgressData.highestUnlockTier when the run began (set by the flow), so the summary can list what this run unlocked after a continue.</summary>
+        public int unlockTierAtRunStart;
         /// <summary>Extra Basic shots granted by pickups for the current turn.</summary>
         public int extraBalls;
         /// <summary>Next fired ball deals double damage on its first hit (Power pickup).</summary>

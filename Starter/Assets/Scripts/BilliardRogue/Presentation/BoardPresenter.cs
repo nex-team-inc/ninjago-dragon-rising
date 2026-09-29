@@ -93,9 +93,20 @@ namespace Nex.BilliardRogue
         public void Rebuild(RunState run)
         {
             views.Rebuild(run);
+            RestoreTelegraphs(run);
             sequences.ResetCats();
             cameraShaker.CaptureBase();
             RefreshDangerLevel(run);
+        }
+
+        // The warning icons are set from phase events; a continued run derives them from the cadence instead.
+        void RestoreTelegraphs(RunState run)
+        {
+            var enemies = run.board.enemies;
+            for (var i = 0; i < enemies.Count; i++)
+            {
+                labels.SetTelegraph(enemies[i].id, EnemyPhaseResolver.PendingTelegraph(rules, enemies[i]));
+            }
         }
 
         /// <summary>Plays the immediate feedback for a frame's worth of player-turn events (hits, bounces, numbers).</summary>

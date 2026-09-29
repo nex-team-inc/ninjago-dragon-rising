@@ -11,7 +11,9 @@ namespace Nex.BilliardRogue
     /// Victory, plus TrackingLost inside a player turn. It is polled: GameSession.Tick advances it every frame and
     /// asynchronous steps (flow host overlays, BoardPresenter playback) are stored and checked for completion, so
     /// the machine never depends on a player loop and edit-mode smoke runs can tick it synchronously. Saves at stage
-    /// start and turn start here, reward roll and pick in RewardFlow; analytics at every boundary.
+    /// start, after each enemy phase and at the stage clear (GDD §9); reward roll and pick in RewardFlow. A decided
+    /// outcome is committed to the meta progress the moment the simulation decides it, before its sequence plays.
+    /// Analytics at every boundary.
     /// </summary>
     public sealed class TurnController
     {
@@ -22,7 +24,9 @@ namespace Nex.BilliardRogue
         UniTask pendingStep;
         UniTask<int> pendingChoice;
         CancellationToken ct;
-        bool stageJustSaved;
+        // The save on disk already equals the next turn-start snapshot (stage start, enemy phase), so EnterPlayerTurn skips its own.
+        bool savedAtBoundary;
+        bool outcomeCommitted;
         bool lowHp;
         int pendingStage = -1;
 
@@ -56,8 +60,18 @@ namespace Nex.BilliardRogue
             if (isContinue)
             {
                 services.Board.Rebuild(run);
-                if (run.awaitingReward) EnterReward();
-                else EnterStageIntro();
+                if (run.awaitingReward)
+                {
+                    // No stage intro on this path: the HUD stage label is pushed here instead.
+                    services.Hud.SetStage();
+                    services.Hud.RefreshAll();
+                    EnterReward();
+                }
+                else
+                {
+                    EnterStageIntro();
+                }
+
                 return;
             }
 
@@ -97,13 +111,24 @@ namespace Nex.BilliardRogue
             }
         }
 
-        /// <summary>Save &amp; Quit or cancellation: the last turn-boundary save stays, meta progress is untouched.</summary>
+        /// <summary>
+        /// Save &amp; Quit or cancellation. Before the simulation has decided the run, the last boundary save stays and
+        /// the meta progress is untouched (Result = Abandoned). Once it has (the enemy-phase playback or the
+        /// defeat / victory sequence is still running), the outcome was already committed, so the run finishes with
+        /// it and the flow shows the summary instead of letting the lethal turn be replayed.
+        /// </summary>
         public void Abandon()
         {
             if (Phase == TurnPhase.Finished) return;
             var run = services.Run;
             services.Sim.ClearBalls();
             services.Pause.SetHold(false);
+            if (run.outcome != RunOutcome.None)
+            {
+                CompleteRun(run.outcome);
+                return;
+            }
+
             services.TimeScale.ResetEffects();
             services.Analytics.RunEnd(RunOutcome.Abandoned, run.stageNumber, run.stats.turns, run.stats.playSeconds, run.stats.kills);
             services.Analytics.SessionStop(RunOutcome.Abandoned);
@@ -139,8 +164,8 @@ namespace Nex.BilliardRogue
         void EnterPlayerTurn()
         {
             var run = services.Run;
-            if (!stageJustSaved) Save();
-            stageJustSaved = false;
+            if (!savedAtBoundary) Save();
+            savedAtBoundary = false;
             var turn = run.turnInStage + 1;
             loop.BeginTurn();
             services.Board.SetActiveShooter(run.activePlayerIndex, run.numPlayers);
@@ -157,11 +182,16 @@ namespace Nex.BilliardRogue
             loop.EndTurn();
             if (services.Sim.IsStageCleared)
             {
+                enemyPhase.EndWithoutPhase();
                 EnterStageClear();
                 return;
             }
 
             pendingStep = enemyPhase.Begin(ct);
+            // GDD §9 save point: the resolved phase is on disk before it plays, so a quit or kill during the playback
+            // (or the defeat sequence) can neither replay the lethal turn nor lose the result.
+            if (services.Run.outcome == RunOutcome.Defeat) CommitOutcome();
+            else SaveAtBoundary();
             Phase = TurnPhase.EnemyPhase;
         }
 
@@ -193,7 +223,7 @@ namespace Nex.BilliardRogue
             services.Board.Rebuild(run);
             if (firstStage) services.Persistence.BeginRun(run);
             else Save();
-            stageJustSaved = true;
+            savedAtBoundary = true;
             services.Analytics.StageStart(run.actIndex, run.stageInAct, run.stage.isBoss);
             if (run.stage.isBoss) services.Analytics.BossSpawn(services.Sim.Act.bossType);
             EnterStageIntro();
@@ -228,6 +258,9 @@ namespace Nex.BilliardRogue
             services.Hud.RefreshHp();
             services.Hud.RefreshBoss();
             services.Analytics.StageClear(run.actIndex, run.stageInAct, run.turnInStage, run.playerHp);
+            // A quit during the sting resumes at the reward: Offer rolls the same cards from the saved rngState, and
+            // the save raises the unlock tier a boss kill earned before the roll reads it.
+            if (run.awaitingReward) Save();
             pendingStep = services.Board.PlayStageClearAsync(ct);
             Phase = TurnPhase.StageClear;
         }
@@ -240,8 +273,14 @@ namespace Nex.BilliardRogue
 
         void Advance()
         {
-            if (services.Sim.AdvanceToNextStage()) BeginNewStage(false);
-            else EnterVictory();
+            if (services.Sim.AdvanceToNextStage())
+            {
+                BeginNewStage(false);
+                return;
+            }
+
+            CommitOutcome();
+            EnterVictory();
         }
 
         void JumpToStage()
@@ -283,8 +322,9 @@ namespace Nex.BilliardRogue
 
         void ResumeFromTrackingLost()
         {
+            // GameplayView.ShowTrackingLostAsync logs tracking_lost with the real time away (the loop does not tick
+            // while the overlay is up, so its own counter stops at the threshold).
             var player = loop.TrackingLostPlayer;
-            services.Analytics.TrackingLost(player, loop.TrackingLostSeconds);
             loop.ClearTrackingLost();
             services.Inputs[player].ResetStrike();
             services.Hud.SetTrackingWarning(player, false);
@@ -311,15 +351,28 @@ namespace Nex.BilliardRogue
 
         void Finish(RunOutcome outcome)
         {
+            CompleteRun(outcome);
+            services.FlowHost.NotifyRunEnded(services.Run);
+        }
+
+        void CompleteRun(RunOutcome outcome)
+        {
             var run = services.Run;
             run.outcome = outcome;
             services.TimeScale.ResetEffects();
             services.Analytics.RunEnd(outcome, run.stageNumber, run.stats.turns, run.stats.playSeconds, run.stats.kills);
             services.Analytics.SessionStop(outcome);
-            NewRecord = services.Persistence.CompleteRun(run);
+            CommitOutcome();
             Result = outcome;
             Phase = TurnPhase.Finished;
-            services.FlowHost.NotifyRunEnded(run);
+        }
+
+        /// <summary>Applies run.outcome to the meta progress and drops the save, once, as soon as the simulation decided it.</summary>
+        void CommitOutcome()
+        {
+            if (outcomeCommitted) return;
+            outcomeCommitted = true;
+            NewRecord = services.Persistence.CompleteRun(services.Run);
         }
 
         #endregion
@@ -327,6 +380,12 @@ namespace Nex.BilliardRogue
         #region Helpers
 
         void Save() => services.Persistence.SaveTurnBoundary(services.Run);
+
+        void SaveAtBoundary()
+        {
+            Save();
+            savedAtBoundary = true;
+        }
 
         // Low HP: repeat the warning at every turn start while low, otherwise only when damage crosses the line.
         void WarnLowHp(bool repeat)

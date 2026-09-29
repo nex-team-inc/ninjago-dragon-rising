@@ -68,7 +68,8 @@ namespace Nex.BilliardRogue
         /// Runs until the run ends or ct is cancelled; returns the outcome. Cancellation and Save &amp; Quit return
         /// Abandoned as the result only: never write Abandoned into RunState.outcome or save after it, because
         /// RunPersistence.Load drops any save whose outcome is not None and the player expects to continue.
-        /// Only RunPersistence.Abandon() drops the save on purpose.
+        /// Only RunPersistence.Abandon() drops the save on purpose. Once the simulation has decided the run
+        /// (Defeat / Victory committed, its sequence still playing), both return that outcome instead.
         /// </summary>
         public UniTask<RunOutcome> RunAsync(CancellationToken ct)
         {
@@ -96,7 +97,8 @@ namespace Nex.BilliardRogue
 
         /// <summary>
         /// Save &amp; Quit from the pause view: the last turn-boundary save (RunPersistence.SaveTurnBoundary) stays on
-        /// disk with outcome None and RunAsync completes with Abandoned (see RunAsync).
+        /// disk with outcome None and RunAsync completes with Abandoned (see RunAsync), unless the run was already
+        /// decided, which completes it with that outcome (TurnController.Abandon).
         /// </summary>
         public void RequestSaveAndQuit()
         {
@@ -112,6 +114,9 @@ namespace Nex.BilliardRogue
             try
             {
                 turns.Tick(unscaledDeltaTime);
+#if ENABLE_DEBUG_SETTINGS || DEVELOPMENT_BUILD || UNITY_EDITOR
+                debugCommands?.Tick();
+#endif
             }
             catch (OperationCanceledException)
             {
@@ -163,15 +168,15 @@ namespace Nex.BilliardRogue
         {
             if (!running) return;
             turns.Abandon();
-            Complete(RunOutcome.Abandoned);
+            Complete(turns.Result);
         }
 
         void HandleCancelled() => Abandon();
 
         void HandleSaved(RunState run) => Saved?.Invoke(run);
 
-        // Subscribe emits the current value first, so a game started while stopped pauses at once. The platform
-        // never resumes by itself: the flow resumes through RequestPause(false) from the pause view.
+        // Save only: GameplayView owns the platform pause (it pushes the pause view, then calls RequestPause), so a
+        // stop can never freeze the run without a visible way back. Subscribe emits the current value first.
         void BindPlatformPause()
         {
             CherryIntegrationManager.Instance.PreferGameStopped.Subscribe(HandlePreferGameStopped, destroyCancellationToken);
@@ -179,9 +184,8 @@ namespace Nex.BilliardRogue
 
         void HandlePreferGameStopped(bool stopped)
         {
-            if (!stopped || !running) return;
-            if (turns.IsStable) services.Persistence.SaveTurnBoundary(context.run);
-            RequestPause(true);
+            if (!stopped || !running || !turns.IsStable) return;
+            services.Persistence.SaveTurnBoundary(context.run);
         }
 
         #endregion

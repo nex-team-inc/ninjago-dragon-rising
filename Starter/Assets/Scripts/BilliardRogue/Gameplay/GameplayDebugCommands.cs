@@ -10,13 +10,21 @@ namespace Nex.BilliardRogue
     /// <summary>
     /// The gameplay half of DebugHooks (TDD D7): Shoot, GotoStage, KillAll, ClearStage, AddEveryBall and State,
     /// registered while a GameSession runs and removed on teardown without touching the flow's handlers.
-    /// ChooseReward stays with the reward view.
+    /// ChooseReward stays with the reward view. Also the DebugSettings.showSimDebug line on the DebugPrinter.
     /// </summary>
     public sealed class GameplayDebugCommands
     {
+        const string SimDebugKey = "sim";
+
         readonly SessionServices services;
         readonly TurnController turns;
         readonly StringBuilder summary = new();
+        TurnPhase printedPhase;
+        int printedBalls = -1;
+        int printedEnemies = -1;
+        int printedHp = -1;
+        int printedShots = -1;
+        bool printing;
         readonly Func<float, bool> shoot;
         readonly Func<int, bool> gotoStage;
         readonly Func<bool> killAll;
@@ -56,6 +64,49 @@ namespace Nex.BilliardRogue
             if (ReferenceEquals(DebugHooks.ClearStageHandler, clearStage)) DebugHooks.ClearStageHandler = null;
             if (ReferenceEquals(DebugHooks.AddEveryBallHandler, addEveryBall)) DebugHooks.AddEveryBallHandler = null;
             if (ReferenceEquals(DebugHooks.StateHandler, state)) DebugHooks.StateHandler = null;
+            if (printing) ClearSimDebug();
+        }
+
+        #endregion
+
+        #region Sim Debug
+
+        /// <summary>
+        /// DebugSettings.showSimDebug: keeps a "sim" line (phase, shots, balls in flight, enemies, HP) on the
+        /// DebugPrinter, rebuilt only when a value changes. Headless runs have no printer.
+        /// </summary>
+        public void Tick()
+        {
+            if (services.Headless) return;
+            if (!services.Debug.showSimDebug)
+            {
+                if (printing) ClearSimDebug();
+                return;
+            }
+
+            var run = services.Run;
+            var balls = services.Sim.ActiveBalls;
+            var enemies = run.board.enemies.Count;
+            var shots = run.stats.shots;
+            if (printing && turns.Phase == printedPhase && balls == printedBalls && enemies == printedEnemies && run.playerHp == printedHp && shots == printedShots) return;
+            printing = true;
+            printedPhase = turns.Phase;
+            printedBalls = balls;
+            printedEnemies = enemies;
+            printedHp = run.playerHp;
+            printedShots = shots;
+            summary.Clear();
+            summary.Append("phase=").Append(printedPhase)
+                .Append(" stage=").Append(run.stageNumber).Append(" turn=").Append(run.turnInStage + 1)
+                .Append(" shots=").Append(shots).Append(" inFlight=").Append(balls)
+                .Append(" enemies=").Append(enemies).Append(" hp=").Append(run.playerHp).Append('/').Append(run.playerMaxHp);
+            DebugPrinter.Instance.Print(SimDebugKey, summary.ToString());
+        }
+
+        void ClearSimDebug()
+        {
+            printing = false;
+            DebugPrinter.Instance.Print(SimDebugKey, "");
         }
 
         #endregion

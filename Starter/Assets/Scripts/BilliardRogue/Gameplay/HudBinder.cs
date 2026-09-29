@@ -26,7 +26,7 @@ namespace Nex.BilliardRogue
         int activePlayer = -1;
         int queueIndex = -1;
         int queueExtra = -1;
-        int queueBagCount = -1;
+        int queueVersion = -1;
         int remaining = -1;
         int total = -1;
         float hype = -1f;
@@ -62,15 +62,15 @@ namespace Nex.BilliardRogue
 
         public void RefreshQueue()
         {
-            var bagCount = run.bag.Count;
-            var index = sequencer.NextIndex;
+            var index = sequencer.NextShot;
             var extra = run.extraBalls;
-            if (index != queueIndex || extra != queueExtra || bagCount != queueBagCount)
+            var version = sequencer.TurnBallsVersion;
+            if (index != queueIndex || extra != queueExtra || version != queueVersion)
             {
                 queueIndex = index;
                 queueExtra = extra;
-                queueBagCount = bagCount;
-                hud.SetBallQueue(run.bag, index, extra);
+                queueVersion = version;
+                hud.SetBallQueue(sequencer.TurnBalls, index, extra);
             }
 
             var left = sequencer.Remaining;

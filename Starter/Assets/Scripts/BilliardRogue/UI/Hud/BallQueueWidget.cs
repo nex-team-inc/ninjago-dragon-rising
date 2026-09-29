@@ -9,10 +9,10 @@ using UnityEngine.UI;
 namespace Nex.BilliardRogue
 {
     /// <summary>
-    /// Ball bag in firing order: a large NEXT slot with the ball's name and level, then the whole turn (bag + bonus
-    /// shots) as a grid of fixed slots, fired balls dimmed, the next one on the active frame with a pulse and marker.
-    /// The panel grows by grid rows only as far as the turn needs (12 slots = 2 rows of 6). Only changed slots are
-    /// touched (no per-frame work or GC).
+    /// The turn's shots in firing order: a large NEXT slot with the ball's name and level, then the whole turn (the
+    /// turn's bag balls + bonus shots) as a grid of fixed slots, fired balls dimmed, the next one on the active frame
+    /// with a pulse and marker. The panel grows by grid rows only as far as the turn needs (12 slots = 2 rows of 6).
+    /// Only changed slots are touched (no per-frame work or GC).
     /// </summary>
     public sealed class BallQueueWidget : MonoBehaviour
     {
@@ -91,7 +91,7 @@ namespace Nex.BilliardRogue
             SetRows(1);
         }
 
-        /// <summary>bag in firing order, nextIndex = next shot (bag.Count.. = bonus shots), extraBalls = bonus Basic shots.</summary>
+        /// <summary>bag = the turn's bag balls in firing order, nextIndex = next shot (bag.Count.. = bonus shots), extraBalls = bonus Basic shots.</summary>
         public void Set(IReadOnlyList<BallInstance> bag, int nextIndex, int extraBalls)
         {
             var shots = bag.Count + extraBalls;

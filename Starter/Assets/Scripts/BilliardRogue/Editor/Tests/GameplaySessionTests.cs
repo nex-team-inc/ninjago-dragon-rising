@@ -1,6 +1,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Nex.BilliardRogue.Simulation;
 using NUnit.Framework;
@@ -54,7 +55,7 @@ namespace Nex.BilliardRogue.Editor.Tests
             public UniTask<RunOutcome> outcome;
             public int ticks;
 
-            public Harness(int players, IShotInput? input = null)
+            public Harness(int players, IShotInput? input = null, DebugSettings? debug = null)
             {
                 config = AssetDatabase.LoadAssetAtPath<BilliardRogueConfig>(ConfigPath);
                 Assert.IsNotNull(config, "run ConfigAssetsBuilder first");
@@ -73,7 +74,7 @@ namespace Nex.BilliardRogue.Editor.Tests
                 session.Initialize(new GameSessionContext
                 {
                     config = config, rules = rules, run = run, isContinue = false, hud = hud, flowHost = flow, inputs = inputs,
-                    persistence = persistence, analytics = null, timeScale = timeScale, headless = true, debugSettings = new DebugSettings(),
+                    persistence = persistence, analytics = null, timeScale = timeScale, headless = true, debugSettings = debug ?? new DebugSettings(),
                 });
                 outcome = session.RunAsync(default);
             }
@@ -214,6 +215,44 @@ namespace Nex.BilliardRogue.Editor.Tests
             Assert.IsTrue(input.Armed, "and are not consumed either");
         }
 
+        [TestCase(false)]
+        [TestCase(true)]
+        public void TurnEndsAfterShotsPerTurnAndTheEnemiesAdvance(bool practiceMode)
+        {
+            var input = new ArmedInput();
+            using var h = new Harness(1, input, new DebugSettings { practiceMode = practiceMode });
+            Assert.IsTrue(h.DriveUntil(() => h.Phase == TurnPhase.PlayerTurn));
+            var shotsPerTurn = h.rules.balance.shotsPerTurn;
+            Assert.Greater(h.run.bag.Count, shotsPerTurn, "the opening bag holds more balls than one turn fires");
+            var rowsBefore = new Dictionary<int, int>();
+            foreach (var enemy in h.run.board.enemies)
+            {
+                // Immortal, so no shot can clear the field and cut the turn short.
+                enemy.hp = enemy.maxHp = 100000;
+                rowsBefore[enemy.id] = enemy.row;
+            }
+
+            for (var shot = 0; shot < shotsPerTurn; shot++)
+            {
+                input.Armed = true;
+                Assert.IsTrue(h.DriveUntil(() => h.run.stats.shots == shot + 1), "shot " + (shot + 1));
+            }
+
+            input.Armed = true;
+            Assert.IsTrue(h.DriveUntil(() => h.Phase == TurnPhase.EnemyPhase), "the turn ends after shotsPerTurn balls");
+            Assert.AreEqual(shotsPerTurn, h.run.stats.shots, "the rest of the bag waits for the next turn");
+            Assert.IsTrue(h.DriveUntil(() => h.Phase == TurnPhase.PlayerTurn), "next turn");
+
+            var advanced = 0;
+            foreach (var enemy in h.run.board.enemies)
+            {
+                if (rowsBefore.TryGetValue(enemy.id, out var row) && enemy.row > row) advanced++;
+            }
+
+            Assert.Greater(advanced, 0, "the enemies stepped toward the player at the turn end");
+            Assert.AreEqual(shotsPerTurn % h.run.bag.Count, h.run.nextBagIndex, "the next turn continues the bag rotation");
+        }
+
         [Test]
         public void TwoPlayersHandOffOnlyWhileAShotIsLeft()
         {
@@ -231,7 +270,7 @@ namespace Nex.BilliardRogue.Editor.Tests
             var input = new ArmedInput();
             using var h = new Harness(1, input);
             Assert.IsTrue(h.DriveUntil(() => h.Phase == TurnPhase.PlayerTurn));
-            var total = h.run.bag.Count;
+            var total = h.rules.balance.shotsPerTurn;
             for (var shot = 0; shot < total; shot++)
             {
                 input.Armed = true;

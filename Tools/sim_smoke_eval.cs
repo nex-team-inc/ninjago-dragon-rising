@@ -1,7 +1,8 @@
 // Whole-run smoke test for the Billiard Rogue simulation (statements only: runs inside the eval wrapper).
 // Usage: unity command eval_file /Users/simonbut/project/VibeProject3/Tools/sim_smoke_eval.cs 240000 --timeout 250 --project-path /Users/simonbut/project/VibeProject3/Starter --json
 // Drives seeded runs with an aiming bot through launch -> step -> enemy phase -> stage clear -> reward -> next stage
-// using the real config assets. The bot samples launch positions x angles plus straight lines at the lowest enemies
+// using the real config assets and the game's ShotSequencer (BalanceRules.shotsPerTurn balls per turn). The bot samples
+// launch positions x angles plus straight lines at the lowest enemies
 // and scores every candidate's PredictPath by the enemy contacts it makes (danger-row and boss contacts weigh more).
 // Reports outcome, act/stage reached, turns per stage, worst flight, hits per shot and enemies on board per seed, plus the
 // GDD v2 §5 batch stats: enemies per batch (min / avg), the lowest row a batch enemy spawned into, dropped entries and
@@ -125,6 +126,8 @@ try
         Tally(events); TallyRows(run, events);
         events.Clear();
         var bot = new System.Random(seed);
+        // The game's own turn rule: BalanceRules.shotsPerTurn balls per turn, the bag rotation carried across turns.
+        var sequencer = new Nex.BilliardRogue.ShotSequencer(run, rules.balance.shotsPerTurn, 0f);
         var turns = 0; var maxSteps = 0; var stuck = 0; var maxHits = 0; var over7 = 0; var over8 = 0; var shots = 0;
         var turnsPerStage = new List<int>(); var stageTurns = 0; var maxEnemies = 0; var minHp = run.playerHp;
         while (run.outcome == Nex.BilliardRogue.Simulation.RunOutcome.None && turns < 400)
@@ -132,9 +135,10 @@ try
             turns++; stageTurns++;
             if (run.board.enemies.Count > maxEnemies) maxEnemies = run.board.enemies.Count;
             if (run.playerHp < minHp) minHp = run.playerHp;
-            for (var s = 0; s < run.bag.Count + run.extraBalls; s++)
+            sequencer.BeginTurn(false);
+            while (sequencer.HasBallToFire && run.board.enemies.Count > 0)
             {
-                var ball = s < run.bag.Count ? run.bag[s] : new Nex.BilliardRogue.Simulation.BallInstance { type = Nex.BilliardRogue.Simulation.BallType.Basic, level = 1 };
+                var ball = sequencer.Fire(out _);
                 var (origin, dir) = Aim(run, bot);
                 if (bot.NextDouble() < randomShotChance)
                 {
@@ -159,7 +163,7 @@ try
                 if (steps > 8 * 60) over8++;
                 if (factory.IsStageCleared(run)) break;
             }
-            run.extraBalls = 0;
+            sequencer.EndTurn();
             if (!factory.IsStageCleared(run))
             {
                 resolver.Resolve(run, rng, events);
@@ -195,7 +199,7 @@ try
         report.AppendLine($"seed {seed}: outcome={run.outcome} act={run.actIndex + 1} stageInAct={run.stageInAct} stageNumber={run.stageNumber} turns={turns} turnsPerStage=[{string.Join(",", turnsPerStage)}] hp={run.playerHp}/{run.playerMaxHp} minHp={Mathf.Min(minHp, run.playerHp)} damageTaken={run.stats.damageTaken} bag=[{bag}] kills={run.stats.kills} shots={shots} bestCombo={run.stats.bestCombo} maxHitsPerShot={maxHits} worstFlight={maxSteps}f({maxSteps / 60f:F1}s) flightsOver7s={over7} flightsOver8s={over8} stuck={stuck} enemiesAtEnd={run.board.enemies.Count} maxEnemiesOnBoard={maxEnemies}");
     }
     report.AppendLine($"batches: count={batchSizes.Count} enemiesPerBatch min={(batchSizes.Count > 0 ? batchSizes.Min() : 0)} avg={(batchSizes.Count > 0 ? batchSizes.Average() : 0):F1} max={(batchSizes.Count > 0 ? batchSizes.Max() : 0)} under10={batchSizes.Count(n => n < 10)} dropped={batchDrops} lowestSpawnRow={batchMaxRow} (last allowed {lastSpawnRow}) spawnsInForbiddenRows={forbiddenSpawns} skipEvents={skipEvents} turnsSkipped={skippedTurns}");
-    report.AppendLine($"all seeds: shots={globalShots} worstFlight={globalWorstFrames / 60f:F2}s maxHitsPerShot={globalMaxHits} flightsOver7s={globalOver7} flightsOver8s={globalOver8} elapsed={watch.ElapsedMilliseconds} ms");
+    report.AppendLine($"all seeds: shotsPerTurn={rules.balance.shotsPerTurn} randomShotChance={randomShotChance} shots={globalShots} worstFlight={globalWorstFrames / 60f:F2}s maxHitsPerShot={globalMaxHits} flightsOver7s={globalOver7} flightsOver8s={globalOver8} elapsed={watch.ElapsedMilliseconds} ms");
 }
 catch (Exception ex)
 {

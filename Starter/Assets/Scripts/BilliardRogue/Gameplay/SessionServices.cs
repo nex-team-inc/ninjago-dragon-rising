@@ -58,13 +58,13 @@ namespace Nex.BilliardRogue
 
         public float TrackingLostSeconds => Config.Control.TrackingLostSeconds;
 
-        /// <summary>DebugSettings.godMode, also on in practice mode (the control lab: the run never ends).</summary>
+        /// <summary>
+        /// DebugSettings.godMode, also on in practice mode (the control lab: the run never ends, while turns still end
+        /// after BalanceRules.shotsPerTurn balls and the enemies still advance).
+        /// </summary>
         public bool GodMode => Debug.godMode || Debug.practiceMode;
 
-        /// <summary>DebugSettings.infiniteBalls, also on in practice mode.</summary>
-        public bool InfiniteBalls => Debug.infiniteBalls || Debug.practiceMode;
-
-        /// <summary>Practice mode: enemies stop one row short of the danger row.</summary>
-        public bool HoldEnemiesBeforeDangerRow => Debug.practiceMode;
+        /// <summary>DebugSettings.infiniteBalls: the turn never runs out of balls, so it ends only on an empty field.</summary>
+        public bool InfiniteBalls => Debug.infiniteBalls;
     }
 }

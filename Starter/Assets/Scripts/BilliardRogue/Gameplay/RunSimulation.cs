@@ -98,11 +98,10 @@ namespace Nex.BilliardRogue
 
         #region Turns
 
-        /// <summary>holdBeforeDangerRow: debug practice mode, enemies stop one row short of the danger row.</summary>
-        public void ResolveEnemyPhase(bool holdBeforeDangerRow = false)
+        public void ResolveEnemyPhase()
         {
             phaseEvents.Clear();
-            resolver.Resolve(run, Rng(), phaseEvents, holdBeforeDangerRow);
+            resolver.Resolve(run, Rng(), phaseEvents);
         }
 
         public void RollRewards(int highestUnlockTier, List<RewardOption> output) => rewards.Roll(rules, run, highestUnlockTier, Rng(), output);

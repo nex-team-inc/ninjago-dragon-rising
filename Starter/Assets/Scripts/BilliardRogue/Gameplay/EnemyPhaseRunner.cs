@@ -9,8 +9,7 @@ namespace Nex.BilliardRogue
 {
     /// <summary>
     /// One enemy phase: resolves it through the simulation (god mode gives the player an unreachable HP for the
-    /// resolve and strips the hurt events afterwards, HANDOFF §5.6; practice mode also holds the enemies one row
-    /// short of the danger row), hands the events to BoardPresenter for staged
+    /// resolve and strips the hurt events afterwards, HANDOFF §5.6), hands the events to BoardPresenter for staged
     /// playback (which plays the step / hurt SFX in sync) and, once played, pushes HP/boss HUD values and the
     /// turn_end analytics.
     /// </summary>
@@ -40,7 +39,7 @@ namespace Nex.BilliardRogue
             var takenBefore = run.stats.damageTaken;
             var godMode = services.GodMode;
             if (godMode) run.playerHp = GodModeHp;
-            services.Sim.ResolveEnemyPhase(services.HoldEnemiesBeforeDangerRow);
+            services.Sim.ResolveEnemyPhase();
             var events = services.Sim.PhaseEvents;
             if (godMode)
             {

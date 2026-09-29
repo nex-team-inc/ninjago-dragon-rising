@@ -55,7 +55,7 @@ namespace Nex.BilliardRogue
             pause = new PauseState(ctx.timeScale);
             var sim = new RunSimulation(ctx.rules, ctx.run);
             var analytics = new SessionAnalytics(ctx.analytics);
-            var sequencer = new ShotSequencer(ctx.run, pacing.ShotCooldown);
+            var sequencer = new ShotSequencer(ctx.run, ctx.rules.balance.shotsPerTurn, pacing.ShotCooldown);
             var debug = ctx.debugSettings ?? (ctx.headless ? new DebugSettings() : PlayerDataManager.Instance.DebugSettings);
             services = new SessionServices(ctx, sim, new BoardDriver(ctx.headless ? null : ctx.board), new HudBinder(ctx.hud, ctx.run, sim, sequencer),
                 new SessionAudio(!ctx.headless, pacing.BgmCrossfadeSeconds), analytics, pause, debug, sequencer, new ShotResultTracker(analytics));

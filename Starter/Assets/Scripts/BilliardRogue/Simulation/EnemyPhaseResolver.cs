@@ -69,9 +69,8 @@ namespace Nex.BilliardRogue.Simulation
         /// turnInStage jumps to its turn (BatchSpawned.sourceId = turns skipped; stats.turns counts played turns only).
         /// A boss stage cycles its escort batches while the boss lives and spawns nothing once it is dead.
         /// Stops after the step in which the player dies. Stores rng.State into run.rngState.
-        /// holdBeforeDangerRow (debug practice mode) stops every advance one row short of the danger row.
         /// </summary>
-        public void Resolve(RunState run, SimRandom rng, List<SimEvent> events, bool holdBeforeDangerRow = false)
+        public void Resolve(RunState run, SimRandom rng, List<SimEvent> events)
         {
             if (run.outcome != RunOutcome.None) return;
             BeginPhase(run);
@@ -84,7 +83,7 @@ namespace Nex.BilliardRogue.Simulation
             if (run.outcome == RunOutcome.None)
             {
                 mark = events.Count;
-                advance.Resolve(run, frozen, abilities.QuakeRows, abilities.QuakeSourceId, holdBeforeDangerRow, events);
+                advance.Resolve(run, frozen, abilities.QuakeRows, abilities.QuakeSourceId, events);
                 Stamp(events, mark, StepAdvance);
                 mark = events.Count;
                 Attack(run, events);

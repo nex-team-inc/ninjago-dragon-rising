@@ -112,24 +112,6 @@ namespace Nex.BilliardRogue.Simulation.Tests
         }
 
         [Test]
-        public void PracticeHoldStopsEveryAdvanceAboveTheDangerRow()
-        {
-            var bat = SimTest.Put(run, ops, EnemyType.Bat, 2, 6);
-            var slime = SimTest.Put(run, ops, EnemyType.Slime, 6, 8);
-            for (var phase = 0; phase < 4; phase++)
-            {
-                var events = new List<SimEvent>();
-                resolver.Resolve(run, rng, events, holdBeforeDangerRow: true);
-                Assert.AreEqual(0, SimTest.Count(events, SimEventKind.EnemyAttack), $"phase {phase}: nobody reaches the danger row");
-            }
-
-            var lastRow = ArenaGeometry.DangerRow(rules.arena) - 1;
-            Assert.AreEqual(lastRow, bat.row, "a 2-row mover stops one row short");
-            Assert.AreEqual(lastRow, slime.row, "an enemy already next to the danger row stays");
-            Assert.AreEqual(rules.balance.playerMaxHp, run.playerHp);
-        }
-
-        [Test]
         public void RangedEnemiesTelegraphThenCastAndDoNotAlsoMelee()
         {
             var mage = SimTest.Put(run, ops, EnemyType.Mage, 5, 9);

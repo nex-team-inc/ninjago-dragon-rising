@@ -111,6 +111,8 @@ namespace Nex.BilliardRogue.Simulation
     public class BalanceRules
     {
         public int playerMaxHp = 30;
+        /// <summary>Balls fired per player turn, taken from the bag in order and wrapping around it (0 = the whole bag, the v1 rule).</summary>
+        public int shotsPerTurn = 3;
         public int bagCap = 12;
         public BallType[] startingBag = { BallType.Basic, BallType.Basic, BallType.Basic, BallType.Basic };
         public int levelCap = 3;

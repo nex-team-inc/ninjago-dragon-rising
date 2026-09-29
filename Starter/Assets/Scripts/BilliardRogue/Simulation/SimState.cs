@@ -191,6 +191,8 @@ namespace Nex.BilliardRogue.Simulation
         public int unlockTierAtRunStart;
         /// <summary>Extra Basic shots granted by pickups for the current turn.</summary>
         public int extraBalls;
+        /// <summary>Bag index of the ball the next turn fires first (turns fire BalanceRules.shotsPerTurn balls in bag order, wrapping around).</summary>
+        public int nextBagIndex;
         /// <summary>Next fired ball deals double damage on its first hit (Power pickup).</summary>
         public bool powerPickupArmed;
     }

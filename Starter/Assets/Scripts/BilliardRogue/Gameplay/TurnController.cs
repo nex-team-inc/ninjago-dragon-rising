@@ -50,7 +50,7 @@ namespace Nex.BilliardRogue
         public PlayerTurnLoop Loop => loop;
 
         /// <summary>A save now would equal the turn-start snapshot: player turn, nothing fired, no balls in flight.</summary>
-        public bool IsStable => Phase == TurnPhase.PlayerTurn && services.Sequencer.NextIndex == 0 && services.Sim.ActiveBalls == 0;
+        public bool IsStable => Phase == TurnPhase.PlayerTurn && services.Sequencer.Fired == 0 && services.Sim.ActiveBalls == 0;
 
         #region Public Methods
 

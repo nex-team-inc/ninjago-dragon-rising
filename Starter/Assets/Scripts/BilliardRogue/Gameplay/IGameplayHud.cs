@@ -9,8 +9,8 @@ namespace Nex.BilliardRogue
     public interface IGameplayHud
     {
         void SetHp(int cur, int max);
-        /// <summary>Bag in firing order; nextIndex = next ball to fire; extraBalls = bonus Basic shots this turn.</summary>
-        void SetBallQueue(IReadOnlyList<BallInstance> bag, int nextIndex, int extraBalls);
+        /// <summary>This turn's bag balls in firing order; nextIndex = next shot (balls.Count.. = bonus shots); extraBalls = bonus Basic shots this turn.</summary>
+        void SetBallQueue(IReadOnlyList<BallInstance> balls, int nextIndex, int extraBalls);
         void SetBallsRemaining(int remaining, int total);
         void SetStage(int actIndex, int stageInAct, bool isBoss);
         void SetActivePlayer(int playerIndex, int numPlayers);

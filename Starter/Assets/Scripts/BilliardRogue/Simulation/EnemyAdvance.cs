@@ -27,16 +27,12 @@ namespace Nex.BilliardRogue.Simulation
 
         #region Public Methods
 
-        /// <summary>
-        /// quakeRows extra rows apply to every enemy except quakeSourceId; frozen enemies stay put. holdBeforeDangerRow
-        /// (debug practice mode) makes the row above the danger row the last one an enemy can step into.
-        /// </summary>
-        public void Resolve(RunState run, List<EnemyState> frozen, int quakeRows, int quakeSourceId, bool holdBeforeDangerRow, List<SimEvent> events)
+        /// <summary>quakeRows extra rows apply to every enemy except quakeSourceId; frozen enemies stay put.</summary>
+        public void Resolve(RunState run, List<EnemyState> frozen, int quakeRows, int quakeSourceId, List<SimEvent> events)
         {
             MovePickups(run, events);
             SortFrontFirst(run.board.enemies);
-            var dangerRow = ArenaGeometry.DangerRow(rules.arena);
-            var lastRow = holdBeforeDangerRow ? dangerRow - 1 : dangerRow;
+            var lastRow = ArenaGeometry.DangerRow(rules.arena);
             var centerX = rules.arena.columns * 0.5f;
             foreach (var e in order)
             {

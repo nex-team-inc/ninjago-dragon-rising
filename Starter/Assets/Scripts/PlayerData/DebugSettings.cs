@@ -18,12 +18,13 @@ namespace Nex
         [DebugOrder(10), Description("Cheat: God Mode")] public bool godMode;
         [DebugOrder(11), Description("Cheat: Infinite Balls")] public bool infiniteBalls;
         [DebugOrder(12), Description("Cheat: Unlock All Balls")] public bool unlockAllBalls;
-        // Control lab: god mode + infinite balls, and enemies stop one row short of the danger row. The control demo
-        // APK (BR_CONTROL_DEMO) starts with it on (the control readout stays off, see showControlReadout).
+        // Control lab: god mode, so the run never ends; turns still end after BalanceRules.shotsPerTurn balls and the
+        // enemies still advance. The control demo APK (BR_CONTROL_DEMO) starts with it on (the control readout stays
+        // off, see showControlReadout).
 #if BR_CONTROL_DEMO
-        [DebugOrder(13), Description("Cheat: Practice Mode (god, infinite balls, no danger row)")] public bool practiceMode = true;
+        [DebugOrder(13), Description("Cheat: Practice Mode (god mode, the run never ends)")] public bool practiceMode = true;
 #else
-        [DebugOrder(13), Description("Cheat: Practice Mode (god, infinite balls, no danger row)")] public bool practiceMode;
+        [DebugOrder(13), Description("Cheat: Practice Mode (god mode, the run never ends)")] public bool practiceMode;
 #endif
 
         [DebugOrder(20), Description("Flow: Auto Aim Bot")] public bool autoAimBot;

@@ -76,10 +76,61 @@ their cost lives in `Nex.Platform`; only the enum-name strings were ours (now ca
   (d) `SessionAnalytics.TrackingLost` / `PlayerTurnLoop.TrackingLostSeconds` removed; (e) `BoardPresenter` pools and
   `WorldLabel.statusIcons` are `EnumDictionary`s written by `BoardPrefabBuilder.WriteEnumDictionary`; (f) see log.
 
+## After pass 2 (one caster per cat/prop/pickup, guides never cast; commit 7f6da517, Build All 19/19)
+
+| Scenario | batches med / max | SetPass med / max | tris | shadow casters med / max | GC (game paths) B/frame avg |
+|---|---|---|---|---|---|
+| A act 1 stage 1 | 137 / 150 | 53 / 61 | 50k | 25 / 27 | 2604 |
+| B act 2 stage 2, 16 enemies | 185 / 192 | 64 / 70 | 55k | 25 / 26 | 1764 |
+| C act 3 boss | 101 / 129 | 52 / 66 | 42k | 11 / 15 | 2338 |
+| E hectic (12 ball types, boss) | 136 / 156 | 59 / 82 | 45k | 15 / 16 | 1958 |
+| D 2P act 1 stage 1 | 148 / 162 | 54 / 60 | 51k | 26 / 28 | 1007 |
+
+(GC on these rows = shot/hit event frames, all inside `Nex.Platform` analytics, see the attribution below.)
+
 ## Log
 
 - [x] Before measurements (1P: A, B, C, E)
 - [x] Code fixes above; compile_check green
-- [ ] Build All, EditMode tests
-- [ ] After measurements (1P A/B/C/E, 2P D), deep-profile GC attribution
-- [ ] (f) audio check, commit, clean tree
+- [x] Build All, after measurements (pass 1 and pass 2), deep-profile GC attribution; pass 2 committed (7f6da517)
+- [ ] EditMode tests, audio check: folded into pass 3 below
+
+# Pass 3 — GPU on Mali-G52 (device title ~40 fps, frames alternating 17/33 ms at vsync 60)
+
+Device facts (v2 logcat): Mali-G52, OpenGL ES 3.2, EGL surface 1920x1080, Swappy on. Editor-side only this pass: the user
+is testing the demo APK on the device (no build, no adb). Scratch: `<session scratchpad>/perf2/` (`GpuAudit.cs` cameras /
+URP / volumes / overdraw in canvas space, `RenderTree.cs` render-loop sample tree, `menus.sh` title / aim / pause /
+reward CPU+GC, `PerfProbe.cs` from pass 1 with full GC paths).
+
+## Before (Editor, 1920x1080 Game view)
+
+Per-frame 1080p work (the world itself is 642x362 + post, ~1/9 of a 1080p pass per full-screen pass):
+- UI is a camera stack: `Main Camera` (Base, clears, draws nothing: every UI canvas is on RootCamera) + `RootCamera`
+  (Overlay, culling Everything incl. World, shadows on, HDR/MSAA allowed). A stack always renders into a 1080p
+  intermediate: Main Camera stores it, RootCamera loads it, draws, stores it, `BlitFinalToBackBuffer` copies it again.
+  Render tree: 3 cameras (WorldCamera, Main Camera, RootCamera), 2 UI render graphs, `BlitFinalToBackBuffer`.
+- Android Blit Type = Always (PlayerSettings): the player adds its own offscreen-to-surface 1080p copy every frame.
+- Full-screen UI layers (screens of 1080p fill, canvas-space estimate): title 2.71 (world RawImage 1.0 + title
+  Vignette 1.0 + UI 0.7), aiming 1.51 (world 1.0 + HUD 0.5), reward 4.36 (world 1.0 + Dim 1.0 + Vignette 1.0 +
+  HUD 0.48 still drawn under the dim + balls 0.9).
+- World post (642x362): Bloom Dual/Half/4 iterations/HQ off, TiltShift 2 half-res passes x 9 taps + composite, Uber
+  (LUT 32 HDR, vignette, Neutral tonemap). Shadows 1024, 1 cascade, 42 m, hard; 6 point lights + sun, 4 per object.
+- CPU/GC (Editor, 80 frames): 368 B/frame on the title and 736 B/frame in gameplay from IMGUI `GUIUtility.BeginGUI`:
+  DebugPrinter.OnGUI runs every frame although the printer is off (plus the MDK `Jazz.DebugFrameManager` in gameplay);
+  16-17 B/frame each from ES3GlobalManager, NexCamera and Jazz coroutines (vendor code); game code 0 B on quiet frames.
+- PlayerSettings.enableFrameTimingStats = false.
+
+## Plan (resume here)
+- [ ] 1. UI straight to the backbuffer: RootCamera Base (clear black, HDR/MSAA off, no shadows/post, culls World +
+      WorldVolume) in the view-manager variant (FlowPrefabsBuilder); Main Camera becomes an AudioListener holder
+      without a Camera (MainSceneBuilder); a rendering contract test.
+- [ ] 2. PlayerSettings via RenderPipelineBuilder: Frame Timing Stats on, Android Blit Type Auto.
+- [ ] 3. Overlay fill: Dim + Vignette composed into one sprite (one full-screen layer instead of two); title /
+      calibration vignette as a hollow 9-slice (centre is transparent); HUD columns leave while the reward view is up
+      (also the v2 label overlap fix).
+- [ ] 4. Low-end GPU tier: HD2DVisualConfig names (Mali-G52) + shader level, Volume_LowTier (bloom lighter, tilt-shift
+      fewer taps) enabled by WorldCameraRig, DebugSettings.renderTier override (0 auto / 1 full / 2 low).
+- [ ] 5. `[Perf]` FrameTimingLogger (dev builds, DebugSettings.logFrameTiming, on in BR_CONTROL_DEMO).
+- [ ] 6. CPU/GC: DebugPrinter disables itself while the printer is off; re-measure menus + gameplay.
+- [ ] 7. Paw-pick analytics input "motion"; RewardView screenshot.
+- [ ] 8. Build All, EditMode tests, after numbers, device steps, commit.

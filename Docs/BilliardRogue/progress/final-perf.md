@@ -147,6 +147,9 @@ Per-frame 1080p work (the world itself is 642x362 + post, ~1/9 of a 1080p pass p
 - [x] 9. Follow-ups: player builds log plain Log lines with ScriptOnly stack traces (`BilliardRogueInitializer`; the
       project logs Full traces, a native unwind per [Analytics] line on every shot); RewardView uses the base view
       canvas (CS0108); logger names "missing frames under budget" when the averages fit but frames still drop.
+- [x] 10. After the first device reading: raw FrameTiming values in the log line; GPU A/B toggles
+      `DebugSettings.disableShadows` and `freezeWorld` (WorldCameraRig; verified in the Editor: camera off / shadows off
+      and back, `[Perf]` batches 53 / SetPass 15 with the world frozen on the title).
 
 ## After pass 3 (Editor, 1920x1080 Game view)
 
@@ -182,6 +185,16 @@ DeformationManager 0.04, UGUI batches 0.08; gameplay GameSession.Update 0.17 / 5
 (stage clear, reward instantiate) and Editor `Debug.Log` stack traces, not steady frames. The debug `AutoAimBot` costs
 1.1 ms every frame while it drives (off for players).
 
+## First device reading (not installed by this pass)
+
+The spawn agent's APK (commit 5eab7018 tree, includes 038da6d4) went on the Playground at 14:15 and its logcat
+(scratch `spawn/device_logcat.txt`) has the logger on the title: `fps 59.9 missed 0% max 17ms`, GPU 15.0 / 16.4 ms
+(avg / max), render thread 1.3 ms, present wait 8.3 ms, `tier Low`, batches 100, SetPass 20, 46k tris (before this pass
+the same screen alternated 17 / 33 ms, ~40 fps). So the title now holds 60, but the GPU still spends ~15 of the 16.7 ms
+there: gameplay (HUD, more enemies, VFX, camera feed + MDK) is the next thing to read. Its first window also showed
+`cpu main -1.9`: on this driver the main-thread time ends at the present wait, so the logger now prints the raw
+FrameTiming values (frame / main / render / present wait) instead of main minus wait.
+
 ## Expected device impact (estimate, Mali-G52 MC2, LPDDR4 ~8 GB/s usable, shared with the camera + MDK)
 
 Per frame at 1080p RGBA8 (8.3 MB per full-screen read or write):
@@ -203,15 +216,16 @@ Expectation: title and menus at a steady 60; gameplay depends on the world pass 
 1. `ControlDemoBuild.Run()` (or menu Nex/Billiard Rogue/Build Control Demo APK), `adb install -r`, launch.
 2. `adb logcat -s Unity | grep Perf`: the first line lists the device (expect `gpu=Mali-G52 api=OpenGLES3 ...
    frameTiming=on`), then one line every 5 s in this format (values are per 5 s window):
-   `[Perf] fps <avg> missed <% frames over 20 ms> max <worst frame>ms | cpu main <avg>/<max> render <avg>/<max> gpu
-   <avg>/<max> ms (avg/max) wait <present wait> | <GPU-bound / CPU-main-bound / CPU-render-bound / within budget / missing
-   frames under budget> | gc <B/frame> on <frames> frames, <n> GCs | batches <n> setpass <n> tris <n>k | tier <Full/Low> |
-   <top view or turn phase>`. Expect `tier Low` on the Playground. `gpu n/a` means the driver gave no timer queries;
-   fps and CPU still count.
+   `[Perf] fps <avg> missed <% frames over 20 ms> max <worst frame>ms | cpu frame <avg>/<max> main <avg>/<max> render
+   <avg>/<max> present wait <avg> | gpu <avg>/<max> ms (avg/max) | <GPU-bound / CPU-render-bound / CPU-main-bound /
+   within budget / missing frames under budget (spikes or pacing)> | gc <B/frame> on <frames> frames, <n> GCs |
+   batches <n> setpass <n> tris <n>k | tier <Full/Low> | <top view or turn phase>`. Expect `tier Low` on the
+   Playground. `gpu n/a` means the driver gave no timer queries; fps and CPU still count.
 3. Sit 20 s each on: title, calibration, aiming (act 1), balls flying with Hype, reward pick (paws), pause, act 2 dense,
    act 3 boss. Note fps / missed / gpu / cpu main per screen and the bottleneck word.
-4. A/B the tier: Debug Settings (Konami code) → Render: Quality Tier 1 (full) vs 2 (low), 20 s each on the same screen;
-   Render: Disable Bloom / Disable Tilt-Shift for the post cost; compare the gpu ms.
+4. GPU split, 20 s per setting on the same screen, Debug Settings (Konami code): Render: Freeze World (the world
+   camera stops, the last world frame stays: what is left is the 1080p UI + composite), Disable Shadows, Disable Bloom,
+   Disable Tilt-Shift, Quality Tier 1 (full) vs 2 (low). The gpu ms deltas give world / shadows / post / UI.
 5. Check the picture: title / reward dim look unchanged, no black frame or stretched image after the Blit Type change,
    the platform overlays (camera mute, pause) still draw.
 6. If still GPU-bound in gameplay: next levers are per-object lights 4 → 2 and/or per-vertex additional lights for the

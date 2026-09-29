@@ -130,6 +130,8 @@ namespace Nex.BilliardRogue
                 bloom &= !debug.disableBloom;
                 tiltShift &= !debug.disableTiltShift;
                 pixelation &= !debug.disablePixelation;
+                shadows &= !debug.disableShadows;
+                worldCamera.enabled = !debug.freezeWorld;
                 tier = debug.renderTier switch
                 {
                     1 => RenderQualityTier.Full,

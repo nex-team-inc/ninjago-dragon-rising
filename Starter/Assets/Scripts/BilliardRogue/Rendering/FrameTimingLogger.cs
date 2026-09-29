@@ -40,8 +40,8 @@ namespace Nex.BilliardRogue
         int missed;
         float maxDeltaMs;
         int timed;
-        double mainSum, renderSum, gpuSum, waitSum;
-        double mainMax, renderMax, gpuMax;
+        double frameSum, mainSum, renderSum, gpuSum, waitSum;
+        double frameMax, mainMax, renderMax, gpuMax;
         long gcBytes;
         int gcFrames;
         int gcCollections;
@@ -125,7 +125,7 @@ namespace Nex.BilliardRogue
             windowStart = Time.unscaledTime;
             frames = missed = timed = gcFrames = counterFrames = 0;
             maxDeltaMs = 0f;
-            mainSum = renderSum = gpuSum = waitSum = mainMax = renderMax = gpuMax = 0.0;
+            frameSum = mainSum = renderSum = gpuSum = waitSum = frameMax = mainMax = renderMax = gpuMax = 0.0;
             gcBytes = batchSum = setPassSum = triangleSum = 0;
             gcCollections = System.GC.CollectionCount(0);
         }
@@ -165,8 +165,12 @@ namespace Nex.BilliardRogue
             var timing = latest[0];
             if (timing.frameStartTimestamp == lastFrameStart) return;
             lastFrameStart = timing.frameStartTimestamp;
-            var main = timing.cpuMainThreadFrameTime - timing.cpuMainThreadPresentWaitTime;
+            // Raw values: on the Playground's GLES driver the main-thread time already ends at the present wait, so
+            // subtracting the wait would hide the main-thread work.
+            var main = timing.cpuMainThreadFrameTime;
             timed++;
+            frameSum += timing.cpuFrameTime;
+            frameMax = System.Math.Max(frameMax, timing.cpuFrameTime);
             mainSum += main;
             renderSum += timing.cpuRenderThreadFrameTime;
             gpuSum += timing.gpuFrameTime;
@@ -187,10 +191,12 @@ namespace Nex.BilliardRogue
                 var main = mainSum / timed;
                 var render = renderSum / timed;
                 var gpu = gpuSum / timed;
-                line.Append(" | cpu main ").Append(main.ToString("0.0")).Append('/').Append(mainMax.ToString("0.0"))
+                line.Append(" | cpu frame ").Append((frameSum / timed).ToString("0.0")).Append('/').Append(frameMax.ToString("0.0"))
+                    .Append(" main ").Append(main.ToString("0.0")).Append('/').Append(mainMax.ToString("0.0"))
                     .Append(" render ").Append(render.ToString("0.0")).Append('/').Append(renderMax.ToString("0.0"))
-                    .Append(" gpu ").Append(gpu > 0.0 ? gpu.ToString("0.0") + "/" + gpuMax.ToString("0.0") : "n/a")
-                    .Append(" ms (avg/max) wait ").Append((waitSum / timed).ToString("0.0"))
+                    .Append(" present wait ").Append((waitSum / timed).ToString("0.0"))
+                    .Append(" | gpu ").Append(gpu > 0.0 ? gpu.ToString("0.0") + "/" + gpuMax.ToString("0.0") : "n/a")
+                    .Append(" ms (avg/max)")
                     .Append(" | ").Append(Bottleneck(main, render, gpu));
             }
             else
@@ -211,23 +217,23 @@ namespace Nex.BilliardRogue
             Reset();
         }
 
-        // Averages over budget name the limiting side; all under budget while frames are still missed points at spikes
-        // (see the max values) or at pacing (present wait).
+        // Averages over budget name the limiting side, the GPU first (the main-thread time can include waiting on
+        // the GPU); all under budget while frames are still missed points at spikes (see the max values) or pacing.
         string Bottleneck(double main, double render, double gpu)
         {
-            if (gpu > budgetMs && gpu >= main && gpu >= render)
+            if (gpu > budgetMs)
             {
                 return "GPU-bound";
-            }
-
-            if (main > budgetMs && main >= render)
-            {
-                return "CPU-main-bound";
             }
 
             if (render > budgetMs)
             {
                 return "CPU-render-bound";
+            }
+
+            if (main > budgetMs)
+            {
+                return "CPU-main-bound";
             }
 
             return missed * 10 > frames ? "missing frames under budget (spikes or pacing)" : "within budget";

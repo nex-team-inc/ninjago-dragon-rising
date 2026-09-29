@@ -65,6 +65,10 @@ namespace Nex
 #else
         [DebugOrder(54), Description("Debug: Log Frame Timing ([Perf] in logcat)")] public bool logFrameTiming;
 #endif
+        // GPU A/B on the device with the [Perf] gpu ms: the world camera's cost is what Freeze World removes (the last
+        // world frame stays on screen), the shadow pass what Disable Shadows removes.
+        [DebugOrder(55), Description("Render: Disable Shadows")] public bool disableShadows;
+        [DebugOrder(56), Description("Render: Freeze World (skip the world camera, GPU A/B)")] public bool freezeWorld;
 
         // Method rows close the panel first, then run; gameplay registers the handlers in DebugHooks.
         [DebugOrder(60), Description("Run: Kill All Enemies")]

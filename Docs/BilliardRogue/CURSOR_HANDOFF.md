@@ -22,10 +22,11 @@ You are the Cursor agent, started automatically by `Tools/handoff/claude_limit_w
 | # | Item | Status | Brief / progress note |
 |---|---|---|---|
 | 1 | Control lab (practice mode, control readout, live tuning, rebuild demo APK) | done (installed on device) | `progress/control-demo.md` |
-| 2 | v2-A Simulation + Gameplay: balls-only rewards, stage-clear heal, Hype → ball speed/damage, hit-stop scaling + cap, analytics | in progress (Claude agent) | `GDD-v2-Changes.md` §1, §3; `progress/v2-sim-gameplay.md` |
-| 3 | v2-B Input: easier strike, body motion energy (`IMotionEnergy`), paw pointer (`IPawPointer`) | in progress (Claude agent) | `GDD-v2-Changes.md` §2–§4; `progress/v2-input.md` |
-| 4 | v2-C UI: hand-controlled RewardView (two cat arms, dual-paw hold to pick), short ball labels (5 locales), HUD Hype meter + MOVE prompt | in progress (Claude agent) | `GDD-v2-Changes.md` §1, §3, §4; `progress/v2-ui.md` |
-| 5 | v2-D Presentation/VFX: Hype juice (ball glow/size/trail, hit VFX scale, shake, damage numbers, aura), dancing cat | in progress (Claude agent) | `GDD-v2-Changes.md` §3; `progress/v2-presentation.md` |
+| 2 | v2-A Simulation + Gameplay: balls-only rewards, stage-clear heal, Hype → ball speed/damage, hit-stop scaling + cap, analytics | done (4c718930) | `GDD-v2-Changes.md` §1, §3; `progress/v2-sim-gameplay.md` |
+| 3 | v2-B Input: easier strike, body motion energy (`IMotionEnergy`), paw pointer (`IPawPointer`) | done (4403da60, e3bfe5a6) | `GDD-v2-Changes.md` §2–§4; `progress/v2-input.md` |
+| 4 | v2-C UI: hand-controlled RewardView (two cat arms, dual-paw hold to pick), short ball labels (5 locales), HUD Hype meter + MOVE prompt | done (b42c1a6b, 0b2a7d5f) | `GDD-v2-Changes.md` §1, §3, §4; `progress/v2-ui.md` |
+| 5 | v2-D Presentation/VFX: Hype juice (ball glow/size/trail, hit VFX scale, shake, damage numbers, aura), dancing cat | done (08268071, 56dafa71) | `GDD-v2-Changes.md` §3; `progress/v2-presentation.md` |
+| 5b | **v2-E Integration + device**: apply the v2 agents' Requests, Build All, EditMode tests, play-mode smoke (Hype, reward pick with both paws / remote Enter, 2P banner), rebuild the demo APK, install + launch on 10.4.6.137 (leave on title), update `ControlDemo.md` | in progress (Claude agent) — **resume from the checkpoint's Plan/Next** | `progress/v2-integration.md` |
 | 6 | Perf on device (60 fps on Mali-G52; title measured ~40 fps in the dev build) | paused | `progress/final-perf.md` |
 
 If an item's progress note says another agent is mid-way, continue it from the note. If every item is done or blocked, write your notes and stop.

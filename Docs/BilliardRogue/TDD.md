@@ -213,7 +213,7 @@ Reflection off walls/enemy faces, shield block from below, pierce, split, bomb a
 | `EnemyDefinition` | `Enemies/Enemy_<Type>.asset` ×12 | `EnemyRules rules`; `EnemyView prefab`; `Sprite icon`; `float hopHeight`; `SfxManager.SoundEffect hitSfx, deathSfx, attackSfx`; `VfxManager.VisualEffect deathVfx`; `string nameKey` |
 | `EnemyCatalog` | `EnemyCatalog.asset` | `EnumDictionary<EnemyType, EnemyDefinition>` |
 | `FieldObjectCatalog` | `FieldObjectCatalog.asset` | `EnumDictionary<FieldObjectType, FieldObjectView>` prefabs, `EnumDictionary<PickupType, PickupView>` prefabs (crate HP is `BalanceRules.crateHp`, single owner) |
-| `ActDefinition` | `Acts/Act_1..3.asset` | `ActRules rules`; `string nameKey`; `GameObject environmentPrefab`; `ActLightingPreset lighting`; `BgmManager.BgmType battleBgm`; `VolumeProfile volumeProfile`; `GameObject ambientParticlesPrefab` |
+| `ActDefinition` | `Acts/Act_1..3.asset` | `ActRules rules`; `string nameKey`; `GameObject environmentPrefab`; `ActLightingPreset lighting`; `BgmManager.BgmType battleBgm`; `VolumeProfile volumeProfile`; `VfxManager.VisualEffect ambientEffect` (AmbientAct{n}, played through VfxManager) |
 | `ArenaConfig` | `ArenaConfig.asset` | `ArenaRules rules`; world scale; wall/floor prefabs; camera pose (position, pitch, FOV) |
 | `BalanceConfig` | `BalanceConfig.asset` | `BalanceRules rules` |
 | `ControlConfig` | `ControlConfig.asset` | paw mapping & strike detection tunables (see §6), debug/bot params |
@@ -278,7 +278,7 @@ public sealed class EnemyView : MonoBehaviour, IPoolableObject   // model root, 
 public sealed class BallView : MonoBehaviour, IPoolableObject    // mesh + emissive + trail
 public sealed class FieldObjectView, PickupView, CatView, AimGuideView
 public sealed class WorldLabelLayer : MonoBehaviour  // crisp UI HP labels + damage numbers positioned from world camera viewport coords (pooled TMP)
-public sealed class CameraShaker, ComboPresenter, ActEnvironmentController (applies ActDefinition: environment prefab, lighting preset, volume profile, ambient particles)
+public sealed class CameraShaker, ComboPresenter, ActEnvironmentController (applies ActDefinition: environment prefab, lighting preset, volume profile, ambient effect via VfxManager)
 ```
 Everything visual goes through `VfxManager.PlayVisualEffect`, audio through `SfxManager.PlaySoundEffect` / `BgmManager`.
 

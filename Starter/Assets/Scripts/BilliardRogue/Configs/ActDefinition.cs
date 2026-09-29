@@ -20,7 +20,8 @@ namespace Nex.BilliardRogue
         [SerializeField] GameObject environmentPrefab = null!;
         [SerializeField] ActLightingPreset lighting = new();
         [SerializeField] VolumeProfile volumeProfile = null!;
-        [SerializeField] GameObject? ambientParticlesPrefab;
+        [Tooltip("Looping atmosphere played through VfxManager at the diorama's ambient anchor (Vfx_Ambient_Act{n}, VfxPrefabsBuilder).")]
+        [SerializeField] VfxManager.VisualEffect ambientEffect = VfxManager.VisualEffect.AmbientAct1;
 
         [Header("Audio")]
         [SerializeField] BgmManager.BgmType battleBgm = BgmManager.BgmType.Act1;
@@ -30,7 +31,7 @@ namespace Nex.BilliardRogue
         public GameObject EnvironmentPrefab => environmentPrefab;
         public ActLightingPreset Lighting => lighting;
         public VolumeProfile VolumeProfile => volumeProfile;
-        public GameObject? AmbientParticlesPrefab => ambientParticlesPrefab;
+        public VfxManager.VisualEffect AmbientEffect => ambientEffect;
         public BgmManager.BgmType BattleBgm => battleBgm;
     }
 }

@@ -8,8 +8,8 @@ using UnityEngine;
 namespace Nex.BilliardRogue.Editor
 {
     /// <summary>
-    /// Registers the burst prefabs in the VfxManager singleton prefab's EnumDictionary (TDD D11: every key, ascending,
-    /// max pool > 0) and links the ambient prefabs into empty ActDefinition slots.
+    /// Registers every prefab (bursts and the act ambients) in the VfxManager singleton prefab's EnumDictionary
+    /// (TDD D11: every key, ascending, max pool > 0) and points each ActDefinition at its AmbientAct{n} effect.
     /// </summary>
     public static class VfxRegistryWriter
     {
@@ -17,12 +17,12 @@ namespace Nex.BilliardRogue.Editor
         const string ActPathFormat = BuilderAssets.ConfigRoot + "/Acts/Act_{0}.asset";
 
         /// <summary>Returns the number of registered keys.</summary>
-        public static int RegisterBursts(IReadOnlyList<VfxRecipe> recipes, List<string> warnings)
+        public static int Register(IReadOnlyList<VfxRecipe> recipes, List<string> warnings)
         {
             var byKey = new Dictionary<int, VfxRecipe>();
             foreach (var recipe in recipes)
             {
-                if (recipe.effect.HasValue) byKey[(int)recipe.effect.Value] = recipe;
+                byKey[(int)recipe.effect] = recipe;
             }
 
             var root = PrefabUtility.LoadPrefabContents(VfxManagerPrefab);
@@ -61,22 +61,24 @@ namespace Nex.BilliardRogue.Editor
             }
         }
 
-        /// <summary>Fills ActDefinition.ambientParticlesPrefab only where it is still empty; returns how many were set.</summary>
-        public static int LinkAmbient(IReadOnlyList<VfxRecipe> recipes, List<string> warnings)
+        /// <summary>Points ActDefinition.ambientEffect of Act_1..3 at AmbientAct1..3; returns how many changed.</summary>
+        public static int LinkAmbient(List<string> warnings)
         {
             var linked = 0;
             for (var act = 1; act <= 3; act++)
             {
                 var definition = AssetDatabase.LoadAssetAtPath<ActDefinition>(string.Format(ActPathFormat, act));
-                var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(VfxPrefabWriter.PathOf(VfxRecipe.Ambient(act)));
-                if (definition == null || prefab == null)
+                if (definition == null)
                 {
-                    warnings.Add($"Act {act}: ActDefinition or Vfx_Ambient_Act{act}.prefab missing; ambient slot not linked.");
+                    warnings.Add($"Act {act}: ActDefinition missing (ActDefinitionsBuilder); ambient effect not linked.");
                     continue;
                 }
 
                 var so = new SerializedObject(definition);
-                if (!BuilderAssets.FillIfNull(so, "ambientParticlesPrefab", prefab)) continue;
+                var property = so.FindProperty("ambientEffect");
+                var effect = (int)VfxRecipe.AmbientEffect(act);
+                if (property.intValue == effect) continue;
+                property.intValue = effect;
                 so.ApplyModifiedPropertiesWithoutUndo();
                 EditorUtility.SetDirty(definition);
                 linked++;

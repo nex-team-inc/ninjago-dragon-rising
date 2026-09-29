@@ -38,6 +38,7 @@ namespace Nex.BilliardRogue.Editor
             SerializedPropertyWriter.Write(so.FindProperty("rules"), RulesFor(actIndex));
             SerializedPropertyWriter.Write(so.FindProperty("lighting"), LightingFor(actIndex));
             so.FindProperty("nameKey").stringValue = LocKeys.Act.Name(actIndex);
+            so.FindProperty("ambientEffect").intValue = (int)VfxRecipe.AmbientEffect(actIndex + 1);
             so.FindProperty("battleBgm").intValue = (int)(actIndex switch
             {
                 0 => BgmManager.BgmType.Act1,

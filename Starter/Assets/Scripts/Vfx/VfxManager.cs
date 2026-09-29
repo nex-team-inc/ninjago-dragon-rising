@@ -33,6 +33,10 @@ namespace Nex
             PlayerHurtFlash = 32,
             CratePieces = 33,
             LevelUpBurst = 34,
+            // Looping act atmospheres (Vfx_Ambient_Act{n}); ActEnvironment plays and stops them.
+            AmbientAct1 = 40,
+            AmbientAct2 = 41,
+            AmbientAct3 = 42,
         }
 
         #region Pool

@@ -1,7 +1,6 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 using Nex.Util;
 using UnityEngine;
 
@@ -10,7 +9,8 @@ namespace Nex.BilliardRogue
     /// <summary>
     /// Root of an Env_Act{n} diorama prefab (TDD §17), laid out in the arena frame (TDD §14.1). Holds what
     /// ActEnvironmentController needs to apply the act: the arena surface materials, the light shafts and the
-    /// ambient-particle anchor, and forwards the act light tint to its DioramaAnimator.
+    /// ambient anchor where the act's looping VfxManager effect (AmbientAct{n}) plays while the diorama is shown,
+    /// and forwards the act light tint to its DioramaAnimator.
     /// </summary>
     public sealed class ActEnvironment : MonoBehaviour
     {
@@ -38,19 +38,18 @@ namespace Nex.BilliardRogue
         [Header("Parts")]
         [SerializeField] DioramaAnimator animator = null!;
         [SerializeField] LightShaft[] lightShafts = Array.Empty<LightShaft>();
-        [Tooltip("Identity anchor in the arena frame; the act's ambient particle prefab (Vfx_Ambient_Act{n}) is attached here at runtime.")]
+        [Tooltip("Identity anchor in the arena frame; the act's ambient effect (ActDefinition.ambientEffect) plays here through VfxManager.")]
         [SerializeField] Transform ambientAnchor = null!;
 
-        readonly List<ParticleSystem> particleBuffer = new();
         MaterialPropertyBlock shaftBlock = null!;
-        GameObject? ambientInstance;
+        ParticleSystem? ambient;
 
         public int ActIndex => actIndex;
         public EnumDictionary<ArenaSurface, Material> ArenaSurfaces => arenaSurfaces;
         public Transform AmbientAnchor => ambientAnchor;
         public int LightCount => animator.LightCount;
 
-        #region Public Methods
+        #region Life Cycle
 
         public void Initialize(EnvironmentConfig config)
         {
@@ -58,9 +57,17 @@ namespace Nex.BilliardRogue
             animator.Initialize(config);
         }
 
+        void OnDestroy() => StopAmbient();
+
+        #endregion
+
+        #region Public Methods
+
+        /// <summary>Shows or hides the diorama; hiding returns its ambient effect to the VfxManager pool.</summary>
         public void SetVisible(bool visible)
         {
             gameObject.SetActive(visible);
+            if (!visible) StopAmbient();
         }
 
         /// <summary>Applies the blended act accents: light tint and intensity on every act light and the god-ray colour/intensity on every shaft.</summary>
@@ -76,39 +83,37 @@ namespace Nex.BilliardRogue
             }
         }
 
-        /// <summary>Instantiates the act's ambient particles under the anchor once (kept while the diorama lives) and tints their start colours.</summary>
-        public void EnsureAmbientParticles(GameObject? prefab, Color tint)
+        /// <summary>
+        /// Plays the ambient effect at the anchor through VfxManager (once per showing; a later call only retints)
+        /// with the look's particle tint applied over the authored colours.
+        /// </summary>
+        public void ShowAmbient(VfxManager.VisualEffect effect, Color tint)
         {
-            if (ambientInstance != null || prefab == null) return;
-            ambientInstance = Instantiate(prefab, ambientAnchor, false);
-            ambientInstance.GetComponentsInChildren(true, particleBuffer);
-            foreach (var particles in particleBuffer)
+            // Edit-mode builder tests apply the looks without the singleton prefabs: no atmosphere there.
+            var manager = VfxManager.Instance;
+            if (manager == null) return;
+            if (ambient == null)
             {
-                var main = particles.main;
-                main.startColor = Tint(main.startColor, tint);
+                ambient = manager.PlayVisualEffect(effect, ambientAnchor.position, ambientAnchor.rotation);
+                // Unregistered effect (the manager warned): nothing to tint.
+                if (ambient == null) return;
             }
 
-            particleBuffer.Clear();
+            var tinter = ambient.GetComponent<AmbientParticleTint>();
+            if (tinter == null) tinter = ambient.gameObject.AddComponent<AmbientParticleTint>();
+            tinter.Apply(tint);
         }
 
         #endregion
 
         #region Helpers
 
-        static ParticleSystem.MinMaxGradient Tint(ParticleSystem.MinMaxGradient gradient, Color tint)
+        // Clearing ends the loop at once; the pooled instance's stop callback then hands it back to the pool.
+        void StopAmbient()
         {
-            switch (gradient.mode)
-            {
-                case ParticleSystemGradientMode.Color:
-                    gradient.color *= tint;
-                    break;
-                case ParticleSystemGradientMode.TwoColors:
-                    gradient.colorMin *= tint;
-                    gradient.colorMax *= tint;
-                    break;
-            }
-
-            return gradient;
+            if (ambient == null) return;
+            ambient.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            ambient = null;
         }
 
         #endregion

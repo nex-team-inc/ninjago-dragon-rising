@@ -18,7 +18,7 @@ Areas: simulation, gameplay, presentation, config, vfx, audio, rendering. Findin
 | 8/12 | minor/major | turn_end missing for the stage-clearing turn | fixed: `EnemyPhaseRunner.EndWithoutPhase()` from `EnterEnemyPhase`'s cleared branch (turn = turnInStage + 1, matching TurnStart) |
 | 9 | major | Strike consumed before the cooldown gate | fixed by the input fixer while this pass ran (`CanFire && TryConsumeStrike`); verified, covered by `StrikeDuringTheCooldownStaysPendingAndFiresAfterIt` |
 | 10 | minor | Tracking check after the last ball; warning left on at turn end | fixed: `UpdateTracking` only while `WantsStrike`, else `ClearTrackingWarning()`; also cleared in `EndTurn` |
-| 13 | major | Ambient particles bypass VfxManager | in progress |
+| 13 | major | Ambient particles bypass VfxManager | fixed: `VfxManager.VisualEffect.AmbientAct1..3 (40..42)`; `VfxRecipe.Ambient` registers them (pool 1/1) and `VfxRegistryWriter.LinkAmbient` writes `ActDefinition.ambientEffect` (replaces the `GameObject ambientParticlesPrefab` slot); `ActEnvironment.ShowAmbient` plays through `VfxManager.PlayVisualEffect` at the anchor, tints via the new `AmbientParticleTint` (idempotent over the authored colours, so pool reuse never compounds) and `SetVisible(false)`/`OnDestroy` stop the loop (StopEmittingAndClear → pool callback). `VfxPrefabsBuilder.Run()` re-run: 21 prefabs, 21 registered, Act_2/Act_3 relinked, prefabs untouched |
 | 14 | minor | Enum-indexed pool arrays instead of EnumDictionary | deferred: needs `WorldPrefabsBuilder`/`BoardPrefabBuilder` changes and a rebuild of BoardPresenter.prefab, and WorldPrefabsBuilder.cs is being edited/run by the content integrator right now |
 | 15 | minor | Hard-coded tunables | fixed: `BallLevelStats.splitFanDegrees/miniRadiusScale`, `ArenaRules.pickupInset/portalInset/mudInset` (class defaults = old constants, assets pick them up), `ControlConfig.sustainSpeedFraction` → `StrikeSettings.sustainSpeedFraction` |
 | 16 | minor | English fallbacks in FloatTextCache / SetupWarningMessage | fixed: table only, empty until loaded, `LogError` for a missing key |
@@ -38,4 +38,6 @@ Other fixers had uncommitted hunks in files this pass touched. Committed here wi
 ## Log
 
 - Verified all 20 findings against the current code; 2 already fixed by parallel fixers, 1 deferred.
-- compile_check green; Editor recompile clean; EditMode: Simulation 56/56, InputCore 19/19, GameplaySessionTests 8/8.
+- compile_check green; Editor recompile clean; EditMode: Simulation 56/56, InputCore 19/19, Editor.Tests 36/36 (incl. GameplaySessionTests 8/8, EnvironmentBuilderTests with the pooled ambient).
+- Play-mode smoke (scratchpad `core_smoke.sh`): StartNewRun(1, 1234) → SkipCalibration → SetBot(true) → 3 turns → pause (timeScale 0) / resume → ClearStage → Reward → ChooseReward(0) → stage 2 intro → player turn; one active `Vfx_Ambient_Act1` instance under VfxManager; no new console errors (only the pre-existing `CameraFrameProvider: Camera timeout` lines of the camera-less Editor).
+- Play-mode act check (`core_smoke_acts.sh`): GotoStage(4) then (8): Act1 ambient off (back in the pool), Act2 on, then Act3 on — the stop-callback release works.

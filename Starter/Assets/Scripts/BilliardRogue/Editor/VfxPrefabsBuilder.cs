@@ -10,9 +10,9 @@ using UnityEngine;
 namespace Nex.BilliardRogue.Editor
 {
     /// <summary>
-    /// Builds every VFX prefab from code (TDD D13, §16, §17): one pooled burst per VfxManager.VisualEffect plus the three
-    /// looping act ambients, their materials, the VfxManager registry, the ActDefinition ambient links and the review
-    /// gallery scene. Idempotent; re-run after RenderPipelineBuilder (World layer) and the Rendering shaders land.
+    /// Builds every VFX prefab from code (TDD D13, §16, §17): one pooled burst per VfxManager.VisualEffect burst key
+    /// plus the three looping act ambients (AmbientAct{n}), their materials, the VfxManager registry, the ActDefinition
+    /// ambient links and the review gallery scene. Idempotent; re-run after RenderPipelineBuilder (World layer) and the Rendering shaders land.
     /// CLI: unity command eval 'return Nex.BilliardRogue.Editor.VfxPrefabsBuilder.Run();' --project-path …/Starter
     /// (Run(true) also regenerates the gallery scene when only its layout code changed).
     /// </summary>
@@ -55,8 +55,8 @@ namespace Nex.BilliardRogue.Editor
             var deletedMaterials = library.DeleteUnused();
             if (deletedMaterials > 0) warnings.Add($"Deleted {deletedMaterials} stale M_Vfx_* material(s).");
             AssetDatabase.SaveAssets();
-            var registered = VfxRegistryWriter.RegisterBursts(recipes, warnings);
-            var linked = VfxRegistryWriter.LinkAmbient(recipes, warnings);
+            var registered = VfxRegistryWriter.Register(recipes, warnings);
+            var linked = VfxRegistryWriter.LinkAmbient(warnings);
             var galleryMissing = AssetDatabase.LoadAssetAtPath<SceneAsset>(VfxGalleryBuilder.ScenePath) == null;
             var gallery = rebuildGallery || structureChanged || galleryMissing ? VfxGalleryBuilder.Build(recipes, warnings) : "unchanged";
             AssetDatabase.SaveAssets();
@@ -70,8 +70,9 @@ namespace Nex.BilliardRogue.Editor
             var recipes = new List<VfxRecipe>();
             VfxCombatRecipes.AddTo(recipes);
             VfxFeedbackRecipes.AddTo(recipes);
-            AddPlaceholders(recipes, warnings);
             VfxAmbientRecipes.AddTo(recipes);
+            // After the ambients: their AmbientAct{n} keys must not get a placeholder burst.
+            AddPlaceholders(recipes, warnings);
             foreach (var recipe in recipes)
             {
                 var budget = recipe.IsAmbient ? AmbientParticleBudget : BurstParticleBudget;
@@ -107,7 +108,7 @@ namespace Nex.BilliardRogue.Editor
         {
             var report = new StringBuilder("[VfxPrefabsBuilder] ");
             report.Append(prefabs).Append(" prefabs, ").Append(registered).Append(" registered in VfxManager, ")
-                .Append(linked).Append(" ambient slots linked, gallery ").Append(gallery);
+                .Append(linked).Append(" act ambient effects (re)linked, gallery ").Append(gallery);
             if (warnings.Count > 0) report.Append("; warnings (").Append(warnings.Count).Append("): ").Append(string.Join(" | ", warnings));
             return report.ToString();
         }

@@ -13,7 +13,7 @@ namespace Nex.BilliardRogue.Editor
     /// Presentation-World builder (TDD §13, §17): World/Arena.prefab, Environment/Env_Act{1,2,3}.prefab from
     /// Tools/Blender/environment/layouts.json and Environment/WorldLighting.prefab (ActEnvironmentController, sun,
     /// grading volumes). Creates EnvironmentConfig.asset when missing, seeds each act's lighting preset from the layout
-    /// plus its Unity calibration (EnvironmentLooks) once, and fills empty config slots (ArenaConfig models, ActDefinition environment / volume / ambient VFX,
+    /// plus its Unity calibration (EnvironmentLooks) once, and fills empty config slots (ArenaConfig models, ActDefinition environment / volume,
     /// title volume). Missing models, materials, volumes or VFX degrade to placeholders with warnings.
     /// CLI: unity command eval 'return Nex.BilliardRogue.Editor.EnvironmentBuilder.Run();'
     /// </summary>
@@ -24,7 +24,6 @@ namespace Nex.BilliardRogue.Editor
         const string ArenaConfigPath = BuilderAssets.ConfigRoot + "/ArenaConfig.asset";
         const string ActPathFormat = BuilderAssets.ConfigRoot + "/Acts/Act_{0}.asset";
         const string VolumePathFormat = "Assets/Settings/BilliardRogue/Volumes/Volume_{0}.asset";
-        const string AmbientVfxPathFormat = "Assets/Prefabs/BilliardRogue/Vfx/Vfx_Ambient_Act{0}.prefab";
         const string WorldVolumeLayer = "WorldVolume";
 
         #region Entry Point
@@ -233,7 +232,6 @@ namespace Nex.BilliardRogue.Editor
                 var so = new SerializedObject(act);
                 filled += FillAsset<GameObject>(so, "environmentPrefab", string.Format(EnvironmentActBuilder.PathFormat, id), "Presentation-World");
                 filled += FillAsset<VolumeProfile>(so, "volumeProfile", string.Format(VolumePathFormat, $"Act{id}"), "Rendering");
-                filled += FillAsset<GameObject>(so, "ambientParticlesPrefab", string.Format(AmbientVfxPathFormat, id), "VFX");
                 so.ApplyModifiedPropertiesWithoutUndo();
                 EditorUtility.SetDirty(act);
             }

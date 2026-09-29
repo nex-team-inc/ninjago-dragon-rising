@@ -10,7 +10,7 @@ namespace Nex.BilliardRogue
 {
     /// <summary>
     /// Applies an act's world look (TDD §8): shows its diorama (Env_Act{n}), swaps the arena surface materials,
-    /// spawns its ambient particles and blends sun (hard shadows), trilight ambient, fog, rim/light tints, god rays
+    /// plays its ambient effect (VfxManager AmbientAct{n}) and blends sun (hard shadows), trilight ambient, fog, rim/light tints, god rays
     /// and the post-processing profile (faded in on a blend volume, then handed to WorldCameraRig.SetVolumeProfile)
     /// from the current look over a short unscaled DOTween; a diorama change swaps behind a brief fog veil. ApplyTitle shows the cozy golden Title variant on a backdrop
     /// act. Lives on WorldLighting.prefab under World; the scene references (arena, camera rig, placed dioramas) are
@@ -49,7 +49,7 @@ namespace Nex.BilliardRogue
         EnvironmentLook to;
         ActEnvironment? shown;
         ActEnvironment? pendingDiorama;
-        GameObject? pendingAmbient;
+        VfxManager.VisualEffect pendingAmbientEffect;
         Color pendingParticleTint;
         bool veiling;
         Tween? transition;
@@ -123,14 +123,14 @@ namespace Nex.BilliardRogue
             if (shown != diorama)
             {
                 pendingDiorama = diorama;
-                pendingAmbient = act.AmbientParticlesPrefab;
+                pendingAmbientEffect = act.AmbientEffect;
                 pendingParticleTint = lighting.particleTint;
                 veiling = seconds > 0f && shown != null;
                 if (!veiling) SwapPendingDiorama();
             }
             else
             {
-                diorama.EnsureAmbientParticles(act.AmbientParticlesPrefab, lighting.particleTint);
+                diorama.ShowAmbient(act.AmbientEffect, lighting.particleTint);
             }
 
             if (seconds <= 0f)
@@ -183,8 +183,7 @@ namespace Nex.BilliardRogue
             pendingDiorama = null;
             shown.SetVisible(true);
             arena.ApplySurfaces(shown.ArenaSurfaces);
-            shown.EnsureAmbientParticles(pendingAmbient, pendingParticleTint);
-            pendingAmbient = null;
+            shown.ShowAmbient(pendingAmbientEffect, pendingParticleTint);
             ApplyLook(current);
         }
 

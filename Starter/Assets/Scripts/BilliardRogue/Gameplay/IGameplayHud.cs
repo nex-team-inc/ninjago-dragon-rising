@@ -21,5 +21,9 @@ namespace Nex.BilliardRogue
         void ShowTurnBanner(int turn);
         void ShowShooterBanner(int playerIndex);
         void SetTrackingWarning(int playerIndex, bool lost);
+        /// <summary>Hype meter (GDD v2 §3): hype01 in 0..1, tier 0..3.</summary>
+        void SetHype(float hype01, int tier);
+        /// <summary>"MOVE!" prompt while balls fly and the player stands still (GDD v2 §3).</summary>
+        void ShowMovePrompt(bool visible);
     }
 }

@@ -217,6 +217,11 @@ namespace Nex.BilliardRogue
             if (power) eventPlayer.PlaySfx(SfxManager.SoundEffect.PowerShot);
         }
 
+        /// <summary>Hype 0..1 scales hit juice (GDD v2 §3). Implemented by the Presentation module.</summary>
+        public void SetHype(float hype01)
+        {
+        }
+
         /// <summary>Additive: lets the world camera rig be set explicitly when the camera has no parent rig.</summary>
         public void SetCameraRig(Camera worldCamera)
         {

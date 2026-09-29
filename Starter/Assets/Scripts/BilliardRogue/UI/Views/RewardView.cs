@@ -93,6 +93,14 @@ namespace Nex.BilliardRogue
         }
 
         /// <summary>Debug/CLI pick (DebugHooks.ChooseReward). False while the cards are not selectable yet.</summary>
+        /// <summary>
+        /// Motion pick (GDD v2 §4): paws of the chooser drive two cat arms; holding both on a ball picks it.
+        /// Call before ChooseAsync; null keeps remote/keyboard only. Implemented by the UI module.
+        /// </summary>
+        public void SetPawPointer(IPawPointer? pointer, int chooserIndex, int numPlayers)
+        {
+        }
+
         public bool TryChoose(int index)
         {
             if (!IsActive || !interactable || index < 0 || index >= shownCount)

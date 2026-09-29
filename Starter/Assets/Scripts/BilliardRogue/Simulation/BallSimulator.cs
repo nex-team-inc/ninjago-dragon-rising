@@ -161,6 +161,14 @@ namespace Nex.BilliardRogue.Simulation
         }
 
         /// <summary>Removes every ball without emitting events (stage transitions, abandon).</summary>
+        /// <summary>
+        /// Hype from body motion (GDD v2 §3), applied every step to all balls in flight: speed and damage multipliers
+        /// (1 = no change). Implemented by the Simulation/Gameplay module.
+        /// </summary>
+        public void SetHype(float speedMultiplier, float damageMultiplier)
+        {
+        }
+
         public void Clear()
         {
             for (var i = 0; i < Capacity; i++)

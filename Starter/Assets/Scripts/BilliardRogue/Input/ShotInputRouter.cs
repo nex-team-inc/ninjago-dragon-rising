@@ -39,6 +39,12 @@ namespace Nex.BilliardRogue
 
         public int PlayerIndex { get; private set; }
         public ShotInputSource ActiveSource { get; private set; }
+
+        /// <summary>Body motion for Hype (GDD v2 §3); null until the Input module provides it.</summary>
+        public IMotionEnergy? MotionEnergy { get; private set; }
+
+        /// <summary>Paws as screen pointers for motion UI (GDD v2 §4); null until the Input module provides it.</summary>
+        public IPawPointer? PawPointer { get; private set; }
         /// <summary>True between TrackingLost and TrackingRestored.</summary>
         public bool IsTrackingLost { get; private set; }
         /// <summary>The body input, whichever source is active (control readout).</summary>

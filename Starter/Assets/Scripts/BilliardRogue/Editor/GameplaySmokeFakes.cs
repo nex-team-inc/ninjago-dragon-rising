@@ -79,6 +79,14 @@ namespace Nex.BilliardRogue.Editor
             if (on) FastForwardOns++;
         }
 
+        public void SetHype(float hype01, int tier)
+        {
+        }
+
+        public void ShowMovePrompt(bool visible)
+        {
+        }
+
         public void SetPowerArmed(bool armed)
         {
         }

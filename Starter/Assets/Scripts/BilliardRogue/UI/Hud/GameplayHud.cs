@@ -133,6 +133,16 @@ namespace Nex.BilliardRogue
             fastForwardChip.SetVisible(on);
         }
 
+        // Implemented by the UI module (GDD v2 §3).
+        public void SetHype(float hype01, int tier)
+        {
+        }
+
+        // Implemented by the UI module (GDD v2 §3).
+        public void ShowMovePrompt(bool visible)
+        {
+        }
+
         public void SetPowerArmed(bool armed)
         {
             powerChip.SetVisible(armed);

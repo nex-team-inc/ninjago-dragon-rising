@@ -29,7 +29,7 @@ Goal: a barely playable Android development APK, so the user can try the paw con
 Note: no code read `BR_CONTROL_DEMO` when the APK was built. Rebuild after demo code guarded by that define lands.
 The rebuild takes about 30 s.
 
-## Control lab (practice mode, control readout, live tuning): in progress
+## Control lab (practice mode, control readout, live tuning): done
 
 Resume: read this section + `git log --oneline -15`. Editor work goes through `Tools/editor_lock.sh demo …`.
 
@@ -51,8 +51,11 @@ Resume: read this section + `git log --oneline -15`. Editor work goes through `T
       too slow / too far / strike POWER / cooldown in the log → SkipCalibration → gameplay readout, tuned
       values (NEED 52, CONTACT 6.0 at x1.5 / x1.2) → 5 shots, HP 30/30, balls 4/4, 3 enemy phases. Console: only
       the Editor's `CameraFrameProvider: Camera timeout` errors (no webcam frames) and third-party warnings.
-- [ ] 6. APK rebuild.
-- [ ] 7. `Docs/BilliardRogue/ControlDemo.md` how-to.
+- [x] 6. APK rebuilt twice with `ControlDemoBuild.Run()` (87 s, then 52 s after eac8d293: the left-handed row saves
+      the panel first). Succeeded, 0 errors, 247,632,739 bytes (`libil2cpp.so` 139 MB). The working tree stayed clean.
+      `aapt`: `team.nex.starter.staging`, `arm64-v8a`, leanback launchable.
+- [x] 7. `Docs/BilliardRogue/ControlDemo.md` (03a2ea23): Editor try-out, device install, readout meanings, Debug
+      Settings tuning rows, feedback checklist.
 
 Notes:
 - Running FlowPrefabsBuilder rewrites CalibrationView/GameplayView.prefab with only fileID/rid churn (their builder

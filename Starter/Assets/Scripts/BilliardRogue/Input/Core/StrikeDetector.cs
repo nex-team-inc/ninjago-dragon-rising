@@ -4,101 +4,16 @@ using UnityEngine;
 
 namespace Nex.BilliardRogue
 {
-    /// <summary>Strike thresholds in body-normalized inches and seconds (built from ControlConfig).</summary>
-    public struct StrikeSettings
-    {
-        /// <summary>Closing speed (in/s) that starts a strike; the strike must keep sustainSpeedFraction of it until contact.</summary>
-        public float strikeSpeed;
-        /// <summary>Fraction of strikeSpeed below which an approach counts as stalled and is dropped.</summary>
-        public float sustainSpeedFraction;
-        /// <summary>Paw distance at which a fast approach fires.</summary>
-        public float contactDistance;
-        /// <summary>Paws must be at least this far apart before a strike can arm (after a reset or a strike).</summary>
-        public float armDistance;
-        /// <summary>Minimum time between a strike and the next arm.</summary>
-        public float rearmSeconds;
-        /// <summary>Peak speed ≥ strikeSpeed × this is a power strike.</summary>
-        public float powerMultiplier;
-        /// <summary>Peak speed mapped to power 1.</summary>
-        public float fullPowerSpeed;
-        /// <summary>The paws must close by at least this much during the strike (filters camera jitter near contact).</summary>
-        public float minTravel;
-        /// <summary>An approach that has not reached contact after this long is dropped.</summary>
-        public float maxStrikeSeconds;
-        /// <summary>Samples further apart than this are a tracking gap: history resyncs, no velocity across it.</summary>
-        public float maxSampleGapSeconds;
-    }
-
-    /// <summary>A detected strike. Times are the sample clock (camera frame time).</summary>
-    public struct StrikeResult
-    {
-        /// <summary>Time of the last calm sample before the closing speed crossed the threshold.</summary>
-        public double startTime;
-        public double time;
-        public float peakSpeed;
-        public float power01;
-        public bool isPowerShot;
-    }
-
-    public enum StrikeState
-    {
-        /// <summary>Waiting for the paws to separate by armDistance.</summary>
-        Disarmed = 0,
-        Armed = 1,
-        /// <summary>The cue paw is closing fast; contact fires the strike.</summary>
-        Approaching = 2,
-        /// <summary>Just fired: waits rearmSeconds and armDistance before arming again.</summary>
-        Cooldown = 3,
-    }
-
-    /// <summary>Why the last paw move did not fire (control readout only; detection never reads it).</summary>
-    public enum StrikeMiss
-    {
-        None = 0,
-        /// <summary>The paws met while armed, but the closing speed stayed under strikeSpeed.</summary>
-        TooSlow = 1,
-        /// <summary>A fast approach stalled or timed out before the paws reached contactDistance.</summary>
-        TooFar = 2,
-        /// <summary>Contact during a fast approach, but the paws closed by less than minTravel.</summary>
-        ShortThrust = 3,
-        /// <summary>A fast contact within rearmSeconds of the last strike.</summary>
-        Cooldown = 4,
-        /// <summary>A fast contact before the paws opened to armDistance (after a strike, a reset or the cooldown).</summary>
-        NotArmed = 5,
-    }
-
-    /// <summary>StrikeDetector state for the control readout (debug display; detection never reads it).</summary>
-    public struct StrikeReadout
-    {
-        public StrikeState state;
-        /// <summary>The thresholds in use (live tuning included).</summary>
-        public StrikeSettings settings;
-        /// <summary>Closing speed of the last sample pair (in/s); 0 right after a gap.</summary>
-        public float closingSpeed;
-        /// <summary>Paw distance of the last sample (inches).</summary>
-        public float pawDistance;
-        /// <summary>Seconds (sample clock) until the cooldown allows arming again; 0 outside Cooldown.</summary>
-        public float cooldownRemaining;
-        public int strikeCount;
-        public float lastStrikeSpeed;
-        public bool lastStrikeWasPower;
-        /// <summary>Incremented per reported miss; lastMiss* describe the latest one.</summary>
-        public int missCount;
-        public StrikeMiss lastMiss;
-        /// <summary>Peak closing speed of the missed move (in/s).</summary>
-        public float lastMissSpeed;
-        /// <summary>Closest paw distance of the missed move (inches).</summary>
-        public float lastMissDistance;
-    }
-
     /// <summary>
-    /// Pure strike detection on raw paw samples (TDD §6, GDD §3.1): the cue paw must close on the ball paw at
-    /// ≥ strikeSpeed and reach contactDistance. Positions are body-relative inches (chest origin), so leaning or
-    /// stepping moves both paws and never fires. The closing speed is the smaller of the cue paw's own speed toward
-    /// the ball paw and the rate the paw distance shrinks: moving the ball paw into the cue, or both paws together,
-    /// is not a strike. Contact is tested on the swept relative segment so a 30 Hz sample that jumps past the ball
-    /// paw still counts. Allocation-free. Readout reports live values and why a move did not fire (control readout);
-    /// that bookkeeping never changes what fires.
+    /// Pure strike detection on raw paw samples (TDD §6, GDD §3.1, GDD v2 §2). A strike starts when the cue paw moves
+    /// toward the ball paw at ≥ strikeSpeed, heading within angleToleranceDeg of it; the approach direction is then
+    /// fixed. It fires when the paws come within contactDistance, or when the cue paw passes the ball paw's line
+    /// (through the ball paw, across the approach direction) at most lineCrossMaxOffset beside it. Positions are
+    /// body-relative inches (chest origin), so leaning or stepping moves both paws and never fires. The speed is the
+    /// smaller of the cue paw's own speed toward the ball paw and the speed relative to the ball paw: moving the ball
+    /// paw into the cue, or both paws together, is not a strike. Contact is tested on the swept relative segment so a
+    /// 30 Hz sample that jumps past the ball paw still counts. Allocation-free. Readout reports live values and why a
+    /// move did not fire (control readout); that bookkeeping never changes what fires.
     /// </summary>
     public sealed class StrikeDetector
     {
@@ -115,6 +30,7 @@ namespace Nex.BilliardRogue
         Vector2 previousCue;
         double approachStartTime;
         float approachStartDistance;
+        Vector2 approachAxis;
         float peakSpeed;
         double stateTime;
         float approachClosest;
@@ -182,14 +98,17 @@ namespace Nex.BilliardRogue
                 return false;
             }
 
+            // rel = cue paw relative to the ball paw; toward = unit direction from the cue paw to the ball paw.
             var dt = (float)(time - previousTime);
-            var previousOffset = previousBall - previousCue;
-            var previousDistance = previousOffset.magnitude;
-            var distance = (ball - cue).magnitude;
-            var towardBall = previousDistance > MinDirectionLength ? previousOffset / previousDistance : Vector2.zero;
-            var cueSpeed = Vector2.Dot((cue - previousCue) / dt, towardBall);
-            var closingSpeed = Mathf.Min(cueSpeed, (previousDistance - distance) / dt);
-            var sweptDistance = DistanceToSegment(previousCue - previousBall, cue - ball);
+            var previousRel = previousCue - previousBall;
+            var rel = cue - ball;
+            var previousDistance = previousRel.magnitude;
+            var distance = rel.magnitude;
+            var toward = previousDistance > MinDirectionLength ? -previousRel / previousDistance : Vector2.zero;
+            var cueVelocity = (cue - previousCue) / dt;
+            var relVelocity = (rel - previousRel) / dt;
+            var closingSpeed = ClosingSpeed(cueVelocity, relVelocity, toward);
+            var sweptDistance = DistanceToSegment(previousRel, rel);
             var previousSampleTime = previousTime;
             Remember(time, ball, cue);
             var contactEntered = Observe(time, closingSpeed, distance, sweptDistance, settings);
@@ -219,7 +138,7 @@ namespace Nex.BilliardRogue
                     }
                     return false;
                 case StrikeState.Armed:
-                    if (closingSpeed < settings.strikeSpeed)
+                    if (closingSpeed < settings.strikeSpeed || !HeadsToward(cueVelocity, toward, settings.angleToleranceDeg))
                     {
                         if (contactEntered && time - lastMissTime > MissRepeatSeconds)
                         {
@@ -229,16 +148,20 @@ namespace Nex.BilliardRogue
                     }
                     approachStartTime = previousSampleTime;
                     approachStartDistance = previousDistance;
+                    approachAxis = toward;
                     peakSpeed = closingSpeed;
                     approachClosest = previousDistance;
                     approachMissed = false;
                     SetState(StrikeState.Approaching, previousSampleTime);
-                    return TryLand(time, sweptDistance, out result);
+                    return TryLand(time, previousRel, rel, sweptDistance, out result);
                 case StrikeState.Approaching:
-                    peakSpeed = Mathf.Max(peakSpeed, closingSpeed);
-                    if (TryLand(time, sweptDistance, out result)) return true;
-                    var stalled = closingSpeed < settings.strikeSpeed * settings.sustainSpeedFraction;
-                    if (stalled || time - approachStartTime > settings.maxStrikeSeconds)
+                    var axisSpeed = ClosingSpeed(cueVelocity, relVelocity, approachAxis);
+                    peakSpeed = Mathf.Max(peakSpeed, axisSpeed);
+                    if (TryLand(time, previousRel, rel, sweptDistance, out result)) return true;
+                    var stalled = axisSpeed < settings.strikeSpeed * settings.sustainSpeedFraction;
+                    // Past the ball paw's line without landing: it went by too far beside the ball paw.
+                    var passedWide = Vector2.Dot(rel, approachAxis) >= 0f;
+                    if (stalled || passedWide || time - approachStartTime > settings.maxStrikeSeconds)
                     {
                         if (!approachMissed)
                         {
@@ -284,20 +207,31 @@ namespace Nex.BilliardRogue
 
         #region Helpers
 
-        bool TryLand(double time, float sweptDistance, out StrikeResult result)
+        /// <summary>Lands on contact (swept distance) or on passing the ball paw's line close enough beside it.</summary>
+        bool TryLand(double time, Vector2 previousRel, Vector2 rel, float sweptDistance, out StrikeResult result)
         {
             result = default;
             var settings = Settings;
             approachClosest = Mathf.Min(approachClosest, sweptDistance);
-            if (sweptDistance > settings.contactDistance) return false;
-            if (approachStartDistance - sweptDistance < settings.minTravel)
+            var byLineCross = false;
+            if (sweptDistance <= settings.contactDistance)
             {
-                if (!approachMissed)
+                if (approachStartDistance - sweptDistance < settings.minTravel)
                 {
-                    approachMissed = true;
-                    ReportMiss(StrikeMiss.ShortThrust, time, peakSpeed, sweptDistance);
+                    if (!approachMissed)
+                    {
+                        approachMissed = true;
+                        ReportMiss(StrikeMiss.ShortThrust, time, peakSpeed, sweptDistance);
+                    }
+                    return false;
                 }
-                return false;
+            }
+            else
+            {
+                // Along the fixed axis the cue paw travelled approachStartDistance by the time it reaches the line.
+                if (!CrossesLine(previousRel, rel, approachAxis, out var offset)) return false;
+                if (offset > settings.lineCrossMaxOffset || approachStartDistance < settings.minTravel) return false;
+                byLineCross = true;
             }
 
             result = new StrikeResult
@@ -307,6 +241,7 @@ namespace Nex.BilliardRogue
                 peakSpeed = peakSpeed,
                 power01 = Mathf.InverseLerp(settings.strikeSpeed, settings.fullPowerSpeed, peakSpeed),
                 isPowerShot = peakSpeed >= settings.strikeSpeed * settings.powerMultiplier,
+                byLineCross = byLineCross,
             };
             readout.strikeCount++;
             readout.lastStrikeSpeed = peakSpeed;
@@ -361,6 +296,36 @@ namespace Nex.BilliardRogue
         {
             State = state;
             stateTime = time;
+        }
+
+        /// <summary>The smaller of the cue paw's own and its relative speed along `direction` (toward the ball paw).</summary>
+        static float ClosingSpeed(Vector2 cueVelocity, Vector2 relVelocity, Vector2 direction)
+        {
+            // relVelocity is the cue relative to the ball paw, so closing on it means moving along +direction.
+            return Mathf.Min(Vector2.Dot(cueVelocity, direction), Vector2.Dot(relVelocity, direction));
+        }
+
+        /// <summary>The cue paw's motion points within toleranceDeg of `toward`.</summary>
+        static bool HeadsToward(Vector2 cueVelocity, Vector2 toward, float toleranceDeg)
+        {
+            var speed = cueVelocity.magnitude;
+            if (speed < MinDirectionLength) return false;
+            return Vector2.Dot(cueVelocity, toward) >= speed * Mathf.Cos(Mathf.Clamp(toleranceDeg, 0f, 90f) * Mathf.Deg2Rad);
+        }
+
+        /// <summary>
+        /// The relative segment passes the ball paw's line (through the origin, perpendicular to `axis`) in the
+        /// direction of `axis`; offset is how far beside the ball paw it passes.
+        /// </summary>
+        static bool CrossesLine(Vector2 previousRel, Vector2 rel, Vector2 axis, out float offset)
+        {
+            offset = 0f;
+            var before = Vector2.Dot(previousRel, axis);
+            var after = Vector2.Dot(rel, axis);
+            if (before >= 0f || after < 0f) return false;
+            var t = -before / (after - before);
+            offset = Vector2.Lerp(previousRel, rel, t).magnitude;
+            return true;
         }
 
         /// <summary>Distance from the origin (ball paw) to the segment the cue paw swept relative to it.</summary>

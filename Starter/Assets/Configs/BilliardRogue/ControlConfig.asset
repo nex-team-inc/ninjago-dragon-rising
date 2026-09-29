@@ -14,18 +14,63 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Nex.BilliardRogue.ControlConfig
   launchXMinInches: -26
   launchXMaxInches: 8
+  launchXMinCutoff: 1
+  launchXBeta: 0.05
   aimMinCutoff: 1
   aimBeta: 0.05
   minAimDistanceInches: 4
   aimSampleDelaySeconds: 0.12
-  minAimAngleDeg: 12
-  strikeSpeedInchesPerSec: 35
-  contactDistanceInches: 5
-  armDistanceInches: 10
-  rearmSeconds: 0.35
-  powerShotSpeedMultiplier: 2
-  fullPowerSpeedInchesPerSec: 120
+  strikeSpeedInchesPerSec: 19
+  sustainSpeedFraction: 0.5
+  contactDistanceInches: 9
+  strikeAngleToleranceDeg: 60
+  lineCrossMaxOffsetInches: 12
+  armDistanceInches: 14
+  minStrikeTravelInches: 4
+  rearmSeconds: 0.25
+  maxStrikeSeconds: 0.6
+  powerShotSpeedMultiplier: 3.5
+  fullPowerSpeedInchesPerSec: 110
+  maxSampleGapSeconds: 0.25
+  strikeExpirySeconds: 0.6
+  trackingAcquireSeconds: 0.2
+  trackingDropSeconds: 0.15
+  staleFrameSeconds: 0.5
   trackingLostSeconds: 1.2
+  motionDeadzoneInchesPerSec: 8
+  motionFullInchesPerSec: 30
+  motionMaxNodeInchesPerSec: 200
+  motionAttackSeconds: 0.1
+  motionReleaseSeconds: 0.5
+  motionMinNodes: 4
+  pawPointerCenterXInches: 0
+  pawPointerCenterYInches: 4
+  pawPointerHalfWidthInches: 16
+  pawPointerHalfHeightInches: 12
+  pawPointerMinCutoff: 1.5
+  pawPointerBeta: 0.08
   debugAimDegPerSec: 90
+  debugLaunchPerSec: 0.8
+  debugStrikePower: 0.6
+  debugMotionFullScreensPerSec: 2
+  debugPawOffset01: 0.03
   botSampleCount: 24
+  botLaunchSamples: 5
+  botCandidatesPerFrame: 4
+  botPathLength: 30
+  botPathBounces: 8
   botThinkSeconds: 0.6
+  botThinkJitterSeconds: 0.25
+  botAimSweepSeconds: 0.35
+  botAimJitterDeg: 1
+  botPowerShotChance: 0.15
+  botMotionFrequencyHz: 0.2
+  botMotionMin: 0.05
+  botMotionMax: 1
+  botHitScore: 1
+  botRowWeight: 0.8
+  botDangerRowBonus: 1.5
+  botKillBonus: 1.5
+  botShieldPenalty: 1.5
+  botCrateScore: 0.3
+  botPickupScore: 1.2

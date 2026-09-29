@@ -12,10 +12,11 @@ namespace Nex.BilliardRogue
     /// (always false under PRODUCTION). The mouse aims at the point it hovers on the arena (a ray from the world
     /// camera onto the arena floor; without one the screen stands for the arena); holding the follow button walks
     /// the cat to the mouse. Arrows nudge the launch position, A/D rotate the aim, Space strikes (Shift + Space =
-    /// power strike), and holding the drop key simulates lost tracking. ShotInputRouter enables it only while it is
-    /// the active source.
+    /// power strike), and holding the drop key simulates lost tracking. Simulated body input (GDD v2 §3-§4): holding
+    /// the Hype key or moving the mouse fast charges the motion energy, and the mouse drives both paws (each a small
+    /// offset beside it) while it is inside the screen. ShotInputRouter enables it only while it is the active source.
     /// </summary>
-    public sealed class DebugShotInput : MonoBehaviour, IShotInput
+    public sealed class DebugShotInput : MonoBehaviour, IShotInput, IMotionEnergy, IPawPointer
     {
         const float MouseMoveThresholdSq = 0.25f;
         const float MinMouseAimDistance = 0.3f;
@@ -34,6 +35,8 @@ namespace Nex.BilliardRogue
         [SerializeField] KeyCode followMouseKey = KeyCode.Mouse1;
         [Tooltip("Held: reports lost tracking (tests the tracking-lost overlay without a camera).")]
         [SerializeField] KeyCode dropTrackingKey = KeyCode.L;
+        [Tooltip("Held: simulated motion energy 1 (Hype without a body).")]
+        [SerializeField] KeyCode hypeKey = KeyCode.H;
 
         ControlConfig config = null!;
         ArenaRules arena = null!;
@@ -49,6 +52,9 @@ namespace Nex.BilliardRogue
         public bool IsTracking { get; private set; } = true;
         public float LaunchX01 { get; private set; } = 0.5f;
         public Vector2 AimDirection { get; private set; } = Vector2.up;
+        /// <summary>Simulated motion energy: the Hype key held = 1, else the mouse speed (IMotionEnergy).</summary>
+        public float Energy01 { get; private set; }
+        public bool IsTracked => IsTracking;
 
         #region Life Cycle
 
@@ -72,8 +78,10 @@ namespace Nex.BilliardRogue
         {
             IsTracking = !DebugInput.GetKey(dropTrackingKey);
             var dt = Time.unscaledDeltaTime;
+            var mouse = MousePosition;
+            UpdateEnergy(mouse - lastMousePosition, dt);
             UpdateKeys(dt);
-            UpdateMouse();
+            UpdateMouse(mouse);
             angleDeg = Mathf.Clamp(angleDeg, arena.minAimAngleDeg, 180f - arena.minAimAngleDeg);
             AimDirection = Vector2Utils.PolarDeg(angleDeg);
             if (DebugInput.GetKeyDown(strikeKey))
@@ -102,6 +110,23 @@ namespace Nex.BilliardRogue
 
         #endregion
 
+        #region IPawPointer
+
+        /// <summary>Both paws at the mouse, each DebugPawOffset01 beside it; false while the mouse is off screen.</summary>
+        public bool TryGetPaws(out Vector2 left01, out Vector2 right01)
+        {
+            var mouse = MousePosition;
+            var width = Mathf.Max(1, Screen.width);
+            var height = Mathf.Max(1, Screen.height);
+            var point = new Vector2(mouse.x / width, mouse.y / height);
+            var offset = new Vector2(config != null ? config.DebugPawOffset01 : 0f, 0f);
+            left01 = point - offset;
+            right01 = point + offset;
+            return IsTracking && point.x >= 0f && point.x <= 1f && point.y >= 0f && point.y <= 1f;
+        }
+
+        #endregion
+
         #region Helpers
 
         void UpdateKeys(float dt)
@@ -126,9 +151,24 @@ namespace Nex.BilliardRogue
             }
         }
 
-        void UpdateMouse()
+        void UpdateEnergy(Vector3 mouseDelta, float dt)
         {
-            var mouse = MousePosition;
+            var target = 0f;
+            if (DebugInput.GetKey(hypeKey))
+            {
+                target = 1f;
+            }
+            else if (dt > 0f)
+            {
+                var screensPerSec = mouseDelta.magnitude / Mathf.Max(1, Screen.height) / dt;
+                target = Mathf.Clamp01(screensPerSec / config.DebugMotionFullScreensPerSec);
+            }
+            var energy = IsTracking ? target : 0f;
+            Energy01 = MotionEnergyFilter.Smooth(Energy01, energy, dt, config.MotionAttackSeconds, config.MotionReleaseSeconds);
+        }
+
+        void UpdateMouse(Vector3 mouse)
+        {
             var moved = (mouse - lastMousePosition).sqrMagnitude > MouseMoveThresholdSq;
             lastMousePosition = mouse;
             var follow = DebugInput.GetKey(followMouseKey);

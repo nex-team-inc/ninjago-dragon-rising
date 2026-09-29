@@ -10,7 +10,8 @@ namespace Nex.BilliardRogue.Editor
 {
     /// <summary>
     /// Builds PlayerShotInput.prefab (TDD §17): ShotInputRouter (first, so GetComponent&lt;IShotInput&gt;() returns
-    /// it) + PawShotInput + DebugShotInput + AutoAimBot on one root, with the router's source slots wired. Every
+    /// it) + PawShotInput + DebugShotInput + AutoAimBot + MotionEnergyMeter + PawPointer (GDD v2 §3-§4) on one root,
+    /// with the router's slots wired. Every
     /// component starts disabled and enables itself in Initialize, so nothing updates before its dependencies are
     /// injected. One instance per player at runtime (the coordinator calls ShotInputRouter.Initialize). Regenerated
     /// over its path (the GUID stays) inside a preview scene.
@@ -35,15 +36,21 @@ namespace Nex.BilliardRogue.Editor
                 var paw = root.AddComponent<PawShotInput>();
                 var debug = root.AddComponent<DebugShotInput>();
                 var bot = root.AddComponent<AutoAimBot>();
+                var motion = root.AddComponent<MotionEnergyMeter>();
+                var pointer = root.AddComponent<PawPointer>();
                 router.enabled = false;
                 paw.enabled = false;
                 debug.enabled = false;
                 bot.enabled = false;
+                motion.enabled = false;
+                pointer.enabled = false;
 
                 var so = new SerializedObject(router);
                 so.FindProperty("pawInput").objectReferenceValue = paw;
                 so.FindProperty("debugInput").objectReferenceValue = debug;
                 so.FindProperty("botInput").objectReferenceValue = bot;
+                so.FindProperty("motionMeter").objectReferenceValue = motion;
+                so.FindProperty("pawPointer").objectReferenceValue = pointer;
                 so.ApplyModifiedPropertiesWithoutUndo();
 
                 PrefabUtility.SaveAsPrefabAsset(root, PlayerShotInputPath, out var success);
@@ -65,7 +72,9 @@ namespace Nex.BilliardRogue.Editor
             var so = new SerializedObject(router);
             var wired = so.FindProperty("pawInput").objectReferenceValue != null
                         && so.FindProperty("debugInput").objectReferenceValue != null
-                        && so.FindProperty("botInput").objectReferenceValue != null;
+                        && so.FindProperty("botInput").objectReferenceValue != null
+                        && so.FindProperty("motionMeter").objectReferenceValue != null
+                        && so.FindProperty("pawPointer").objectReferenceValue != null;
             var first = asset.GetComponent<IShotInput>();
             return $"[InputPrefabsBuilder] {PlayerShotInputPath}: sources wired={wired}, GetComponent<IShotInput>()={first.GetType().Name}";
         }

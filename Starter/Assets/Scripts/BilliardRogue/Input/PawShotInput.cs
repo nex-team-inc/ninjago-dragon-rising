@@ -177,7 +177,7 @@ namespace Nex.BilliardRogue
 
                 lastRawFrameTime = frameTime;
                 lastRawFrameArrival = now;
-                rawPoseDetected = ArePawsDetected(result.original);
+                rawPoseDetected = PawSampling.ArePawsDetected(result.original, PlayerIndex);
             }
 
             if (rawPoseDetected && TrySamplePaws(true, out var ball, out var cue))
@@ -244,32 +244,12 @@ namespace Nex.BilliardRogue
 
         #region Helpers
 
-        /// <summary>Chest, elbows and wrists (the engine derives each paw from elbow + wrist) detected in this camera frame.</summary>
-        bool ArePawsDetected(BodyPoseDetection detection)
-        {
-            var pose = detection.GetPlayerPose(PlayerIndex)?.bodyPose;
-            if (pose == null) return false;
-            return pose.Chest().isDetected && pose.LeftElbow().isDetected && pose.LeftWrist().isDetected
-                   && pose.RightElbow().isDetected && pose.RightWrist().isDetected;
-        }
-
         /// <summary>Ball and cue paw positions in inches relative to the chest (x = screen right = the player's right).</summary>
         bool TrySamplePaws(bool smoothed, out Vector2 ball, out Vector2 cue)
         {
             ball = default;
             cue = default;
-            var chest = engine.GetNodePosition(PoseNodeIndex.Chest, smoothed);
-            var left = engine.GetNodePosition(PoseNodeIndex.LeftHand, smoothed);
-            var right = engine.GetNodePosition(PoseNodeIndex.RightHand, smoothed);
-            if (chest == null || left == null || right == null)
-            {
-                return false;
-            }
-
-            var root = engine.transform;
-            var perInch = 1f / engine.DistancePerInch;
-            var leftInches = (Vector2)root.InverseTransformVector(left.Value - chest.Value) * perInch;
-            var rightInches = (Vector2)root.InverseTransformVector(right.Value - chest.Value) * perInch;
+            if (!PawSampling.TrySampleHands(engine, smoothed, out var leftInches, out var rightInches)) return false;
             ball = leftHanded ? rightInches : leftInches;
             cue = leftHanded ? leftInches : rightInches;
             return true;

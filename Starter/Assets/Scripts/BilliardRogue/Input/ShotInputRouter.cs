@@ -12,6 +12,8 @@ namespace Nex.BilliardRogue
     /// in the Editor whenever the paws are not tracked (no camera or nobody in front of it). Debug sources are never
     /// selected in release builds. Raises
     /// TrackingLost after ControlConfig.trackingLostSeconds without tracking and TrackingRestored when it is back.
+    /// MotionEnergy / PawPointer (GDD v2 §3-§4) are one RoutedBodyInput that follows the active source: the body
+    /// meter and pointer, plus the debug input's simulated energy and mouse paws, or the bot's simulated energy.
     /// </summary>
     public sealed class ShotInputRouter : MonoBehaviour, IShotInput
     {
@@ -22,6 +24,10 @@ namespace Nex.BilliardRogue
         [SerializeField] DebugShotInput debugInput = null!;
         [Tooltip("Auto-aim bot on this prefab (Editor and debug builds).")]
         [SerializeField] AutoAimBot botInput = null!;
+        [Tooltip("Whole-body motion energy (Hype) on this prefab.")]
+        [SerializeField] MotionEnergyMeter motionMeter = null!;
+        [Tooltip("Hands as screen pointers (motion reward pick) on this prefab.")]
+        [SerializeField] PawPointer pawPointer = null!;
 
         public event Action<int>? TrackingLost;
         public event Action<int>? TrackingRestored;
@@ -31,6 +37,10 @@ namespace Nex.BilliardRogue
         IShotInput bot = null!;
         IShotInput active = null!;
         ControlConfig config = null!;
+        RoutedBodyInput body = null!;
+        IMotionEnergy? debugEnergy;
+        IPawPointer? debugPointer;
+        IMotionEnergy? botEnergy;
         Func<bool>? leftHandedSource;
 #if ENABLE_DEBUG_SETTINGS || DEVELOPMENT_BUILD || UNITY_EDITOR
         Func<bool>? forceDebugSource;
@@ -40,15 +50,17 @@ namespace Nex.BilliardRogue
         public int PlayerIndex { get; private set; }
         public ShotInputSource ActiveSource { get; private set; }
 
-        /// <summary>Body motion for Hype (GDD v2 §3); null until the Input module provides it.</summary>
+        /// <summary>Body motion for Hype (GDD v2 §3), following the active source; set by Initialize (cacheable).</summary>
         public IMotionEnergy? MotionEnergy { get; private set; }
 
-        /// <summary>Paws as screen pointers for motion UI (GDD v2 §4); null until the Input module provides it.</summary>
+        /// <summary>Paws as screen pointers for motion UI (GDD v2 §4), following the active source; set by Initialize (cacheable).</summary>
         public IPawPointer? PawPointer { get; private set; }
         /// <summary>True between TrackingLost and TrackingRestored.</summary>
         public bool IsTrackingLost { get; private set; }
         /// <summary>The body input, whichever source is active (control readout).</summary>
         public PawShotInput Paw => pawInput;
+        /// <summary>The body motion meter, whichever source is active (control readout); null if not on the prefab.</summary>
+        public MotionEnergyMeter? BodyMotion => motionMeter != null ? motionMeter : null;
 
         #region Initialization
 
@@ -60,12 +72,25 @@ namespace Nex.BilliardRogue
             forceDebugSource = ctx.forceDebugInput;
 #endif
             pawInput.Initialize(playerIndex, engine, ctx.control, ctx.rules.arena, leftHandedSource(), ctx.tuning);
+            // Guarded: a PlayerShotInput.prefab built before v2 has no meter / pointer (rebuild with InputPrefabsBuilder).
+            if (motionMeter != null)
+            {
+                motionMeter.Initialize(playerIndex, engine, ctx.control);
+            }
+            if (pawPointer != null)
+            {
+                pawPointer.Initialize(playerIndex, engine, ctx.control);
+            }
             debugInput.Initialize(playerIndex, ctx.control, ctx.rules.arena, ctx.worldCamera, ctx.layout);
             botInput.Initialize(playerIndex, ctx.rules, ctx.run, ctx.control);
             Initialize(playerIndex, pawInput, debugInput, botInput, ctx.control);
         }
 
-        /// <summary>Routes between already initialized inputs (tests, custom compositions).</summary>
+        /// <summary>
+        /// Routes between already initialized inputs (tests, custom compositions). Debug / bot inputs that also
+        /// implement IMotionEnergy / IPawPointer feed MotionEnergy / PawPointer while active; the body meter and
+        /// pointer are this prefab's (when present and initialized).
+        /// </summary>
         public void Initialize(int playerIndex, IShotInput aPaw, IShotInput aDebug, IShotInput aBot, ControlConfig aConfig)
         {
             PlayerIndex = playerIndex;
@@ -73,6 +98,12 @@ namespace Nex.BilliardRogue
             debug = aDebug;
             bot = aBot;
             config = aConfig;
+            debugEnergy = aDebug as IMotionEnergy;
+            debugPointer = aDebug as IPawPointer;
+            botEnergy = aBot as IMotionEnergy;
+            body = new RoutedBodyInput(motionMeter != null ? motionMeter : null, pawPointer != null ? pawPointer : null);
+            MotionEnergy = body;
+            PawPointer = body;
             Select(SelectSource(), announce: false);
             enabled = true;
         }
@@ -138,6 +169,14 @@ namespace Nex.BilliardRogue
             };
             SetEnabled(debug, source == ShotInputSource.Debug);
             SetEnabled(bot, source == ShotInputSource.Bot);
+            body.Route(
+                source switch
+                {
+                    ShotInputSource.Bot => botEnergy,
+                    ShotInputSource.Debug => debugEnergy,
+                    _ => null,
+                },
+                source == ShotInputSource.Debug ? debugPointer : null);
             active.ResetStrike();
             if (announce)
             {

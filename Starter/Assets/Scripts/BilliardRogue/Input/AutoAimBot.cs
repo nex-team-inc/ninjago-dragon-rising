@@ -13,11 +13,17 @@ namespace Nex.BilliardRogue
     /// sweep the cue to the chosen shot, then strike and wait until the strike is consumed. A board change (shot
     /// fired, enemies died or moved, new turn or stage) restarts the thinking. Without a run (calibration) it strikes
     /// straight up from the centre. Deterministic per player index. ShotInputRouter enables it only while selected.
+    /// Simulated motion energy (GDD v2 §3) wanders smoothly between botMotionMin and botMotionMax (Perlin noise on
+    /// unscaled time, so it needs no Update) and visits every Hype tier, so automated playtests exercise Hype.
     /// </summary>
-    public sealed class AutoAimBot : MonoBehaviour, IShotInput
+    public sealed class AutoAimBot : MonoBehaviour, IShotInput, IMotionEnergy
     {
         const float MinStrikePower = 0.4f;
         const int SeedSalt = 7919;
+        // Perlin noise mostly spans 0.25..0.75; this window stretches it so both ends of the range are reached.
+        const float NoiseLow = 0.3f;
+        const float NoiseHigh = 0.7f;
+        const float NoiseRowPerPlayer = 17.3f;
 
         enum Phase
         {
@@ -46,6 +52,18 @@ namespace Nex.BilliardRogue
         public bool IsTracking => true;
         public float LaunchX01 { get; private set; } = 0.5f;
         public Vector2 AimDirection { get; private set; } = Vector2.up;
+        public bool IsTracked => true;
+
+        public float Energy01
+        {
+            get
+            {
+                if (config == null) return 0f;
+                var noise = Mathf.PerlinNoise(Time.unscaledTime * config.BotMotionFrequencyHz, (PlayerIndex + 1) * NoiseRowPerPlayer);
+                var t = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(NoiseLow, NoiseHigh, noise));
+                return Mathf.Lerp(config.BotMotionMin, config.BotMotionMax, t);
+            }
+        }
 
         #region Life Cycle
 

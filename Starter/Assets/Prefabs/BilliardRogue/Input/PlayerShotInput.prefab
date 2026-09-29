@@ -13,6 +13,8 @@ GameObject:
   - component: {fileID: 7979907293318304873}
   - component: {fileID: 4994525922903123965}
   - component: {fileID: 8982330444118871059}
+  - component: {fileID: 3985967389185767345}
+  - component: {fileID: 2088257158947045083}
   m_Layer: 0
   m_Name: PlayerShotInput
   m_TagString: Untagged
@@ -50,6 +52,8 @@ MonoBehaviour:
   pawInput: {fileID: 7979907293318304873}
   debugInput: {fileID: 4994525922903123965}
   botInput: {fileID: 8982330444118871059}
+  motionMeter: {fileID: 3985967389185767345}
+  pawPointer: {fileID: 2088257158947045083}
 --- !u!114 &7979907293318304873
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -82,6 +86,7 @@ MonoBehaviour:
   aimRightKey: 100
   followMouseKey: 324
   dropTrackingKey: 108
+  hypeKey: 104
 --- !u!114 &8982330444118871059
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -94,3 +99,27 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 59ecaa7288efd4db48b652e5e607eb87, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Nex.BilliardRogue.AutoAimBot
+--- !u!114 &3985967389185767345
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6589468642888060030}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d4f915654d8a499e80ea238be7a532f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Nex.BilliardRogue.MotionEnergyMeter
+--- !u!114 &2088257158947045083
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6589468642888060030}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0a9d3c69c7bd84538a6e88a01b051a34, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Nex.BilliardRogue.PawPointer

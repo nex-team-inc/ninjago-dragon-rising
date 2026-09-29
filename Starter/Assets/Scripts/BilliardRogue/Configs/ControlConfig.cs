@@ -5,9 +5,9 @@ using UnityEngine;
 namespace Nex.BilliardRogue
 {
     /// <summary>
-    /// Paw mapping, strike detection, debug input and auto-aim bot tunables (GDD §3.1, TDD §6). Distances are
-    /// body-normalized inches relative to the chest; times are unscaled seconds. The aim angle clamp is
-    /// ArenaRules.minAimAngleDeg (inputs clamp through ArenaGeometry.ClampAim).
+    /// Paw mapping, strike detection, body motion energy (Hype), paw pointer, debug input and auto-aim bot tunables
+    /// (GDD §3.1, GDD v2 §2-§4, TDD §6). Distances are body-normalized inches relative to the chest; times are
+    /// unscaled seconds. The aim angle clamp is ArenaRules.minAimAngleDeg (inputs clamp through ArenaGeometry.ClampAim).
     /// </summary>
     [CreateAssetMenu(fileName = "ControlConfig", menuName = "Nex/Billiard Rogue/Control Config", order = 52)]
     public sealed class ControlConfig : ScriptableObject
@@ -33,24 +33,28 @@ namespace Nex.BilliardRogue
         [SerializeField, Range(0f, 0.5f)] float aimSampleDelaySeconds = 0.12f;
 
         [Header("Strike detection")]
-        [Tooltip("Cue-paw closing speed toward the ball paw that starts a strike.")]
-        [SerializeField, Range(5f, 200f)] float strikeSpeedInchesPerSec = 35f;
+        [Tooltip("Cue-paw speed toward the ball paw that starts a strike (v2: 55% of the v1 35 in/s).")]
+        [SerializeField, Range(5f, 200f)] float strikeSpeedInchesPerSec = 19f;
         [Tooltip("A started strike whose closing speed drops below this fraction of the strike speed before contact is dropped as stalled.")]
         [SerializeField, Range(0.1f, 1f)] float sustainSpeedFraction = 0.5f;
-        [Tooltip("Paw distance at which the strike fires.")]
-        [SerializeField, Range(1f, 20f)] float contactDistanceInches = 5f;
-        [Tooltip("Paws must be at least this far apart before a new strike can arm.")]
-        [SerializeField, Range(2f, 30f)] float armDistanceInches = 10f;
+        [Tooltip("Paw distance at which the strike fires (v2: 1.8x the v1 5 in).")]
+        [SerializeField, Range(1f, 20f)] float contactDistanceInches = 9f;
+        [Tooltip("Max angle between the cue paw's motion and the direction to the ball paw that still starts a strike.")]
+        [SerializeField, Range(10f, 90f)] float strikeAngleToleranceDeg = 60f;
+        [Tooltip("A fast approach that passes the ball paw's line (across the thrust) fires when it passes at most this far beside the ball paw. 0 = contact only.")]
+        [SerializeField, Range(0f, 40f)] float lineCrossMaxOffsetInches = 12f;
+        [Tooltip("Paws must be at least this far apart before a new strike can arm (at least contact + min travel).")]
+        [SerializeField, Range(2f, 30f)] float armDistanceInches = 14f;
         [Tooltip("The paws must close by at least this much during one strike (filters camera jitter near contact).")]
         [SerializeField, Range(0f, 20f)] float minStrikeTravelInches = 4f;
         [Tooltip("Minimum time between a strike and the next arm.")]
-        [SerializeField, Range(0.05f, 2f)] float rearmSeconds = 0.35f;
+        [SerializeField, Range(0.05f, 2f)] float rearmSeconds = 0.25f;
         [Tooltip("A fast approach that has not reached contact after this long is dropped.")]
-        [SerializeField, Range(0.1f, 1.5f)] float maxStrikeSeconds = 0.4f;
+        [SerializeField, Range(0.1f, 1.5f)] float maxStrikeSeconds = 0.6f;
         [Tooltip("Closing speed ≥ threshold × this multiplier counts as a power strike.")]
-        [SerializeField, Range(1f, 5f)] float powerShotSpeedMultiplier = 2f;
+        [SerializeField, Range(1f, 6f)] float powerShotSpeedMultiplier = 3.5f;
         [Tooltip("Closing speed mapped to power 1.")]
-        [SerializeField, Range(20f, 400f)] float fullPowerSpeedInchesPerSec = 120f;
+        [SerializeField, Range(20f, 400f)] float fullPowerSpeedInchesPerSec = 110f;
         [Tooltip("Raw camera samples further apart than this are a tracking gap (no speed is measured across it).")]
         [SerializeField, Range(0.05f, 1f)] float maxSampleGapSeconds = 0.25f;
         [Tooltip("A strike nobody consumed within this time is dropped (pause, enemy phase, the other player's turn). Must exceed PacingConfig.shotCooldown, or a strike made during the cooldown expires before it can fire.")]
@@ -66,6 +70,34 @@ namespace Nex.BilliardRogue
         [Tooltip("Untracked this long raises ShotInputRouter.TrackingLost (the gameplay pause overlay uses the same value).")]
         [SerializeField, Range(0.2f, 5f)] float trackingLostSeconds = 1.2f;
 
+        [Header("Motion energy (Hype, GDD v2 §3)")]
+        [Tooltip("Per-node speed (in/s) treated as camera jitter and subtracted before averaging.")]
+        [SerializeField, Range(0f, 40f)] float motionDeadzoneInchesPerSec = 8f;
+        [Tooltip("Mean per-node speed above the deadzone (in/s) mapped to energy 1.")]
+        [SerializeField, Range(5f, 150f)] float motionFullInchesPerSec = 30f;
+        [Tooltip("One node's speed is clamped to this (in/s) so a single mis-detected frame cannot max the meter.")]
+        [SerializeField, Range(20f, 600f)] float motionMaxNodeInchesPerSec = 200f;
+        [Tooltip("Time constant (s) while the energy rises.")]
+        [SerializeField, Range(0.01f, 1f)] float motionAttackSeconds = 0.1f;
+        [Tooltip("Time constant (s) while the energy falls.")]
+        [SerializeField, Range(0.05f, 3f)] float motionReleaseSeconds = 0.5f;
+        [Tooltip("Nodes that must be detected in two consecutive camera frames for a motion measurement (else energy falls to 0).")]
+        [SerializeField, Range(1, 11)] int motionMinNodes = 4;
+
+        [Header("Paw pointer (motion UI, GDD v2 §4)")]
+        [Tooltip("Hand x offset from the chest (inches, + = screen right) mapped to the screen centre.")]
+        [SerializeField, Range(-20f, 20f)] float pawPointerCenterXInches = 0f;
+        [Tooltip("Hand y offset from the chest (inches, + = up) mapped to the screen centre.")]
+        [SerializeField, Range(-20f, 20f)] float pawPointerCenterYInches = 4f;
+        [Tooltip("Hand x distance from the centre (inches) mapped to the left / right screen edge (smaller = less arm travel).")]
+        [SerializeField, Range(4f, 40f)] float pawPointerHalfWidthInches = 16f;
+        [Tooltip("Hand y distance from the centre (inches) mapped to the bottom / top screen edge.")]
+        [SerializeField, Range(4f, 40f)] float pawPointerHalfHeightInches = 12f;
+        [Tooltip("OneEuro min cutoff (Hz) of the paw pointer filter (lower = steadier, more lag).")]
+        [SerializeField, Range(0.1f, 10f)] float pawPointerMinCutoff = 1.5f;
+        [Tooltip("OneEuro beta of the paw pointer filter (higher = less lag on fast moves).")]
+        [SerializeField, Range(0f, 1f)] float pawPointerBeta = 0.08f;
+
         [Header("Debug input (Editor / debug builds)")]
         [Tooltip("A/D aim rotation speed in degrees per second.")]
         [SerializeField, Range(10f, 360f)] float debugAimDegPerSec = 90f;
@@ -73,6 +105,10 @@ namespace Nex.BilliardRogue
         [SerializeField, Range(0.1f, 3f)] float debugLaunchPerSec = 0.8f;
         [Tooltip("Power of a plain Space strike (Shift + Space is a power strike at power 1).")]
         [SerializeField, Range(0f, 1f)] float debugStrikePower = 0.6f;
+        [Tooltip("Mouse speed (screen heights per second) that simulates motion energy 1 (holding the Hype key is 1).")]
+        [SerializeField, Range(0.1f, 10f)] float debugMotionFullScreensPerSec = 2f;
+        [Tooltip("Debug paw pointer: each paw sits this far (screen widths) left / right of the mouse.")]
+        [SerializeField, Range(0f, 0.2f)] float debugPawOffset01 = 0.03f;
 
         [Header("Auto-aim bot (debug, automated playtests)")]
         [Tooltip("Candidate aim angles per launch position scored with BallSimulator.PredictPath.")]
@@ -95,6 +131,12 @@ namespace Nex.BilliardRogue
         [SerializeField, Range(0f, 10f)] float botAimJitterDeg = 1f;
         [Tooltip("Chance that a bot strike is a power strike.")]
         [SerializeField, Range(0f, 1f)] float botPowerShotChance = 0.15f;
+        [Tooltip("How fast the bot's simulated motion energy wanders (Hz of its noise).")]
+        [SerializeField, Range(0.01f, 2f)] float botMotionFrequencyHz = 0.2f;
+        [Tooltip("Lowest simulated motion energy of the bot.")]
+        [SerializeField, Range(0f, 1f)] float botMotionMin = 0.05f;
+        [Tooltip("Highest simulated motion energy of the bot.")]
+        [SerializeField, Range(0f, 1f)] float botMotionMax = 1f;
 
         [Header("Auto-aim bot scoring")]
         [Tooltip("Score per predicted damaging enemy contact.")]
@@ -124,6 +166,8 @@ namespace Nex.BilliardRogue
         public float AimSampleDelaySeconds => aimSampleDelaySeconds;
         public float StrikeSpeedInchesPerSec => strikeSpeedInchesPerSec;
         public float ContactDistanceInches => contactDistanceInches;
+        public float StrikeAngleToleranceDeg => strikeAngleToleranceDeg;
+        public float LineCrossMaxOffsetInches => lineCrossMaxOffsetInches;
         public float ArmDistanceInches => armDistanceInches;
         public float MinStrikeTravelInches => minStrikeTravelInches;
         public float RearmSeconds => rearmSeconds;
@@ -139,6 +183,14 @@ namespace Nex.BilliardRogue
         public float DebugAimDegPerSec => debugAimDegPerSec;
         public float DebugLaunchPerSec => debugLaunchPerSec;
         public float DebugStrikePower => debugStrikePower;
+        public float DebugMotionFullScreensPerSec => debugMotionFullScreensPerSec;
+        public float DebugPawOffset01 => debugPawOffset01;
+        public float MotionAttackSeconds => motionAttackSeconds;
+        public float MotionReleaseSeconds => motionReleaseSeconds;
+        public Vector2 PawPointerCenterInches => new(pawPointerCenterXInches, pawPointerCenterYInches);
+        public Vector2 PawPointerHalfRangeInches => new(pawPointerHalfWidthInches, pawPointerHalfHeightInches);
+        public float PawPointerMinCutoff => pawPointerMinCutoff;
+        public float PawPointerBeta => pawPointerBeta;
         public int BotSampleCount => botSampleCount;
         public int BotLaunchSamples => botLaunchSamples;
         public int BotCandidatesPerFrame => botCandidatesPerFrame;
@@ -149,6 +201,9 @@ namespace Nex.BilliardRogue
         public float BotAimSweepSeconds => botAimSweepSeconds;
         public float BotAimJitterDeg => botAimJitterDeg;
         public float BotPowerShotChance => botPowerShotChance;
+        public float BotMotionFrequencyHz => botMotionFrequencyHz;
+        public float BotMotionMin => botMotionMin;
+        public float BotMotionMax => botMotionMax;
         public float BotHitScore => botHitScore;
         public float BotRowWeight => botRowWeight;
         public float BotDangerRowBonus => botDangerRowBonus;
@@ -163,6 +218,8 @@ namespace Nex.BilliardRogue
             strikeSpeed = strikeSpeedInchesPerSec,
             sustainSpeedFraction = sustainSpeedFraction,
             contactDistance = contactDistanceInches,
+            angleToleranceDeg = strikeAngleToleranceDeg,
+            lineCrossMaxOffset = lineCrossMaxOffsetInches,
             armDistance = armDistanceInches,
             rearmSeconds = rearmSeconds,
             powerMultiplier = powerShotSpeedMultiplier,
@@ -172,14 +229,26 @@ namespace Nex.BilliardRogue
             maxSampleGapSeconds = maxSampleGapSeconds,
         };
 
+        /// <summary>Motion energy settings for MotionEnergyFilter (a fresh copy, so live Inspector edits apply).</summary>
+        public MotionEnergySettings MotionEnergySettings => new()
+        {
+            deadzone = motionDeadzoneInchesPerSec,
+            fullSpeed = motionFullInchesPerSec,
+            maxNodeSpeed = motionMaxNodeInchesPerSec,
+            attackSeconds = motionAttackSeconds,
+            releaseSeconds = motionReleaseSeconds,
+            minNodes = motionMinNodes,
+            maxSampleGapSeconds = maxSampleGapSeconds,
+        };
+
         #endregion
 
         #region Live tuning
 
         /// <summary>
         /// StrikeSettings with the live tuning applied: strike and full-power speed × tuning.strikeSpeed (the power
-        /// curve keeps its shape), contact distance × tuning.contactDistance; the arm distance stays at least contact +
-        /// min travel so a strike can still arm when the contact distance grows.
+        /// curve keeps its shape), contact distance and line-cross offset × tuning.contactDistance; the arm distance
+        /// stays at least contact + min travel so a strike can still arm when the contact distance grows.
         /// </summary>
         public StrikeSettings StrikeSettingsFor(in ControlTuning tuning)
         {
@@ -187,6 +256,7 @@ namespace Nex.BilliardRogue
             settings.strikeSpeed *= tuning.strikeSpeed;
             settings.fullPowerSpeed *= tuning.strikeSpeed;
             settings.contactDistance *= tuning.contactDistance;
+            settings.lineCrossMaxOffset *= tuning.contactDistance;
             settings.armDistance = Mathf.Max(settings.armDistance, settings.contactDistance + settings.minTravel);
             return settings;
         }

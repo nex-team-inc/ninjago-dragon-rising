@@ -273,7 +273,10 @@ namespace Nex.BilliardRogue
         [Tooltip("Pitch added per successive hit of one ball.")]
         [SerializeField, Range(0f, 0.25f)] float comboPitchStep = 0.06f;
         [SerializeField, Range(1f, 3f)] float comboPitchMax = 2f;
-        [SerializeField, Range(1, 20)] int comboShowThreshold = 3;
+        [Tooltip("First flight combo (enemy hits while balls fly, the POWER charge) that shows the \"x{n} COMBO\" float.")]
+        [SerializeField, Range(1, 20)] int comboShowThreshold = 5;
+        [Tooltip("After the first, the float shows again every this many hits.")]
+        [SerializeField, Range(1, 20)] int comboShowEvery = 5;
 
         [Header("Flashes")]
         [SerializeField] Color enemyHitFlash = Color.white;
@@ -317,6 +320,7 @@ namespace Nex.BilliardRogue
         public float ComboPitchStep => comboPitchStep;
         public float ComboPitchMax => comboPitchMax;
         public int ComboShowThreshold => comboShowThreshold;
+        public int ComboShowEvery => Mathf.Max(1, comboShowEvery);
         public Color EnemyHitFlash => enemyHitFlash;
         public Color EnemyFreezeTint => enemyFreezeTint;
         public Color PlayerHurtFlash => playerHurtFlash;

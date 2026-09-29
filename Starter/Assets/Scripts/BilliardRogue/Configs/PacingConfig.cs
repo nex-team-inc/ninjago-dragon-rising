@@ -12,6 +12,8 @@ namespace Nex.BilliardRogue
 
         [Header("Shots")]
         [SerializeField, Range(0f, 2f)] float shotCooldown = 0.35f;
+        [Tooltip("Seconds between two balls of a volley (gameplay time, so hit-stop and slow-mo stretch it).")]
+        [SerializeField, Range(0.02f, 0.5f)] float volleyInterval = 0.09f;
         [Tooltip("Seconds of straggler flight (no balls left to shoot) before fast-forward kicks in.")]
         [SerializeField, Range(0f, 10f)] float fastForwardDelay = 2.5f;
         [SerializeField, Range(1f, 4f)] float fastForwardScale = 2f;
@@ -65,6 +67,7 @@ namespace Nex.BilliardRogue
         [SerializeField, Range(0f, 2f)] float rewardPickDuration = 0.6f;
 
         public float ShotCooldown => shotCooldown;
+        public float VolleyInterval => volleyInterval;
         public float FastForwardDelay => fastForwardDelay;
         public float FastForwardScale => fastForwardScale;
         public float TurnEndGrace => turnEndGrace;

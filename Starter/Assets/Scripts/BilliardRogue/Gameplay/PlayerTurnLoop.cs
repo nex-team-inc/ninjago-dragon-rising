@@ -8,19 +8,32 @@ namespace Nex.BilliardRogue
 {
     /// <summary>
     /// The per-frame work of a player turn (TDD §7): for every player (2P shoot together) the tracking check, aim preview
-    /// (BallSimulator.PredictPath → BoardPresenter.SetAim) and strike → Launch; then the fixed-step simulation from the
-    /// gameplay time scale, event drain into BoardPresenter / TurnFeedback / ShotResultTracker, straggler fast-forward and
-    /// the turn-end condition (nobody has a shot left or the stage is cleared, no balls in flight, grace elapsed).
-    /// Allocation-free per frame.
+    /// (BallSimulator.PredictPath → BoardPresenter.SetAim) and strike → a volley of the whole bag streamed along the
+    /// locked aim, PacingConfig.volleyInterval apart; then the fixed-step simulation from the gameplay time scale, the
+    /// event drain into BoardPresenter / TurnFeedback / ShotResultTracker / the combo POWER, straggler fast-forward and
+    /// the turn-end condition (nobody has a shot left or the stage is cleared, no volley launching, no balls in flight,
+    /// grace elapsed). Allocation-free per frame.
     /// </summary>
     public sealed class PlayerTurnLoop
     {
+        /// <summary>One player's volley while it launches: next bag index (-1 = none), timer and the locked shot.</summary>
+        struct Volley
+        {
+            public int next;
+            public float timer;
+            public float launchX01;
+            public Vector2 direction;
+            public bool powerShot;
+            public float power01;
+        }
+
         readonly SessionServices services;
         readonly TurnFeedback feedback;
         readonly HypeController hype;
         readonly Vector2[] aimPoints;
         readonly float[] trackingLostSeconds;
         readonly bool[] warned;
+        readonly Volley[] volleys;
         float stragglerSeconds;
         float graceRemaining;
         bool fastForward;
@@ -31,13 +44,16 @@ namespace Nex.BilliardRogue
             feedback = new TurnFeedback(aServices);
             hype = new HypeController(aServices);
             aimPoints = new Vector2[Mathf.Max(2, aServices.Pacing.AimGuideMaxPoints)];
-            trackingLostSeconds = new float[aServices.Inputs.Length];
-            warned = new bool[aServices.Inputs.Length];
+            var players = aServices.Inputs.Length;
+            trackingLostSeconds = new float[players];
+            warned = new bool[players];
+            volleys = new Volley[players];
+            StopVolleys();
         }
 
         public bool IsTurnDone { get; private set; }
 
-        /// <summary>Hype from body motion while balls fly (GDD v2 §3).</summary>
+        /// <summary>POWER charged by the combo while balls fly (playtest 4).</summary>
         public HypeController Hype => hype;
 
         /// <summary>First player with a shot left whose paws stayed untracked past ControlConfig.trackingLostSeconds, -1 otherwise.</summary>
@@ -54,6 +70,7 @@ namespace Nex.BilliardRogue
                 inputs[i].ResetStrike();
             }
 
+            StopVolleys();
             stragglerSeconds = 0f;
             graceRemaining = services.Pacing.TurnEndGrace;
             ClearTrackingLost();
@@ -66,6 +83,7 @@ namespace Nex.BilliardRogue
         public void EndTurn()
         {
             services.Tracker.Flush();
+            StopVolleys();
             for (var p = 0; p < services.Inputs.Length; p++)
             {
                 services.Board.SetAim(p, 0.5f, Vector2.up, 0, aimPoints, false);
@@ -85,10 +103,12 @@ namespace Nex.BilliardRogue
             Array.Clear(trackingLostSeconds, 0, trackingLostSeconds.Length);
         }
 
-        /// <summary>The player still wants a strike this turn: they have a shot left and the stage did not fall mid-turn.</summary>
-        bool WantsStrike(int player) => services.Sequencer.HasShot(player) && !feedback.StageCleared;
+        bool Launching(int player) => volleys[player].next >= 0;
 
-        bool CanFire(int player) => services.Sequencer.CanFire(player) && !feedback.StageCleared;
+        /// <summary>The player still wants a strike: a shot left, no volley of theirs launching, the stage still up.</summary>
+        bool WantsStrike(int player) => services.Sequencer.HasShot(player) && !Launching(player) && !feedback.StageCleared;
+
+        bool CanFire(int player) => services.Sequencer.CanFire(player) && !Launching(player) && !feedback.StageCleared;
 
         #endregion
 
@@ -118,21 +138,22 @@ namespace Nex.BilliardRogue
                 // fires when the cooldown ends instead of being consumed and dropped.
                 if (CanFire(p) && input.TryConsumeStrike(out var strike))
                 {
-                    Fire(p, strike);
+                    Fire(p, input, strike);
                 }
             }
 
-            hype.Tick(unscaledDeltaTime, scaledDeltaTime);
+            var launching = StreamVolleys(scaledDeltaTime);
+            hype.Tick(unscaledDeltaTime, scaledDeltaTime, launching || services.Sim.ActiveBalls > 0);
             if (scaledDeltaTime > 0f) services.Sim.Step(scaledDeltaTime);
             Drain();
             services.Board.UpdateBalls(services.Sim.Balls);
             UpdateFastForward(unscaledDeltaTime);
-            UpdateTurnEnd(scaledDeltaTime);
+            UpdateTurnEnd(scaledDeltaTime, launching);
         }
 
         /// <summary>
-        /// Fires the next ball at angleDeg (from +x, 90 = up) from the launch position of the first player who can
-        /// fire (DebugHooks.Shoot).
+        /// Shoots a volley at angleDeg (from +x, 90 = up) from the launch position of the first player who can fire
+        /// (DebugHooks.Shoot).
         /// </summary>
         public bool ForceShoot(float angleDeg)
         {
@@ -141,7 +162,7 @@ namespace Nex.BilliardRogue
             for (var p = 0; p < services.Inputs.Length; p++)
             {
                 if (!CanFire(p)) continue;
-                Fire(p, new StrikeInfo { direction = new Vector2(Mathf.Cos(radians), Mathf.Sin(radians)), power01 = 0.5f });
+                Fire(p, services.Inputs[p], new StrikeInfo { direction = new Vector2(Mathf.Cos(radians), Mathf.Sin(radians)), power01 = 0.5f });
                 return true;
             }
 
@@ -152,43 +173,111 @@ namespace Nex.BilliardRogue
 
         #region Steps
 
-        void Fire(int player, StrikeInfo strike)
+        /// <summary>Spends the player's shot and locks the volley on the aim at the strike; StreamVolleys launches it.</summary>
+        void Fire(int player, IShotInput input, StrikeInfo strike)
         {
-            var arena = services.Rules.arena;
-            var input = services.Inputs[player];
-            var ball = services.Sequencer.Fire(player);
-            var origin = ArenaGeometry.LaunchOrigin(arena, input.LaunchX01);
-            var direction = ArenaGeometry.ClampAim(arena, strike.direction);
-            services.Sim.Launch(ball, origin, direction, strike.isPowerShot, player);
+            services.Sequencer.Fire(player);
+            volleys[player] = new Volley
+            {
+                next = 0,
+                timer = 0f,
+                launchX01 = input.LaunchX01,
+                direction = ArenaGeometry.ClampAim(services.Rules.arena, strike.direction),
+                powerShot = strike.isPowerShot,
+                power01 = strike.power01,
+            };
             services.Board.PlayStrike(player, strike.isPowerShot);
-            services.Analytics.ShotFired(ball.type, ball.level, Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg, strike.power01, player);
             services.Hud.RefreshQueue();
             graceRemaining = services.Pacing.TurnEndGrace;
+        }
+
+        /// <summary>Launches the volleys' balls that are due; returns whether a volley is still launching.</summary>
+        bool StreamVolleys(float scaledDeltaTime)
+        {
+            var bag = services.Run.bag;
+            var arena = services.Rules.arena;
+            // With the stage down or the field empty the rest of a volley stays home: there is nothing left to hit.
+            var cut = feedback.StageCleared || services.Sim.LivingEnemyCount() == 0;
+            var launching = false;
+            var progress = 0;
+            for (var p = 0; p < volleys.Length; p++)
+            {
+                ref var volley = ref volleys[p];
+                if (volley.next < 0) continue;
+                if (cut)
+                {
+                    volley.next = -1;
+                    continue;
+                }
+
+                volley.timer -= scaledDeltaTime;
+                while (volley.timer <= 0f && volley.next < bag.Count)
+                {
+                    var ball = bag[volley.next++];
+                    var origin = ArenaGeometry.LaunchOrigin(arena, volley.launchX01);
+                    services.Sim.Launch(ball, origin, volley.direction, volley.powerShot, p);
+                    services.Analytics.ShotFired(ball.type, ball.level, Mathf.Atan2(volley.direction.y, volley.direction.x) * Mathf.Rad2Deg,
+                        volley.power01, p);
+                    volley.timer += services.Pacing.VolleyInterval;
+                }
+
+                if (volley.next >= bag.Count)
+                {
+                    volley.next = -1;
+                    continue;
+                }
+
+                launching = true;
+                progress = Mathf.Max(progress, volley.next);
+            }
+
+            services.Hud.SetVolleyProgress(progress);
+            return launching;
+        }
+
+        void StopVolleys()
+        {
+            for (var p = 0; p < volleys.Length; p++)
+            {
+                volleys[p].next = -1;
+            }
+
+            services.Hud.SetVolleyProgress(0);
         }
 
         void Drain()
         {
             var events = services.Sim.Events;
             if (events.Count == 0) return;
-            services.Board.Consume(events, services.Run);
+            var hits = 0;
+            for (var i = 0; i < events.Count; i++)
+            {
+                if (events[i].kind == SimEventKind.EnemyHit) hits++;
+            }
+
+            var comboBefore = hype.ComboHits;
+            if (hits > 0) hype.AddHits(hits);
+            services.Board.Consume(events, services.Run, comboBefore);
             feedback.Consume(events);
             services.Tracker.Consume(events);
             events.Clear();
         }
 
+        /// <summary>The live aim, or while the player's volley launches its locked line (the cue thrusts along it).</summary>
         void UpdateAim(IShotInput input, int player)
         {
             var arena = services.Rules.arena;
-            var launchX = input.LaunchX01;
-            var origin = ArenaGeometry.LaunchOrigin(arena, launchX);
-            var direction = ArenaGeometry.ClampAim(arena, input.AimDirection);
-            var visible = WantsStrike(player);
+            var volley = volleys[player];
+            var launching = volley.next >= 0;
+            var launchX = launching ? volley.launchX01 : input.LaunchX01;
+            var direction = launching ? volley.direction : ArenaGeometry.ClampAim(arena, input.AimDirection);
+            var visible = launching || WantsStrike(player);
             var count = 0;
             if (visible)
             {
                 var pacing = services.Pacing;
                 var length = pacing.AimGuideLength(services.AimGuideSetting);
-                count = services.Sim.PredictPath(origin, direction, length, pacing.AimGuideMaxBounces, aimPoints);
+                count = services.Sim.PredictPath(ArenaGeometry.LaunchOrigin(arena, launchX), direction, length, pacing.AimGuideMaxBounces, aimPoints);
             }
 
             services.Board.SetAim(player, launchX, direction, count, aimPoints, visible);
@@ -208,11 +297,11 @@ namespace Nex.BilliardRogue
             if (stragglerSeconds >= services.Pacing.FastForwardDelay) SetFastForward(true);
         }
 
-        void UpdateTurnEnd(float scaledDeltaTime)
+        void UpdateTurnEnd(float scaledDeltaTime, bool launching)
         {
             // An empty field ends the turn too (GDD v2 §5): the enemy phase then brings the next batch in right away.
             var noMoreShots = !services.Sequencer.HasBallToFire || feedback.StageCleared || services.Sim.LivingEnemyCount() == 0;
-            if (!noMoreShots || services.Sim.ActiveBalls > 0)
+            if (!noMoreShots || launching || services.Sim.ActiveBalls > 0)
             {
                 graceRemaining = services.Pacing.TurnEndGrace;
                 return;

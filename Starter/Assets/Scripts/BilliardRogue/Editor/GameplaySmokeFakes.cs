@@ -84,10 +84,6 @@ namespace Nex.BilliardRogue.Editor
         {
         }
 
-        public void ShowMovePrompt(bool visible)
-        {
-        }
-
         public void SetPowerArmed(bool armed)
         {
         }

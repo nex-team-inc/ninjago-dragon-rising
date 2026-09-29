@@ -4,7 +4,11 @@ using UnityEngine;
 
 namespace Nex.BilliardRogue
 {
-    /// <summary>Per-ball combo feedback: rising SFX pitch on successive hits and the "x{n} COMBO" float past the threshold.</summary>
+    /// <summary>
+    /// Combo feedback: rising SFX pitch on a ball's successive hits, and the "x{n} COMBO" float for the flight's combo
+    /// (every enemy hit while balls fly, the count that charges POWER) at JuiceConfig's milestones, so a volley shows
+    /// one climbing count instead of a float per ball.
+    /// </summary>
     public sealed class ComboPresenter
     {
         readonly JuiceConfig juice;
@@ -21,10 +25,11 @@ namespace Nex.BilliardRogue
             return Mathf.Min(juice.ComboPitchMax, 1f + juice.ComboPitchStep * Mathf.Max(0, combo - 1));
         }
 
-        public void OnComboChanged(int combo, Vector3 world, Color playerColor)
+        public void OnFlightCombo(int combo, Vector3 world, Color color)
         {
-            if (combo < juice.ComboShowThreshold) return;
-            labels.ShowCombo(world + Vector3.up * 0.3f, combo, playerColor);
+            var first = juice.ComboShowThreshold;
+            if (combo < first || (combo - first) % juice.ComboShowEvery != 0) return;
+            labels.ShowCombo(world + Vector3.up * 0.3f, combo, color);
         }
     }
 }

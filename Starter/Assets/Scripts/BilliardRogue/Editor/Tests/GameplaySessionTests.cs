@@ -198,18 +198,19 @@ namespace Nex.BilliardRogue.Editor.Tests
             Assert.IsTrue(h.DriveUntil(() => h.Phase == TurnPhase.PlayerTurn));
             input.Armed = true;
             h.Tick(1);
-            Assert.AreEqual(1, h.run.stats.shots);
+            Assert.AreEqual(1, h.run.stats.shots, "the volley's first ball is out");
             var consumesAfterFirst = input.Consumes;
+            var volley = h.run.bag.Count;
 
             input.Armed = true;
             var cooldownTicks = Mathf.CeilToInt(h.config.Pacing.ShotCooldown / Dt);
             h.Tick(cooldownTicks - 1);
-            Assert.AreEqual(1, h.run.stats.shots, "inside the cooldown");
+            Assert.AreEqual(volley, h.run.stats.shots, "the first volley is out, the second waits for the cooldown");
             Assert.AreEqual(consumesAfterFirst, input.Consumes, "the strike is not consumed (and lost) while the shot cannot fire");
             Assert.IsTrue(input.Armed);
 
             h.Tick(3);
-            Assert.AreEqual(2, h.run.stats.shots, "fires once the cooldown ends, without a new strike");
+            Assert.Greater(h.run.stats.shots, volley, "fires once the cooldown ends, without a new strike");
             Assert.IsFalse(input.Armed);
         }
 
@@ -244,7 +245,7 @@ namespace Nex.BilliardRogue.Editor.Tests
             using var h = new Harness(1, input, new DebugSettings { practiceMode = practiceMode });
             Assert.IsTrue(h.DriveUntil(() => h.Phase == TurnPhase.PlayerTurn));
             var shotsPerTurn = h.rules.balance.shotsPerTurn;
-            Assert.Greater(h.run.bag.Count, shotsPerTurn, "the opening bag holds more balls than one turn fires");
+            var volley = h.run.bag.Count;
             var rowsBefore = new Dictionary<int, int>();
             foreach (var enemy in h.run.board.enemies)
             {
@@ -253,15 +254,17 @@ namespace Nex.BilliardRogue.Editor.Tests
                 rowsBefore[enemy.id] = enemy.row;
             }
 
+            // No +1 Ball pickups: exactly shotsPerTurn volleys.
+            h.run.board.pickups.Clear();
             for (var shot = 0; shot < shotsPerTurn; shot++)
             {
                 input.Armed = true;
-                Assert.IsTrue(h.DriveUntil(() => h.run.stats.shots == shot + 1), "shot " + (shot + 1));
+                Assert.IsTrue(h.DriveUntil(() => h.run.stats.shots == (shot + 1) * volley), "every shot launches the whole bag: volley " + (shot + 1));
             }
 
             input.Armed = true;
-            Assert.IsTrue(h.DriveUntil(() => h.Phase == TurnPhase.EnemyPhase), "the turn ends after shotsPerTurn balls");
-            Assert.AreEqual(shotsPerTurn, h.run.stats.shots, "the rest of the bag waits for the next turn");
+            Assert.IsTrue(h.DriveUntil(() => h.Phase == TurnPhase.EnemyPhase), "the turn ends after shotsPerTurn volleys");
+            Assert.AreEqual(shotsPerTurn * volley, h.run.stats.shots, "no fourth volley");
             Assert.IsTrue(h.DriveUntil(() => h.Phase == TurnPhase.PlayerTurn), "next turn");
 
             var advanced = 0;
@@ -271,7 +274,6 @@ namespace Nex.BilliardRogue.Editor.Tests
             }
 
             Assert.Greater(advanced, 0, "the enemies stepped toward the player at the turn end");
-            Assert.AreEqual(shotsPerTurn % h.run.bag.Count, h.run.nextBagIndex, "the next turn continues the bag rotation");
         }
 
         [Test]
@@ -305,11 +307,19 @@ namespace Nex.BilliardRogue.Editor.Tests
             var input = new ArmedInput();
             using var h = new Harness(1, input);
             Assert.IsTrue(h.DriveUntil(() => h.Phase == TurnPhase.PlayerTurn));
+            foreach (var enemy in h.run.board.enemies)
+            {
+                // Immortal, so no volley can clear the field and cut the turn short.
+                enemy.hp = enemy.maxHp = 100000;
+            }
+
+            h.run.board.pickups.Clear();
             var total = h.rules.balance.shotsPerTurn;
+            var volley = h.run.bag.Count;
             for (var shot = 0; shot < total; shot++)
             {
                 input.Armed = true;
-                Assert.IsTrue(h.DriveUntil(() => h.run.stats.shots == shot + 1), "shot " + (shot + 1));
+                Assert.IsTrue(h.DriveUntil(() => h.run.stats.shots == (shot + 1) * volley), "volley " + (shot + 1));
             }
 
             input.IsTracking = false;

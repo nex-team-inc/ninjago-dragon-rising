@@ -42,8 +42,6 @@ namespace Nex.BilliardRogue
 
         public void SetHype(float hype01, int tier) => inner.SetHype(hype01, tier);
 
-        public void ShowMovePrompt(bool visible) => inner.ShowMovePrompt(visible);
-
         public void ShowTurnBanner(int turn) => inner.ShowTurnBanner(turn);
 
         public void ShowShooterBanner(int playerIndex) => inner.ShowShooterBanner(playerIndex);

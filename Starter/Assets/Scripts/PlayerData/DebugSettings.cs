@@ -42,7 +42,7 @@ namespace Nex
         [DebugOrder(31), Description("Run: Force Reward Ball (-1 = off, 0..11 = BallType)"), NumericSteps(IntSteps = 1, IntMin = -1, IntMax = 11)]
         public int forceRewardBall = -1;
         [DebugOrder(32), Description("Run: Fixed Seed (0 = random)")] public int fixedSeed;
-        [DebugOrder(33), Description("Run: Force Hype while balls fly (-1 = off, 0..1)"), NumericSteps(Steps = 0.05, Min = -1, Max = 1)]
+        [DebugOrder(33), Description("Run: Force POWER while balls fly (-1 = off, 0..1)"), NumericSteps(Steps = 0.05, Min = -1, Max = 1)]
         public float forceHype = -1f;
 
         [DebugOrder(40), Description("Debug: Show Sim Debug")] public bool showSimDebug;

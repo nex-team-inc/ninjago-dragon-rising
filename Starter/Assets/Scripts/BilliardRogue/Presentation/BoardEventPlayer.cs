@@ -85,13 +85,17 @@ namespace Nex.BilliardRogue
                 case SimEventKind.PlayerDied: OnPlayerDied(); break;
                 case SimEventKind.PowerShotConsumed: Burst(VfxManager.VisualEffect.LevelUpBurst, SfxManager.SoundEffect.PowerShot, ev.position, labels.Texts.Power, juice.CritDamageColor); break;
                 case SimEventKind.BallExited: combos.Remove(ev.ballId); break;
-                case SimEventKind.ComboChanged:
-                    combos[ev.ballId] = ev.value;
-                    combo.OnComboChanged(ev.value, Center(ev.position), juice.PlayerColor(shooterIndex));
-                    break;
+                case SimEventKind.ComboChanged: combos[ev.ballId] = ev.value; break;
                 case SimEventKind.BossPhaseChanged: OnBossPhase(ev); break;
                 case SimEventKind.WaveSpawned: views.SyncPickups(run); break;
             }
+        }
+
+        /// <summary>Player turn: an EnemyHit that brought the flight's combo (the POWER charge) to flightCombo.</summary>
+        public void PlayFlightCombo(in SimEvent hit, int flightCombo)
+        {
+            var world = views.TryGetEnemy(hit.targetId, out var view) ? view.Center : Center(hit.position);
+            combo.OnFlightCombo(flightCombo, world, juice.PlayerColor(shooterIndex));
         }
 
         #endregion

@@ -166,14 +166,18 @@ namespace Nex.BilliardRogue
             }
         }
 
-        /// <summary>Plays the immediate feedback for a frame's worth of player-turn events (hits, bounces, numbers).</summary>
-        public void Consume(List<SimEvent> events, RunState run)
+        /// <summary>
+        /// Plays the immediate feedback for a frame's worth of player-turn events (hits, bounces, numbers); flightCombo is
+        /// the flight's enemy hits before these events (the POWER combo), which every EnemyHit here counts on from.
+        /// </summary>
+        public void Consume(List<SimEvent> events, RunState run, int flightCombo)
         {
             var enemyRemoved = false;
             for (var i = 0; i < events.Count; i++)
             {
                 var ev = events[i];
                 eventPlayer.Play(ev, run);
+                if (ev.kind == SimEventKind.EnemyHit) eventPlayer.PlayFlightCombo(ev, ++flightCombo);
                 enemyRemoved |= ev.kind == SimEventKind.EnemyKilled;
             }
 

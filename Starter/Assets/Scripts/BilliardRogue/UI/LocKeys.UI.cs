@@ -18,7 +18,7 @@ namespace Nex.BilliardRogue
 
         public static partial class Hud
         {
-            public const string BallsLabel = "br.hud.ballsLabel";             // en: Balls
+            public const string BallsLabel = "br.hud.ballsLabel";             // en: Shots (the count is shots left; every shot is a volley of the bag)
             public const string Next = "br.hud.next";                         // en: NEXT
             public const string BonusBalls = "br.hud.bonusBalls";             // en: Bonus +{0} (smart)
             public const string Shooter = "br.hud.shooter";                   // en: Shooter

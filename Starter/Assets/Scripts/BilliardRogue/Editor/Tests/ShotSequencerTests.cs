@@ -1,85 +1,58 @@
 #nullable enable
 
-using System.Collections.Generic;
 using Nex.BilliardRogue.Simulation;
 using NUnit.Framework;
 
 namespace Nex.BilliardRogue.Editor.Tests
 {
     /// <summary>
-    /// ShotSequencer turn rules: BalanceRules.shotsPerTurn balls per turn in bag order, the rotation carried across turns
-    /// (run.nextBagIndex), bonus shots from pickups, the whole-bag rule at 0, the infinite-balls cheat and the 2P rotation.
+    /// ShotSequencer turn rules (playtest 4): BalanceRules.shotsPerTurn shots per player per turn, every shot a volley of
+    /// the whole bag, shared bonus shots from pickups, per-player cooldowns when 2P shoot together, the infinite cheat.
     /// </summary>
     public class ShotSequencerTests
     {
-        static readonly BallType[] FourBalls = { BallType.Basic, BallType.Flame, BallType.Frost, BallType.Bomb };
-
-        static RunState NewRun(BallType[] bag, int numPlayers = 1)
+        static RunState NewRun(int balls, int numPlayers = 1)
         {
             var run = new RunState { numPlayers = numPlayers };
-            foreach (var type in bag)
+            for (var i = 0; i < balls; i++)
             {
-                run.bag.Add(new BallInstance { type = type, level = 1 });
+                run.bag.Add(new BallInstance { type = BallType.Basic, level = 1 });
             }
 
             return run;
         }
 
-        static List<BallType> PlayTurn(ShotSequencer sequencer, bool infinite = false, int maxShots = 100)
-        {
-            var fired = new List<BallType>();
-            sequencer.BeginTurn(infinite);
-            while (sequencer.HasBallToFire && fired.Count < maxShots)
-            {
-                fired.Add(sequencer.Fire(0).type);
-            }
-
-            sequencer.EndTurn();
-            return fired;
-        }
-
         [Test]
-        public void ATurnFiresShotsPerTurnBallsInBagOrder()
+        public void ATurnHasShotsPerTurnShots()
         {
-            var sequencer = new ShotSequencer(NewRun(FourBalls), 3, 0f);
+            var sequencer = new ShotSequencer(NewRun(4), 3, 0f);
             sequencer.BeginTurn(false);
             Assert.AreEqual(3, sequencer.Total);
-            Assert.AreEqual(3, sequencer.Remaining);
-            Assert.AreEqual(BallType.Basic, sequencer.Fire(0).type);
-            Assert.AreEqual(BallType.Flame, sequencer.Fire(0).type);
-            Assert.AreEqual(BallType.Frost, sequencer.Fire(0).type);
-            Assert.IsFalse(sequencer.HasBallToFire, "the fourth ball waits for the next turn");
+            for (var shot = 0; shot < 3; shot++)
+            {
+                Assert.IsTrue(sequencer.CanFire(0), "shot " + (shot + 1));
+                sequencer.Fire(0);
+            }
+
+            Assert.IsFalse(sequencer.HasBallToFire);
             Assert.AreEqual(0, sequencer.Remaining);
+            Assert.AreEqual(3, sequencer.Fired);
         }
 
         [Test]
-        public void TheNextTurnContinuesTheRotation()
+        public void EveryShotIsAVolleyOfTheWholeBag()
         {
-            var run = NewRun(FourBalls);
+            var run = NewRun(4);
             var sequencer = new ShotSequencer(run, 3, 0f);
-            PlayTurn(sequencer);
-            Assert.AreEqual(3, run.nextBagIndex);
-            CollectionAssert.AreEqual(new[] { BallType.Bomb, BallType.Basic, BallType.Flame }, PlayTurn(sequencer));
-            CollectionAssert.AreEqual(new[] { BallType.Frost, BallType.Bomb, BallType.Basic }, PlayTurn(sequencer));
-            Assert.AreEqual(1, run.nextBagIndex);
+            Assert.AreSame(run.bag, sequencer.Volley);
+            run.bag.Add(new BallInstance { type = BallType.Flame, level = 1 });
+            Assert.AreEqual(5, sequencer.Volley.Count, "a won ball joins every later shot");
         }
 
         [Test]
-        public void ATurnCutShortKeepsItsUnfiredBallsFirstInLine()
+        public void PickupsAddSharedBonusShotsThatDoNotCarryOver()
         {
-            var run = NewRun(FourBalls);
-            var sequencer = new ShotSequencer(run, 3, 0f);
-            sequencer.BeginTurn(false);
-            sequencer.Fire(0);
-            sequencer.EndTurn();
-            Assert.AreEqual(1, run.nextBagIndex);
-            CollectionAssert.AreEqual(new[] { BallType.Flame, BallType.Frost, BallType.Bomb }, PlayTurn(sequencer));
-        }
-
-        [Test]
-        public void PickupsAddBonusBasicShotsThatDoNotCarryOver()
-        {
-            var run = NewRun(new[] { BallType.Flame, BallType.Frost, BallType.Bomb, BallType.Iron });
+            var run = NewRun(4);
             var sequencer = new ShotSequencer(run, 3, 0f);
             sequencer.BeginTurn(false);
             sequencer.Fire(0);
@@ -87,53 +60,46 @@ namespace Nex.BilliardRogue.Editor.Tests
             Assert.AreEqual(4, sequencer.Total);
             sequencer.Fire(0);
             sequencer.Fire(0);
-            Assert.IsTrue(sequencer.HasBallToFire, "the pickup reopened the turn");
-            Assert.AreEqual(BallType.Basic, sequencer.Fire(0).type, "bonus shots are Basic balls");
+            Assert.IsTrue(sequencer.HasShot(0), "the pickup reopened the turn");
+            sequencer.Fire(0);
             Assert.IsFalse(sequencer.HasBallToFire);
             sequencer.EndTurn();
             Assert.AreEqual(0, run.extraBalls);
-            Assert.AreEqual(3, run.nextBagIndex, "bonus shots do not move the bag rotation");
+            sequencer.BeginTurn(false);
+            Assert.AreEqual(3, sequencer.Total, "bonus shots never carry over");
         }
 
         [Test]
-        public void ZeroShotsPerTurnFiresTheWholeBag()
+        public void TheInfiniteCheatNeverRunsOutOfShots()
         {
-            var sequencer = new ShotSequencer(NewRun(FourBalls), 0, 0f);
-            CollectionAssert.AreEqual(FourBalls, PlayTurn(sequencer));
-        }
+            var sequencer = new ShotSequencer(NewRun(4), 3, 0f);
+            sequencer.BeginTurn(true);
+            for (var shot = 0; shot < 10; shot++)
+            {
+                sequencer.Fire(0);
+            }
 
-        [Test]
-        public void ASmallBagWrapsWithinTheTurn()
-        {
-            var sequencer = new ShotSequencer(NewRun(new[] { BallType.Flame, BallType.Frost }), 3, 0f);
-            CollectionAssert.AreEqual(new[] { BallType.Flame, BallType.Frost, BallType.Flame }, PlayTurn(sequencer));
-            CollectionAssert.AreEqual(new[] { BallType.Frost, BallType.Flame, BallType.Frost }, PlayTurn(sequencer));
-        }
-
-        [Test]
-        public void TheInfiniteCheatCyclesTheBagWithoutEndingTheTurn()
-        {
-            var sequencer = new ShotSequencer(NewRun(FourBalls), 3, 0f);
-            var fired = PlayTurn(sequencer, infinite: true, maxShots: 6);
-            CollectionAssert.AreEqual(new[] { BallType.Basic, BallType.Flame, BallType.Frost, BallType.Bomb, BallType.Basic, BallType.Flame }, fired);
+            Assert.IsTrue(sequencer.HasBallToFire);
+            sequencer.EndTurn();
             Assert.IsFalse(sequencer.Infinite, "the cheat is chosen again at every turn start");
         }
 
         [Test]
         public void TwoPlayersEachHaveShotsPerTurnAndShootTogether()
         {
-            var run = NewRun(FourBalls, numPlayers: 2);
-            var sequencer = new ShotSequencer(run, 3, 0.35f);
+            var sequencer = new ShotSequencer(NewRun(4, numPlayers: 2), 3, 0.35f);
             sequencer.BeginTurn(false);
             Assert.AreEqual(6, sequencer.Total, "3 shots each");
-            Assert.AreEqual(BallType.Basic, sequencer.Fire(0).type);
+            sequencer.Fire(0);
             Assert.IsFalse(sequencer.CanFire(0), "P1 waits out their own cooldown");
             Assert.IsTrue(sequencer.CanFire(1), "while P2 can shoot at the same moment");
-            Assert.AreEqual(BallType.Flame, sequencer.Fire(1).type, "whoever fires takes the next ball in the bag");
-            sequencer.Tick(1f);
-            sequencer.Fire(0);
-            sequencer.Tick(1f);
-            sequencer.Fire(0);
+            sequencer.Fire(1);
+            for (var shot = 0; shot < 2; shot++)
+            {
+                sequencer.Tick(1f);
+                sequencer.Fire(0);
+            }
+
             sequencer.Tick(1f);
             Assert.IsFalse(sequencer.HasShot(0), "P1 used their 3 shots");
             Assert.IsTrue(sequencer.HasShot(1), "P2 still has 2");
@@ -142,42 +108,20 @@ namespace Nex.BilliardRogue.Editor.Tests
             sequencer.Tick(1f);
             sequencer.Fire(1);
             Assert.IsFalse(sequencer.HasBallToFire);
-            sequencer.EndTurn();
-            Assert.AreEqual(6 % FourBalls.Length, run.nextBagIndex);
         }
 
         [Test]
         public void ABonusShotGoesToWhicheverPlayerFiresIt()
         {
-            var run = NewRun(FourBalls, numPlayers: 2);
+            var run = NewRun(4, numPlayers: 2);
             var sequencer = new ShotSequencer(run, 1, 0f);
             sequencer.BeginTurn(false);
             sequencer.Fire(0);
             run.extraBalls = 1;
             Assert.IsTrue(sequencer.HasShot(0), "P1's own shot is gone, the shared bonus shot is left");
-            Assert.AreEqual(BallType.Basic, sequencer.Fire(0).type);
+            sequencer.Fire(0);
             Assert.IsFalse(sequencer.HasShot(0));
             Assert.IsTrue(sequencer.HasShot(1), "P2 keeps their own shot");
-        }
-
-        [Test]
-        public void BetweenTurnsTheQueueShowsTheComingTurn()
-        {
-            var sequencer = new ShotSequencer(NewRun(FourBalls), 3, 0f);
-            CollectionAssert.AreEqual(new[] { BallType.Basic, BallType.Flame, BallType.Frost }, Types(sequencer.TurnBalls));
-            PlayTurn(sequencer);
-            CollectionAssert.AreEqual(new[] { BallType.Bomb, BallType.Basic, BallType.Flame }, Types(sequencer.TurnBalls));
-        }
-
-        static List<BallType> Types(IReadOnlyList<BallInstance> balls)
-        {
-            var types = new List<BallType>();
-            foreach (var ball in balls)
-            {
-                types.Add(ball.type);
-            }
-
-            return types;
         }
     }
 }

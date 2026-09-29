@@ -27,12 +27,12 @@ namespace Nex.BilliardRogue
         int activePlayer = int.MinValue;
         int queueIndex = -1;
         int queueExtra = -1;
-        int queueVersion = -1;
+        int queueBagCount = -1;
+        int volleyLaunched;
         int remaining = -1;
         int total = -1;
         float hype = -1f;
         int hypeTier = -1;
-        bool movePrompt;
 
         public HudBinder(IGameplayHud aHud, RunState aRun, RunSimulation aSim, ShotSequencer aSequencer)
         {
@@ -61,17 +61,17 @@ namespace Nex.BilliardRogue
             hud.SetHp(hp, maxHp);
         }
 
+        /// <summary>The bag every shot launches (balls already out of the current volley dimmed) and the shots left.</summary>
         public void RefreshQueue()
         {
-            var index = sequencer.NextShot;
+            var bagCount = run.bag.Count;
             var extra = run.extraBalls;
-            var version = sequencer.TurnBallsVersion;
-            if (index != queueIndex || extra != queueExtra || version != queueVersion)
+            if (volleyLaunched != queueIndex || extra != queueExtra || bagCount != queueBagCount)
             {
-                queueIndex = index;
+                queueIndex = volleyLaunched;
                 queueExtra = extra;
-                queueVersion = version;
-                hud.SetBallQueue(sequencer.TurnBalls, index, extra);
+                queueBagCount = bagCount;
+                hud.SetBallQueue(sequencer.Volley, volleyLaunched, extra);
             }
 
             var left = sequencer.Remaining;
@@ -80,6 +80,14 @@ namespace Nex.BilliardRogue
             remaining = left;
             total = all;
             hud.SetBallsRemaining(left, all);
+        }
+
+        /// <summary>Balls of the volley launched so far (0 when no volley streams: the whole bag is ready).</summary>
+        public void SetVolleyProgress(int launched)
+        {
+            if (launched == volleyLaunched) return;
+            volleyLaunched = launched;
+            RefreshQueue();
         }
 
         /// <summary>1P: P1. 2P shoot together, so every player is active (-1).</summary>
@@ -148,13 +156,6 @@ namespace Nex.BilliardRogue
             hype = hype01;
             hypeTier = tier;
             hud.SetHype(hype01, tier);
-        }
-
-        public void ShowMovePrompt(bool visible)
-        {
-            if (visible == movePrompt) return;
-            movePrompt = visible;
-            hud.ShowMovePrompt(visible);
         }
 
         public void ShowTurnBanner(int turn) => hud.ShowTurnBanner(turn);

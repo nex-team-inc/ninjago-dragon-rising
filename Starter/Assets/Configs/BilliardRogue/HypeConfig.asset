@@ -12,7 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f5642ff0d318146889a6c12d80c51dbb, type: 3}
   m_Name: HypeConfig
   m_EditorClassIdentifier: Assembly-CSharp::Nex.BilliardRogue.HypeConfig
-  energyToHype:
+  comboForFullPower: 24
+  comboToPower:
     serializedVersion: 2
     m_Curve:
     - serializedVersion: 3
@@ -37,7 +38,6 @@ MonoBehaviour:
     m_PostInfinity: 2
     m_RotationOrder: 4
   attackSeconds: 0.1
-  releaseSeconds: 0.5
   tierThresholds:
   - 0.25
   - 0.55
@@ -49,5 +49,3 @@ MonoBehaviour:
   minBonusDamage: 1
   maxHitStopMultiplier: 3
   hitStopExtraCapPerSecond: 0.12
-  movePromptBelow: 0.2
-  movePromptDelay: 1

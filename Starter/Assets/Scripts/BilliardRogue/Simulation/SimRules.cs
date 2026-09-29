@@ -113,7 +113,7 @@ namespace Nex.BilliardRogue.Simulation
         public int playerMaxHp = 30;
         /// <summary>HP every enemy attack (melee from the danger row, ranged bolt) takes from the player; 0 = the enemy's attack stat.</summary>
         public int damagePerAttack;
-        /// <summary>Balls fired per player turn, taken from the bag in order and wrapping around it (0 = the whole bag, the v1 rule).</summary>
+        /// <summary>Shots per player per turn (at least 1); every shot is a volley of the whole bag.</summary>
         public int shotsPerTurn = 3;
         public int bagCap = 12;
         public BallType[] startingBag = { BallType.Basic, BallType.Basic, BallType.Basic, BallType.Basic };

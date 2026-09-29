@@ -9,7 +9,7 @@ namespace Nex.BilliardRogue
     public interface IGameplayHud
     {
         void SetHp(int cur, int max);
-        /// <summary>This turn's bag balls in firing order; nextIndex = next shot (balls.Count.. = bonus shots); extraBalls = bonus Basic shots this turn.</summary>
+        /// <summary>The bag every shot launches as a volley; nextIndex = balls of the current volley already launched; extraBalls = bonus shots this turn.</summary>
         void SetBallQueue(IReadOnlyList<BallInstance> balls, int nextIndex, int extraBalls);
         void SetBallsRemaining(int remaining, int total);
         void SetStage(int actIndex, int stageInAct, bool isBoss);
@@ -25,7 +25,5 @@ namespace Nex.BilliardRogue
         void SetTrackingWarning(int playerIndex, bool lost);
         /// <summary>Hype meter (GDD v2 §3): hype01 in 0..1, tier 0..3.</summary>
         void SetHype(float hype01, int tier);
-        /// <summary>"MOVE!" prompt while balls fly and the player stands still (GDD v2 §3).</summary>
-        void ShowMovePrompt(bool visible);
     }
 }

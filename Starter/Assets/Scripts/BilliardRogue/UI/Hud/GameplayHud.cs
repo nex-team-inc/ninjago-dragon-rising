@@ -86,7 +86,8 @@ namespace Nex.BilliardRogue
 
         public void SetBallQueue(IReadOnlyList<BallInstance> bag, int nextIndex, int extraBalls)
         {
-            ballQueue.Set(bag, nextIndex, extraBalls);
+            // A bonus shot is another volley of the same bag: the chip counts it, the grid shows the bag only.
+            ballQueue.Set(bag, nextIndex, 0);
             if (extraBalls == bonusBalls) return;
             bonusBalls = extraBalls;
             if (extraBalls > 0)
@@ -145,13 +146,6 @@ namespace Nex.BilliardRogue
         {
             hypeMeter.Set(hype01, tier);
         }
-
-        /// <summary>"MOVE!" prompt with the dancing cat near the arena bottom. Cheap to call every frame.</summary>
-        public void ShowMovePrompt(bool visible)
-        {
-            movePrompt.SetVisible(visible);
-        }
-
         public void SetPowerArmed(bool armed)
         {
             powerChip.SetVisible(armed);

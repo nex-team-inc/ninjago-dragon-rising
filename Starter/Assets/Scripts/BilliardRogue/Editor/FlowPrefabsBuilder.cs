@@ -11,7 +11,8 @@ namespace Nex.BilliardRogue.Editor
 {
     /// <summary>
     /// Builds the Flow prefabs (TDD §17): BilliardRogueViewManager (variant of the starter MainViewManager with the
-    /// secret code), GameplayPip, CalibrationView, GameplayView and BilliardRogueCoordinator. Prefabs are regenerated
+    /// secret code), GameplayPip, CalibrationView, GameplayView, the control lab readout (ControlReadoutBuilder) and
+    /// BilliardRogueCoordinator. Prefabs are regenerated
     /// over their existing paths (GUIDs stay); other modules' prefabs are referenced by path and tolerated when missing.
     /// CLI: unity command eval 'return Nex.BilliardRogue.Editor.FlowPrefabsBuilder.Run();'
     /// </summary>
@@ -52,7 +53,9 @@ namespace Nex.BilliardRogue.Editor
             report.Append(", calibration view");
             var gameplay = FlowViewPrefabsBuilder.BuildGameplayView(GameplayViewPath, pip);
             report.Append(", gameplay view");
-            BuildCoordinator(calibration, gameplay);
+            var readout = ControlReadoutBuilder.Build();
+            report.Append(", control readout");
+            BuildCoordinator(calibration, gameplay, readout);
             report.Append(", coordinator");
 
             AssetDatabase.SaveAssets();
@@ -142,7 +145,7 @@ namespace Nex.BilliardRogue.Editor
 
         #region Coordinator
 
-        static void BuildCoordinator(CalibrationView calibration, GameplayView gameplay)
+        static void BuildCoordinator(CalibrationView calibration, GameplayView gameplay, ControlReadoutOverlay readout)
         {
             var root = new GameObject("BilliardRogueCoordinator");
             var coordinator = root.AddComponent<BilliardRogueCoordinator>();
@@ -169,6 +172,7 @@ namespace Nex.BilliardRogue.Editor
             so.FindProperty("summaryViewPrefab").objectReferenceValue = FlowUiFactory.LoadPrefabComponent<SummaryView>(FlowUiFactory.ViewsFolder + "/SummaryView.prefab", "UI-Views");
             so.FindProperty("settingsViewPrefab").objectReferenceValue = FlowUiFactory.LoadPrefabComponent<SettingsView>(FlowUiFactory.ViewsFolder + "/SettingsView.prefab", "UI-Views");
             so.FindProperty("playerShotInputPrefab").objectReferenceValue = FlowUiFactory.LoadPrefab(PlayerShotInputPath, "Input");
+            so.FindProperty("controlReadoutPrefab").objectReferenceValue = readout;
             so.ApplyModifiedPropertiesWithoutUndo();
 
             if (so.FindProperty("config").objectReferenceValue == null)

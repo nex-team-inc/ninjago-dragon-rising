@@ -1,5 +1,6 @@
 #nullable enable
 
+using System;
 using Jazz;
 using Nex.BilliardRogue.Simulation;
 using Nex.Utils;
@@ -13,7 +14,8 @@ namespace Nex.BilliardRogue
     /// engine's smoothed nodes, filtered again with OneEuro. Strikes come from the raw nodes, sampled once per camera
     /// frame (original.frameTime changes, ~30 Hz) and fed to StrikeDetector; the strike direction is the aim from
     /// aimSampleDelaySeconds before the thrust started. Units are body-normalized inches, so height and distance to
-    /// the camera do not matter. Allocation-free per frame.
+    /// the camera do not matter. Live tuning (ControlTuning, polled every frame) scales the config values; the
+    /// readout properties feed the control lab overlay. Allocation-free per frame.
     /// </summary>
     public sealed class PawShotInput : MonoBehaviour, IShotInput
     {
@@ -23,6 +25,8 @@ namespace Nex.BilliardRogue
         OnePlayerDetectionEngine engine = null!;
         ControlConfig config = null!;
         ArenaRules arena = null!;
+        Func<ControlTuning> tuningSource = null!;
+        ControlTuning tuning = ControlTuning.Identity;
         StrikeDetector detector = null!;
         OneEuroFilter launchFilter = null!;
         OneEuroFilter aimFilterX = null!;
@@ -49,16 +53,35 @@ namespace Nex.BilliardRogue
         /// <summary>Strike detector state (debug display).</summary>
         public StrikeState StrikeState => detector.State;
 
+        #region Readout
+
+        /// <summary>Detector values, thresholds in use and the last strike / miss (control readout).</summary>
+        public StrikeReadout StrikeReadout => detector.Readout;
+        /// <summary>The newest camera frame showed the chest, both elbows and both wrists.</summary>
+        public bool PawsDetected => rawPoseDetected;
+        /// <summary>A camera frame arrived within ControlConfig.staleFrameSeconds.</summary>
+        public bool HasCameraFrames => Time.realtimeSinceStartup - lastRawFrameArrival <= config.StaleFrameSeconds;
+        /// <summary>Strikes the detector fired while tracking was not (yet) confirmed: never queued.</summary>
+        public int UntrackedStrikeCount { get; private set; }
+        /// <summary>Queued strikes dropped unfired (expired before a consumer took them, or reset).</summary>
+        public int ExpiredStrikeCount { get; private set; }
+
+        #endregion
+
         #region Life Cycle
 
-        public void Initialize(int playerIndex, OnePlayerDetectionEngine aEngine, ControlConfig aConfig, ArenaRules aArena, bool aLeftHanded)
+        /// <summary>aTuning is polled every frame (ControlTuning.Identity keeps the asset values).</summary>
+        public void Initialize(int playerIndex, OnePlayerDetectionEngine aEngine, ControlConfig aConfig, ArenaRules aArena, bool aLeftHanded,
+            Func<ControlTuning> aTuning)
         {
             PlayerIndex = playerIndex;
             engine = aEngine;
             config = aConfig;
             arena = aArena;
             leftHanded = aLeftHanded;
-            detector = new StrikeDetector(config.StrikeSettings);
+            tuningSource = aTuning;
+            tuning = tuningSource();
+            detector = new StrikeDetector(config.StrikeSettingsFor(tuning));
             ResetFilters();
             engine.NewDetectionCapturedAndProcessed += HandleDetection;
             enabled = true;
@@ -73,6 +96,7 @@ namespace Nex.BilliardRogue
         // here: CameraSession may destroy it before this input.
         void Update()
         {
+            ApplyTuning();
             var now = Time.realtimeSinceStartup;
             var valid = now - lastPoseTime <= config.TrackingDropSeconds && now - lastRawFrameArrival <= config.StaleFrameSeconds;
             if (valid && !wasValid)
@@ -100,11 +124,17 @@ namespace Nex.BilliardRogue
             if (!hasPendingStrike) return false;
 
             hasPendingStrike = false;
-            return Time.realtimeSinceStartup - pendingStrikeTime <= config.StrikeExpirySeconds;
+            if (Time.realtimeSinceStartup - pendingStrikeTime <= config.StrikeExpirySeconds) return true;
+            ExpiredStrikeCount++;
+            return false;
         }
 
         public void ResetStrike()
         {
+            if (hasPendingStrike)
+            {
+                ExpiredStrikeCount++;
+            }
             hasPendingStrike = false;
             detector.Reset();
         }
@@ -178,13 +208,16 @@ namespace Nex.BilliardRogue
             }
 
             aimHistory.Add(frameTime, liveAim);
-            detector.Settings = config.StrikeSettings;
             var wasApproaching = detector.IsApproaching;
             if (detector.AddSample(frameTime, ball, cue, out var result))
             {
                 if (IsTracking)
                 {
                     QueueStrike(result, now);
+                }
+                else
+                {
+                    UntrackedStrikeCount++;
                 }
                 return;
             }
@@ -245,8 +278,9 @@ namespace Nex.BilliardRogue
         void UpdateLaunch(float ballX, float now)
         {
             var x = launchFilter.Filter(ballX, now);
-            var min = leftHanded ? -config.LaunchXMaxInches : config.LaunchXMinInches;
-            var max = leftHanded ? -config.LaunchXMinInches : config.LaunchXMaxInches;
+            config.LaunchRangeFor(tuning, out var rangeMin, out var rangeMax);
+            var min = leftHanded ? -rangeMax : rangeMin;
+            var max = leftHanded ? -rangeMin : rangeMax;
             LaunchX01 = RemapUtils.RemapAndClamp(x, min, max, 0f, 1f);
         }
 
@@ -265,9 +299,25 @@ namespace Nex.BilliardRogue
 
         void ResetFilters()
         {
+            var aimCutoff = config.AimMinCutoffFor(tuning);
             launchFilter = new OneEuroFilter(config.LaunchXMinCutoff, config.LaunchXBeta);
-            aimFilterX = new OneEuroFilter(config.AimMinCutoff, config.AimBeta);
-            aimFilterY = new OneEuroFilter(config.AimMinCutoff, config.AimBeta);
+            aimFilterX = new OneEuroFilter(aimCutoff, config.AimBeta);
+            aimFilterY = new OneEuroFilter(aimCutoff, config.AimBeta);
+        }
+
+        // Every frame, so debug panel and Inspector edits apply at once (also before the first camera frame). The
+        // OneEuro filters take their cutoff at construction: only an aim smoothing change rebuilds them (an
+        // allocation on a debug panel edit only).
+        void ApplyTuning()
+        {
+            var next = tuningSource();
+            var smoothingChanged = !Mathf.Approximately(next.aimSmoothing, tuning.aimSmoothing);
+            tuning = next;
+            detector.Settings = config.StrikeSettingsFor(tuning);
+            if (smoothingChanged)
+            {
+                ResetFilters();
+            }
         }
 
         #endregion

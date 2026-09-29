@@ -31,6 +31,16 @@ namespace Nex
         [DebugOrder(22), Description("Flow: Fast Enemy Phase")] public bool fastEnemyPhase;
         [DebugOrder(23), Description("Input: Force Mouse/Keyboard")] public bool forceDebugInput;
 
+        // Control lab live tuning: ControlConfig value x scale (the asset stays untouched), read every frame.
+        [DebugOrder(24), Description("Input: Strike Speed x (higher = harder thrust)"), NumericSteps(Steps = 0.05, Min = 0.25, Max = 3)]
+        public float strikeSpeedScale = 1f;
+        [DebugOrder(25), Description("Input: Contact Distance x (higher = paws may stay apart)"), NumericSteps(Steps = 0.05, Min = 0.25, Max = 3)]
+        public float contactDistanceScale = 1f;
+        [DebugOrder(26), Description("Input: Aim Smoothing x (higher = steadier, more lag)"), NumericSteps(Steps = 0.05, Min = 0.25, Max = 3)]
+        public float aimSmoothingScale = 1f;
+        [DebugOrder(27), Description("Input: Launch Range x (lower = less left-paw travel)"), NumericSteps(Steps = 0.05, Min = 0.25, Max = 3)]
+        public float launchRangeScale = 1f;
+
         [DebugOrder(30), Description("Run: Force Start Stage (-1 = off, 0..11)"), NumericSteps(IntSteps = 1, IntMin = -1, IntMax = 11)]
         public int forceStartStage = -1;
         [DebugOrder(31), Description("Run: Force Reward Ball (-1 = off, 0..11 = BallType)"), NumericSteps(IntSteps = 1, IntMin = -1, IntMax = 11)]
@@ -38,6 +48,11 @@ namespace Nex
         [DebugOrder(32), Description("Run: Fixed Seed (0 = random)")] public int fixedSeed;
 
         [DebugOrder(40), Description("Debug: Show Sim Debug")] public bool showSimDebug;
+#if BR_CONTROL_DEMO
+        [DebugOrder(41), Description("Debug: Show Control Readout")] public bool showControlDebug = true;
+#else
+        [DebugOrder(41), Description("Debug: Show Control Readout")] public bool showControlDebug;
+#endif
 
         [DebugOrder(50), Description("Render: Disable Pixelation")] public bool disablePixelation;
         [DebugOrder(51), Description("Render: Disable Tilt-Shift")] public bool disableTiltShift;
@@ -66,6 +81,13 @@ namespace Nex
 #if ENABLE_DEBUG_SETTINGS || DEVELOPMENT_BUILD || UNITY_EDITOR
             UnityEngine.Debug.Log($"[DebugSettings] {DebugHooks.AddEveryBall()}");
 #endif
+        }
+
+        // Same preference as Settings > Left-Handed Cue; the shot inputs poll it, so it applies mid-run.
+        [DebugOrder(28), Description("Input: Toggle Left-Handed Cue")]
+        public void ToggleLeftHandedCue()
+        {
+            PlayerDataManager.Instance.ScopedPlayerPreferenceUpdate(preference => preference.leftHandedCue = !preference.leftHandedCue);
         }
 
         [DebugOrder(63), Description("Save: Reset Meta Progress"), SaveBeforeInvoking]

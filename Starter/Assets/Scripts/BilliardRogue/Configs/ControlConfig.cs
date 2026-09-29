@@ -173,5 +173,36 @@ namespace Nex.BilliardRogue
         };
 
         #endregion
+
+        #region Live tuning
+
+        /// <summary>
+        /// StrikeSettings with the live tuning applied: strike and full-power speed × tuning.strikeSpeed (the power
+        /// curve keeps its shape), contact distance × tuning.contactDistance; the arm distance stays at least contact +
+        /// min travel so a strike can still arm when the contact distance grows.
+        /// </summary>
+        public StrikeSettings StrikeSettingsFor(in ControlTuning tuning)
+        {
+            var settings = StrikeSettings;
+            settings.strikeSpeed *= tuning.strikeSpeed;
+            settings.fullPowerSpeed *= tuning.strikeSpeed;
+            settings.contactDistance *= tuning.contactDistance;
+            settings.armDistance = Mathf.Max(settings.armDistance, settings.contactDistance + settings.minTravel);
+            return settings;
+        }
+
+        /// <summary>Aim OneEuro min cutoff with the live tuning applied (a higher smoothing scale filters harder).</summary>
+        public float AimMinCutoffFor(in ControlTuning tuning) => aimMinCutoff / tuning.aimSmoothing;
+
+        /// <summary>Right-handed ball-paw range (inches from the chest) scaled around its centre by tuning.launchRange.</summary>
+        public void LaunchRangeFor(in ControlTuning tuning, out float minInches, out float maxInches)
+        {
+            var center = (launchXMinInches + launchXMaxInches) * 0.5f;
+            var halfRange = (launchXMaxInches - launchXMinInches) * 0.5f * tuning.launchRange;
+            minInches = center - halfRange;
+            maxInches = center + halfRange;
+        }
+
+        #endregion
     }
 }

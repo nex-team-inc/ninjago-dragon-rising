@@ -278,6 +278,58 @@ namespace Nex.BilliardRogue.InputCore.Tests
             Assert.AreEqual(0, feed.strikes);
         }
 
+        [Test]
+        public void SlowContactIsReportedAsTooSlow()
+        {
+            var feed = new Feed();
+            feed.Hold(ballPaw, CueStart, 5);
+            feed.MoveCue(ballPaw, CueStart, ballPaw + new Vector2(0.5f, 0f), 15f);
+            feed.Hold(ballPaw, ballPaw + new Vector2(0.5f, 0f), 5);
+            var readout = feed.detector.Readout;
+            Assert.AreEqual(0, feed.strikes);
+            Assert.AreEqual(1, readout.missCount, "one report per contact, not per sample");
+            Assert.AreEqual(StrikeMiss.TooSlow, readout.lastMiss);
+            Assert.That(readout.lastMissSpeed, Is.InRange(10f, 20f));
+        }
+
+        [Test]
+        public void FastMoveThatStopsShortIsReportedAsTooFar()
+        {
+            var feed = new Feed();
+            var stop = ballPaw + (CueStart - ballPaw).normalized * 8f;
+            feed.Hold(ballPaw, CueStart, 5);
+            feed.MoveCue(ballPaw, CueStart, stop, 90f);
+            feed.Hold(ballPaw, stop, 3);
+            var readout = feed.detector.Readout;
+            Assert.AreEqual(StrikeMiss.TooFar, readout.lastMiss);
+            Assert.AreEqual(8f, readout.lastMissDistance, 0.5f);
+            Assert.GreaterOrEqual(readout.lastMissSpeed, 35f);
+            Assert.AreEqual(8f, readout.pawDistance, 0.01f);
+            Assert.AreEqual(0f, readout.closingSpeed, 0.01f);
+        }
+
+        [Test]
+        public void StrikeIsCountedAndAFastContactDuringTheCooldownIsReported()
+        {
+            var feed = new Feed();
+            var contact = ballPaw + new Vector2(1f, 0f);
+            var open = ballPaw + new Vector2(9f, 0f);
+            feed.Hold(ballPaw, CueStart, 5);
+            feed.MoveCue(ballPaw, CueStart, contact, 90f);
+            var readout = feed.detector.Readout;
+            Assert.AreEqual(1, readout.strikeCount);
+            Assert.AreEqual(feed.last.peakSpeed, readout.lastStrikeSpeed);
+            Assert.AreEqual(StrikeState.Cooldown, readout.state);
+            Assert.Greater(readout.cooldownRemaining, 0f);
+
+            feed.MoveCue(ballPaw, contact, open, 180f);
+            feed.MoveCue(ballPaw, open, contact, 180f);
+            readout = feed.detector.Readout;
+            Assert.AreEqual(1, feed.strikes);
+            Assert.AreEqual(StrikeMiss.Cooldown, readout.lastMiss);
+            Assert.AreEqual(1, readout.missCount, "the first strike's own contact is not a miss");
+        }
+
         #endregion
     }
 }

@@ -41,6 +41,8 @@ namespace Nex.BilliardRogue
         public ShotInputSource ActiveSource { get; private set; }
         /// <summary>True between TrackingLost and TrackingRestored.</summary>
         public bool IsTrackingLost { get; private set; }
+        /// <summary>The body input, whichever source is active (control readout).</summary>
+        public PawShotInput Paw => pawInput;
 
         #region Initialization
 
@@ -51,7 +53,7 @@ namespace Nex.BilliardRogue
 #if ENABLE_DEBUG_SETTINGS || DEVELOPMENT_BUILD || UNITY_EDITOR
             forceDebugSource = ctx.forceDebugInput;
 #endif
-            pawInput.Initialize(playerIndex, engine, ctx.control, ctx.rules.arena, leftHandedSource());
+            pawInput.Initialize(playerIndex, engine, ctx.control, ctx.rules.arena, leftHandedSource(), ctx.tuning);
             debugInput.Initialize(playerIndex, ctx.control, ctx.rules.arena, ctx.worldCamera, ctx.layout);
             botInput.Initialize(playerIndex, ctx.rules, ctx.run, ctx.control);
             Initialize(playerIndex, pawInput, debugInput, botInput, ctx.control);

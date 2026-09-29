@@ -41,6 +41,10 @@ namespace Nex.BilliardRogue
         [Tooltip("One instance per player: PawShotInput + DebugShotInput + AutoAimBot + ShotInputRouter.")]
         [SerializeField] GameObject? playerShotInputPrefab;
 
+        [Header("Debug (wired by FlowPrefabsBuilder)")]
+        [Tooltip("Control lab readout (DebugSettings.showControlDebug); instantiated in Editor / development / ENABLE_DEBUG_SETTINGS builds only.")]
+        [SerializeField] ControlReadoutOverlay? controlReadoutPrefab;
+
         RunPersistence persistence = null!;
         GameRules rules = null!;
         RunFlow runFlow = null!;
@@ -86,8 +90,9 @@ namespace Nex.BilliardRogue
             worldCameraRig.SetPose(config.Arena.CameraPosition, config.Arena.CameraPitchDeg, config.Arena.CameraFov);
             actEnvironment.Initialize(config.Arena);
             actEnvironment.ApplyTitle(config.Acts[0], instant: true);
+            var readout = CreateControlReadout();
             var shotInputs = new PlayerShotInputFactory(playerShotInputPrefab, cameraSession, config.Control, rules,
-                worldCameraRig.WorldCamera, arenaLayout, ActiveRun);
+                worldCameraRig.WorldCamera, arenaLayout, ActiveRun, readout != null ? readout.Track : null);
             runFlow = new RunFlow(new RunFlowContext
             {
                 viewManager = viewManager,
@@ -145,6 +150,30 @@ namespace Nex.BilliardRogue
         {
             RunAnalytics.SecretCode(view.AnalyticsScreenName);
         }
+
+        /// <summary>The control lab readout, following every shot input the factory builds; null in release builds.</summary>
+        ControlReadoutOverlay? CreateControlReadout()
+        {
+#if ENABLE_DEBUG_SETTINGS || DEVELOPMENT_BUILD || UNITY_EDITOR
+            if (controlReadoutPrefab == null) return null;
+            var overlay = Instantiate(controlReadoutPrefab, transform);
+            overlay.Initialize(IsControlReadoutShown);
+            return overlay;
+#else
+            return null;
+#endif
+        }
+
+#if ENABLE_DEBUG_SETTINGS || DEVELOPMENT_BUILD || UNITY_EDITOR
+        // The calibration test strike and gameplay (also under the tracking-lost overlay); hidden under pause,
+        // rewards, stage intros and Debug Settings.
+        bool IsControlReadoutShown()
+        {
+            if (!PlayerDataManager.Instance.DebugSettings.showControlDebug) return false;
+            return viewManager.TopViewIdentifier is View.ViewIdentifier.Calibration or View.ViewIdentifier.Gameplay
+                or View.ViewIdentifier.TrackingLost;
+        }
+#endif
 
         /// <summary>The run being played, for the bot; null during calibration and on the title.</summary>
         RunState? ActiveRun()

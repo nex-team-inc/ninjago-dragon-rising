@@ -10,19 +10,23 @@ namespace Nex.BilliardRogue
     /// <summary>
     /// Shot inputs (Input module): one PlayerShotInput.prefab instance per player whose ShotInputRouter picks between
     /// the paw, mouse/keyboard and bot inputs. Every instance shares one ShotInputContext; its providers are polled,
-    /// so preference and debug changes apply mid-run. Without the Input module prefab there is no paw input.
+    /// so preference and debug changes apply mid-run (debug builds: the DebugSettings control tuning rows too).
+    /// Every router is handed to the optional created callback (the control readout). Without the Input module
+    /// prefab there is no paw input.
     /// </summary>
     public sealed class PlayerShotInputFactory
     {
         readonly GameObject? prefab;
         readonly CameraSession cameraSession;
         readonly ShotInputContext context;
+        readonly Action<ShotInputRouter>? created;
 
         public PlayerShotInputFactory(GameObject? aPrefab, CameraSession aCameraSession, ControlConfig control, GameRules rules,
-            Camera worldCamera, ArenaLayout layout, Func<RunState?> activeRun)
+            Camera worldCamera, ArenaLayout layout, Func<RunState?> activeRun, Action<ShotInputRouter>? aCreated)
         {
             prefab = aPrefab;
             cameraSession = aCameraSession;
+            created = aCreated;
             context = new ShotInputContext
             {
                 control = control,
@@ -33,6 +37,9 @@ namespace Nex.BilliardRogue
                 worldCamera = worldCamera,
                 layout = layout,
             };
+#if ENABLE_DEBUG_SETTINGS || DEVELOPMENT_BUILD || UNITY_EDITOR
+            context.tuning = ReadDebugTuning;
+#endif
         }
 
         /// <summary>CalibrationShotInputFactory: null when the Input module prefab is missing.</summary>
@@ -65,7 +72,16 @@ namespace Nex.BilliardRogue
             instance.name = $"{prefab.name}_P{playerIndex + 1}";
             var router = instance.GetComponent<ShotInputRouter>();
             router.Initialize(playerIndex, engine, context);
+            created?.Invoke(router);
             return router;
         }
+
+#if ENABLE_DEBUG_SETTINGS || DEVELOPMENT_BUILD || UNITY_EDITOR
+        static ControlTuning ReadDebugTuning()
+        {
+            var debug = PlayerDataManager.Instance.DebugSettings;
+            return new ControlTuning(debug.strikeSpeedScale, debug.contactDistanceScale, debug.aimSmoothingScale, debug.launchRangeScale);
+        }
+#endif
     }
 }

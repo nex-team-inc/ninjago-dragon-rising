@@ -22,6 +22,10 @@ namespace Nex.BilliardRogue
         /// tracked, e.g. <c>() =&gt; PlayerDataManager.Instance.DebugSettings.forceDebugInput</c>. Ignored in release.
         /// </summary>
         public Func<bool> forceDebugInput = AlwaysFalse;
+        /// <summary>
+        /// Live ControlConfig multipliers, polled every frame (debug builds: the DebugSettings tuning rows).
+        /// </summary>
+        public Func<ControlTuning> tuning = IdentityTuning;
         /// <summary>The run the bot aims at; null outside gameplay (calibration), where the bot shoots straight up.</summary>
         public Func<RunState?> run = NoRun;
         /// <summary>Optional: lets the debug input aim at the mouse on the arena (WorldCamera renders full screen).</summary>
@@ -32,5 +36,7 @@ namespace Nex.BilliardRogue
         static RunState? NoRun() => null;
 
         static bool AlwaysFalse() => false;
+
+        static ControlTuning IdentityTuning() => ControlTuning.Identity;
     }
 }

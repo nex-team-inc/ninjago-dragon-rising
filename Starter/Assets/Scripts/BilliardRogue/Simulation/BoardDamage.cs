@@ -149,6 +149,12 @@ namespace Nex.BilliardRogue.Simulation
             {
                 run.stats.bossesDefeated++;
             }
+            if (e.type != EnemyType.BoneWall)
+            {
+                var balance = rules.balance;
+                var gain = r.isBoss ? balance.energyPerBossKill : balance.energyPerKill;
+                run.energy = Mathf.Max(run.energy, Mathf.Min(balance.energyMax, run.energy + gain));
+            }
             var killed = EnemyEvents.Make(rules.arena, SimEventKind.EnemyKilled, e, 0);
             killed.flag = r.isBoss;
             events.Add(killed);

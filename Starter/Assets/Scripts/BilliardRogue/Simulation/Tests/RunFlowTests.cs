@@ -195,6 +195,28 @@ namespace Nex.BilliardRogue.Simulation.Tests
         }
 
         [Test]
+        public void DefeatingEnemiesAddsEnergyUpToTheCapAndBoneWallsGiveNone()
+        {
+            rules.balance.startingEnergy = 2;
+            rules.balance.energyMax = 13;
+            rules.balance.energyPerKill = 1;
+            rules.balance.energyPerBossKill = 10;
+            var run = factory.NewRun(rules, 1, 1);
+            Assert.AreEqual(2f, run.energy, "a run starts with startingEnergy");
+            var events = new List<SimEvent>();
+            var hit = new DamageSource { ballType = BallType.Basic, ballId = 1 };
+
+            ops.DamageEnemy(run, SimTest.Put(run, ops, EnemyType.Slime, 0, 0, 1), 5, hit, events);
+            Assert.AreEqual(3f, run.energy, "an enemy gives energyPerKill");
+            ops.DamageEnemy(run, SimTest.Put(run, ops, EnemyType.BoneWall, 1, 0, 1), 5, hit, events);
+            Assert.AreEqual(3f, run.energy, "a Bone Wall is not an enemy defeated");
+            ops.DamageEnemy(run, SimTest.Put(run, ops, EnemyType.KingSlime, 3, 2, 1), 5, hit, events);
+            Assert.AreEqual(13f, run.energy, "a boss gives energyPerBossKill");
+            ops.DamageEnemy(run, SimTest.Put(run, ops, EnemyType.Slime, 0, 5, 1), 5, hit, events);
+            Assert.AreEqual(13f, run.energy, "capped at energyMax");
+        }
+
+        [Test]
         public void ARunSavedWithAnOlderMaxHpContinuesWithTheCurrentMaxAndTheSameShare()
         {
             rules.balance.playerMaxHp = 3;

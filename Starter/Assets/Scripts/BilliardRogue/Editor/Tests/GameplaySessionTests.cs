@@ -196,6 +196,8 @@ namespace Nex.BilliardRogue.Editor.Tests
             var input = new ArmedInput();
             using var h = new Harness(1, input);
             Assert.IsTrue(h.DriveUntil(() => h.Phase == TurnPhase.PlayerTurn));
+            // A second shot this turn (a +1 Ball bonus volley), so the strike after the first one meets the cooldown.
+            h.run.extraBalls = 1;
             input.Armed = true;
             h.Tick(1);
             Assert.AreEqual(1, h.run.stats.shots, "the volley's first ball is out");
@@ -264,7 +266,7 @@ namespace Nex.BilliardRogue.Editor.Tests
 
             input.Armed = true;
             Assert.IsTrue(h.DriveUntil(() => h.Phase == TurnPhase.EnemyPhase), "the turn ends after shotsPerTurn volleys");
-            Assert.AreEqual(shotsPerTurn * volley, h.run.stats.shots, "no fourth volley");
+            Assert.AreEqual(shotsPerTurn * volley, h.run.stats.shots, "no volley past shotsPerTurn");
             Assert.IsTrue(h.DriveUntil(() => h.Phase == TurnPhase.PlayerTurn), "next turn");
 
             var advanced = 0;

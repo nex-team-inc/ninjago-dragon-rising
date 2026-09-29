@@ -5,23 +5,31 @@ using UnityEngine;
 namespace Nex.BilliardRogue
 {
     /// <summary>
-    /// POWER (playtest 4; it replaced the body-motion Hype of GDD v2 §3): every enemy hit while a shot's balls fly adds
-    /// to the combo, and the combo charges the power 0..1. Read by HypeController (Gameplay), which pushes the speed /
-    /// damage / hit-stop multipliers and the HUD meter tier. Presentation juice (glow, shake, VFX scale) lives in
-    /// JuiceConfig and follows the pushed value.
+    /// POWER (GDD v2 §17, playtest 5): while balls fly, the players' body motion charges the POWER bar 0..1 and every bit
+    /// of charge spends run energy (RunState.energy; defeating enemies refills it, BalanceRules). With no energy dancing
+    /// charges nothing. The bar never drains on its own and resets at every turn. Read by HypeController (Gameplay),
+    /// which pushes the speed / damage / hit-stop multipliers and the HUD meter tier. Presentation juice (glow, shake,
+    /// VFX scale) lives in JuiceConfig and follows the pushed value.
     /// </summary>
     [CreateAssetMenu(fileName = "HypeConfig", menuName = "Nex/Billiard Rogue/Hype Config", order = 55)]
     public sealed class HypeConfig : ScriptableObject
     {
         public const int TierCount = 3;
 
-        [Header("Charge")]
-        [Tooltip("Enemy hits in one flight (every ball in the air counts, both players in 2P) that give full power.")]
-        [SerializeField, Range(1, 200)] int comboForFullPower = 24;
-        [Tooltip("Share of comboForFullPower reached (0..1) → power 0..1.")]
-        [SerializeField] AnimationCurve comboToPower = AnimationCurve.Linear(0f, 0f, 1f, 1f);
-        [Tooltip("Seconds to close ~63% of the gap as the power rises (the meter's fill).")]
-        [SerializeField, Range(0.01f, 2f)] float attackSeconds = 0.1f;
+        [Header("Charge (dance)")]
+        [Tooltip("Body motion energy 0..1 (MotionEnergyMeter) → share of chargePerSecond.")]
+        [SerializeField] AnimationCurve motionToCharge = AnimationCurve.Linear(0f, 0f, 1f, 1f);
+        [Tooltip("POWER gained per second of full-speed dancing (1 = the whole bar in a second).")]
+        [SerializeField, Range(0.05f, 5f)] float chargePerSecond = 0.6f;
+        [Tooltip("Run energy the bar costs from empty to full (charging a part costs that part).")]
+        [SerializeField, Range(0.5f, 50f)] float energyPerFullPower = 6f;
+
+        [Header("Prompts")]
+        [Tooltip("MOVE! shows once balls fly, energy is left, the bar is not full and the players stayed below this motion for movePromptDelay.")]
+        [SerializeField, Range(0f, 1f)] float movePromptBelowMotion = 0.15f;
+        [SerializeField, Range(0f, 5f)] float movePromptDelay = 1f;
+        [Tooltip("Dancing at least this hard with no energy left shows \"No energy!\" on the meter.")]
+        [SerializeField, Range(0f, 1f)] float noEnergyMotion = 0.3f;
 
         [Header("Tiers (HUD meter, stingers)")]
         [Tooltip("Power at which tiers 1, 2 and 3 start (ascending).")]
@@ -44,17 +52,28 @@ namespace Nex.BilliardRogue
         [Tooltip("Most extra hit-stop (seconds) the power may add per real second, so pacing never stalls.")]
         [SerializeField, Range(0f, 0.5f)] float hitStopExtraCapPerSecond = 0.12f;
 
-        public float AttackSeconds => attackSeconds;
+        public float EnergyPerFullPower => energyPerFullPower;
+        public float MovePromptBelowMotion => movePromptBelowMotion;
+        public float MovePromptDelay => movePromptDelay;
+        public float NoEnergyMotion => noEnergyMotion;
         public float TierHysteresis => tierHysteresis;
         public int MinBonusTier => minBonusTier;
         public int MinBonusDamage => minBonusDamage;
         public float HitStopExtraCapPerSecond => hitStopExtraCapPerSecond;
 
-        /// <summary>Power 0..1 for the enemy hits of the current flight.</summary>
-        public float TargetFor(int comboHits)
+        /// <summary>
+        /// One charge step: motion01 for seconds raises power (never past 1) as far as energy pays for it. Returns the
+        /// new power; spent is the energy it cost (≤ energy).
+        /// </summary>
+        public float Charge(float power01, float energy, float motion01, float seconds, out float spent)
         {
-            var share = Mathf.Clamp01((float)comboHits / Mathf.Max(1, comboForFullPower));
-            return Mathf.Clamp01(comboToPower.Evaluate(share));
+            spent = 0f;
+            var room = 1f - Mathf.Clamp01(power01);
+            if (room <= 0f || energy <= 0f || seconds <= 0f) return Mathf.Clamp01(power01);
+            var rise = Mathf.Clamp01(motionToCharge.Evaluate(Mathf.Clamp01(motion01))) * chargePerSecond * seconds;
+            rise = Mathf.Min(rise, room, energy / energyPerFullPower);
+            spent = Mathf.Min(energy, rise * energyPerFullPower);
+            return Mathf.Clamp01(power01 + rise);
         }
 
         /// <summary>Power at which tier 1..3 starts; tiers without a configured threshold never start.</summary>

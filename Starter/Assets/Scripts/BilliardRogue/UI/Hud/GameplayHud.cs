@@ -146,6 +146,17 @@ namespace Nex.BilliardRogue
         {
             hypeMeter.Set(hype01, tier);
         }
+
+        public void SetEnergy(int energy, bool starved)
+        {
+            hypeMeter.SetEnergy(energy, starved);
+        }
+
+        /// <summary>"MOVE!" prompt with the dancing cat near the arena bottom. Cheap to call every frame.</summary>
+        public void ShowMovePrompt(bool visible)
+        {
+            movePrompt.SetVisible(visible);
+        }
         public void SetPowerArmed(bool armed)
         {
             powerChip.SetVisible(armed);

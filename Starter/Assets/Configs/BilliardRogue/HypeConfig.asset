@@ -12,8 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f5642ff0d318146889a6c12d80c51dbb, type: 3}
   m_Name: HypeConfig
   m_EditorClassIdentifier: Assembly-CSharp::Nex.BilliardRogue.HypeConfig
-  comboForFullPower: 24
-  comboToPower:
+  motionToCharge:
     serializedVersion: 2
     m_Curve:
     - serializedVersion: 3
@@ -37,7 +36,11 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  attackSeconds: 0.1
+  chargePerSecond: 0.6
+  energyPerFullPower: 12
+  movePromptBelowMotion: 0.15
+  movePromptDelay: 1
+  noEnergyMotion: 0.3
   tierThresholds:
   - 0.25
   - 0.55

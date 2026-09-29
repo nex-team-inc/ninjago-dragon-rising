@@ -5,24 +5,23 @@ using UnityEngine;
 namespace Nex.BilliardRogue
 {
     /// <summary>
-    /// POWER (playtest 4, replacing the body-motion Hype of GDD v2 §3): every enemy hit while balls fly adds to the
-    /// combo (PlayerTurnLoop.AddHits; every ball in the air counts, both players in 2P) and HypeConfig turns it into
-    /// power 0..1, rising quickly on unscaled time. Every player-turn frame it pushes the ball speed / damage multipliers
-    /// to the simulation, the juice value to the board, the meter tier to the HUD and the hit-stop scaling to
-    /// TimeScaleController, and feeds the per-shot analytics. It resets to 0 (neutral pushes, once) as soon as nothing
-    /// flies: no ball in the air and no volley still launching. Debug: DebugOverride (DebugHooks.SetHype) or
-    /// DebugSettings.forceHype (≥ 0) replace the combo value, still only while balls fly. Allocation-free.
+    /// POWER (GDD v2 §17): while balls fly (or a volley still launches), the players' body motion (ShotInputRouter
+    /// .MotionEnergy, the maximum across players; a missing source counts as 0) charges POWER 0..1 through
+    /// HypeConfig.Charge on unscaled time, paid from the run's energy; with no energy dancing charges nothing. POWER
+    /// never drains on its own: it holds until ResetTurn (every turn start and end). Every player-turn frame it pushes
+    /// the ball speed / damage multipliers to the simulation, the juice value to the board, the meter tier, energy and
+    /// MOVE! prompt to the HUD and the hit-stop scaling to TimeScaleController, and feeds the per-shot analytics.
+    /// Debug: DebugOverride (DebugHooks.SetHype) or DebugSettings.forceHype (≥ 0) set POWER while balls fly, free of
+    /// energy. Never touches aim or strikes. Allocation-free.
     /// </summary>
     public sealed class HypeController
     {
-        const float Epsilon = 0.0005f;
-
         readonly SessionServices services;
         readonly HypeConfig config;
         float hype;
         int tier;
-        int comboHits;
-        bool pushed;
+        float stillSeconds;
+        bool starved;
 
         public HypeController(SessionServices aServices)
         {
@@ -31,62 +30,59 @@ namespace Nex.BilliardRogue
             config = configured != null ? configured : ScriptableObject.CreateInstance<HypeConfig>();
         }
 
-        /// <summary>Current power 0..1 (0 whenever nothing flies).</summary>
+        /// <summary>Current POWER 0..1 (this turn's charge).</summary>
         public float Hype => hype;
 
         /// <summary>Current meter tier 0..HypeConfig.TierCount.</summary>
         public int Tier => tier;
-
-        /// <summary>Enemy hits since the balls started flying.</summary>
-        public int ComboHits => comboHits;
 
         /// <summary>Debug override 0..1 (DebugHooks.SetHype); negative = off (DebugSettings.forceHype then applies).</summary>
         public float DebugOverride { get; set; } = -1f;
 
         #region Public Methods
 
-        public void AddHits(int hits)
-        {
-            comboHits += hits;
-        }
-
-        /// <summary>One player-turn frame, before the simulation step (the step then flies with this frame's power).</summary>
+        /// <summary>One player-turn frame, before the simulation step (the step then flies with this frame's POWER).</summary>
         public void Tick(float unscaledDeltaTime, float scaledDeltaTime, bool flying)
         {
-            if (!flying)
+            var run = services.Run;
+            var motion = MaxMotion(out var tracked);
+            if (flying)
             {
-                Reset();
-                return;
+                var forced = ForcedHype();
+                if (forced >= 0f)
+                {
+                    hype = forced;
+                    tracked = true;
+                }
+                else
+                {
+                    hype = config.Charge(hype, run.energy, motion, unscaledDeltaTime, out var spent);
+                    run.energy = Mathf.Max(0f, run.energy - spent);
+                }
+
+                tier = TierFor(hype, tier);
+                Push();
+                services.Tracker.SampleHype(hype, scaledDeltaTime);
             }
 
-            var forced = ForcedHype();
-            if (forced >= 0f)
-            {
-                hype = forced;
-            }
-            else
-            {
-                var target = config.TargetFor(comboHits);
-                hype += (target - hype) * (1f - Mathf.Exp(-Mathf.Max(0f, unscaledDeltaTime) / Mathf.Max(0.001f, config.AttackSeconds)));
-                hype = hype < Epsilon ? 0f : Mathf.Clamp01(hype);
-            }
-
-            tier = TierFor(hype, tier);
-            Push();
-            services.Tracker.SampleHype(hype, scaledDeltaTime);
+            var canCharge = flying && tracked && hype < 1f;
+            starved = canCharge && run.energy <= 0f && motion >= config.NoEnergyMotion;
+            services.Hud.SetEnergy(run.energy, starved);
+            UpdateMovePrompt(unscaledDeltaTime, canCharge && run.energy > 0f, motion);
         }
 
-        /// <summary>Back to 0 with neutral pushes (nothing flies, turn end); a no-op once already neutral.</summary>
-        public void Reset()
+        /// <summary>Turn start / end: POWER back to 0 with neutral pushes, the HUD showing the energy left.</summary>
+        public void ResetTurn()
         {
-            comboHits = 0;
-            if (!pushed && hype <= 0f) return;
             hype = 0f;
             tier = 0;
-            pushed = false;
+            stillSeconds = 0f;
+            starved = false;
             services.Sim.Balls.SetHype(1f, 1f, 0);
             services.Board.SetHype(0f);
             services.Hud.SetHype(0f, 0);
+            services.Hud.SetEnergy(services.Run.energy, false);
+            services.Hud.ShowMovePrompt(false);
             services.TimeScale.SetHitStopScale(1f, config.HitStopExtraCapPerSecond);
         }
 
@@ -96,12 +92,42 @@ namespace Nex.BilliardRogue
 
         void Push()
         {
-            pushed = true;
             var minBonus = tier >= config.MinBonusTier ? config.MinBonusDamage : 0;
             services.Sim.Balls.SetHype(config.SpeedMultiplier(hype), config.DamageMultiplier(hype), minBonus);
             services.Board.SetHype(hype);
             services.Hud.SetHype(hype, tier);
             services.TimeScale.SetHitStopScale(config.HitStopMultiplier(hype), config.HitStopExtraCapPerSecond);
+        }
+
+        // MOVE! asks for dancing only when dancing would pay: balls flying, energy left, the bar not yet full.
+        void UpdateMovePrompt(float unscaledDeltaTime, bool worthDancing, float motion)
+        {
+            if (!worthDancing || motion >= config.MovePromptBelowMotion)
+            {
+                stillSeconds = 0f;
+                services.Hud.ShowMovePrompt(false);
+                return;
+            }
+
+            stillSeconds += unscaledDeltaTime;
+            services.Hud.ShowMovePrompt(stillSeconds >= config.MovePromptDelay);
+        }
+
+        float MaxMotion(out bool anyTracked)
+        {
+            anyTracked = false;
+            var best = 0f;
+            var inputs = services.Inputs;
+            for (var i = 0; i < inputs.Length; i++)
+            {
+                if (inputs[i] is not ShotInputRouter router) continue;
+                var energy = router.MotionEnergy;
+                if (energy == null) continue;
+                anyTracked |= energy.IsTracked;
+                best = Mathf.Max(best, energy.Energy01);
+            }
+
+            return best;
         }
 
         float ForcedHype()

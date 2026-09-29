@@ -173,6 +173,8 @@ namespace Nex.BilliardRogue.Simulation
         public int turnInStage;
         public int playerHp;
         public int playerMaxHp;
+        /// <summary>Dance energy (GDD v2 §17): defeating enemies adds to it, dancing while balls fly spends it on POWER.</summary>
+        public float energy;
         public List<BallInstance> bag = new();
         public BoardState board = new();
         public StagePlan stage = new();

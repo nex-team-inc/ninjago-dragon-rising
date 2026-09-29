@@ -9,8 +9,9 @@ namespace Nex.BilliardRogue
     /// <summary>
     /// The per-frame work of a player turn (TDD §7): for every player (2P shoot together) the tracking check, aim preview
     /// (BallSimulator.PredictPath → BoardPresenter.SetAim) and strike → a volley of the whole bag streamed along the
-    /// locked aim, PacingConfig.volleyInterval apart; then the fixed-step simulation from the gameplay time scale, the
-    /// event drain into BoardPresenter / TurnFeedback / ShotResultTracker / the combo POWER, straggler fast-forward and
+    /// locked aim, PacingConfig.volleyInterval apart; the dance POWER (HypeController, reset every turn); then the
+    /// fixed-step simulation from the gameplay time scale, the event drain into BoardPresenter (with the flight's combo
+    /// for the COMBO floats) / TurnFeedback / ShotResultTracker, straggler fast-forward and
     /// the turn-end condition (nobody has a shot left or the stage is cleared, no volley launching, no balls in flight,
     /// grace elapsed). Allocation-free per frame.
     /// </summary>
@@ -37,6 +38,7 @@ namespace Nex.BilliardRogue
         float stragglerSeconds;
         float graceRemaining;
         bool fastForward;
+        int flightCombo;
 
         public PlayerTurnLoop(SessionServices aServices)
         {
@@ -53,7 +55,7 @@ namespace Nex.BilliardRogue
 
         public bool IsTurnDone { get; private set; }
 
-        /// <summary>POWER charged by the combo while balls fly (playtest 4).</summary>
+        /// <summary>POWER charged by dancing while balls fly, paid with energy (GDD v2 §17).</summary>
         public HypeController Hype => hype;
 
         /// <summary>First player with a shot left whose paws stayed untracked past ControlConfig.trackingLostSeconds, -1 otherwise.</summary>
@@ -76,6 +78,8 @@ namespace Nex.BilliardRogue
             ClearTrackingLost();
             IsTurnDone = false;
             SetFastForward(false);
+            hype.ResetTurn();
+            flightCombo = 0;
             feedback.BeginTurn();
             services.Hud.RefreshQueue();
         }
@@ -91,7 +95,7 @@ namespace Nex.BilliardRogue
             }
 
             SetFastForward(false);
-            hype.Reset();
+            hype.ResetTurn();
             services.TimeScale.ResetEffects();
             services.Sequencer.EndTurn();
             ClearTrackingLost();
@@ -143,7 +147,9 @@ namespace Nex.BilliardRogue
             }
 
             var launching = StreamVolleys(scaledDeltaTime);
-            hype.Tick(unscaledDeltaTime, scaledDeltaTime, launching || services.Sim.ActiveBalls > 0);
+            var flying = launching || services.Sim.ActiveBalls > 0;
+            if (!flying) flightCombo = 0;
+            hype.Tick(unscaledDeltaTime, scaledDeltaTime, flying);
             if (scaledDeltaTime > 0f) services.Sim.Step(scaledDeltaTime);
             Drain();
             services.Board.UpdateBalls(services.Sim.Balls);
@@ -255,9 +261,8 @@ namespace Nex.BilliardRogue
                 if (events[i].kind == SimEventKind.EnemyHit) hits++;
             }
 
-            var comboBefore = hype.ComboHits;
-            if (hits > 0) hype.AddHits(hits);
-            services.Board.Consume(events, services.Run, comboBefore);
+            services.Board.Consume(events, services.Run, flightCombo);
+            flightCombo += hits;
             feedback.Consume(events);
             services.Tracker.Consume(events);
             events.Clear();

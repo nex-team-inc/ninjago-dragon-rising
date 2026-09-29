@@ -23,7 +23,11 @@ namespace Nex.BilliardRogue
         /// <summary>"Enemies incoming!" while a spawn batch pops in (GDD v2 §5); the next turn banner replaces it.</summary>
         void ShowIncomingBanner();
         void SetTrackingWarning(int playerIndex, bool lost);
-        /// <summary>Hype meter (GDD v2 §3): hype01 in 0..1, tier 0..3.</summary>
+        /// <summary>POWER meter (GDD v2 §17): hype01 in 0..1, tier 0..3.</summary>
         void SetHype(float hype01, int tier);
+        /// <summary>Dance energy left (GDD v2 §17); starved = a player dances with none left.</summary>
+        void SetEnergy(int energy, bool starved);
+        /// <summary>"MOVE!" while balls fly, energy is left and nobody dances (GDD v2 §17).</summary>
+        void ShowMovePrompt(bool visible);
     }
 }

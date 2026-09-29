@@ -84,6 +84,14 @@ namespace Nex.BilliardRogue.Editor
         {
         }
 
+        public int Energy { get; private set; } = -1;
+
+        public void SetEnergy(int energy, bool starved) => Energy = energy;
+
+        public void ShowMovePrompt(bool visible)
+        {
+        }
+
         public void SetPowerArmed(bool armed)
         {
         }

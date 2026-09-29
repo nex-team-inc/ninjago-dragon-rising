@@ -10,8 +10,8 @@ using Kit = Nex.BilliardRogue.Editor.UiPrefabKit;
 namespace Nex.BilliardRogue.Editor
 {
     /// <summary>
-    /// GameplayHud pieces for Hype (GDD v2 §3): the meter panel at the bottom of the left column (title, bar with tier
-    /// ticks at 0.25 / 0.55 / 0.85, tier callout) and the MOVE! prompt (dancing cat + label) above the arena bottom,
+    /// GameplayHud pieces for POWER (GDD v2 §3, §17): the meter panel at the bottom of the left column (title, dance
+    /// energy on the right, bar with tier ticks at 0.25 / 0.55 / 0.85, tier callout) and the MOVE! prompt (dancing cat + label) above the arena bottom,
     /// clear of the arena centre and the launch line. 1920x1080 units.
     /// </summary>
     public static class UiHypeBuilder
@@ -34,8 +34,10 @@ namespace Nex.BilliardRogue.Editor
             var group = panel.gameObject.AddComponent<CanvasGroup>();
             var p = panel.transform;
             kit.Image(p, "Icon", theme.Strike, Kit.TopLeft, new Vector2(Inset - 4f, -20f), new Vector2(48f, 48f));
-            kit.Label(p, "Title", LocKeys.Hud.Hype, 32, theme.TextMuted, Kit.TopLeft, new Vector2(Inset + 52f, -20f), new Vector2(240f, 48f),
+            kit.Label(p, "Title", LocKeys.Hud.Hype, 32, theme.TextMuted, Kit.TopLeft, new Vector2(Inset + 52f, -20f), new Vector2(160f, 48f),
                 TextAlignmentOptions.Left);
+            var energyLabel = kit.Label(p, "Energy", LocKeys.Hud.Energy, 32, theme.Positive, Kit.TopRight, new Vector2(-Inset, -20f),
+                new Vector2(BarWidth - 168f, 48f), TextAlignmentOptions.Right);
             var (fill, ghost) = UiHudBuilder.Bar(kit, p, theme.HypeFill, new Vector2(Inset, -72f), BarWidth);
             Object.DestroyImmediate(ghost.gameObject);
             fill.fillAmount = 0f;
@@ -62,6 +64,7 @@ namespace Nex.BilliardRogue.Editor
             UiFields.SetArray(widget, "ticks", ticks);
             UiFields.Set(widget, "callout", callout.transform);
             UiFields.Set(widget, "calloutLabel", calloutLabel);
+            UiFields.Set(widget, "energyLabel", energyLabel);
             UiFields.Set(hud, "hypeMeter", widget);
         }
 

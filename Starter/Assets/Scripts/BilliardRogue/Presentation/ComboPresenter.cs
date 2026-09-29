@@ -6,8 +6,8 @@ namespace Nex.BilliardRogue
 {
     /// <summary>
     /// Combo feedback: rising SFX pitch on a ball's successive hits, and the "x{n} COMBO" float for the flight's combo
-    /// (every enemy hit while balls fly, the count that charges POWER) at JuiceConfig's milestones, so a volley shows
-    /// one climbing count instead of a float per ball.
+    /// (every enemy hit while balls fly) at JuiceConfig's milestones, so a volley shows one climbing count instead of a
+    /// float per ball.
     /// </summary>
     public sealed class ComboPresenter
     {

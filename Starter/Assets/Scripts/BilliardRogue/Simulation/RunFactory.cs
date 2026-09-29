@@ -31,6 +31,7 @@ namespace Nex.BilliardRogue.Simulation
                 numPlayers = Math.Max(1, numPlayers),
                 playerHp = balance.playerMaxHp,
                 playerMaxHp = balance.playerMaxHp,
+                energy = Math.Min(balance.startingEnergy, balance.energyMax),
             };
             foreach (var type in balance.startingBag)
             {

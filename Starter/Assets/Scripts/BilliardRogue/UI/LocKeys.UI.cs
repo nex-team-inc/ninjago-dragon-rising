@@ -30,6 +30,9 @@ namespace Nex.BilliardRogue
             public const string HypeTier3 = "br.hud.hypeTier3";               // en: MAX!!!
             public const string MovePrompt = "br.hud.movePrompt";             // en: MOVE!
             public const string MoveHint = "br.hud.moveHint";                 // en: Dance to power up the balls!
+            // GDD v2 §17: dancing spends energy, defeating enemies refills it.
+            public const string Energy = "br.hud.energy";                     // en: Energy {0} (smart)
+            public const string NoEnergy = "br.hud.noEnergy";                 // en: No energy!
             // GDD v2 §5: a spawn batch pops in.
             public const string EnemiesIncoming = "br.hud.incoming";          // en: Enemies incoming!
 

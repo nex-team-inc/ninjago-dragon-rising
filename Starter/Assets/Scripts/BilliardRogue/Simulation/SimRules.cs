@@ -114,7 +114,15 @@ namespace Nex.BilliardRogue.Simulation
         /// <summary>HP every enemy attack (melee from the danger row, ranged bolt) takes from the player; 0 = the enemy's attack stat.</summary>
         public int damagePerAttack;
         /// <summary>Shots per player per turn (at least 1); every shot is a volley of the whole bag.</summary>
-        public int shotsPerTurn = 3;
+        public int shotsPerTurn = 1;
+        /// <summary>Energy a run starts with (GDD v2 §17: dancing while balls fly spends it on POWER).</summary>
+        public int startingEnergy = 6;
+        /// <summary>Most energy a run holds.</summary>
+        public int energyMax = 30;
+        /// <summary>Energy for every enemy defeated (Bone Walls give none).</summary>
+        public int energyPerKill = 1;
+        /// <summary>Energy for defeating a boss (instead of energyPerKill).</summary>
+        public int energyPerBossKill = 10;
         public int bagCap = 12;
         public BallType[] startingBag = { BallType.Basic, BallType.Basic, BallType.Basic, BallType.Basic };
         public int levelCap = 3;

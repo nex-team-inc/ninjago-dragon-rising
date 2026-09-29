@@ -91,7 +91,7 @@ namespace Nex.BilliardRogue
             }
         }
 
-        /// <summary>Player turn: an EnemyHit that brought the flight's combo (the POWER charge) to flightCombo.</summary>
+        /// <summary>Player turn: an EnemyHit that brought the flight's combo (enemy hits while balls fly) to flightCombo.</summary>
         public void PlayFlightCombo(in SimEvent hit, int flightCombo)
         {
             var world = views.TryGetEnemy(hit.targetId, out var view) ? view.Center : Center(hit.position);

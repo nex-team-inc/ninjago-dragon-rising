@@ -31,7 +31,7 @@ namespace Nex.BilliardRogue
             if (enabled) presenter.Rebuild(run);
         }
 
-        /// <summary>flightCombo: the flight's enemy hits before these events (HypeController.ComboHits), for the COMBO floats.</summary>
+        /// <summary>flightCombo: the flight's enemy hits before these events (PlayerTurnLoop), for the COMBO floats.</summary>
         public void Consume(List<SimEvent> events, RunState run, int flightCombo = 0)
         {
             if (enabled) presenter.Consume(events, run, flightCombo);

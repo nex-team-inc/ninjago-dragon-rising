@@ -33,6 +33,9 @@ namespace Nex.BilliardRogue
         int total = -1;
         float hype = -1f;
         int hypeTier = -1;
+        int energy = -1;
+        bool energyStarved;
+        bool movePrompt;
 
         public HudBinder(IGameplayHud aHud, RunState aRun, RunSimulation aSim, ShotSequencer aSequencer)
         {
@@ -51,6 +54,7 @@ namespace Nex.BilliardRogue
             RefreshActivePlayer();
             RefreshPower();
             RefreshBoss();
+            SetEnergy(run.energy, false);
         }
 
         public void RefreshHp()
@@ -156,6 +160,23 @@ namespace Nex.BilliardRogue
             hype = hype01;
             hypeTier = tier;
             hud.SetHype(hype01, tier);
+        }
+
+        /// <summary>Energy left (shown whole) and whether a player dances with none left.</summary>
+        public void SetEnergy(float value, bool starved)
+        {
+            var whole = Mathf.FloorToInt(value + 0.001f);
+            if (whole == energy && starved == energyStarved) return;
+            energy = whole;
+            energyStarved = starved;
+            hud.SetEnergy(whole, starved);
+        }
+
+        public void ShowMovePrompt(bool visible)
+        {
+            if (visible == movePrompt) return;
+            movePrompt = visible;
+            hud.ShowMovePrompt(visible);
         }
 
         public void ShowTurnBanner(int turn) => hud.ShowTurnBanner(turn);

@@ -69,7 +69,7 @@ namespace Nex.BilliardRogue
         [Tooltip("COMBO text colour at JuiceConfig comboShowThreshold, blending to comboHigh at comboRainbowAt.")]
         public Color comboLow = new(1f, 0.85f, 0.2f, 1f);
         public Color comboHigh = new(1f, 0.25f, 0.6f, 1f);
-        [Tooltip("From this flight combo on the COMBO text cycles the rainbow (keep it near HypeConfig comboForFullPower).")]
+        [Tooltip("From this flight combo on the COMBO text cycles the rainbow.")]
         [Range(3, 60)] public int comboRainbowAt = 25;
 
         static EnumDictionary<BallType, Color> DefaultBallColors()

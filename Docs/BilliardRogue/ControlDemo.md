@@ -10,11 +10,11 @@ The demo adds three things to the normal game:
 
 | | What it does |
 |---|---|
-| **Practice mode** | God mode and infinite balls. Enemies stop one row above the red danger row. A run never ends, so you can keep shooting. |
+| **Practice mode** | God mode: a run never ends. Off by default since playtest 4 (the player loses HP as in the game); turns still end after 3 shots and the enemies still advance. |
 | **Control readout** | A panel in the lower right corner, one per player. It shows what the body tracking sees and why a thrust did or did not shoot. It appears during the calibration test strike and during gameplay once you turn it on (hidden by default since the second playtest). |
 | **Live tuning** | Debug Settings rows that scale the strike speed, the contact distance, the aim smoothing and the launch range while you play. |
 
-In the Playground APK, practice mode is on from the start and the readout is off. Turn the readout on in Debug Settings
+In the Playground APK, practice mode and the readout both start off. Turn the readout on in Debug Settings
 with **Debug: Show Control Readout** (see [Debug Settings](#4-debug-settings-open-it-and-tune)). In the Editor you turn
 both on once in Debug Settings.
 
@@ -88,7 +88,7 @@ about 10 fps while Unity is not the focused window, so click the Game view befor
 | Contents | `Assets/Scenes/BilliardRogue/Main.unity` only (index 0), Addressables content in `assets/aa` |
 | Player | Development build, IL2CPP, `arm64-v8a` only (`lib/arm64-v8a/libil2cpp.so`), OpenGL ES 3, min SDK 30, target SDK 36 |
 | Defines | the project's Android defines + `BR_CONTROL_DEMO;ENABLE_DEBUG_SETTINGS`, for this build only. `ProjectSettings.asset` is restored afterwards |
-| Demo defaults | `BR_CONTROL_DEMO`: practice mode starts on; the control readout starts off (GDD v2 §6) |
+| Demo defaults | `BR_CONTROL_DEMO`: practice mode and the control readout start off (GDD v2 §6, §10) |
 | Build time | cold: 315 s (Addressables 93 s + player 221 s). Incremental after a code change: 52–92 s |
 | Summary | `Builds/Android/BilliardRogue_ControlDemo.build.json` (result, size, timings, errors), rewritten on every build |
 

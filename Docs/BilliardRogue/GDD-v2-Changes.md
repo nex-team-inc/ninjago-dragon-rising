@@ -61,3 +61,25 @@ These override GDD.md where they conflict. Every number is a default in a config
 
 ## 6. Debug overlay hidden by default
 - The control readout (debug canvas) is hidden by default in every build, including the control demo; it stays available as the Debug Settings toggle "Show Control Readout". The DebugPrinter stays off by default.
+
+## 7. Turns are 3 shots, and the enemies advance every turn (playtest 3, 2026-09-29)
+- A turn fires `BalanceRules.shotsPerTurn` balls (default 3; 0 = the whole bag, the v1 rule), taken from the bag in order and continuing across turns (`RunState.nextBagIndex`), so reward balls enter the rotation. +1 Ball pickups add a bonus Basic shot to the current turn (it does not carry over and does not move the rotation).
+- After the turn's last ball the enemy phase runs: every enemy steps forward and attacks from the danger row. Practice mode no longer means infinite balls or holding the enemies above the danger row (both made the enemies stop).
+
+## 8. Damage numbers (playtest 3)
+- Every ball hits in its own colour (`JuiceConfig.numbers.ballColors`) as a light-to-deep gradient over a dark outline dropped one font pixel; numbers land white-hot, arc away, grow at mid / hard damage, pop harder with damage and combo; killing blows shine, crits cycle the rainbow, COMBO text heats from gold to pink and turns rainbow from 12.
+
+## 9. No cat on the board, the cue stays (playtest 3)
+- The cat knight is hidden (`JuiceConfig.cat.visible` off); its cue lies behind the waiting ball along the aim and thrusts on the strike, only while a shot waits. The title's cat portraits stay.
+
+## 10. 3 HP, every attack takes 1 (playtest 4)
+- `playerMaxHp` 3 and `BalanceRules.damagePerAttack` 1: every melee or ranged attack takes exactly 1 HP whatever the enemy. Heals fit 3 HP: stage clear +1, heal pickup +1, a boss clear refills, Vampire heals at most 1 / 1 / 2 per shot.
+- Practice mode (god) is off by default in every build, the control demo included.
+
+## 11. 2 players shoot together (playtest 4)
+- In 2P each player has `shotsPerTurn` shots per turn and both shoot at the same time from their own launch position, each with their own cue and aim guide; whoever fires takes the next bag ball, bonus shots are shared. The turn ends when both are out of shots and the balls are back. A player with shots left who leaves the frame pauses the run.
+- Enemies (bosses included) spawn with `BalanceRules.coopEnemyHpScale` × HP in 2P (default 2).
+
+## 12. Balance with 3-shot turns and 3 HP (`Tools/sim_smoke_eval.cs`, 6 seeds)
+- Tuned: 2 batches per normal stage, `hpScalePerStage` 0.08, bosses at 65 % HP (King Slime 46, Bone Lich 85, Crystal Golem 130).
+- 1P aimed bot: 0/6 without Hype (dies in act 2), 3/6 with Hype 0.5; 1P casual (30 % random shots) with Hype 0.5: 0/6. 2P co-op with Hype 0.5: 2/6 aimed, 2/6 casual. Hype and ball power are being redesigned next (playtest 4 items B and C); rebalance after them.

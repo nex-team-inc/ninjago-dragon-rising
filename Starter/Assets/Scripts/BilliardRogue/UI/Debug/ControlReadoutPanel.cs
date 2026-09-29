@@ -19,7 +19,7 @@ namespace Nex.BilliardRogue
         const float PeakHoldSeconds = 1f;
         const float BarEpsilon = 0.002f;
 
-        enum LogKind { Strike, StrikePower, TooSlow, TooFar, ShortThrust, Cooldown, NotArmed, Untracked, Expired }
+        enum LogKind { Strike, StrikePower, TooSlow, TooFar, ShortThrust, Cooldown, NotArmed, Untracked, Expired, StrikeLine, StrikePowerLine }
 
         struct LogEntry
         {
@@ -32,6 +32,7 @@ namespace Nex.BilliardRogue
         {
             "STRIKE {0:0} in/s", "STRIKE {0:0} in/s POWER", "missed: too slow {0:0} in/s", "missed: paws too far {0:0.0} in",
             "missed: short thrust", "cooldown", "not armed: open paws", "dropped: no tracking", "expired: not fired",
+            "STRIKE {0:0} in/s (line)", "STRIKE {0:0} in/s POWER (line)",
         };
         static readonly string[] headerFormats = { "P{0:0} PAW", "P{0:0} DEBUG", "P{0:0} BOT" };
 
@@ -48,6 +49,7 @@ namespace Nex.BilliardRogue
         [SerializeField] TextMeshProUGUI stateLabel = null!;
         [SerializeField] TextMeshProUGUI strikesLabel = null!;
         [SerializeField] TextMeshProUGUI lastLabel = null!;
+        [SerializeField] ControlReadoutEnergyRow? energyRow;
         [Tooltip("Newest first.")]
         [SerializeField] TextMeshProUGUI[] logLabels = null!;
 
@@ -112,6 +114,7 @@ namespace Nex.BilliardRogue
             peakSpeed = 0f;
             shownHeader = shownTracking = shownLaunch = shownAim = shownHand = int.MinValue;
             shownSpeed = shownNeed = shownDistance = shownContact = shownState = shownStrikes = shownLast = int.MinValue;
+            if (energyRow != null) energyRow.Bind();
             RenderLog();
         }
 
@@ -126,6 +129,7 @@ namespace Nex.BilliardRogue
             RefreshDistance(readout, settings);
             RefreshState(readout);
             CollectEvents(paw, readout);
+            if (energyRow != null) energyRow.Refresh(router);
         }
 
         #endregion
@@ -292,7 +296,8 @@ namespace Nex.BilliardRogue
             if (readout.strikeCount != seenStrikes)
             {
                 seenStrikes = readout.strikeCount;
-                Push(readout.lastStrikeWasPower ? LogKind.StrikePower : LogKind.Strike, readout.lastStrikeSpeed);
+                var line = readout.lastStrikeByLineCross;
+                Push(readout.lastStrikeWasPower ? line ? LogKind.StrikePowerLine : LogKind.StrikePower : line ? LogKind.StrikeLine : LogKind.Strike, readout.lastStrikeSpeed);
             }
 
             if (readout.missCount != seenMisses)
@@ -357,8 +362,8 @@ namespace Nex.BilliardRogue
                 label.SetText(logFormats[(int)entry.kind], entry.value);
                 var color = entry.kind switch
                 {
-                    LogKind.Strike => goodColor,
-                    LogKind.StrikePower => powerColor,
+                    LogKind.Strike or LogKind.StrikeLine => goodColor,
+                    LogKind.StrikePower or LogKind.StrikePowerLine => powerColor,
                     LogKind.Untracked or LogKind.Expired => badColor,
                     _ => warnColor,
                 };

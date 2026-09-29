@@ -38,7 +38,7 @@ namespace Nex.BilliardRogue
     /// </summary>
     public sealed class HypeJuice
     {
-        const float TierDownHysteresis = 0.05f;
+        const float DefaultTierDownHysteresis = 0.05f;
         const float ApplyEpsilon = 0.002f;
 
         readonly JuiceConfig.HypeSettings settings;
@@ -48,15 +48,24 @@ namespace Nex.BilliardRogue
         readonly WorldLabelLayer labels;
         readonly CatView[] cats;
         readonly HypeAuraView? aura;
+        // Tier thresholds: HypeConfig (shared with gameplay and the HUD) when present, else JuiceConfig.Hype.
+        readonly float tier1;
+        readonly float tier2;
+        readonly float tier3;
+        readonly float tierDownHysteresis;
         float target;
         float current;
         float applied = -1f;
         int appliedTier;
         int tier;
 
-        public HypeJuice(JuiceConfig juice, BoardViews aViews, BoardEventPlayer aEventPlayer, CameraShaker aShaker, WorldLabelLayer aLabels, CatView[] aCats, HypeAuraView? aAura)
+        public HypeJuice(JuiceConfig juice, HypeConfig? tiers, BoardViews aViews, BoardEventPlayer aEventPlayer, CameraShaker aShaker, WorldLabelLayer aLabels, CatView[] aCats, HypeAuraView? aAura)
         {
             settings = juice.Hype;
+            tier1 = tiers != null ? tiers.TierThreshold(1) : settings.tier1;
+            tier2 = tiers != null ? tiers.TierThreshold(2) : settings.tier2;
+            tier3 = tiers != null ? tiers.TierThreshold(3) : settings.tier3;
+            tierDownHysteresis = tiers != null ? tiers.TierHysteresis : DefaultTierDownHysteresis;
             views = aViews;
             eventPlayer = aEventPlayer;
             shaker = aShaker;
@@ -143,11 +152,11 @@ namespace Nex.BilliardRogue
 
         int TierOf(float hype01, int currentTier)
         {
-            var up = hype01 >= settings.tier3 ? 3 : hype01 >= settings.tier2 ? 2 : hype01 >= settings.tier1 ? 1 : 0;
+            var up = hype01 >= tier3 ? 3 : hype01 >= tier2 ? 2 : hype01 >= tier1 ? 1 : 0;
             if (up >= currentTier) return up;
             // Falling: only drop a tier once Hype is clearly below its threshold, so the tier look does not flicker.
-            var down = hype01 + TierDownHysteresis;
-            var held = down >= settings.tier3 ? 3 : down >= settings.tier2 ? 2 : down >= settings.tier1 ? 1 : 0;
+            var down = hype01 + tierDownHysteresis;
+            var held = down >= tier3 ? 3 : down >= tier2 ? 2 : down >= tier1 ? 1 : 0;
             return Mathf.Min(currentTier, held);
         }
     }

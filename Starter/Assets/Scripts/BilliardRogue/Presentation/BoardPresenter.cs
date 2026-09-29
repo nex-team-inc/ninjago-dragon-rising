@@ -88,7 +88,7 @@ namespace Nex.BilliardRogue
             sequences = new BoardSequencePlayer(views, eventPlayer, cameraShaker, config, cats);
             ballVisitor = views.OnBall;
             if (hypeAura != null) hypeAura.Initialize(layout, config.Juice);
-            hype = new HypeJuice(config.Juice, views, eventPlayer, cameraShaker, labels, cats, hypeAura);
+            hype = new HypeJuice(config.Juice, config.Hype, views, eventPlayer, cameraShaker, labels, cats, hypeAura);
             SetActiveShooter(0, 1);
         }
 

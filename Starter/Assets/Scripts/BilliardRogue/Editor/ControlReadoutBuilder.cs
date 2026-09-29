@@ -21,7 +21,7 @@ namespace Nex.BilliardRogue.Editor
         const int SortingOrder = 30;
         const int Players = 2;
         const float PanelWidth = UiHudBuilder.ColumnWidth;
-        const float PanelHeight = 476f;
+        const float PanelHeight = 516f;
         const float Inset = 20f;
         const float RowHeight = 40f;
         const float LogPitch = 36f;
@@ -92,10 +92,16 @@ namespace Nex.BilliardRogue.Editor
             UiFields.Set(panel, "strikesLabel", Right(t, "Strikes", -238f, "STRIKES 0", textColor));
             UiFields.Set(panel, "lastLabel", Left(t, "Last", -278f, "LAST -", mutedColor));
 
+            // Hype row (v2): routed motion energy + the body meter.
+            var energyRow = go.AddComponent<ControlReadoutEnergyRow>();
+            UiFields.Set(energyRow, "energyLabel", Left(t, "Energy", -318f, "ENERGY 0.00", mutedColor));
+            UiFields.Set(energyRow, "bodyLabel", Right(t, "Body", -318f, "BODY -", mutedColor));
+            UiFields.Set(panel, "energyRow", energyRow);
+
             var logs = new List<Object>();
             for (var i = 0; i < 4; i++)
             {
-                var label = Left(t, $"Log{i}", -322f - i * LogPitch, i == 0 ? "thrust right paw into left" : "", mutedColor);
+                var label = Left(t, $"Log{i}", -362f - i * LogPitch, i == 0 ? "thrust right paw into left" : "", mutedColor);
                 ((RectTransform)label.transform).sizeDelta = new Vector2(PanelWidth - 2f * Inset, LogPitch);
                 logs.Add(label);
             }

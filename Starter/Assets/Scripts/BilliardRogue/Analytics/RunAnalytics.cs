@@ -16,6 +16,9 @@ namespace Nex.BilliardRogue
     {
         public const string ContentName = "billiard_rogue";
 
+        // Enum.ToString allocates per call; the shot events fire several times a turn.
+        static readonly string[] BallTypeNames = System.Enum.GetNames(typeof(BallType));
+        static readonly string[] EnemyTypeNames = System.Enum.GetNames(typeof(EnemyType));
         float runStartTime;
 
         /// <summary>False once the singleton is gone (scene teardown reaches it before the session's last events).</summary>
@@ -120,7 +123,7 @@ namespace Nex.BilliardRogue
         {
             Track("shot_fired", new GameAnalyticsProperties
             {
-                ["ball_type"] = ballType.ToString(), ["ball_level"] = level, ["angle_deg"] = Round1(angleDeg),
+                ["ball_type"] = BallTypeNames[(int)ballType], ["ball_level"] = level, ["angle_deg"] = Round1(angleDeg),
                 ["power"] = power, ["player_index"] = shooter,
             });
         }
@@ -129,7 +132,7 @@ namespace Nex.BilliardRogue
         {
             Track("ball_result", new GameAnalyticsProperties
             {
-                ["ball_type"] = ballType.ToString(), ["hits"] = hits, ["damage"] = damage, ["bounces"] = bounces,
+                ["ball_type"] = BallTypeNames[(int)ballType], ["hits"] = hits, ["damage"] = damage, ["bounces"] = bounces,
                 ["kills"] = kills, ["max_combo"] = combo,
             });
         }
@@ -175,12 +178,12 @@ namespace Nex.BilliardRogue
 
         public void BossSpawn(EnemyType type)
         {
-            Track("boss_spawn", new GameAnalyticsProperties { ["boss_id"] = type.ToString() });
+            Track("boss_spawn", new GameAnalyticsProperties { ["boss_id"] = EnemyTypeNames[(int)type] });
         }
 
         public void BossDefeated(EnemyType type, int turns)
         {
-            Track("boss_defeated", new GameAnalyticsProperties { ["boss_id"] = type.ToString(), ["turns"] = turns });
+            Track("boss_defeated", new GameAnalyticsProperties { ["boss_id"] = EnemyTypeNames[(int)type], ["turns"] = turns });
         }
 
         /// <summary>Sent before SessionStop.</summary>

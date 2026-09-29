@@ -177,7 +177,7 @@ namespace Nex.BilliardRogue.InputCore.Tests
         }
 
         [Test]
-        public void MissingSampleDropsTheApproach()
+        public void MarkGapDropsTheApproach()
         {
             var feed = new Feed();
             feed.Hold(ballPaw, CueStart, 5);
@@ -187,6 +187,57 @@ namespace Nex.BilliardRogue.InputCore.Tests
             Assert.AreEqual(StrikeState.Armed, feed.detector.State);
             feed.Sample(ballPaw, ballPaw + new Vector2(1f, 0f));
             Assert.AreEqual(0, feed.strikes);
+        }
+
+        [Test]
+        public void OneMissingFrameMidThrustStillFires()
+        {
+            var feed = new Feed();
+            feed.Hold(ballPaw, CueStart, 5);
+            feed.Sample(ballPaw, Vector2.Lerp(CueStart, ballPaw, 0.3f));
+            Assert.IsTrue(feed.detector.IsApproaching);
+            // Motion blur loses the paws for one camera frame at peak speed; contact is measured across the gap.
+            feed.time += FrameSeconds;
+            feed.detector.MarkMissingSample(feed.time);
+            Assert.IsTrue(feed.detector.IsApproaching);
+            feed.Sample(ballPaw, ballPaw + new Vector2(1f, -0.5f));
+            Assert.AreEqual(1, feed.strikes);
+        }
+
+        [Test]
+        public void MissingSamplesPastTheGapLimitDropTheApproach()
+        {
+            var feed = new Feed();
+            feed.Hold(ballPaw, CueStart, 5);
+            feed.Sample(ballPaw, Vector2.Lerp(CueStart, ballPaw, 0.3f));
+            // 7 frames (0.23 s) are still within maxSampleGapSeconds (0.25 s); the 8th is past it.
+            for (var i = 0; i < 7; i++)
+            {
+                feed.time += FrameSeconds;
+                feed.detector.MarkMissingSample(feed.time);
+            }
+
+            Assert.IsTrue(feed.detector.IsApproaching);
+            feed.time += FrameSeconds;
+            feed.detector.MarkMissingSample(feed.time);
+            Assert.AreEqual(StrikeState.Armed, feed.detector.State);
+            feed.Sample(ballPaw, ballPaw + new Vector2(1f, 0f));
+            Assert.AreEqual(0, feed.strikes);
+        }
+
+        [Test]
+        public void SampleClockSteppedBackResumesAfterMarkGap()
+        {
+            var feed = new Feed();
+            feed.Hold(ballPaw, CueStart, 5);
+            // Wall-clock frame times jump back (system clock correction): PawShotInput calls MarkGap, then the
+            // detector runs on the new clock instead of ignoring every sample until the old time is passed.
+            feed.detector.MarkGap();
+            feed.time -= 60.0;
+            feed.Hold(ballPaw, CueStart, 3);
+            Assert.AreEqual(StrikeState.Armed, feed.detector.State);
+            feed.MoveCue(ballPaw, CueStart, ballPaw + new Vector2(1f, -0.5f), 60f);
+            Assert.AreEqual(1, feed.strikes);
         }
 
         [Test]

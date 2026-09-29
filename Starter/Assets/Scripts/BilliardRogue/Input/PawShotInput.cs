@@ -129,14 +129,22 @@ namespace Nex.BilliardRogue
 
         // The smoother re-emits the last detection every Update; only a new camera frame is a new raw sample. Whether
         // the paws are really seen comes from that raw pose: the engine's node auto-hide runs on scaled time and
-        // freezes while gameplay is paused (tracking-lost overlay).
+        // freezes while gameplay is paused (tracking-lost overlay). frameTime is wall-clock time (MDK
+        // DetectionCoordinator), so any change is a new frame: a system clock stepped back restarts the sample clock
+        // (detector and aim history resync) instead of freezing tracking until the clock passes the old value.
         void HandleDetection(BodyPoseDetectionResult result)
         {
             var now = Time.realtimeSinceStartup;
             var frameTime = result.original.frameTime;
-            var newFrame = frameTime > lastRawFrameTime;
+            var newFrame = frameTime != lastRawFrameTime;
             if (newFrame)
             {
+                if (frameTime < lastRawFrameTime)
+                {
+                    detector.MarkGap();
+                    aimHistory.Clear();
+                }
+
                 lastRawFrameTime = frameTime;
                 lastRawFrameArrival = now;
                 rawPoseDetected = ArePawsDetected(result.original);
@@ -164,7 +172,8 @@ namespace Nex.BilliardRogue
         {
             if (!rawPoseDetected || !TrySamplePaws(false, out var ball, out var cue))
             {
-                detector.MarkGap();
+                // One dropped frame mid-thrust is bridged; only a gap past maxSampleGapSeconds drops the approach.
+                detector.MarkMissingSample(frameTime);
                 return;
             }
 

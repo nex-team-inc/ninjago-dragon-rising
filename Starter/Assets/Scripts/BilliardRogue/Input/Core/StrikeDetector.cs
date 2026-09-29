@@ -157,7 +157,18 @@ namespace Nex.BilliardRogue
             }
         }
 
-        /// <summary>A sample is missing (paw not visible): drops the history and any approach, keeps arm/cooldown.</summary>
+        /// <summary>
+        /// The sample at `time` is missing (paws not detected in that camera frame). A short dropout is bridged: the
+        /// next sample measures its velocity across the gap (motion blur at peak thrust speed often loses one frame).
+        /// Once the gap since the last sample exceeds maxSampleGapSeconds, it is a MarkGap.
+        /// </summary>
+        public void MarkMissingSample(double time)
+        {
+            if (hasPrevious && time - previousTime <= Settings.maxSampleGapSeconds) return;
+            MarkGap();
+        }
+
+        /// <summary>Tracking gap (or a sample clock reset): drops the history and any approach, keeps arm/cooldown.</summary>
         public void MarkGap()
         {
             hasPrevious = false;

@@ -37,6 +37,11 @@ namespace Nex.BilliardRogue
         readonly Dictionary<int, WorldLabel> labelsById = new();
         readonly List<WorldLabel> labels = new();
         readonly List<DamageNumber> numbers = new();
+        int hypeTier;
+        Color hypeColor = Color.white;
+        float hypeSizePerTier;
+        float hypePopPerTier;
+        float hypeTint;
 
         public FloatTextCache Texts => texts;
 
@@ -143,7 +148,27 @@ namespace Nex.BilliardRogue
         {
             var size = kind == NumberKind.Crit ? juice.CritNumberSize : juice.DamageNumberSize;
             var text = kind == NumberKind.Heal ? texts.Heal(value) : NumberStrings.Get(value);
-            Show(text, ColorFor(kind), size, world, juice.DamageNumberLifetime, juice.DamageNumberRise, true);
+            var color = ColorFor(kind);
+            var pop = 0f;
+            // Hype (GDD v2 §3): ball damage numbers grow, pop harder and take the tier colour.
+            if (hypeTier > 0 && (kind == NumberKind.Normal || kind == NumberKind.Crit))
+            {
+                size += hypeTier * hypeSizePerTier;
+                pop = hypeTier * hypePopPerTier;
+                if (kind == NumberKind.Normal) color = Color.Lerp(color, hypeColor, hypeTint);
+            }
+
+            Show(text, color, size, world, juice.DamageNumberLifetime, juice.DamageNumberRise, true, pop);
+        }
+
+        /// <summary>Hype tier (0 = none) and its colour for the next damage numbers (HypeJuice).</summary>
+        public void SetHype(int tier, Color tierColor, JuiceConfig.HypeSettings settings)
+        {
+            hypeTier = tier;
+            hypeColor = tierColor;
+            hypeSizePerTier = settings.numberSizePerTier;
+            hypePopPerTier = settings.numberPopPerTier;
+            hypeTint = settings.numberTint;
         }
 
         public void ShowText(Vector3 world, string text, Color color)
@@ -193,11 +218,11 @@ namespace Nex.BilliardRogue
             return label;
         }
 
-        void Show(string text, Color color, float size, Vector3 world, float lifetime, float rise, bool jitter)
+        void Show(string text, Color color, float size, Vector3 world, float lifetime, float rise, bool jitter, float pop = 0f)
         {
             var number = numberPool.Get();
             var j = jitter ? new Vector2(Random.Range(-juice.Labels.numberJitter, juice.Labels.numberJitter), 0f) : Vector2.zero;
-            number.Show(text, color, size, world, lifetime, rise, j);
+            number.Show(text, color, size, world, lifetime, rise, j, pop);
             numbers.Add(number);
         }
 

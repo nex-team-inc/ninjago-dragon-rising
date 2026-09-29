@@ -26,6 +26,8 @@ namespace Nex.BilliardRogue
         readonly int[] sfxFrame = new int[SfxSlots];
         readonly Dictionary<int, int> combos = new();
         int shooterIndex;
+        float hypeVfxScale = 1f;
+        int hypeSparkTier;
 
         public BoardEventPlayer(BoardViews aViews, WorldLabelLayer aLabels, ComboPresenter aCombo, CameraShaker aShaker, BilliardRogueConfig aConfig, ArenaLayout aLayout, CatView[] aCats)
         {
@@ -43,6 +45,13 @@ namespace Nex.BilliardRogue
         {
             get => shooterIndex;
             set => shooterIndex = value;
+        }
+
+        /// <summary>Hype juice (HypeJuice): hit VFX scale, and the tier (0 = none) from which hits add extra sparks.</summary>
+        public void SetHype(float vfxScale, int sparkTier)
+        {
+            hypeVfxScale = vfxScale;
+            hypeSparkTier = sparkTier;
         }
 
         #region Dispatch
@@ -97,7 +106,7 @@ namespace Nex.BilliardRogue
         void OnWallBounce(in SimEvent ev)
         {
             PlaySfx(SfxManager.SoundEffect.BallWallBounce, 1f, 0.6f);
-            PlayVfx(VfxManager.VisualEffect.WallSpark, Center(ev.position));
+            PlayVfx(VfxManager.VisualEffect.WallSpark, Center(ev.position), hypeVfxScale);
         }
 
         void OnTeleport(in SimEvent ev)
@@ -136,8 +145,17 @@ namespace Nex.BilliardRogue
             var sfx = ev.flag ? SfxManager.SoundEffect.CritHit : damage >= s.hardDamage ? SfxManager.SoundEffect.BallHitHard : damage >= s.midDamage ? SfxManager.SoundEffect.BallHitMid : definition.HitSfx;
             var pitch = combo.Pitch(views.TryGetBall(ev.ballId, out var b) && b.IsMini ? 1 : ComboOf(ev.ballId));
             PlaySfx(isBoss ? SfxManager.SoundEffect.BossHit : sfx, pitch, 1f);
-            PlayVfx(ev.flag ? VfxManager.VisualEffect.CritSpark : definition.HitVfx, world, ev.flag ? s.critVfxScale : 1f);
+            PlayVfx(ev.flag ? VfxManager.VisualEffect.CritSpark : definition.HitVfx, world, (ev.flag ? s.critVfxScale : 1f) * hypeVfxScale);
+            if (hypeSparkTier > 0) PlayHypeSparks(world);
             shaker.Shake(juice.ShakeAmplitudeByDamage.Evaluate(damage));
+        }
+
+        void PlayHypeSparks(Vector3 world)
+        {
+            var scale = juice.Hype.extraSparkScale * hypeVfxScale;
+            var up = Vector3.up * (0.2f * layout.CellSize);
+            PlayVfx(VfxManager.VisualEffect.HitSpark, world + up, scale);
+            if (hypeSparkTier >= 3) PlayVfx(VfxManager.VisualEffect.CritSpark, world - up * 0.5f, scale);
         }
 
         /// <summary>ComboChanged arrives right after EnemyHit for the same ball, so this hit is the previous combo + 1.</summary>

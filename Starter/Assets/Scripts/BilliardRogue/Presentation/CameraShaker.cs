@@ -30,6 +30,8 @@ namespace Nex.BilliardRogue
         float worldPerPixel = 0.02f;
         float pushIn;
         float noiseSeed;
+        float hypeMultiplier = 1f;
+        float hypeCapPixels = 16f;
         bool initialized;
 
         public float PushIn => pushIn;
@@ -86,10 +88,19 @@ namespace Nex.BilliardRogue
         {
             if (!initialized || amplitudePixels <= 0f) return;
             if (!PlayerDataManager.Instance.PlayerPreference.screenShake) return;
+            // Hype boosts every shake while balls fly, up to a cap; a shake already above the cap passes unchanged.
+            if (hypeMultiplier > 1f) amplitudePixels = Mathf.Min(amplitudePixels * hypeMultiplier, Mathf.Max(amplitudePixels, hypeCapPixels));
             var amplitude = amplitudePixels * worldPerPixel;
             // A stronger hit re-scales the noise instead of only adding trauma, so big shakes read big.
             amplitudeWorld = Mathf.Max(amplitude, amplitudeWorld * trauma);
             trauma = Mathf.Clamp01(trauma + Mathf.Clamp01(amplitudePixels / 12f));
+        }
+
+        /// <summary>Hype shake multiplier (HypeJuice, GDD v2 §3) and the pixel cap of boosted shakes.</summary>
+        public void SetHypeMultiplier(float multiplier, float capPixels)
+        {
+            hypeMultiplier = Mathf.Max(1f, multiplier);
+            hypeCapPixels = capPixels;
         }
 
         /// <summary>Moves the rig forward by distance over inDuration, holds, then returns over outDuration.</summary>

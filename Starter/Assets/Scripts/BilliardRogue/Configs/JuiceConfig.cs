@@ -167,6 +167,77 @@ namespace Nex.BilliardRogue
             [Range(0.2f, 3f)] public float explosionVfxScalePerRadius = 1f;
         }
 
+        /// <summary>Hype (body motion while balls fly, GDD v2 §3) scaling of the flight and hit juice. 0 hype = the v1 look.</summary>
+        [Serializable]
+        public sealed class HypeSettings
+        {
+            [Tooltip("Hype at which tiers 1 / 2 / 3 are reached (keep equal to the gameplay/HUD tiers).")]
+            [Range(0f, 1f)] public float tier1 = 0.25f;
+            [Range(0f, 1f)] public float tier2 = 0.55f;
+            [Range(0f, 1f)] public float tier3 = 0.85f;
+            [Tooltip("Seconds to follow a rising / falling Hype (exponential smoothing, unscaled time).")]
+            [Range(0.01f, 1f)] public float riseTime = 0.08f;
+            [Range(0.01f, 2f)] public float fallTime = 0.35f;
+            [Tooltip("Tier colours 1..3: ball trails, damage numbers and the aura.")]
+            public Color tier1Color = new(1f, 0.92f, 0.35f);
+            public Color tier2Color = new(1f, 0.55f, 0.15f);
+            public Color tier3Color = new(1f, 0.3f, 0.75f);
+
+            [Header("Balls (× at full Hype)")]
+            [Range(1f, 4f)] public float glowMax = 2.2f;
+            [Range(1f, 1.5f)] public float sizeMax = 1.15f;
+            [Range(1f, 4f)] public float trailTimeMax = 2.4f;
+            [Range(1f, 3f)] public float trailWidthMax = 1.7f;
+            [Tooltip("How far the trail colour moves from the ball's glow colour to the tier colour.")]
+            [Range(0f, 1f)] public float trailTint = 0.7f;
+
+            [Header("Hits (× at full Hype)")]
+            [Range(1f, 3f)] public float hitVfxScaleMax = 2f;
+            [Range(1f, 4f)] public float shakeMax = 2.5f;
+            [Tooltip("Shake amplitude cap (world display pixels) for Hype-boosted shakes; stronger unboosted shakes pass unchanged.")]
+            [Range(1f, 40f)] public float shakeCapPixels = 16f;
+            [Tooltip("Tier from which every enemy hit adds an extra spark burst (tier 3 adds a crit spark as well).")]
+            [Range(1, 4)] public int extraSparksTier = 2;
+            [Range(0f, 1f)] public float extraSparkScale = 0.8f;
+
+            [Header("Damage numbers (per tier)")]
+            [Tooltip("Font size added per tier; keep a multiple of 16 so the pixel font stays crisp.")]
+            [Range(0f, 32f)] public float numberSizePerTier = 16f;
+            [Tooltip("Extra pop overshoot per tier (0.25 = the number peaks 25% larger).")]
+            [Range(0f, 1f)] public float numberPopPerTier = 0.22f;
+            [Tooltip("Normal damage numbers blend toward the tier colour by this much.")]
+            [Range(0f, 1f)] public float numberTint = 0.8f;
+
+            [Header("Tier-3 aura (arena rim)")]
+            [Tooltip("Line width in cells.")]
+            [Range(0.02f, 1f)] public float auraWidth = 0.22f;
+            [Tooltip("Height above the floor in cells.")]
+            [Range(0f, 1f)] public float auraHeight = 0.08f;
+            [Range(0.1f, 2f)] public float auraPulsePeriod = 0.42f;
+            [Range(0f, 1f)] public float auraPulseAmount = 0.45f;
+            [Tooltip("Seconds to fade the aura in / out.")]
+            [Range(0.02f, 1f)] public float auraFade = 0.2f;
+
+            [Header("Cat dance")]
+            [Tooltip("Hype below which the cat does not dance.")]
+            [Range(0f, 0.5f)] public float danceMin = 0.05f;
+            [Tooltip("Dance beats per second at low / full Hype.")]
+            [Range(0.5f, 6f)] public float danceBeatsMin = 1.8f;
+            [Range(0.5f, 8f)] public float danceBeatsMax = 3.6f;
+            [Tooltip("Hop height in cells at full Hype.")]
+            [Range(0f, 1f)] public float danceBounce = 0.22f;
+            [Range(0f, 60f)] public float danceYaw = 28f;
+            [Range(0f, 30f)] public float danceRoll = 10f;
+            [Range(0f, 0.4f)] public float danceSquash = 0.12f;
+            [Tooltip("Tail wag speed multiplier at full Hype.")]
+            [Range(1f, 5f)] public float danceTailSpeed = 2.5f;
+            [Tooltip("Big pose when a tier is reached: duration, jump (cells, tier 3 value; lower tiers scale down), scale punch.")]
+            [Range(0.2f, 2f)] public float tierPoseDuration = 0.7f;
+            [Range(0f, 2f)] public float tierPoseJump = 0.75f;
+            [Range(0f, 1f)] public float tierPoseScale = 0.28f;
+            [Range(0f, 3f)] public float tierPoseVfxScale = 1.2f;
+        }
+
         [Header("Camera shake")]
         [Tooltip("Shake amplitude (world display pixels) by damage dealt.")]
         [SerializeField] AnimationCurve shakeAmplitudeByDamage = AnimationCurve.Linear(0f, 0f, 20f, 6f);
@@ -213,6 +284,9 @@ namespace Nex.BilliardRogue
         [SerializeField] LabelSettings labels = new();
         [SerializeField] SequenceSettings sequences = new();
 
+        [Header("Hype (GDD v2 §3)")]
+        [SerializeField] HypeSettings hype = new();
+
         public AnimationCurve ShakeAmplitudeByDamage => shakeAmplitudeByDamage;
         public float ShakeDuration => shakeDuration;
         public float PlayerHurtShake => playerHurtShake;
@@ -245,6 +319,7 @@ namespace Nex.BilliardRogue
         public AimGuideSettings AimGuide => aimGuide;
         public LabelSettings Labels => labels;
         public SequenceSettings Sequences => sequences;
+        public HypeSettings Hype => hype;
 
         public Color PlayerColor(int playerIndex) => playerIndex == 0 ? player1Color : player2Color;
     }

@@ -29,6 +29,8 @@ namespace Nex.BilliardRogue
         [Tooltip("Cat_P1, Cat_P2.")]
         [SerializeField] CatView[] cats = System.Array.Empty<CatView>();
         [SerializeField] CameraShaker cameraShaker = null!;
+        [Tooltip("Tier-3 Hype rim aura (optional).")]
+        [SerializeField] HypeAuraView? hypeAura;
 
         [Header("Arena (scene instance, wired by MainSceneBuilder)")]
         [Tooltip("Its danger-row glow follows the enemies closest to the cat.")]
@@ -48,6 +50,8 @@ namespace Nex.BilliardRogue
         EnemyPhasePlayer phasePlayer = null!;
         BoardSequencePlayer sequences = null!;
         BallVisitor ballVisitor = null!;
+        HypeJuice hype = null!;
+        float debugHype = -1f;
         Vector2[] fallbackPath = new Vector2[2];
         int activeShooter;
         int numPlayers = 1;
@@ -55,6 +59,9 @@ namespace Nex.BilliardRogue
         public CameraShaker Shaker => cameraShaker;
         public WorldLabelLayer Labels => labels;
         public AimGuideView AimGuide => aimGuide;
+        /// <summary>Smoothed Hype the juice currently shows, and its tier (debug / verification).</summary>
+        public float HypeShown => hype != null ? hype.Current : 0f;
+        public int HypeTier => hype != null ? hype.Tier : 0;
 
         #region Life Cycle
 
@@ -80,7 +87,16 @@ namespace Nex.BilliardRogue
             phasePlayer = new EnemyPhasePlayer(views, eventPlayer, labels, cameraShaker, layout, config, cats);
             sequences = new BoardSequencePlayer(views, eventPlayer, cameraShaker, config, cats);
             ballVisitor = views.OnBall;
+            if (hypeAura != null) hypeAura.Initialize(layout, config.Juice);
+            hype = new HypeJuice(config.Juice, views, eventPlayer, cameraShaker, labels, cats, hypeAura);
             SetActiveShooter(0, 1);
+        }
+
+        void Update()
+        {
+            if (hype == null) return;
+            if (debugHype >= 0f) hype.SetTarget(debugHype);
+            hype.Tick(Time.unscaledDeltaTime);
         }
 
         #endregion
@@ -140,6 +156,7 @@ namespace Nex.BilliardRogue
         public void Clear()
         {
             views.ClearAll();
+            hype.ResetHype();
             aimGuide.SetVisible(false);
             arenaView.SetDangerLevel(0f);
         }
@@ -217,9 +234,22 @@ namespace Nex.BilliardRogue
             if (power) eventPlayer.PlaySfx(SfxManager.SoundEffect.PowerShot);
         }
 
-        /// <summary>Hype 0..1 scales hit juice (GDD v2 §3). Implemented by the Presentation module.</summary>
+        /// <summary>
+        /// Hype 0..1 (GDD v2 §3) scales the flight and hit juice: ball glow / size / trail, hit VFX and extra sparks,
+        /// camera shake, damage numbers, the tier-3 rim aura and the dancing cats. Call every frame (or on change);
+        /// the look follows smoothly. Hit-stop time stays with Gameplay.
+        /// </summary>
         public void SetHype(float hype01)
         {
+            if (hype == null || debugHype >= 0f) return;
+            hype.SetTarget(hype01);
+        }
+
+        /// <summary>Debug / verification: pins the shown Hype (0..1) regardless of SetHype; a negative value releases it.</summary>
+        public void SetDebugHype(float hype01)
+        {
+            debugHype = hype01 < 0f ? -1f : Mathf.Clamp01(hype01);
+            if (hype != null && debugHype < 0f) hype.SetTarget(0f);
         }
 
         /// <summary>Additive: lets the world camera rig be set explicitly when the camera has no parent rig.</summary>

@@ -8,7 +8,8 @@ namespace Nex.BilliardRogue
     /// <summary>
     /// Pooled in-flight ball: Ball.fbx mesh with the ball type's material (or a base/emission tint through a
     /// MaterialPropertyBlock), a glow trail and spin from the velocity. Positions come from BallSimulator snapshots
-    /// every frame; the frame stamp lets BoardViews release balls the simulator no longer reports.
+    /// every frame; the frame stamp lets BoardViews release balls the simulator no longer reports. Hype (ApplyHype)
+    /// scales the glow, size and trail.
     /// </summary>
     public sealed class BallView : MonoBehaviour, IPoolableObject
     {
@@ -23,10 +24,19 @@ namespace Nex.BilliardRogue
         [SerializeField] MeshRenderer meshRenderer = null!;
         [SerializeField] TrailRenderer trail = null!;
 
+        const float HypeEpsilon = 0.004f;
+
         MaterialPropertyBlock block = null!;
         Material? baseMaterial;
         float spinPerUnit;
         Vector3 lastPosition;
+        float baseDiameter;
+        float baseGlow;
+        float baseTrailTime;
+        float baseTrailWidth;
+        Color baseTrailColor;
+        float appliedHype;
+        int appliedTier;
 
         public int Id { get; private set; }
         public int FrameStamp { get; private set; }
@@ -63,6 +73,30 @@ namespace Nex.BilliardRogue
             trail.time = settings.trailTime;
             trail.Clear();
             trail.emitting = true;
+            baseDiameter = diameter;
+            baseGlow = settings.flightGlow;
+            baseTrailTime = settings.trailTime;
+            baseTrailWidth = diameter * settings.trailWidthScale;
+            baseTrailColor = trailColor;
+            appliedHype = 0f;
+            appliedTier = 0;
+        }
+
+        /// <summary>Hype look (GDD v2 §3): brighter emission, a subtly larger ball, a longer, wider, tier-tinted trail.</summary>
+        public void ApplyHype(in HypeLook look)
+        {
+            if (Mathf.Abs(look.hype01 - appliedHype) < HypeEpsilon && look.tier == appliedTier) return;
+            appliedHype = look.hype01;
+            appliedTier = look.tier;
+            block.SetFloat(EmissionStrengthId, baseGlow * look.glow);
+            meshRenderer.SetPropertyBlock(block);
+            var diameter = baseDiameter * look.size;
+            mesh.localScale = new Vector3(diameter, diameter, diameter);
+            trail.time = baseTrailTime * look.trailTime;
+            trail.startWidth = baseTrailWidth * look.size * look.trailWidth;
+            var tint = Color.Lerp(baseTrailColor, look.tierColor, look.trailTint);
+            trail.startColor = new Color(tint.r, tint.g, tint.b, baseTrailColor.a);
+            trail.endColor = new Color(tint.r, tint.g, tint.b, 0f);
         }
 
         /// <summary>Applies the simulator snapshot for this frame (world position and velocity).</summary>

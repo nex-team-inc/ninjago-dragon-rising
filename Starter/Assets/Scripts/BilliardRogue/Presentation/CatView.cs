@@ -7,6 +7,7 @@ namespace Nex.BilliardRogue
     /// <summary>
     /// One player's cat knight on the launch line: walks to the launch X, idles in a 3/4 view toward the camera,
     /// turns up the arena to strike with the cue, flinches when hurt, dances on victory and slumps on defeat.
+    /// While balls fly it dances with Hype (GDD v2 §3) and strikes a big pose when a Hype tier is reached.
     /// Rigid parts (Cat_Hero.fbx: Body, Head, EarL/R, Tail, PawL/R, Cape) are animated by code; P1/P2 palettes
     /// swap the model material (M_Palette / M_Palette_CatP2).
     /// </summary>
@@ -32,6 +33,7 @@ namespace Nex.BilliardRogue
 
         ArenaLayout layout = null!;
         JuiceConfig.CatSettings settings = null!;
+        JuiceConfig.HypeSettings hypeSettings = null!;
         MaterialPropertyBlock block = null!;
         int playerIndex;
         float currentX01 = 0.5f;
@@ -41,6 +43,11 @@ namespace Nex.BilliardRogue
         float strikeT = 1f;
         float hurtT = 1f;
         float victoryT = 1f;
+        float poseT = 1f;
+        float poseStrength;
+        float hype;
+        float dancePhase;
+        float tailPhase;
         bool defeated;
         bool active;
         Vector3 cueBaseLocal;
@@ -58,6 +65,7 @@ namespace Nex.BilliardRogue
             playerIndex = aPlayerIndex;
             layout = aLayout;
             settings = juice.Cat;
+            hypeSettings = juice.Hype;
             block ??= new MaterialPropertyBlock();
             cueBaseLocal = cue.localPosition;
             cueBaseRotation = cue.localRotation;
@@ -76,7 +84,8 @@ namespace Nex.BilliardRogue
             pennantRenderer.SetPropertyBlock(block);
             currentX01 = targetX01 = playerIndex == 0 ? settings.waitingX01 : 1f - settings.waitingX01;
             defeated = false;
-            strikeT = hurtT = victoryT = 1f;
+            strikeT = hurtT = victoryT = poseT = 1f;
+            hype = 0f;
             SetActive(false);
             Place();
         }
@@ -98,6 +107,11 @@ namespace Nex.BilliardRogue
             var yaw = settings.idleYaw;
             var cueOffset = Vector3.zero;
             var bounce = 0f;
+            var roll = 0f;
+            var squash = 1f;
+            var dancing = !defeated && hype >= hypeSettings.danceMin;
+            if (dancing) dancePhase += dt * Mathf.Lerp(hypeSettings.danceBeatsMin, hypeSettings.danceBeatsMax, hype);
+            tailPhase += dt * (dancing ? Mathf.Lerp(1f, hypeSettings.danceTailSpeed, hype) : 1f);
             if (strikeT < 1f)
             {
                 strikeT = Mathf.Min(1f, strikeT + dt / settings.strikeDuration);
@@ -119,20 +133,40 @@ namespace Nex.BilliardRogue
                 bounce = settings.victoryJump * Easing.Arc(victoryT) * layout.CellSize;
                 if (victoryT >= 1f) victoryT = 0f;
             }
+            else if (poseT < 1f)
+            {
+                // Tier reached: big jump, full spin and a scale punch (stronger for higher tiers).
+                poseT = Mathf.Min(1f, poseT + dt / hypeSettings.tierPoseDuration);
+                yaw = settings.idleYaw + 360f * Easing.OutQuad(poseT);
+                bounce = hypeSettings.tierPoseJump * poseStrength * Easing.Arc(poseT) * layout.CellSize;
+                squash = 1f + hypeSettings.tierPoseScale * poseStrength * Easing.Punch(poseT);
+            }
             else if (walking)
             {
                 yaw = currentX01 < targetX01 ? 90f : 270f;
                 bounce = Mathf.Abs(Mathf.Sin(phase * 14f)) * 0.06f * layout.CellSize;
             }
+            else if (dancing)
+            {
+                // Hop on every beat, sway side to side every two beats, squash on landing.
+                var beat = Mathf.Abs(Mathf.Sin(dancePhase * Mathf.PI));
+                var sway = Mathf.Sin(dancePhase * Mathf.PI * 0.5f);
+                yaw = settings.idleYaw + sway * hypeSettings.danceYaw * hype;
+                roll = sway * hypeSettings.danceRoll * hype;
+                bounce = beat * hypeSettings.danceBounce * hype * layout.CellSize;
+                squash = 1f + (beat - 0.5f) * hypeSettings.danceSquash * hype;
+            }
 
             var lean = defeated ? Quaternion.Euler(35f, 0f, 0f) : Quaternion.identity;
-            model.localRotation = Quaternion.Euler(0f, yaw, 0f) * lean;
+            model.localRotation = Quaternion.Euler(0f, yaw, 0f) * Quaternion.Euler(0f, 0f, roll) * lean;
             model.localPosition = new Vector3(0f, bounce, walking ? 0f : Mathf.Sin(phase * 1.3f) * 0.01f);
-            model.localScale = (defeated ? new Vector3(1.08f, 0.85f, 1.08f) : Vector3.one) * settings.modelScale;
+            var stretch = new Vector3(1f / Mathf.Sqrt(squash), squash, 1f / Mathf.Sqrt(squash));
+            model.localScale = (defeated ? new Vector3(1.08f, 0.85f, 1.08f) : stretch) * settings.modelScale;
             cue.localPosition = cueBaseLocal + cueOffset;
             cue.localRotation = cueBaseRotation;
-            if (tail != null) tail.localRotation = Quaternion.Euler(0f, Mathf.Sin(phase * settings.tailWagSpeed * Mathf.PI) * settings.tailWagAngle, 0f);
-            if (head != null) head.localRotation = Quaternion.Euler(0f, Mathf.Sin(phase * 0.7f) * 6f, 0f);
+            if (tail != null) tail.localRotation = Quaternion.Euler(0f, Mathf.Sin(tailPhase * settings.tailWagSpeed * Mathf.PI) * settings.tailWagAngle, 0f);
+            var nod = dancing ? Mathf.Abs(Mathf.Sin(dancePhase * Mathf.PI)) * 12f * hype : 0f;
+            if (head != null) head.localRotation = Quaternion.Euler(nod, Mathf.Sin(phase * 0.7f) * 6f, 0f);
             UpdateEars(dt);
             pennant.localRotation = Quaternion.Euler(0f, 0f, Mathf.Sin(phase * 5f) * 8f);
         }
@@ -185,7 +219,22 @@ namespace Nex.BilliardRogue
         public void ResetPose()
         {
             defeated = false;
-            victoryT = strikeT = hurtT = 1f;
+            victoryT = strikeT = hurtT = poseT = 1f;
+            hype = 0f;
+        }
+
+        /// <summary>Smoothed Hype 0..1 (HypeJuice): the cat dances harder the more the player moves.</summary>
+        public void SetHype(float hype01)
+        {
+            hype = Mathf.Clamp01(hype01);
+        }
+
+        /// <summary>Big celebratory pose when a Hype tier (1..3) is reached.</summary>
+        public void PlayTierPose(int tier)
+        {
+            if (defeated) return;
+            poseT = 0f;
+            poseStrength = 0.4f + 0.2f * Mathf.Clamp(tier, 1, 3);
         }
 
         #endregion

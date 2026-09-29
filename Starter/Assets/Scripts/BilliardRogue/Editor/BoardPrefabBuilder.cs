@@ -219,6 +219,7 @@ namespace Nex.BilliardRogue.Editor
             }
 
             var aimGuide = BuildAimGuide(root.transform, glow, layer);
+            var aura = BuildHypeAura(root.transform, glow, layer);
             var cats = new List<CatView>();
             for (var i = 0; i < 2; i++)
             {
@@ -238,11 +239,36 @@ namespace Nex.BilliardRogue.Editor
             so.FindProperty("aimGuide").objectReferenceValue = aimGuide;
             SerializedPropertyWriter.Write(so.FindProperty("cats"), cats);
             so.FindProperty("cameraShaker").objectReferenceValue = shaker;
+            so.FindProperty("hypeAura").objectReferenceValue = aura;
             so.FindProperty("labelLayerPrefab").objectReferenceValue = AssetDatabase.LoadAssetAtPath<WorldLabelLayer>(LabelLayerPath);
             so.FindProperty("labelPrefab").objectReferenceValue = AssetDatabase.LoadAssetAtPath<WorldLabel>(LabelPath);
             so.FindProperty("damageNumberPrefab").objectReferenceValue = AssetDatabase.LoadAssetAtPath<DamageNumber>(NumberPath);
             so.ApplyModifiedPropertiesWithoutUndo();
             WorldPrefabModels.SavePrefab(root, PresenterPath);
+        }
+
+        /// <summary>Tier-3 Hype rim aura: one looped additive line (M_BallTrail); HypeAuraView places it on the arena rim.</summary>
+        static HypeAuraView BuildHypeAura(Transform parent, Material glow, int layer)
+        {
+            var go = new GameObject("HypeAura");
+            go.transform.SetParent(parent, false);
+            go.layer = Mathf.Max(0, layer);
+            var line = go.AddComponent<LineRenderer>();
+            line.sharedMaterial = WorldPrefabModels.BallTrail(glow);
+            line.useWorldSpace = true;
+            line.loop = true;
+            line.positionCount = 0;
+            line.widthMultiplier = 0.2f;
+            line.alignment = LineAlignment.View;
+            line.numCornerVertices = 4;
+            line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            line.receiveShadows = false;
+            line.enabled = false;
+            var view = go.AddComponent<HypeAuraView>();
+            var so = new SerializedObject(view);
+            so.FindProperty("line").objectReferenceValue = line;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            return view;
         }
 
         static AimGuideView BuildAimGuide(Transform parent, Material glow, int layer)

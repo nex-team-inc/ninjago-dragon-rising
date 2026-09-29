@@ -19,6 +19,7 @@ namespace Nex.BilliardRogue
         [SerializeField] TextMeshProUGUI text = null!;
 
         Color color = Color.white;
+        float pop;
 
         public RectTransform Rect => rect;
         public Vector3 WorldPosition { get; private set; }
@@ -27,8 +28,10 @@ namespace Nex.BilliardRogue
         public float Lifetime { get; private set; } = 1f;
         public float Rise { get; private set; }
 
-        public void Show(string value, Color aColor, float size, Vector3 world, float lifetime, float rise, Vector2 jitter)
+        /// <summary>pop: extra overshoot of the pop-in (0 = the plain pop; Hype tiers make it larger).</summary>
+        public void Show(string value, Color aColor, float size, Vector3 world, float lifetime, float rise, Vector2 jitter, float aPop = 0f)
         {
+            pop = Mathf.Max(0f, aPop);
             text.SetText(value);
             color = aColor;
             text.color = aColor;
@@ -48,8 +51,8 @@ namespace Nex.BilliardRogue
             Age += dt;
             var t = Age / Lifetime;
             if (t >= 1f) return false;
-            // Pop in, hold, then fade out over the last 40%.
-            var scale = t < 0.12f ? Easing.OutBack(t / 0.12f) : 1f;
+            // Pop in (overshooting by pop), settle, hold, then fade out over the last 40%.
+            var scale = t < 0.12f ? Easing.OutBack(t / 0.12f) * (1f + pop) : t < 0.3f ? Mathf.Lerp(1f + pop, 1f, Easing.OutQuad((t - 0.12f) / 0.18f)) : 1f;
             rect.localScale = new Vector3(scale, scale, 1f);
             var alpha = t > 0.6f ? 1f - (t - 0.6f) / 0.4f : 1f;
             text.color = new Color(color.r, color.g, color.b, color.a * alpha);

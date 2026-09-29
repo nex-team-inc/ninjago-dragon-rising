@@ -12,22 +12,21 @@ namespace Nex.BilliardRogue
 {
     /// <summary>
     /// Localized floating-text strings resolved once per locale (LocKeys.Float), including pre-formatted combo and
-    /// heal texts, so gameplay never formats or looks up strings while balls fly. English copy is the fallback.
+    /// heal texts, so gameplay never formats or looks up strings while balls fly. Every string comes from the
+    /// string table: until it is loaded (or for a key it lacks, which is logged) the text is empty, never English.
     /// </summary>
     public sealed class FloatTextCache : IDisposable
     {
         public const int MaxCached = 64;
 
-        static readonly (string key, string english)[] Plain =
+        static readonly string[] PlainKeys =
         {
-            (LocKeys.Float.Block, "BLOCK"), (LocKeys.Float.Crit, "CRIT!"), (LocKeys.Float.Power, "POWER!"),
-            (LocKeys.Float.Frozen, "FROZEN"), (LocKeys.Float.Miss, "MISS"), (LocKeys.Float.Split, "SPLIT!"),
-            (LocKeys.Float.Enraged, "ENRAGED!"), (LocKeys.Float.Quake, "QUAKE!"), (LocKeys.Float.Shield, "SHIELD"),
-            (LocKeys.Float.Summon, "SUMMON!"), (LocKeys.Float.Warp, "WARP!"), (LocKeys.Float.ExtraBall, "+1 BALL"),
-            (LocKeys.Float.PowerUp, "POWER UP"),
+            LocKeys.Float.Block, LocKeys.Float.Crit, LocKeys.Float.Power, LocKeys.Float.Frozen, LocKeys.Float.Miss,
+            LocKeys.Float.Split, LocKeys.Float.Enraged, LocKeys.Float.Quake, LocKeys.Float.Shield, LocKeys.Float.Summon,
+            LocKeys.Float.Warp, LocKeys.Float.ExtraBall, LocKeys.Float.PowerUp,
         };
 
-        readonly string[] plain = new string[Plain.Length];
+        readonly string[] plain = new string[PlainKeys.Length];
         readonly string[] combo = new string[MaxCached + 1];
         readonly string[] heal = new string[MaxCached + 1];
         readonly CancellationToken token;
@@ -52,7 +51,9 @@ namespace Nex.BilliardRogue
         public FloatTextCache(CancellationToken cancellationToken)
         {
             token = cancellationToken;
-            FillEnglish();
+            Array.Fill(plain, "");
+            Array.Fill(combo, "");
+            Array.Fill(heal, "");
             LocalizationSettings.SelectedLocaleChanged += HandleLocaleChanged;
             RefreshAsync().Forget();
         }
@@ -81,20 +82,6 @@ namespace Nex.BilliardRogue
             RefreshAsync().Forget();
         }
 
-        void FillEnglish()
-        {
-            for (var i = 0; i < Plain.Length; i++)
-            {
-                plain[i] = Plain[i].english;
-            }
-
-            for (var n = 0; n <= MaxCached; n++)
-            {
-                combo[n] = "x" + n + " COMBO";
-                heal[n] = "+" + n;
-            }
-        }
-
         async UniTask RefreshAsync()
         {
             try
@@ -102,18 +89,18 @@ namespace Nex.BilliardRogue
                 await LocalizationSettings.InitializationOperation.ToUniTask(cancellationToken: token);
                 var table = await LocalizationSettings.StringDatabase.GetTableAsync(LocKeys.Table).ToUniTask(cancellationToken: token);
                 if (disposed || table == null) return;
-                for (var i = 0; i < Plain.Length; i++)
+                for (var i = 0; i < PlainKeys.Length; i++)
                 {
-                    var entry = table.GetEntry(Plain[i].key);
-                    if (entry != null) plain[i] = entry.GetLocalizedString();
+                    var entry = Entry(table, PlainKeys[i]);
+                    plain[i] = entry == null ? "" : entry.GetLocalizedString();
                 }
 
-                var comboEntry = table.GetEntry(LocKeys.Float.Combo);
-                var healEntry = table.GetEntry(LocKeys.Float.Heal);
+                var comboEntry = Entry(table, LocKeys.Float.Combo);
+                var healEntry = Entry(table, LocKeys.Float.Heal);
                 for (var n = 0; n <= MaxCached; n++)
                 {
-                    if (comboEntry != null) combo[n] = Format(comboEntry, n, combo[n]);
-                    if (healEntry != null) heal[n] = Format(healEntry, n, heal[n]);
+                    combo[n] = comboEntry == null ? "" : comboEntry.GetLocalizedString(n);
+                    heal[n] = healEntry == null ? "" : healEntry.GetLocalizedString(n);
                 }
             }
             catch (OperationCanceledException)
@@ -121,10 +108,12 @@ namespace Nex.BilliardRogue
             }
         }
 
-        static string Format(StringTableEntry entry, int n, string fallback)
+        // The seeder writes every key into all locales; a missing one is a build error, not a reason to show English.
+        static StringTableEntry? Entry(StringTable table, string key)
         {
-            var value = entry.GetLocalizedString(n);
-            return string.IsNullOrEmpty(value) ? fallback : value;
+            var entry = table.GetEntry(key);
+            if (entry == null) Debug.LogError($"[FloatTextCache] Missing localization entry '{key}' in '{table.LocaleIdentifier}'.");
+            return entry;
         }
 
         #endregion

@@ -7,8 +7,10 @@ namespace Nex.BilliardRogue
     /// <summary>Strike thresholds in body-normalized inches and seconds (built from ControlConfig).</summary>
     public struct StrikeSettings
     {
-        /// <summary>Closing speed (in/s) that starts a strike; the strike must keep at least half of it until contact.</summary>
+        /// <summary>Closing speed (in/s) that starts a strike; the strike must keep sustainSpeedFraction of it until contact.</summary>
         public float strikeSpeed;
+        /// <summary>Fraction of strikeSpeed below which an approach counts as stalled and is dropped.</summary>
+        public float sustainSpeedFraction;
         /// <summary>Paw distance at which a fast approach fires.</summary>
         public float contactDistance;
         /// <summary>Paws must be at least this far apart before a strike can arm (after a reset or a strike).</summary>
@@ -60,7 +62,6 @@ namespace Nex.BilliardRogue
     public sealed class StrikeDetector
     {
         const float MinDirectionLength = 1e-3f;
-        const float SustainSpeedFraction = 0.5f;
 
         bool hasPrevious;
         double previousTime;
@@ -146,7 +147,7 @@ namespace Nex.BilliardRogue
                 case StrikeState.Approaching:
                     peakSpeed = Mathf.Max(peakSpeed, closingSpeed);
                     if (TryLand(time, sweptDistance, out result)) return true;
-                    var stalled = closingSpeed < settings.strikeSpeed * SustainSpeedFraction;
+                    var stalled = closingSpeed < settings.strikeSpeed * settings.sustainSpeedFraction;
                     if (stalled || time - approachStartTime > settings.maxStrikeSeconds)
                     {
                         SetState(StrikeState.Armed, time);

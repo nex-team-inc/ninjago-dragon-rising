@@ -7,7 +7,8 @@ using UnityEngine.Audio;
 namespace Nex
 {
     // Single owner of the mixer volumes: applies PlayerDataManager's volume properties and writes changes back
-    // into PlayerPreference (saved after a short debounce so slider drags do not rewrite the file per tick).
+    // into PlayerPreference (saved after a short debounce so slider drags do not rewrite the file per tick, and
+    // flushed when the app pauses or quits).
     public class VolumeManager  : Singleton<VolumeManager>
     {
         [SerializeField] AudioMixer audioMixer = null!;
@@ -36,10 +37,17 @@ namespace Nex
 
         void Update()
         {
-            if (!saveQueued || Time.unscaledTime < saveDueTime) return;
-            saveQueued = false;
-            PlayerDataManager.Instance.SavePlayerPreference();
+            if (saveQueued && Time.unscaledTime >= saveDueTime) Flush();
         }
+
+        // Home (Android TV) or a quit inside the debounce window stops Update before the write: flush the change
+        // now, or a process kill in the background loses it.
+        void OnApplicationPause(bool paused)
+        {
+            if (paused) Flush();
+        }
+
+        void OnApplicationQuit() => Flush();
 
         #endregion
 
@@ -95,6 +103,13 @@ namespace Nex
         {
             saveQueued = true;
             saveDueTime = Time.unscaledTime + saveDebounceSeconds;
+        }
+
+        void Flush()
+        {
+            if (!saveQueued) return;
+            saveQueued = false;
+            PlayerDataManager.Instance.SavePlayerPreference();
         }
 
         #endregion

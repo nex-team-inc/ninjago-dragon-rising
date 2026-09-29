@@ -24,6 +24,10 @@ namespace Nex.BilliardRogue.Simulation
         public bool areaCross;
         public int splitCount;
         public int splitDamage = 1;
+        /// <summary>Angle between neighbouring minis of a split (the fan is centred on the reflected direction).</summary>
+        public float splitFanDegrees = 18f;
+        /// <summary>Mini radius as a fraction of the parent ball's.</summary>
+        public float miniRadiusScale = 0.7f;
         public int pierceCount;
         public int healPerHit;
         public int healCapPerShot;
@@ -87,6 +91,10 @@ namespace Nex.BilliardRogue.Simulation
         public float ballSpeed = 13f;
         public float enemyInset = 0.08f;
         public float bossInset = 0.1f;
+        /// <summary>Cell insets (grid units) a ball must overlap before a trigger fires: pickups, portals, mud.</summary>
+        public float pickupInset = 0.2f;
+        public float portalInset = 0.25f;
+        public float mudInset = 0.1f;
         public float minAimAngleDeg = 12f;
         public float maxFlightSeconds = 7f;
         public int maxIdleWallBounces = 10;

@@ -8,10 +8,6 @@ namespace Nex.BilliardRogue.Simulation
     /// <summary>Overlap triggers a ball passes through without reflecting: pickups, portals, mud, pierced enemies.</summary>
     internal sealed class BallTriggers
     {
-        const float PickupInset = 0.2f;
-        const float PortalInset = 0.25f;
-        const float MudInset = 0.1f;
-
         readonly GameRules rules;
         readonly BoardOps ops;
 
@@ -34,7 +30,7 @@ namespace Nex.BilliardRogue.Simulation
             {
                 if (i >= pickups.Count) continue;
                 var pickup = pickups[i];
-                if (!BallCollision.OverlapsCell(rules.arena, pickup.col, pickup.row, PickupInset, b.position, b.radius)) continue;
+                if (!BallCollision.OverlapsCell(rules.arena, pickup.col, pickup.row, rules.arena.pickupInset, b.position, b.radius)) continue;
                 b.idleWallBounces = 0;
                 ops.CollectPickup(run, pickup, b.id, events);
             }
@@ -68,7 +64,7 @@ namespace Nex.BilliardRogue.Simulation
             {
                 var mud = objects[i];
                 if (mud.type != FieldObjectType.Mud) continue;
-                if (!BallCollision.OverlapsCell(rules.arena, mud.col, mud.row, MudInset, b.position, b.radius)) continue;
+                if (!BallCollision.OverlapsCell(rules.arena, mud.col, mud.row, rules.arena.mudInset, b.position, b.radius)) continue;
                 if (b.mudInsideId == mud.id) return;
                 b.mudInsideId = mud.id;
                 b.slowTimer = rules.balance.mudSlowSeconds;
@@ -102,7 +98,7 @@ namespace Nex.BilliardRogue.Simulation
                 {
                     continue;
                 }
-                if (BallCollision.OverlapsCell(rules.arena, o.col, o.row, PortalInset, position, radius)) return i;
+                if (BallCollision.OverlapsCell(rules.arena, o.col, o.row, rules.arena.portalInset, position, radius)) return i;
             }
             return -1;
         }

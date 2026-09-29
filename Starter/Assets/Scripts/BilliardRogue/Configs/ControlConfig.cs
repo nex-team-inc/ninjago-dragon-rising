@@ -35,6 +35,8 @@ namespace Nex.BilliardRogue
         [Header("Strike detection")]
         [Tooltip("Cue-paw closing speed toward the ball paw that starts a strike.")]
         [SerializeField, Range(5f, 200f)] float strikeSpeedInchesPerSec = 35f;
+        [Tooltip("A started strike whose closing speed drops below this fraction of the strike speed before contact is dropped as stalled.")]
+        [SerializeField, Range(0.1f, 1f)] float sustainSpeedFraction = 0.5f;
         [Tooltip("Paw distance at which the strike fires.")]
         [SerializeField, Range(1f, 20f)] float contactDistanceInches = 5f;
         [Tooltip("Paws must be at least this far apart before a new strike can arm.")]
@@ -159,6 +161,7 @@ namespace Nex.BilliardRogue
         public StrikeSettings StrikeSettings => new()
         {
             strikeSpeed = strikeSpeedInchesPerSec,
+            sustainSpeedFraction = sustainSpeedFraction,
             contactDistance = contactDistanceInches,
             armDistance = armDistanceInches,
             rearmSeconds = rearmSeconds,

@@ -12,8 +12,9 @@ namespace Nex.BilliardRogue
     /// <summary>
     /// Animates one resolved enemy phase from its events, step by step (SimEvent.step 0..4, HANDOFF §4): status
     /// ticks with numbers, abilities (telegraphs, casts, heals, spawns, quake), simultaneous hops, staggered
-    /// danger-row attacks and the new wave, each step waiting its PacingConfig duration (scaled by the fast enemy
-    /// phase debug setting). Ends with a reconcile so the views match the state exactly.
+    /// danger-row attacks and the new wave, each step waiting its PacingConfig duration in gameplay time (the debug
+    /// fast enemy phase is TimeScaleController's phase scale, set by EnemyPhaseRunner, so the waits, hops and tweens
+    /// speed up together). Ends with a reconcile so the views match the state exactly.
     /// </summary>
     public sealed class EnemyPhasePlayer
     {
@@ -44,7 +45,6 @@ namespace Nex.BilliardRogue
 
         public async UniTask PlayAsync(List<SimEvent> events, RunState run, PacingConfig pacing, CancellationToken ct)
         {
-            var scale = PlayerDataManager.Instance.DebugSettings.fastEnemyPhase ? pacing.FastEnemyPhaseScale : 1f;
             ClearTelegraphs();
             for (var step = 0; step < StepCount; step++)
             {
@@ -52,11 +52,11 @@ namespace Nex.BilliardRogue
                 {
                     0 => PlayStatus(events, run) ? pacing.StatusTickDuration : 0f,
                     1 => PlayAbilities(events, run, pacing) ? pacing.AbilityDuration : 0f,
-                    2 => PlayAdvance(events, run, pacing.EnemyHopDuration * scale) ? pacing.EnemyHopDuration : 0f,
-                    3 => await PlayAttacksAsync(events, run, pacing, scale, ct),
+                    2 => PlayAdvance(events, run, pacing.EnemyHopDuration) ? pacing.EnemyHopDuration : 0f,
+                    3 => await PlayAttacksAsync(events, run, pacing, ct),
                     _ => PlaySpawn(events, run) ? pacing.WaveSpawnDuration : 0f,
                 };
-                if (wait > 0f) await Delay(wait * scale, ct);
+                if (wait > 0f) await Delay(wait, ct);
                 if (run.outcome == RunOutcome.Defeat && step >= 3) break;
             }
 
@@ -179,7 +179,7 @@ namespace Nex.BilliardRogue
             return any;
         }
 
-        async UniTask<float> PlayAttacksAsync(List<SimEvent> events, RunState run, PacingConfig pacing, float scale, CancellationToken ct)
+        async UniTask<float> PlayAttacksAsync(List<SimEvent> events, RunState run, PacingConfig pacing, CancellationToken ct)
         {
             var attackers = 0;
             for (var i = 0; i < events.Count; i++)
@@ -188,7 +188,7 @@ namespace Nex.BilliardRogue
                 if (ev.step != 3) continue;
                 if (ev.kind == SimEventKind.EnemyAttack)
                 {
-                    if (attackers > 0) await Delay(pacing.EnemyStagger * scale, ct);
+                    if (attackers > 0) await Delay(pacing.EnemyStagger, ct);
                     attackers++;
                     PlayMeleeAttack(ev, pacing);
                     continue;

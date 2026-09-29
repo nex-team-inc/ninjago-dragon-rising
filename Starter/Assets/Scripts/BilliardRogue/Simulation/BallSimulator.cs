@@ -15,8 +15,6 @@ namespace Nex.BilliardRogue.Simulation
     {
         const int Capacity = 96;
         const int MaxSubstepsPerStep = 120;
-        const float MiniRadiusScale = 0.7f;
-        const float SplitFanDegrees = 18f;
 
         readonly GameRules rules;
         readonly BoardOps ops;
@@ -264,18 +262,19 @@ namespace Nex.BilliardRogue.Simulation
 
         void Split(BallSlot parent, Vector2 normal, List<SimEvent> events)
         {
-            var count = hitResolver.LevelStats(parent.type, parent.level).splitCount;
+            var stats = hitResolver.LevelStats(parent.type, parent.level);
+            var count = stats.splitCount;
             events.Add(new SimEvent { kind = SimEventKind.BallSplit, ballId = parent.id, ballType = parent.type, value = count, position = parent.position });
             var baseAngle = Mathf.Atan2(parent.direction.y, parent.direction.x);
             for (var i = 0; i < count; i++)
             {
                 var mini = Acquire();
                 if (mini == null) break;
-                var angle = baseAngle + (i - (count - 1) * 0.5f) * SplitFanDegrees * Mathf.Deg2Rad;
+                var angle = baseAngle + (i - (count - 1) * 0.5f) * stats.splitFanDegrees * Mathf.Deg2Rad;
                 // A grazing parent leaves part of the fan pointing back into the face it just hit; those minis go onward.
                 var direction = BallCollision.Reflect(new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)), normal);
                 mini.Begin(nextBallId++, parent.type, parent.level, true, parent.shooterIndex, parent.shotNumber, i + 1,
-                    parent.position, direction, parent.speed, parent.radius * MiniRadiusScale);
+                    parent.position, direction, parent.speed, parent.radius * stats.miniRadiusScale);
                 mini.flightTime = parent.flightTime;
                 mini.combo = parent.combo;
                 mini.hitIndex = parent.hitIndex;

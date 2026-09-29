@@ -27,8 +27,6 @@ namespace Nex.BilliardRogue
 
         readonly bool alwaysSkipSplash = PlatformUtils.IsEditor;
 
-        #region Life Cycle
-
         void Start()
         {
 #if UNITY_STANDALONE_OSX
@@ -45,10 +43,6 @@ namespace Nex.BilliardRogue
             BootAsync(destroyCancellationToken).Forget();
         }
 
-        #endregion
-
-        #region Boot
-
         async UniTaskVoid BootAsync(CancellationToken ct)
         {
             if (ShouldPlaySplash())
@@ -56,22 +50,30 @@ namespace Nex.BilliardRogue
                 await PlaySplashAsync();
             }
 
-            await coordinator.Initialize();
+            await coordinator.WaitUntilEnabledAsync();
             await LocaleRestore.ApplyAsync(PlayerDataManager.Instance.PlayerPreference, ct);
 
             // ScreenBlockerManager.Hide misbehaves right after another feedback finished (see MainInitializerExample);
             // the short delay keeps the hide animation correct.
             await UniTask.Delay(TimeSpan.FromSeconds(0.1f), cancellationToken: ct);
             await ScreenBlockerManager.Instance.Hide();
-            await coordinator.StartMain();
+            await coordinator.StartMainAsync();
         }
 
         bool ShouldPlaySplash()
         {
             var application = ApplicationManager.Instance;
-            if (!application.FirstAppStart) return false;
+            if (!application.FirstAppStart)
+            {
+                return false;
+            }
+
             application.FirstAppStart = false;
-            if (!nexSplashScreenReference.RuntimeKeyIsValid()) return false;
+            if (!nexSplashScreenReference.RuntimeKeyIsValid())
+            {
+                return false;
+            }
+
             return debugShowSplash || !alwaysSkipSplash;
         }
 
@@ -82,7 +84,5 @@ namespace Nex.BilliardRogue
             await player.Play();
             await player.DismissDestroy();
         }
-
-        #endregion
     }
 }

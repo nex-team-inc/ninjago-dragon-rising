@@ -13,8 +13,8 @@ using UnityEngine.Localization.Settings;
 namespace Nex
 {
     // Shows the localized setup hint for one player. Strings are cached per locale because the tracker
-    // updates on every detection tick. A key missing from the table (seeder not run, untranslated locale)
-    // falls back to the English hint so the setup screen never goes blank.
+    // updates on every detection tick. Every hint comes from the string table; a key missing from it
+    // (seeder not run) is logged as an error and leaves the hint empty rather than showing English.
     public class SetupWarningMessage : MonoBehaviour
     {
         [SerializeField] TMP_Text warningText = null!;
@@ -75,14 +75,14 @@ namespace Nex
             var table = await LocalizationSettings.StringDatabase.GetTableAsync(LocKeys.Table).ToUniTask(cancellationToken: cancellationToken);
             for (var i = 0; i < warningByIssue.Length; i++)
             {
-                var (key, english) = HintFor((SetupIssueType)i);
+                var key = HintKeyFor((SetupIssueType)i);
                 var entry = key.Length == 0 || table == null ? null : table.GetEntry(key);
                 if (entry == null && key.Length > 0 && reportedMissingKeys.Add(key))
                 {
-                    Debug.LogWarning($"[SetupWarningMessage] Missing localization entry '{key}', using English.");
+                    Debug.LogError($"[SetupWarningMessage] Missing localization entry '{key}'.");
                 }
 
-                warningByIssue[i] = entry?.GetLocalizedString() ?? english;
+                warningByIssue[i] = entry == null ? "" : entry.GetLocalizedString();
             }
 
             ApplyCurrent();
@@ -97,22 +97,22 @@ namespace Nex
 
         #region Helpers
 
-        // Localization key plus the English copy from LocKeys.Setup (the fallback when the table lacks the key).
-        static (string key, string english) HintFor(SetupIssueType issue)
+        // Localization key of the hint (LocKeys.Setup); "" = no hint.
+        static string HintKeyFor(SetupIssueType issue)
         {
             return issue switch
             {
-                SetupIssueType.None => ("", ""),
-                SetupIssueType.NoPose => (LocKeys.Setup.NoPlayer, "No player"),
-                SetupIssueType.ChestTooHigh => (LocKeys.Setup.StepBack, "Step back"),
-                SetupIssueType.ChestTooLow => (LocKeys.Setup.StepBack, "Step back"),
-                SetupIssueType.ChestTooLeft => (LocKeys.Setup.MoveToCenter, "Move to center"),
-                SetupIssueType.ChestTooRight => (LocKeys.Setup.MoveToCenter, "Move to center"),
-                SetupIssueType.TooFar => (LocKeys.Setup.MoveCloser, "Move closer"),
-                SetupIssueType.TooClose => (LocKeys.Setup.StepBack, "Step back"),
-                SetupIssueType.TooFarInPlayArea => (LocKeys.Setup.MoveCloser, "Move closer"),
-                SetupIssueType.TooCloseInPlayArea => (LocKeys.Setup.StepBack, "Step back"),
-                SetupIssueType.NotAtCenter => (LocKeys.Setup.MoveToCenter, "Move to center"),
+                SetupIssueType.None => "",
+                SetupIssueType.NoPose => LocKeys.Setup.NoPlayer,
+                SetupIssueType.ChestTooHigh => LocKeys.Setup.StepBack,
+                SetupIssueType.ChestTooLow => LocKeys.Setup.StepBack,
+                SetupIssueType.ChestTooLeft => LocKeys.Setup.MoveToCenter,
+                SetupIssueType.ChestTooRight => LocKeys.Setup.MoveToCenter,
+                SetupIssueType.TooFar => LocKeys.Setup.MoveCloser,
+                SetupIssueType.TooClose => LocKeys.Setup.StepBack,
+                SetupIssueType.TooFarInPlayArea => LocKeys.Setup.MoveCloser,
+                SetupIssueType.TooCloseInPlayArea => LocKeys.Setup.StepBack,
+                SetupIssueType.NotAtCenter => LocKeys.Setup.MoveToCenter,
                 _ => throw new ArgumentOutOfRangeException(nameof(issue), issue, null)
             };
         }

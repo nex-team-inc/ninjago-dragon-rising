@@ -31,6 +31,8 @@ namespace Nex.BilliardRogue.Editor
 
         const int MaxUInt16Vertices = 65000;
 
+        #region Public Methods
+
         /// <summary>
         /// Combines under root. groupKey returns the logical group of a renderer (null = leave it alone); the final
         /// group also separates materials and shadow modes. Meshes go to meshFolder as "{prefix}_{group}.asset".
@@ -137,6 +139,10 @@ namespace Nex.BilliardRogue.Editor
             return found;
         }
 
+        #endregion
+
+        #region Helpers
+
         static Mesh LoadOrCreateMesh(string path, string name)
         {
             var existing = AssetDatabase.LoadAssetAtPath<Mesh>(path);
@@ -156,5 +162,7 @@ namespace Nex.BilliardRogue.Editor
 
             return sb.ToString();
         }
+
+        #endregion
     }
 }

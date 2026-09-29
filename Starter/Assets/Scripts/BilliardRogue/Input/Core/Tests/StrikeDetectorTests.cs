@@ -15,6 +15,7 @@ namespace Nex.BilliardRogue.InputCore.Tests
         static StrikeSettings DefaultSettings() => new()
         {
             strikeSpeed = 35f,
+            sustainSpeedFraction = 0.5f,
             contactDistance = 5f,
             armDistance = 10f,
             rearmSeconds = 0.35f,

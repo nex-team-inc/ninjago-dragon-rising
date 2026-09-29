@@ -38,6 +38,8 @@ namespace Nex.BilliardRogue
         Material material = null!;
         TiltShiftVolume settings = null!;
 
+        #region Life Cycle
+
         public TiltShiftPass()
         {
             requiresIntermediateTexture = true;
@@ -48,6 +50,10 @@ namespace Nex.BilliardRogue
             material = aMaterial;
             settings = volume;
         }
+
+        #endregion
+
+        #region Render Graph
 
         public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
         {
@@ -86,6 +92,10 @@ namespace Nex.BilliardRogue
             resourceData.cameraColor = destination;
         }
 
+        #endregion
+
+        #region Helpers
+
         void AddDraw(RenderGraph renderGraph, string name, TextureHandle source, TextureHandle blurred, TextureHandle target,
             int shaderPass, MaterialPropertyBlock block, Vector4 parameters)
         {
@@ -116,5 +126,7 @@ namespace Nex.BilliardRogue
                 context.cmd.DrawProcedural(Matrix4x4.identity, d.material, d.shaderPass, MeshTopology.Triangles, 3, 1, d.block);
             });
         }
+
+        #endregion
     }
 }

@@ -17,6 +17,8 @@ namespace Nex.BilliardRogue.Editor
     {
         static Color C(float r, float g, float b) => new(r, g, b, 1f);
 
+        #region Public Methods
+
         /// <summary>Overrides the layout-seeded preset of act actId (1-based) with its calibrated values.</summary>
         public static void Calibrate(int actId, ActLightingPreset look)
         {
@@ -53,6 +55,10 @@ namespace Nex.BilliardRogue.Editor
             look.godRayIntensity = 1.6f;
             look.particleTint = C(1f, 0.85f, 0.6f);
         }
+
+        #endregion
+
+        #region Act Looks
 
         // Sunny afternoon in the ruins: a warm but not yellow sun from the upper left at 46°, long hard shadows,
         // cooler violet ambient in the shade, stone lanterns as accents only.
@@ -113,5 +119,7 @@ namespace Nex.BilliardRogue.Editor
             look.godRayColor = C(0.9f, 0.9f, 1f);
             look.godRayIntensity = 0.6f;
         }
+
+        #endregion
     }
 }

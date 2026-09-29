@@ -34,10 +34,28 @@ The rebuild takes about 30 s.
 Resume: read this section + `git log --oneline -15`. Editor work goes through `Tools/editor_lock.sh demo …`.
 
 - [x] 0. Paused perf pass edits reviewed and committed (7f6da517: shadow flags in the builders, board teardown guard).
-- [ ] 1. `DebugSettings.practiceMode`: god mode + infinite balls, enemies stop one row above the danger row.
-- [ ] 2. Control readout overlay (`showControlDebug`): calibration test strike + gameplay, right column.
-- [ ] 3. Live tuning rows (strike speed, contact distance, aim smoothing, launch range) + left-handed row.
-- [ ] 4. `#if BR_CONTROL_DEMO` defaults (showControlDebug, practiceMode on).
-- [ ] 5. Editor verification (screenshots in scratchpad `demo/`), EditMode tests.
+- [x] 1. `DebugSettings.practiceMode` (ae8e7361): god mode + infinite balls through `SessionServices.GodMode` /
+      `InfiniteBalls`; `EnemyPhaseResolver.Resolve(..., holdBeforeDangerRow)` stops every advance one row short of
+      the danger row. Test: `EnemyPhaseTests.PracticeHoldStopsEveryAdvanceAboveTheDangerRow`.
+- [x] 2. Control readout (c2049b53): `UI/Debug/ControlReadoutOverlay` + `ControlReadoutPanel`,
+      `ControlReadoutOverlay.prefab` built by `Editor/ControlReadoutBuilder` (called by FlowPrefabsBuilder, which
+      wires `BilliardRogueCoordinator.controlReadoutPrefab`). `StrikeDetector.Readout` (`StrikeReadout`,
+      `StrikeMiss`) + `PawShotInput` readout properties. StrikeDetectorTests +3.
+- [x] 3. Live tuning (c2049b53): `ControlTuning` (0.25..3, snapped to 0.05), `ShotInputContext.tuning`,
+      `ControlConfig.StrikeSettingsFor / AimMinCutoffFor / LaunchRangeFor`, DebugSettings rows 24-27 + row 28
+      `ToggleLeftHandedCue` (also in Settings).
+- [x] 4. `#if BR_CONTROL_DEMO` initializers: `practiceMode` and `showControlDebug` default to true.
+- [x] 5. Editor verification: EditMode 117/117. Play mode (scratchpad `demo/verify.sh` + `DemoVerify.cs`):
+      New Run 1P → calibration steps completed by reflection → test strike with the readout
+      (`P1 DEBUG`, `NO TRACKING: CAMERA`: the Editor had no camera frames) → synthetic detector samples showed
+      too slow / too far / strike POWER / cooldown in the log → SkipCalibration → gameplay readout, tuned
+      values (NEED 52, CONTACT 6.0 at x1.5 / x1.2) → 5 shots, HP 30/30, balls 4/4, 3 enemy phases. Console: only
+      the Editor's `CameraFrameProvider: Camera timeout` errors (no webcam frames) and third-party warnings.
 - [ ] 6. APK rebuild.
 - [ ] 7. `Docs/BilliardRogue/ControlDemo.md` how-to.
+
+Notes:
+- Running FlowPrefabsBuilder rewrites CalibrationView/GameplayView.prefab with only fileID/rid churn (their builder
+  code is unchanged; the coordinator's references to them stay the same), so those two were restored with git.
+- The paw readout needs camera frames to move; in the Editor without a body the router picks the Debug source
+  (header `P1 DEBUG`), and the paw fields stay at their last values.

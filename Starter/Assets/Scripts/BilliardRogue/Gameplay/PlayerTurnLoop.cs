@@ -39,7 +39,7 @@ namespace Nex.BilliardRogue
 
         public void BeginTurn()
         {
-            services.Sequencer.BeginTurn(services.Debug.infiniteBalls);
+            services.Sequencer.BeginTurn(services.InfiniteBalls);
             var inputs = services.Inputs;
             for (var i = 0; i < inputs.Length; i++)
             {

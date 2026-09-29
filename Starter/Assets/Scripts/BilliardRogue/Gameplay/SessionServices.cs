@@ -57,5 +57,14 @@ namespace Nex.BilliardRogue
         public int AimGuideSetting => headless ? 1 : PlayerDataManager.Instance.PlayerPreference.aimGuideLength;
 
         public float TrackingLostSeconds => Config.Control.TrackingLostSeconds;
+
+        /// <summary>DebugSettings.godMode, also on in practice mode (the control lab: the run never ends).</summary>
+        public bool GodMode => Debug.godMode || Debug.practiceMode;
+
+        /// <summary>DebugSettings.infiniteBalls, also on in practice mode.</summary>
+        public bool InfiniteBalls => Debug.infiniteBalls || Debug.practiceMode;
+
+        /// <summary>Practice mode: enemies stop one row short of the danger row.</summary>
+        public bool HoldEnemiesBeforeDangerRow => Debug.practiceMode;
     }
 }

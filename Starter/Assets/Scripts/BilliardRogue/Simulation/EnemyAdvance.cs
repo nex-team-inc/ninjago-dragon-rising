@@ -27,12 +27,16 @@ namespace Nex.BilliardRogue.Simulation
 
         #region Public Methods
 
-        /// <summary>quakeRows extra rows apply to every enemy except quakeSourceId; frozen enemies stay put.</summary>
-        public void Resolve(RunState run, List<EnemyState> frozen, int quakeRows, int quakeSourceId, List<SimEvent> events)
+        /// <summary>
+        /// quakeRows extra rows apply to every enemy except quakeSourceId; frozen enemies stay put. holdBeforeDangerRow
+        /// (debug practice mode) makes the row above the danger row the last one an enemy can step into.
+        /// </summary>
+        public void Resolve(RunState run, List<EnemyState> frozen, int quakeRows, int quakeSourceId, bool holdBeforeDangerRow, List<SimEvent> events)
         {
             MovePickups(run, events);
             SortFrontFirst(run.board.enemies);
             var dangerRow = ArenaGeometry.DangerRow(rules.arena);
+            var lastRow = holdBeforeDangerRow ? dangerRow - 1 : dangerRow;
             var centerX = rules.arena.columns * 0.5f;
             foreach (var e in order)
             {
@@ -48,7 +52,7 @@ namespace Nex.BilliardRogue.Simulation
                 }
                 if (rows <= 0) continue;
                 var from = ops.Center(e);
-                var moved = Move(run, e, rows, dangerRow, centerX);
+                var moved = Move(run, e, rows, lastRow, centerX);
                 if (moved == 0) continue;
                 var ev = ops.EnemyEvent(SimEventKind.EnemyMoved, e, moved);
                 ev.position = from;
@@ -61,12 +65,12 @@ namespace Nex.BilliardRogue.Simulation
 
         #region Helpers
 
-        int Move(RunState run, EnemyState e, int rows, int dangerRow, float centerX)
+        int Move(RunState run, EnemyState e, int rows, int lastRow, float centerX)
         {
             var moved = 0;
             for (var i = 0; i < rows; i++)
             {
-                if (e.row + e.height - 1 >= dangerRow) break;
+                if (e.row + e.height - 1 >= lastRow) break;
                 if (ops.IsFootprintFree(run.board, e.col, e.row + 1, e.width, e.height, e))
                 {
                     e.row++;

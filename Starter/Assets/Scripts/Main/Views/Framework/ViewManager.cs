@@ -45,6 +45,8 @@ namespace Nex
         public event UnityAction? PauseViewHomeClicked;
         public event UnityAction? PauseViewResumeClicked;
         public event UnityAction? Paused;
+        /// <summary>Debug builds: the secret code was entered on this top view, just before Debug Settings opens.</summary>
+        public event UnityAction<View>? SecretCodeEntered;
 
         void Awake()
         {
@@ -89,6 +91,18 @@ namespace Nex
         }
 
         public View TopView => viewStack.Peek().view;
+
+        /// <summary>Adds every view on the stack that is a T to result, top first.</summary>
+        public void CollectStackViews<T>(List<T> result) where T : View
+        {
+            foreach (var config in viewStack)
+            {
+                if (config.view is T view)
+                {
+                    result.Add(view);
+                }
+            }
+        }
         public View.ViewIdentifier TopViewIdentifier => TopView.Identifier;
         public TopLevelControlPanel ControlPanel => controlPanel;
 
@@ -425,6 +439,7 @@ namespace Nex
 
         void OpenDebugSettings()
         {
+            SecretCodeEntered?.Invoke(TopView);
             SfxManager.Instance.PlaySoundEffect(SfxManager.SoundEffect.GenericEnter);
             PushViewPrefab(debugSettingsPrefab).Forget();
         }

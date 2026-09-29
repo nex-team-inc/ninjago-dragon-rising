@@ -2,6 +2,7 @@
 
 using System.Collections.Generic;
 using Nex.BilliardRogue.Simulation;
+using Nex.Util;
 using UnityEngine;
 
 namespace Nex.BilliardRogue
@@ -17,10 +18,10 @@ namespace Nex.BilliardRogue
         readonly GameRules rules;
         readonly ArenaLayout layout;
         readonly JuiceConfig juice;
-        readonly EnemyViewPool[] enemyPools;
+        readonly EnumDictionary<EnemyType, EnemyViewPool> enemyPools;
         readonly BallViewPool ballPool;
-        readonly FieldObjectViewPool[] objectPools;
-        readonly PickupViewPool[] pickupPools;
+        readonly EnumDictionary<FieldObjectType, FieldObjectViewPool> objectPools;
+        readonly EnumDictionary<PickupType, PickupViewPool> pickupPools;
         readonly WorldLabelLayer labels;
         readonly Dictionary<int, EnemyView> enemies = new();
         readonly List<EnemyView> enemyList = new();
@@ -33,8 +34,9 @@ namespace Nex.BilliardRogue
         readonly List<int> scratchIds = new();
         int ballFrame;
 
-        public BoardViews(BilliardRogueConfig aConfig, GameRules aRules, ArenaLayout aLayout, EnemyViewPool[] aEnemyPools, BallViewPool aBallPool,
-            FieldObjectViewPool[] aObjectPools, PickupViewPool[] aPickupPools, WorldLabelLayer aLabels, BallView ballPrefab, int worldLayer)
+        public BoardViews(BilliardRogueConfig aConfig, GameRules aRules, ArenaLayout aLayout, EnumDictionary<EnemyType, EnemyViewPool> aEnemyPools,
+            BallViewPool aBallPool, EnumDictionary<FieldObjectType, FieldObjectViewPool> aObjectPools, EnumDictionary<PickupType, PickupViewPool> aPickupPools,
+            WorldLabelLayer aLabels, BallView ballPrefab, int worldLayer)
         {
             config = aConfig;
             rules = aRules;
@@ -45,24 +47,32 @@ namespace Nex.BilliardRogue
             objectPools = aObjectPools;
             pickupPools = aPickupPools;
             labels = aLabels;
-            for (var i = 0; i < enemyPools.Length; i++)
+            var enemyTypes = EnumDictionary<EnemyType, EnemyViewPool>.allKeys;
+            for (var i = 0; i < enemyTypes.Length; i++)
             {
-                enemyPools[i].Layer = worldLayer;
-                enemyPools[i].Initialize(config.Enemies.Get((EnemyType)i).Prefab, 6);
+                var pool = enemyPools[enemyTypes[i]];
+                pool.Layer = worldLayer;
+                pool.Initialize(config.Enemies.Get(enemyTypes[i]).Prefab, 6);
+                pool.Prewarm(2);
             }
 
             ballPool.Layer = worldLayer;
             ballPool.Initialize(ballPrefab, 16);
-            for (var i = 0; i < objectPools.Length; i++)
+            ballPool.Prewarm(16);
+            var objectTypes = EnumDictionary<FieldObjectType, FieldObjectViewPool>.allKeys;
+            for (var i = 0; i < objectTypes.Length; i++)
             {
-                objectPools[i].Layer = worldLayer;
-                objectPools[i].Initialize(config.FieldObjects.ObjectPrefabs[(FieldObjectType)i], 2);
+                var pool = objectPools[objectTypes[i]];
+                pool.Layer = worldLayer;
+                pool.Initialize(config.FieldObjects.ObjectPrefabs[objectTypes[i]], 2);
             }
 
-            for (var i = 0; i < pickupPools.Length; i++)
+            var pickupTypes = EnumDictionary<PickupType, PickupViewPool>.allKeys;
+            for (var i = 0; i < pickupTypes.Length; i++)
             {
-                pickupPools[i].Layer = worldLayer;
-                pickupPools[i].Initialize(config.FieldObjects.PickupPrefabs[(PickupType)i], 2);
+                var pool = pickupPools[pickupTypes[i]];
+                pool.Layer = worldLayer;
+                pool.Initialize(config.FieldObjects.PickupPrefabs[pickupTypes[i]], 2);
             }
         }
 
@@ -224,7 +234,7 @@ namespace Nex.BilliardRogue
         {
             if (enemies.TryGetValue(state.id, out var existing)) return existing;
             var definition = config.Enemies.Get(state.type);
-            var view = enemyPools[(int)state.type].Get();
+            var view = enemyPools[state.type].Get();
             view.Spawn(state, definition.Rules.isBoss, layout, juice, pop);
             enemies[state.id] = view;
             enemyList.Add(view);
@@ -274,7 +284,7 @@ namespace Nex.BilliardRogue
         public FieldObjectView SpawnObject(FieldObjectState state, RunState run)
         {
             if (objects.TryGetValue(state.id, out var existing)) return existing;
-            var view = objectPools[(int)state.type].Get();
+            var view = objectPools[state.type].Get();
             var maxHp = state.type == FieldObjectType.Crate ? CrateMaxHp(run) : state.hp;
             view.Spawn(state, maxHp, layout, juice);
             objects[state.id] = view;
@@ -309,7 +319,7 @@ namespace Nex.BilliardRogue
         public PickupView SpawnPickup(PickupState state)
         {
             if (pickups.TryGetValue(state.id, out var existing)) return existing;
-            var view = pickupPools[(int)state.type].Get();
+            var view = pickupPools[state.type].Get();
             view.Spawn(state, layout, juice);
             pickups[state.id] = view;
             pickupList.Add(view);

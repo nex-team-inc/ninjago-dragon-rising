@@ -203,6 +203,32 @@ namespace Nex.BilliardRogue.Editor
             }
         }
 
+        /// <summary>
+        /// Keeps shadow casting on the renderers of castPart only (the largest renderer when it is null): one shadow per
+        /// model instead of one per limb, eye or weapon.
+        /// </summary>
+        public static void CastShadowsFrom(List<Renderer> renderers, Transform? castPart)
+        {
+            if (castPart == null)
+            {
+                var largest = -1f;
+                foreach (var renderer in renderers)
+                {
+                    var size = renderer.bounds.size;
+                    var volume = size.x * size.y * size.z;
+                    if (volume <= largest) continue;
+                    largest = volume;
+                    castPart = renderer.transform;
+                }
+            }
+
+            foreach (var renderer in renderers)
+            {
+                var casts = renderer.transform == castPart;
+                renderer.shadowCastingMode = casts ? UnityEngine.Rendering.ShadowCastingMode.On : UnityEngine.Rendering.ShadowCastingMode.Off;
+            }
+        }
+
         public static Transform? FindPart(Transform root, string partName)
         {
             if (root.name == partName) return root;

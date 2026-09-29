@@ -47,7 +47,9 @@ namespace Nex.BilliardRogue
             display = aDisplay;
             juice = aJuice;
             labelPool.Initialize(labelPrefab, 24);
+            labelPool.Prewarm(16);
             numberPool.Initialize(numberPrefab, 24);
+            numberPool.Prewarm(16);
             texts = new FloatTextCache(destroyCancellationToken);
         }
 

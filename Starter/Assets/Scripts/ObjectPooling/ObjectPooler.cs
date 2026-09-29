@@ -37,10 +37,27 @@ namespace Nex
         {
             var instance = (T)component;
             activeInstances.Remove(instance);
+            // Already destroyed by a scene teardown that reached it before its owner: nothing left to pool.
+            if (instance == null) return;
             objectPool.Release(instance);
         }
 
         public IEnumerable<T> ActiveInstances => activeInstances;
+
+        /// <summary>Creates count inactive instances up front so the first spawns of a stage do not instantiate mid-play.</summary>
+        public void Prewarm(int count)
+        {
+            var instances = new T[count];
+            for (var i = 0; i < count; i++)
+            {
+                instances[i] = objectPool.Get();
+            }
+
+            for (var i = 0; i < count; i++)
+            {
+                objectPool.Release(instances[i]);
+            }
+        }
 
         protected virtual T CreatePooledItem()
         {

@@ -93,9 +93,11 @@ namespace Nex.BilliardRogue.Editor
             var model = WorldPrefabModels.InstantiateModel(modelPath, root.transform, "Model", PrimitiveType.Capsule, placeholderScale, layer, out _);
             var renderers = new List<Renderer>();
             WorldPrefabModels.ApplyMaterial(model, palette, renderers);
+            WorldPrefabModels.CastShadowsFrom(renderers, WorldPrefabModels.FindFirstPart(model.transform, "Body", "Stem", "Base", "Robe", "Wall"));
             var emissive = WorldPrefabModels.CollectEmissive(renderers, type == EnemyType.Healer ? "Spores" : "");
             var bounds = WorldPrefabModels.RendererBounds(model);
             var marker = WorldPrefabModels.CreatePrimitive(root.transform, "ShieldMarker", PrimitiveType.Cube, new Vector3(0f, 0.35f, 0.5f), new Vector3(1f, 0.7f, 0.08f), glow, layer);
+            marker.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             marker.SetActive(false);
 
             var view = root.AddComponent<EnemyView>();

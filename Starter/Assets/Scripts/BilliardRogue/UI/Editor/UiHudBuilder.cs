@@ -59,6 +59,7 @@ namespace Nex.BilliardRogue.Editor
             var warnings = kit.Ui("TrackingWarnings", left.transform);
             Kit.Place(warnings, Kit.TopLeft, new Vector2(0f, y), new Vector2(ColumnWidth, 144f));
             Column(warnings, TextAnchor.UpperLeft);
+            IsolateCanvas(warnings);
             var warningChips = new List<Object>
             {
                 Chip(kit, warnings.transform, "WarningP1", LocKeys.Hud.TrackingWarningPlayer, theme.Danger, new Vector2(ColumnWidth, 64f), true),
@@ -76,6 +77,7 @@ namespace Nex.BilliardRogue.Editor
             var chips = kit.Ui("Chips", right.transform);
             Kit.Place(chips, Kit.TopLeft, Vector2.zero, new Vector2(ColumnWidth, 224f));
             Column(chips, TextAnchor.UpperLeft);
+            IsolateCanvas(chips);
             UiFields.Set(hud, "bonusBallsChip", Chip(kit, chips.transform, "BonusBalls", LocKeys.Hud.BonusBalls, theme.Positive, new Vector2(ColumnWidth, 64f), false));
             UiFields.Set(hud, "powerChip", Chip(kit, chips.transform, "PowerReady", LocKeys.Hud.PowerArmed, theme.Danger, new Vector2(ColumnWidth, 64f), true));
             UiFields.Set(hud, "fastForwardChip", Chip(kit, chips.transform, "FastForward", LocKeys.Hud.FastForward, theme.TextPrimary, new Vector2(ColumnWidth, 64f), true));
@@ -153,6 +155,7 @@ namespace Nex.BilliardRogue.Editor
             var theme = kit.Theme;
             const float height = 144f;
             var panel = kit.Image(parent, "HpPanel", theme.Panel, Kit.TopLeft, new Vector2(0f, y), new Vector2(ColumnWidth, height), Fill.Tiled);
+            IsolateCanvas(panel.gameObject);
             var shake = kit.Ui("Content", panel.transform);
             Kit.Stretch(shake);
             var s = shake.transform;
@@ -180,6 +183,7 @@ namespace Nex.BilliardRogue.Editor
         {
             var theme = kit.Theme;
             var panel = kit.Image(parent, "BossBar", theme.Panel, Kit.TopLeft, Vector2.zero, new Vector2(ColumnWidth, 144f), Fill.Tiled);
+            IsolateCanvas(panel.gameObject);
             var group = panel.gameObject.AddComponent<CanvasGroup>();
             var shake = kit.Ui("Content", panel.transform);
             Kit.Stretch(shake);
@@ -211,6 +215,7 @@ namespace Nex.BilliardRogue.Editor
             var heightWithoutGrid = GridTop + QueueBottomPadding - (SlotPitch - SlotSize);
             var panel = kit.Image(parent, "BallsPanel", theme.Panel, Kit.TopLeft, Vector2.zero,
                 new Vector2(ColumnWidth, heightWithoutGrid + 2f * SlotPitch), Fill.Tiled);
+            IsolateCanvas(panel.gameObject);
             var p = panel.transform;
             kit.Image(p, "Icon", theme.Ball, Kit.TopLeft, new Vector2(Inset - 4f, -24f), new Vector2(48f, 48f));
             kit.Label(p, "Label", LocKeys.Hud.BallsLabel, 32, theme.TextMuted, Kit.TopLeft, new Vector2(Inset + 52f, -24f), new Vector2(160f, 48f),
@@ -310,6 +315,7 @@ namespace Nex.BilliardRogue.Editor
         static HudBanner Ribbon(Kit kit, Transform parent, string name, string key, Vector2 pos, float width)
         {
             var banner = UiMenuViewsBuilder.Banner(kit, parent, name, key, pos, width);
+            IsolateCanvas(banner.gameObject);
             var group = banner.gameObject.AddComponent<CanvasGroup>();
             var widget = banner.gameObject.AddComponent<HudBanner>();
             UiFields.Set(widget, "theme", kit.Theme);
@@ -318,6 +324,15 @@ namespace Nex.BilliardRogue.Editor
             UiFields.Set(widget, "label", banner.GetComponentInChildren<TextLabel>());
             banner.gameObject.SetActive(false);
             return widget;
+        }
+
+        /// <summary>
+        /// Own canvas for a subtree that changes at runtime (bar tweens, counters, chips, banners), so its rebuilds
+        /// leave the static HUD frames alone. Same shader channels as the root: TMP needs them on every canvas.
+        /// </summary>
+        static void IsolateCanvas(GameObject go)
+        {
+            go.AddComponent<Canvas>().additionalShaderChannels = (AdditionalCanvasShaderChannels)27;
         }
 
         /// <summary>Stacks active children top-down with the panel gutter (inactive ones collapse).</summary>

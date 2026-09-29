@@ -2,6 +2,7 @@
 
 using System.Collections.Generic;
 using Nex.BilliardRogue.Simulation;
+using Nex.Util;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
@@ -90,11 +91,11 @@ namespace Nex.BilliardRogue.Editor
             pill.color = new Color(0.04f, 0.04f, 0.07f, 0.86f);
             var hp = NewText("Hp", label.transform, font, 32f, new Vector2(0f, 0f), new Vector2(160f, 40f));
             var icons = new List<Image>();
-            var statusNames = new[] { "Status_Burn", "Status_Poison", "Status_Freeze" };
-            for (var i = 0; i < statusNames.Length; i++)
+            var statuses = EnumDictionary<StatusType, Image>.allKeys;
+            for (var i = 0; i < statuses.Length; i++)
             {
-                var image = NewImage(statusNames[i], label.transform, new Vector2((i - 1) * 30f, -30f), new Vector2(28f, 28f));
-                image.sprite = WorldPrefabModels.LoadSprite($"{WorldPrefabModels.IconRoot}/{statusNames[i]}.png");
+                var image = NewImage($"Status_{statuses[i]}", label.transform, new Vector2((i - 1) * 30f, -30f), new Vector2(28f, 28f));
+                image.sprite = WorldPrefabModels.LoadSprite($"{WorldPrefabModels.IconRoot}/Status_{statuses[i]}.png");
                 image.enabled = false;
                 icons.Add(image);
             }
@@ -105,7 +106,7 @@ namespace Nex.BilliardRogue.Editor
             labelSo.FindProperty("rect").objectReferenceValue = label.GetComponent<RectTransform>();
             labelSo.FindProperty("hpText").objectReferenceValue = hp;
             labelSo.FindProperty("hpPill").objectReferenceValue = pill;
-            SerializedPropertyWriter.Write(labelSo.FindProperty("statusIcons"), icons);
+            WriteEnumDictionary(labelSo.FindProperty("statusIcons"), icons);
             labelSo.FindProperty("telegraphIcon").objectReferenceValue = telegraph;
             labelSo.ApplyModifiedPropertiesWithoutUndo();
             WorldPrefabModels.SavePrefab(label, LabelPath);
@@ -125,6 +126,8 @@ namespace Nex.BilliardRogue.Editor
             layerRect.anchorMax = Vector2.one;
             layerRect.offsetMin = Vector2.zero;
             layerRect.offsetMax = Vector2.zero;
+            // Every label moves each frame: an own canvas keeps those rebuilds off the GameplayView canvas.
+            layer.AddComponent<Canvas>().additionalShaderChannels = (AdditionalCanvasShaderChannels)27;
             var labelPool = layer.AddComponent<WorldLabelPool>();
             var numberPool = layer.AddComponent<DamageNumberPool>();
             var layerView = layer.AddComponent<WorldLabelLayer>();
@@ -222,11 +225,11 @@ namespace Nex.BilliardRogue.Editor
             var shaker = root.AddComponent<CameraShaker>();
             var presenter = root.AddComponent<BoardPresenter>();
             var so = new SerializedObject(presenter);
-            SerializedPropertyWriter.Write(so.FindProperty("enemyPools"), enemyPools);
+            WriteEnumDictionary(so.FindProperty("enemyPools"), enemyPools);
             so.FindProperty("ballPool").objectReferenceValue = ballPool;
             so.FindProperty("ballPrefab").objectReferenceValue = ballPrefab;
-            SerializedPropertyWriter.Write(so.FindProperty("objectPools"), objectPools);
-            SerializedPropertyWriter.Write(so.FindProperty("pickupPools"), pickupPools);
+            WriteEnumDictionary(so.FindProperty("objectPools"), objectPools);
+            WriteEnumDictionary(so.FindProperty("pickupPools"), pickupPools);
             so.FindProperty("aimGuide").objectReferenceValue = aimGuide;
             SerializedPropertyWriter.Write(so.FindProperty("cats"), cats);
             so.FindProperty("cameraShaker").objectReferenceValue = shaker;
@@ -277,5 +280,14 @@ namespace Nex.BilliardRogue.Editor
         }
 
         #endregion
+
+        /// <summary>Fills an EnumDictionary property whose keys are 0..n-1 (the builders create one value per enum key in order).</summary>
+        static void WriteEnumDictionary<T>(SerializedProperty dictionary, List<T> values) where T : UnityEngine.Object
+        {
+            for (var i = 0; i < values.Count; i++)
+            {
+                EnumDictionaryEditorUtils.GetValueProperty(dictionary, i).objectReferenceValue = values[i];
+            }
+        }
     }
 }

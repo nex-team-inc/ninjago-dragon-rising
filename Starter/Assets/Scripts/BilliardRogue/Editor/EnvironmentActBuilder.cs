@@ -23,6 +23,8 @@ namespace Nex.BilliardRogue.Editor
 
         static readonly string[] FirePieces = { "Env_WallTorch", "Env_WallTorch_Arcane", "Env_Brazier", "Env_Candles", "Env_StoneLantern" };
         static readonly string[] NoShadowPieces = { "Env_GrassTuft", "Env_Flowers", "Env_Pebbles", "Env_GroundPatch", "Env_PavingPatch", "Env_Mushrooms", "Env_GroundMound", "Env_WaterPool", "Env_WaterPool_Glow" };
+        // Emissive flames and thin cloth cast no shadow: each animated part is its own renderer in the shadow pass.
+        static readonly string[] NoShadowParts = { "Flame", "Cloth" };
         static readonly string[] SwayParts = { "Canopy", "Cloth" };
         static readonly string[] BobParts = { "Water", "Water_Emissive", "Glints_Emissive" };
 
@@ -116,6 +118,12 @@ namespace Nex.BilliardRogue.Editor
                 }
 
                 EnvironmentPieces.SetShadows(instance, System.Array.IndexOf(NoShadowPieces, prop.piece) < 0);
+                foreach (var renderer in instance.GetComponentsInChildren<Renderer>(true))
+                {
+                    if (System.Array.IndexOf(NoShadowParts, renderer.gameObject.name) < 0) continue;
+                    renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                }
+
                 EnvironmentPieces.SetStatic(instance);
                 CollectAnimatedParts(ctx, instance);
                 ctx.props.Add(instance);

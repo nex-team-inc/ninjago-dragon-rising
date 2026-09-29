@@ -15,6 +15,8 @@ namespace Nex.BilliardRogue
         public RunState run = null!;
         public bool isContinue;
         public CameraSession camera = null!;
+        /// <summary>Seconds between camera preview refreshes while the PiP feed shows (0 = every camera frame).</summary>
+        public float pipPreviewInterval;
         public BoardPresenter board = null!;
         public ArenaLayout layout = null!;
         public PixelWorldDisplay display = null!;

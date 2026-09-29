@@ -88,6 +88,7 @@ namespace Nex.BilliardRogue
                 run = run,
                 isContinue = isContinue,
                 camera = ctx.camera,
+                pipPreviewInterval = ctx.pipPreviewInterval(),
                 board = ctx.board,
                 layout = ctx.layout,
                 display = ctx.display,

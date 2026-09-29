@@ -100,6 +100,7 @@ namespace Nex.BilliardRogue
                 rules = rules,
                 persistence = persistence,
                 camera = cameraSession,
+                pipPreviewInterval = () => config.Visual.PipPreviewInterval(worldCameraRig.Tier),
                 calibrationViewPrefab = calibrationViewPrefab,
                 gameplayViewPrefab = gameplayViewPrefab,
                 board = boardPresenter,

@@ -21,6 +21,8 @@ namespace Nex.BilliardRogue
         public GameRules rules = null!;
         public RunPersistence persistence = null!;
         public CameraSession camera = null!;
+        /// <summary>Seconds between camera preview refreshes for the gameplay PiP, read when a run starts (render tier).</summary>
+        public Func<float> pipPreviewInterval = null!;
         public CalibrationView calibrationViewPrefab = null!;
         public GameplayView gameplayViewPrefab = null!;
         public BoardPresenter board = null!;

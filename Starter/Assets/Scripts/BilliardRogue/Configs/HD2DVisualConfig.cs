@@ -68,6 +68,8 @@ namespace Nex.BilliardRogue
         [SerializeField] bool lowTierTiltShift = true;
         [Tooltip("Keep the main-light shadows in the low tier.")]
         [SerializeField] bool lowTierShadows = true;
+        [Tooltip("Camera preview refreshes per second behind the gameplay PiP feed in the low tier (0 = every camera frame, as in the full tier). Each refresh uploads the whole camera frame twice on the render thread, about 9 ms on the Nex Playground.")]
+        [SerializeField, Range(0f, 30f)] float lowTierPipPreviewHz = 8f;
 
         #region Accessors
 
@@ -116,6 +118,12 @@ namespace Nex.BilliardRogue
             }
 
             return RenderQualityTier.Full;
+        }
+
+        /// <summary>Seconds between camera preview refreshes behind the gameplay PiP (0 = every camera frame).</summary>
+        public float PipPreviewInterval(RenderQualityTier tier)
+        {
+            return tier == RenderQualityTier.Low && lowTierPipPreviewHz > 0f ? 1f / lowTierPipPreviewHz : 0f;
         }
 
         #endregion

@@ -1,6 +1,7 @@
 #nullable enable
 
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using Cysharp.Threading.Tasks;
 using Jazz;
 using UnityEngine;
@@ -142,6 +143,51 @@ namespace Nex
         {
             bodyPoseDetectionManager.shouldDetect = true;
             cvDetectionManager.GetFrameProvider().TurnOnPreviewTexture();
+        }
+
+        #endregion
+
+        #region Preview Texture Rate
+
+        /// <summary>SetPreviewTextureInterval value that stops the preview texture refreshes; detection keeps running.</summary>
+        public const float PreviewTextureOff = -1f;
+
+        // 0 = the MDK default: the camera refreshes the preview textures on every camera frame.
+        float previewInterval;
+        float nextPreviewTime;
+
+        /// <summary>
+        /// Seconds between camera preview texture refreshes: 0 = every camera frame (the MDK default), PreviewTextureOff
+        /// = none. A refresh uploads the whole camera frame into two textures on the render thread (about 9 ms on the
+        /// Nex Playground), so a view that shows only a small feed can ask for fewer. PauseDetection still wins.
+        /// </summary>
+        public void SetPreviewTextureInterval(float seconds)
+        {
+            previewInterval = seconds;
+            nextPreviewTime = 0f;
+            if (seconds != 0f) return;
+            if (TryGetCamera(out var provider, out var nexCamera))
+            {
+                nexCamera.isRenderPreview = provider.IsPreviewTextureOn();
+            }
+        }
+
+        void Update()
+        {
+            if (previewInterval == 0f) return;
+            if (!TryGetCamera(out var provider, out var nexCamera)) return;
+            // NexCamera uploads at the end of a frame that has isRenderPreview set and announces the texture at the end
+            // of the next frame, so one frame on gives exactly one upload and one announcement.
+            var due = previewInterval > 0f && provider.IsPreviewTextureOn() && Time.unscaledTime >= nextPreviewTime;
+            nexCamera.isRenderPreview = due;
+            if (due) nextPreviewTime = Time.unscaledTime + previewInterval;
+        }
+
+        bool TryGetCamera([NotNullWhen(true)] out CameraFrameProvider? provider, [NotNullWhen(true)] out NexCamera? nexCamera)
+        {
+            provider = cvDetectionManager.GetFrameProvider() as CameraFrameProvider;
+            nexCamera = provider != null ? provider.GetCamera() : null;
+            return provider != null && nexCamera != null;
         }
 
         #endregion

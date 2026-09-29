@@ -100,10 +100,9 @@ namespace Nex.BilliardRogue
             manager.PauseViewResumeClicked += HandlePauseResume;
             manager.PauseViewHomeClicked += HandlePauseHome;
 
-            var detection = ctx.camera.Detection;
             // Its own Screen Space Overlay canvas (TDD D5), so it lives as a scene root and dies with this view.
             pip = Instantiate(pipPrefab);
-            pip.Initialize(ctx.run.numPlayers, detection.PlayAreaController, detection.BodyPoseDetectionManager);
+            pip.Initialize(ctx.run.numPlayers, ctx.camera.Detection, ctx.pipPreviewInterval);
             pip.SetActivePlayer(ctx.run.numPlayers > 1 ? ctx.run.activePlayerIndex : -1);
             pip.SetVisible(false);
 

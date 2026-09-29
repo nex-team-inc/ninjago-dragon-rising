@@ -19,7 +19,7 @@ namespace Nex
         [DebugOrder(11), Description("Cheat: Infinite Balls")] public bool infiniteBalls;
         [DebugOrder(12), Description("Cheat: Unlock All Balls")] public bool unlockAllBalls;
         // Control lab: god mode + infinite balls, and enemies stop one row short of the danger row. The control demo
-        // APK (BR_CONTROL_DEMO) starts with it and the control readout on.
+        // APK (BR_CONTROL_DEMO) starts with it on (the control readout stays off, see showControlReadout).
 #if BR_CONTROL_DEMO
         [DebugOrder(13), Description("Cheat: Practice Mode (god, infinite balls, no danger row)")] public bool practiceMode = true;
 #else
@@ -50,11 +50,9 @@ namespace Nex
         public float forceHype = -1f;
 
         [DebugOrder(40), Description("Debug: Show Sim Debug")] public bool showSimDebug;
-#if BR_CONTROL_DEMO
-        [DebugOrder(41), Description("Debug: Show Control Readout")] public bool showControlDebug = true;
-#else
-        [DebugOrder(41), Description("Debug: Show Control Readout")] public bool showControlDebug;
-#endif
+        // Hidden by default in every build, the control demo included (GDD v2 §6). Renamed from showControlDebug so a
+        // value saved while the demo defaulted it on is dropped instead of keeping the readout up.
+        [DebugOrder(41), Description("Debug: Show Control Readout")] public bool showControlReadout;
 
         [DebugOrder(50), Description("Render: Disable Pixelation")] public bool disablePixelation;
         [DebugOrder(51), Description("Render: Disable Tilt-Shift")] public bool disableTiltShift;

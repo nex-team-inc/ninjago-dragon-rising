@@ -70,6 +70,7 @@ namespace Nex.BilliardRogue
             {
                 var label = labels[i];
                 Project(label.Rect, label.WorldPosition, offset);
+                label.ApplyScale(label.PopScale);
             }
 
             var dt = Time.deltaTime;

@@ -1,5 +1,6 @@
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
@@ -13,7 +14,8 @@ namespace Nex.BilliardRogue
     /// Owns every visual on the arena (enemies, balls, field objects, pickups, cats, aim guide, labels, juice)
     /// and turns SimEvents into animation, VFX and SFX. Never re-derives geometry: everything goes through ArenaLayout.
     /// Composition: BoardViews (pools and id registry), BoardEventPlayer (event feedback), EnemyPhasePlayer
-    /// (stepped enemy phase), BoardSequencePlayer (stage clear / boss intro / defeat / victory), WorldLabelLayer (UI labels).
+    /// (stepped enemy phase), BatchSpawnPlayer (GDD v2 §5 batch pop-in), BoardSequencePlayer (stage clear / boss intro /
+    /// defeat / victory), WorldLabelLayer (UI labels).
     /// </summary>
     public sealed class BoardPresenter : MonoBehaviour
     {
@@ -48,6 +50,7 @@ namespace Nex.BilliardRogue
         BoardViews views = null!;
         BoardEventPlayer eventPlayer = null!;
         EnemyPhasePlayer phasePlayer = null!;
+        BatchSpawnPlayer batchPlayer = null!;
         BoardSequencePlayer sequences = null!;
         BallVisitor ballVisitor = null!;
         HypeJuice hype = null!;
@@ -84,7 +87,8 @@ namespace Nex.BilliardRogue
             views = new BoardViews(config, rules, layout, enemyPools, ballPool, objectPools, pickupPools, labels, ballPrefab, worldLayer);
             var combo = new ComboPresenter(config.Juice, labels);
             eventPlayer = new BoardEventPlayer(views, labels, combo, cameraShaker, config, layout, cats);
-            phasePlayer = new EnemyPhasePlayer(views, eventPlayer, labels, cameraShaker, layout, config, cats);
+            batchPlayer = new BatchSpawnPlayer(views, eventPlayer);
+            phasePlayer = new EnemyPhasePlayer(views, eventPlayer, batchPlayer, labels, cameraShaker, layout, config, cats);
             sequences = new BoardSequencePlayer(views, eventPlayer, cameraShaker, config, cats);
             ballVisitor = views.OnBall;
             if (hypeAura != null) hypeAura.Initialize(layout, config.Juice);
@@ -110,6 +114,30 @@ namespace Nex.BilliardRogue
             RestoreTelegraphs(run);
             sequences.ResetCats();
             cameraShaker.CaptureBase();
+            RefreshDangerLevel(run);
+        }
+
+        /// <summary>
+        /// Stage start (GDD v2 §5): rebuilds from the state but keeps the first batch (spawnEvents from BeginStage) hidden,
+        /// so PlayBatchSpawnAsync can pop it in after the stage intro.
+        /// </summary>
+        public void RebuildForPopIn(RunState run, List<SimEvent> spawnEvents)
+        {
+            Rebuild(run);
+            batchPlayer.Hide(spawnEvents);
+            RefreshDangerLevel(run);
+        }
+
+        /// <summary>Pops in the batch of spawnEvents (all steps) and waits for the last pop to land; onBatch as in PlayEnemyPhaseAsync.</summary>
+        public async UniTask PlayBatchSpawnAsync(List<SimEvent> spawnEvents, RunState run, Action? onBatch, CancellationToken ct)
+        {
+            var pacing = config.Pacing;
+            if (await batchPlayer.PlayAsync(spawnEvents, run, -1, pacing.BatchSpawnStagger, onBatch, ct))
+            {
+                await UniTask.Delay(TimeSpan.FromSeconds(pacing.WaveSpawnDuration), cancellationToken: ct);
+            }
+
+            RestoreTelegraphs(run);
             RefreshDangerLevel(run);
         }
 
@@ -145,10 +173,13 @@ namespace Nex.BilliardRogue
             views.EndBallFrame();
         }
 
-        /// <summary>Animates one resolved enemy phase step by step (events carry step 0..4) with PacingConfig timings.</summary>
-        public async UniTask PlayEnemyPhaseAsync(List<SimEvent> events, RunState run, CancellationToken ct)
+        /// <summary>
+        /// Animates one resolved enemy phase step by step (events carry step 0..4) with PacingConfig timings; onBatch runs
+        /// when a spawn batch starts popping in (the HUD's "Enemies incoming!").
+        /// </summary>
+        public async UniTask PlayEnemyPhaseAsync(List<SimEvent> events, RunState run, Action? onBatch, CancellationToken ct)
         {
-            await phasePlayer.PlayAsync(events, run, config.Pacing, ct);
+            await phasePlayer.PlayAsync(events, run, config.Pacing, onBatch, ct);
             RefreshDangerLevel(run);
         }
 

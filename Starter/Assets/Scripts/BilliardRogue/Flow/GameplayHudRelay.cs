@@ -48,6 +48,8 @@ namespace Nex.BilliardRogue
 
         public void ShowShooterBanner(int playerIndex) => inner.ShowShooterBanner(playerIndex);
 
+        public void ShowIncomingBanner() => inner.ShowIncomingBanner();
+
         public void SetTrackingWarning(int playerIndex, bool lost) => inner.SetTrackingWarning(playerIndex, lost);
     }
 }

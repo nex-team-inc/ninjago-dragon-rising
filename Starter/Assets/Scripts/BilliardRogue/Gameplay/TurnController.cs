@@ -21,6 +21,7 @@ namespace Nex.BilliardRogue
         readonly PlayerTurnLoop loop;
         readonly EnemyPhaseRunner enemyPhase;
         readonly RewardFlow reward;
+        readonly BatchArrivals arrivals;
         UniTask pendingStep;
         UniTask<int> pendingChoice;
         CancellationToken ct;
@@ -36,6 +37,7 @@ namespace Nex.BilliardRogue
             loop = new PlayerTurnLoop(aServices);
             enemyPhase = new EnemyPhaseRunner(aServices);
             reward = new RewardFlow(aServices);
+            arrivals = new BatchArrivals(aServices);
         }
 
         public TurnPhase Phase { get; private set; }
@@ -75,7 +77,7 @@ namespace Nex.BilliardRogue
                 return;
             }
 
-            ApplyDebugStart();
+            services.Sim.ApplyDebugStart(services.Debug.fixedSeed, services.Debug.forceStartStage);
             BeginNewStage(true);
         }
 
@@ -218,9 +220,10 @@ namespace Nex.BilliardRogue
             var events = services.Sim.Events;
             events.Clear();
             services.Sim.BeginStage();
-            // Rebuild recreates every view from the state, so the spawn events are not replayed.
+            // Rebuild recreates every view from the state (the spawn events are not replayed) except the first batch,
+            // which pops in after the stage intro (GDD v2 §5).
+            arrivals.RebuildForStageStart(events, run);
             events.Clear();
-            services.Board.Rebuild(run);
             if (firstStage) services.Persistence.BeginRun(run);
             else Save();
             savedAtBoundary = true;
@@ -235,16 +238,8 @@ namespace Nex.BilliardRogue
             services.Hud.SetStage();
             services.Hud.RefreshAll();
             services.Audio.PlayMusic(run.stage.isBoss ? BgmManager.BgmType.Boss : services.Config.Acts[run.actIndex].BattleBgm);
-            pendingStep = IntroAsync();
+            pendingStep = arrivals.IntroAsync(ct);
             Phase = TurnPhase.StageIntro;
-        }
-
-        async UniTask IntroAsync()
-        {
-            var run = services.Run;
-            await services.FlowHost.ShowStageIntroAsync(run.actIndex, run.stageInAct, run.stage.isBoss, ct);
-            if (!run.stage.isBoss) return;
-            await services.Board.PlayBossIntroAsync(services.Sim.Act.bossType, ct);
         }
 
         void EnterStageClear()
@@ -413,21 +408,6 @@ namespace Nex.BilliardRogue
             pendingChoice = UniTask.FromResult(0);
             index = done.GetAwaiter().GetResult();
             return true;
-        }
-
-        // Nothing has consumed the RNG before the first BeginStage, so reseeding here keeps the run deterministic.
-        void ApplyDebugStart()
-        {
-            var run = services.Run;
-            var fixedSeed = services.Debug.fixedSeed;
-            if (fixedSeed != 0)
-            {
-                run.seed = fixedSeed;
-                run.rngState = SimRandom.SeedToState(fixedSeed);
-            }
-
-            var forcedStage = services.Debug.forceStartStage;
-            if (forcedStage > 0 && forcedStage < SimConstants.StageCount) services.Sim.SetStage(forcedStage);
         }
 
         #endregion

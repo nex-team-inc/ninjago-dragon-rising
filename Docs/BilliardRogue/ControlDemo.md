@@ -11,11 +11,28 @@ The demo adds three things to the normal game:
 | | What it does |
 |---|---|
 | **Practice mode** | God mode and infinite balls. Enemies stop one row above the red danger row. A run never ends, so you can keep shooting. |
-| **Control readout** | A panel in the lower right corner, one per player. It shows what the body tracking sees and why a thrust did or did not shoot. It appears during the calibration test strike and during gameplay. |
+| **Control readout** | A panel in the lower right corner, one per player. It shows what the body tracking sees and why a thrust did or did not shoot. It appears during the calibration test strike and during gameplay once you turn it on (hidden by default since the second playtest). |
 | **Live tuning** | Debug Settings rows that scale the strike speed, the contact distance, the aim smoothing and the launch range while you play. |
 
-In the Playground APK, practice mode and the readout are on from the start. In the Editor you turn them on once in
-Debug Settings (see [Debug Settings](#4-debug-settings-open-it-and-tune)).
+In the Playground APK, practice mode is on from the start and the readout is off. Turn the readout on in Debug Settings
+with **Debug: Show Control Readout** (see [Debug Settings](#4-debug-settings-open-it-and-tune)). In the Editor you turn
+both on once in Debug Settings.
+
+## What's new after the second playtest (GDD v2 §5–§6)
+
+| | Behaviour now | How to try it |
+|---|---|---|
+| **Enemies pop in** | Enemies no longer march in as rows from the top. They appear **from nowhere at random free cells**, each with a portal flash, a dust puff and a pop sound, one after another (0.06 s apart), scaling up from nothing with a little bounce. Pickups pop in the same way. Nothing ever appears in the **3 rows nearest the cat** (with 10 rows: only rows 1–7 counted from the top; the red danger row and the two above it stay clear). Every row keeps at least one free cell. | Start a run: after the stage banner the first batch pops in, with an **"Enemies incoming!"** ribbon at the top. |
+| **Batches of 10 every 3 turns** | A batch has **at least 10 enemies** (fewer only when the free cells run out) plus 2 pickups. A stage has 3 batches: on turn 1, turn 4 and turn 7. Enemies still move down one row per enemy phase and attack from the danger row. | Watch the turn banner: new enemies arrive with turns 4 and 7. |
+| **No empty turns** | When the field is empty (Bone Walls do not count), your turn ends right away, and if the stage still has a batch it arrives immediately. The turn counter jumps to that batch's turn, so after clearing the field on turn 2 the next banner reads **Turn 4**. With no batch left, an empty field clears the stage. | Clear the field before turn 4. |
+| **Boss stages** | The boss appears at the top centre (2×2, rows 1–2) together with the first escort batch. More escort batches (10 each, fewer when the board is full) arrive every 3 turns while the boss lives, and none after it dies. The bosses' own summons are unchanged. | Debug Settings **Run: Force Start Stage** 3, 7 or 11, or `DebugHooks.GotoStage(3)`. |
+| **Debug overlay hidden** | The control readout (the debug canvas in the lower right) is **off by default** in every build, this demo included. The **Debug: Show Control Readout** toggle still brings it back. A value saved by an older demo is ignored once, so the readout starts hidden after the update. The debug printer stays off by default too. | Open Debug Settings and turn **Debug: Show Control Readout** on. |
+
+The numbers are config values: `ActRules.minEnemiesPerBatch` (10), `spawnEveryNTurns` (3), `batchesPerStage` (3),
+`spawnForbiddenNearRows` (3), `pickupsPerBatch` (2) and `batchBudgetRows` (4) in `Assets/Configs/BilliardRogue/Acts/Act_1..3`;
+the stagger and the ribbon time are `PacingConfig.batchSpawnStagger` (0.06 s) and `incomingBannerDuration` (0.9 s).
+Balance check with the simulation bot (6 seeds): an aiming bot wins every run, and a bot that shoots 60% of its balls at
+random still wins 5 of 6, so the batches are not too hard. A run saved before this update continues its stage with the new rules.
 
 ## What's new in v2 (after the first device playtest)
 

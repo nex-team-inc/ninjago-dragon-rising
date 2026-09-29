@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Nex.BilliardRogue
 {
-    /// <summary>Pooled pickup: bobbing, spinning model that hops down with the waves and pops when collected.</summary>
+    /// <summary>Pooled pickup: bobbing, spinning model that pops in with its batch, hops down with the enemies and pops when collected.</summary>
     public sealed class PickupView : MonoBehaviour, IPoolableObject
     {
         static readonly int EmissionStrengthId = Shader.PropertyToID("_EmissionStrength");
@@ -26,6 +26,8 @@ namespace Nex.BilliardRogue
         float moveT = 1f;
         float moveDuration = 0.4f;
         float collectT = 1f;
+        float popT = 1f;
+        float popDuration = 0.28f;
         bool collecting;
 
         public int Id { get; private set; }
@@ -35,14 +37,17 @@ namespace Nex.BilliardRogue
 
         #region Life Cycle
 
-        public void Spawn(PickupState state, ArenaLayout layout, JuiceConfig aJuice)
+        /// <summary>popSeconds &gt; 0 scales the model in from 0 with an overshoot over that time.</summary>
+        public void Spawn(PickupState state, ArenaLayout layout, JuiceConfig aJuice, float popSeconds = 0f)
         {
             Id = state.id;
             juice = aJuice;
             block ??= new MaterialPropertyBlock();
             basePosition = layout.CellCenterWorld(state.col, state.row);
             transform.SetPositionAndRotation(basePosition, layout.transform.rotation);
-            model.localScale = Vector3.one;
+            popT = popSeconds > 0f ? 0f : 1f;
+            popDuration = Mathf.Max(0.05f, popSeconds);
+            model.localScale = popT < 1f ? Vector3.zero : Vector3.one;
             phase = UnityEngine.Random.value * 10f;
             moveT = collectT = 1f;
             collecting = false;
@@ -71,6 +76,13 @@ namespace Nex.BilliardRogue
             var bob = (Mathf.Sin(phase / p.pickupBobPeriod * Mathf.PI * 2f) + 1f) * 0.5f * p.pickupBobAmplitude;
             model.localPosition = new Vector3(0f, bob, 0f);
             model.localRotation = Quaternion.Euler(0f, phase * p.pickupSpinSpeed, 0f);
+            if (popT < 1f && !collecting)
+            {
+                popT = Mathf.Min(1f, popT + dt / popDuration);
+                var pop = Easing.OutBack(popT);
+                model.localScale = new Vector3(pop, pop, pop);
+            }
+
             if (collectT < 1f)
             {
                 collectT = Mathf.Min(1f, collectT + dt / 0.18f);

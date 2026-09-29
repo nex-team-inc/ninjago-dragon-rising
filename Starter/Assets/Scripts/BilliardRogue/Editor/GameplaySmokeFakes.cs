@@ -40,6 +40,7 @@ namespace Nex.BilliardRogue.Editor
         public int QueueUpdates { get; private set; }
         public int TurnBanners { get; private set; }
         public int ShooterBanners { get; private set; }
+        public int IncomingBanners { get; private set; }
         public bool BossVisible { get; private set; }
         public bool BossSeen { get; private set; }
         public bool FastForward { get; private set; }
@@ -94,6 +95,8 @@ namespace Nex.BilliardRogue.Editor
         public void ShowTurnBanner(int turn) => TurnBanners++;
 
         public void ShowShooterBanner(int playerIndex) => ShooterBanners++;
+
+        public void ShowIncomingBanner() => IncomingBanners++;
 
         public void SetTrackingWarning(int playerIndex, bool lost)
         {

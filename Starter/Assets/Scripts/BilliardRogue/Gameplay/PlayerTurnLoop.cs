@@ -209,7 +209,8 @@ namespace Nex.BilliardRogue
         void UpdateTurnEnd(float scaledDeltaTime)
         {
             var sequencer = services.Sequencer;
-            var noMoreShots = !sequencer.HasBallToFire || feedback.StageCleared || (sequencer.Infinite && services.Sim.LivingEnemyCount() == 0);
+            // An empty field ends the turn too (GDD v2 §5): the enemy phase then brings the next batch in right away.
+            var noMoreShots = !sequencer.HasBallToFire || feedback.StageCleared || services.Sim.LivingEnemyCount() == 0;
             if (!noMoreShots || services.Sim.ActiveBalls > 0)
             {
                 graceRemaining = services.Pacing.TurnEndGrace;

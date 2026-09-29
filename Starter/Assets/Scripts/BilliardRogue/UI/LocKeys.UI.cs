@@ -30,6 +30,8 @@ namespace Nex.BilliardRogue
             public const string HypeTier3 = "br.hud.hypeTier3";               // en: MAX!!!
             public const string MovePrompt = "br.hud.movePrompt";             // en: MOVE!
             public const string MoveHint = "br.hud.moveHint";                 // en: Dance to power up the balls!
+            // GDD v2 §5: a spawn batch pops in.
+            public const string EnemiesIncoming = "br.hud.incoming";          // en: Enemies incoming!
 
             public static readonly string[] HypeTiers = { Hype, HypeTier1, HypeTier2, HypeTier3 };
         }

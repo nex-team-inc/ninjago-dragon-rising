@@ -165,7 +165,7 @@ namespace Nex.BilliardRogue
             SyncPickups(run);
         }
 
-        /// <summary>Wave pickups have no spawn event (HANDOFF §4): add the missing views, drop the stale ones.</summary>
+        /// <summary>Drift safety net for pickups (batch pickups pop in on PickupSpawned): add the missing views, drop the stale ones.</summary>
         public void SyncPickups(RunState run)
         {
             var board = run.board;
@@ -316,11 +316,12 @@ namespace Nex.BilliardRogue
             return null;
         }
 
-        public PickupView SpawnPickup(PickupState state)
+        /// <summary>pop: scales in from 0 with an overshoot (a batch pop-in, GDD v2 §5).</summary>
+        public PickupView SpawnPickup(PickupState state, bool pop = false)
         {
             if (pickups.TryGetValue(state.id, out var existing)) return existing;
             var view = pickupPools[state.type].Get();
-            view.Spawn(state, layout, juice);
+            view.Spawn(state, layout, juice, pop ? juice.EnemyMotion.spawnPopDuration : 0f);
             pickups[state.id] = view;
             pickupList.Add(view);
             return view;

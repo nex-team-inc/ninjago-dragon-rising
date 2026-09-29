@@ -58,6 +58,7 @@ namespace Nex.BilliardRogue
         int ballsTotal = -1;
         int bonusBalls = -1;
         bool revealed = true;
+        Color turnBannerColor = Color.white;
         Vector2 leftHome;
         Vector2 rightHome;
         Sequence? revealTween;
@@ -70,6 +71,7 @@ namespace Nex.BilliardRogue
             leftHome = leftColumn.anchoredPosition;
             rightHome = rightColumn.anchoredPosition;
             ballQueue.Initialize(balls);
+            turnBannerColor = turnBanner.Label.Color;
             turnLabel.gameObject.SetActive(false);
             for (var i = 0; i < trackingWarnings.Length; i++)
             {
@@ -169,7 +171,20 @@ namespace Nex.BilliardRogue
             }
 
             turnBanner.Label.SetKey(LocKeys.Hud.TurnBanner, turn);
+            turnBanner.Label.Color = turnBannerColor;
             turnBanner.Show(pacing.TurnBannerDuration);
+        }
+
+        /// <summary>
+        /// "Enemies incoming!" on the turn ribbon (danger colour) while a spawn batch pops in (GDD v2 §5); the turn banner
+        /// that follows replaces it in place.
+        /// </summary>
+        public void ShowIncomingBanner()
+        {
+            var label = turnBanner.Label;
+            label.SetKey(LocKeys.Hud.EnemiesIncoming);
+            label.Color = theme.Danger;
+            turnBanner.Show(pacing.IncomingBannerDuration);
         }
 
         public void ShowShooterBanner(int playerIndex)

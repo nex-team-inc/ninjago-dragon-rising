@@ -20,6 +20,8 @@ namespace Nex.BilliardRogue
         void SetPowerArmed(bool armed);
         void ShowTurnBanner(int turn);
         void ShowShooterBanner(int playerIndex);
+        /// <summary>"Enemies incoming!" while a spawn batch pops in (GDD v2 §5); the next turn banner replaces it.</summary>
+        void ShowIncomingBanner();
         void SetTrackingWarning(int playerIndex, bool lost);
         /// <summary>Hype meter (GDD v2 §3): hype01 in 0..1, tier 0..3.</summary>
         void SetHype(float hype01, int tier);

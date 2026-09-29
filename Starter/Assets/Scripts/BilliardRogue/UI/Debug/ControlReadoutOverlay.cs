@@ -6,7 +6,7 @@ using UnityEngine;
 namespace Nex.BilliardRogue
 {
     /// <summary>
-    /// Control lab readout (DebugSettings.showControlDebug): its own Screen Space Overlay canvas above the views and
+    /// Control lab readout (DebugSettings.showControlReadout, hidden by default in every build, GDD v2 §6): its own Screen Space Overlay canvas above the views and
     /// the PiP, one ControlReadoutPanel per player in the right HUD column (never over the arena). The coordinator
     /// creates it in Editor / development / ENABLE_DEBUG_SETTINGS builds only and hands it every ShotInputRouter
     /// PlayerShotInputFactory builds, so it follows the calibration test strike and then the gameplay inputs; a panel

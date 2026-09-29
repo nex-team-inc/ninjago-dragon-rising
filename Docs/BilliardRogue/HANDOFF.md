@@ -70,15 +70,31 @@ Added by the fix pass (2026-09-28 evening; all additive, public APIs unchanged):
   there and attack every phase.
 - **Ids:** `board.nextId` is unique across enemies, field objects and pickups. Plan field objects use ids 1..N.
   `BeginStage` copies them and sets nextId = max+1.
-- **Stage start:** a normal stage spawns waves[0] into row 1 and waves[1] into row 0. A boss stage spawns waves[0]
-  (the boss alone) at col `(columns − w)/2`, rows 0–1. After that, one wave row per enemy phase spawns into row 0.
-- **Blocked wave cells relocate:** a cell whose planned column is occupied spawns in the nearest free column of the row
-  (closer wins, left on ties), so the planned enemy count survives congestion. Only a completely full row drops cells,
-  and `WaveSpawned.flag` reports it. (Before: 28% of act-3 enemies silently vanished.)
-- **Boss stage:** a stage is a boss stage when `stageInAct >= act.normalStages`. After the planned escorts,
-  `waves[1 + k % (waves.Count − 1)]` spawns every `bossEscortEveryNTurns` turns while the boss lives, with
-  k = turnInStage / N. Nothing spawns after the boss dies.
-- **Stage cleared:** true when (boss stage ? no boss alive : all waves spawned) and no enemies remain except `BoneWall`.
+- **Spawning (GDD v2 §5, replaces the v1 row waves):** a stage plans `ActRules.batchesPerStage` (3) batches
+  (`StagePlan.batches`), each `minEnemiesPerBatch` (10) enemies from the act's weighted pool within a budget of
+  `batchBudgetRows` × (`baseBudgetPerRow` + `budgetGrowthPerStage` × stageNumber) (boss escorts: half; the cheapest
+  entries fill up when the budget runs short), then `pickupsPerBatch` (2) pickups. `BoardOps.SpawnBatch` places every
+  entry, in plan order, on a random free cell (one `SimRandom` draw each) in rows 0..rows − 1 − `spawnForbiddenNearRows`
+  (rows 0..6 of 10: never rows 7–9), keeping `minOpenColumnsPerRow` (1) free cells in each row; entries without a cell
+  are dropped (`BatchSpawned.flag`). Nothing slides in from the top any more.
+- **Cadence (`StageSchedule`):** batch 0 spawns in `BeginStage` (turn 1); batch k spawns at the end of the enemy phase that
+  brings turnInStage to k × `spawnEveryNTurns` (turns 4, 7). `RunState.nextBatchIndex` / `nextBatchTurn` hold the schedule.
+- **Skip empty turns:** when a phase ends with no enemy but Bone Walls on the field and a batch is left, the next batch
+  spawns right away and turnInStage jumps to its turn (`BatchSpawned.sourceId` = turns skipped; `stats.turns` counts
+  played turns only). Gameplay also ends a player turn as soon as the field is empty, so no shot is wasted on nothing.
+- **Boss stage:** `BeginStage` places `act.bossType` at col `(columns − w)/2`, rows 0–1 (its `EnemySpawned` has no pop-in
+  flag), then batch 0 as the first escorts. Escort batches keep coming every `spawnEveryNTurns` while the boss lives,
+  cycling `batches[k % count]`; nothing spawns once it is dead. The bosses' own spawn abilities are unchanged.
+- **Stage cleared:** true when no batch is left (normal stage: all spawned; boss stage: boss dead) and no enemies remain
+  except `BoneWall`.
+- **Events:** batch enemies emit `EnemySpawned` with `flag = true`, `value2` = stagger index; batch pickups emit
+  `PickupSpawned` (34, same fields); then one `BatchSpawned` (54: value = batch index, value2 = entries spawned, flag =
+  dropped, sourceId = turns skipped). Presentation pops them in with a stagger (`BatchSpawnPlayer`); at a stage start the
+  board is rebuilt with the batch hidden and it pops in after the intro (`BatchArrivals`).
+- **v1 saves:** a stage planned with row waves (`StagePlan.batches` empty) is converted by
+  `StageSchedule.UpgradeLegacyStage` (on load and at the next phase end): the unspawned waves (boss: all escort waves) are
+  packed into batches of ≥ 10 enemies, the first due at the next phase end. `waves`, `nextWaveIndex`, `SpawnWaveRow` and
+  `WaveSpawned` remain for that path only.
 
 **Enemy phase**
 - **Cadence:** each enemy's `turnCounter` increments at the start of every enemy phase.
@@ -116,13 +132,14 @@ Added by the fix pass (2026-09-28 evening; all additive, public APIs unchanged):
   bot shots; 1.9% of shots reach the drop). Pool size is 96 balls with 240 Hz substeps.
 
 **Pickups, generation and rewards**
-- **Pickups** move with the waves through `EnemyMoved` with `flag = true`. Wave pickups have no spawn event, so
-  presentation should sync pickups on `WaveSpawned`.
+- **Pickups** move down with the enemies through `EnemyMoved` with `flag = true`. Batch pickups spawn with
+  `PickupSpawned`; presentation still syncs pickups on `BatchSpawned` as a safety net.
 - **Shots:** `run.extraBalls` (+1 Ball pickups) is **not** reset by the simulation. `ShotSequencer` owns resetting it
   at the end of the turn.
 - **Stage generation:**
-  - Every row has at least one enemy and keeps at least `act.minOpenColumnsPerRow` (1) columns open.
-  - Field objects sit in rows 2..danger−1, at most one per column, at most one portal pair, and avoid boss columns.
+  - Batches as above (the v1 rule "every row has an enemy" is gone with the rows).
+  - Field objects sit in rows 2..6 (never the 3 rows nearest the player), at most one per column, at most one portal pair,
+    and avoid boss columns.
   - Crate HP = `crateHp × (1 + hpScalePerStage × stageNumber)`.
 - **Reward cards:** card 1 is a new ball, card 2 an upgrade, card 3 a Heal when HP ≤ 50% (otherwise a random kind).
   No Basic ball is offered while an ability ball is unlocked (`balance.offerBasicBall = false`), and no two cards share
@@ -152,9 +169,13 @@ Status after the Simulation fix pass (2026-09-28 evening): items 1, 2, 3 and 5 a
    behaviour as defaults, written into the assets).
 6. `DebugSettings.godMode` and similar settings must be handled by Gameplay around `BoardOps.DamagePlayer` (the
    simulation has no debug flags).
-7. **Pile-ups on boss stages** are now visible instead of silently trimmed (wave cells relocate rather than vanish). If
-   boss stages feel crowded, `bossEscortEveryNTurns` and the boss `spawnCount` are the levers; the simulation reports
-   drops through `WaveSpawned.flag`.
+7. **Pile-ups on boss stages** are visible instead of silently trimmed. Since GDD v2 §5 the levers are
+   `ActRules.spawnEveryNTurns` / `minEnemiesPerBatch` (escort batches) and the boss `spawnCount`; the simulation reports
+   drops through `BatchSpawned.flag`.
+8. **Balance with batches (2026-09-29, `Tools/sim_smoke_eval.cs`, 6 seeds, real configs, no Hype):** the aiming bot wins
+   6/6 (min HP 18–26), 30% random shots 6/6, 60% random shots 5/6; turns per stage 4–18 (boss stages longest). Every
+   batch had exactly 10 enemies, none spawned below row 6, 94 empty-turn skips. No value was changed; if it plays too
+   easy, raise `batchesPerStage`, `batchBudgetRows` or `hpScalePerStage`.
 
 ## 6. Suggested next steps for Claude
 

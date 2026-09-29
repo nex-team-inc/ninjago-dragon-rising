@@ -12,7 +12,7 @@ namespace Nex.BilliardRogue
     /// <summary>
     /// Animates one resolved enemy phase from its events, step by step (SimEvent.step 0..4, HANDOFF §4): status
     /// ticks with numbers, abilities (telegraphs, casts, heals, spawns, quake), simultaneous hops, staggered
-    /// danger-row attacks and the new wave, each step waiting its PacingConfig duration in gameplay time (the debug
+    /// danger-row attacks and the batch pop-in (BatchSpawnPlayer, GDD v2 §5), each step waiting its PacingConfig duration in gameplay time (the debug
     /// fast enemy phase is TimeScaleController's phase scale, set by EnemyPhaseRunner, so the waits, hops and tweens
     /// speed up together). Ends with a reconcile so the views match the state exactly.
     /// </summary>
@@ -28,9 +28,12 @@ namespace Nex.BilliardRogue
         readonly BilliardRogueConfig config;
         readonly JuiceConfig juice;
         readonly CatView[] cats;
+        readonly BatchSpawnPlayer batches;
 
-        public EnemyPhasePlayer(BoardViews aViews, BoardEventPlayer aPlayer, WorldLabelLayer aLabels, CameraShaker aShaker, ArenaLayout aLayout, BilliardRogueConfig aConfig, CatView[] aCats)
+        public EnemyPhasePlayer(BoardViews aViews, BoardEventPlayer aPlayer, BatchSpawnPlayer aBatches, WorldLabelLayer aLabels, CameraShaker aShaker, ArenaLayout aLayout,
+            BilliardRogueConfig aConfig, CatView[] aCats)
         {
+            batches = aBatches;
             views = aViews;
             player = aPlayer;
             labels = aLabels;
@@ -43,7 +46,8 @@ namespace Nex.BilliardRogue
 
         #region Public Methods
 
-        public async UniTask PlayAsync(List<SimEvent> events, RunState run, PacingConfig pacing, CancellationToken ct)
+        /// <summary>onBatch runs when a spawn batch starts popping in (the HUD's "Enemies incoming!").</summary>
+        public async UniTask PlayAsync(List<SimEvent> events, RunState run, PacingConfig pacing, Action? onBatch, CancellationToken ct)
         {
             ClearTelegraphs();
             for (var step = 0; step < StepCount; step++)
@@ -54,7 +58,7 @@ namespace Nex.BilliardRogue
                     1 => PlayAbilities(events, run, pacing) ? pacing.AbilityDuration : 0f,
                     2 => PlayAdvance(events, run, pacing.EnemyHopDuration) ? pacing.EnemyHopDuration : 0f,
                     3 => await PlayAttacksAsync(events, run, pacing, ct),
-                    _ => PlaySpawn(events, run) ? pacing.WaveSpawnDuration : 0f,
+                    _ => await batches.PlayAsync(events, run, 4, pacing.BatchSpawnStagger, onBatch, ct) ? pacing.WaveSpawnDuration : 0f,
                 };
                 if (wait > 0f) await Delay(wait, ct);
                 if (run.outcome == RunOutcome.Defeat && step >= 3) break;
@@ -198,21 +202,6 @@ namespace Nex.BilliardRogue
             }
 
             return attackers > 0 ? pacing.EnemyAttackDuration : 0f;
-        }
-
-        bool PlaySpawn(List<SimEvent> events, RunState run)
-        {
-            var any = false;
-            for (var i = 0; i < events.Count; i++)
-            {
-                var ev = events[i];
-                if (ev.step != 4) continue;
-                if (ev.kind == SimEventKind.EnemySpawned || ev.kind == SimEventKind.WaveSpawned) any = true;
-                player.Play(ev, run);
-            }
-
-            if (any) player.PlaySfx(SfxManager.SoundEffect.TurnStart, 1f, 0.7f);
-            return any;
         }
 
         #endregion

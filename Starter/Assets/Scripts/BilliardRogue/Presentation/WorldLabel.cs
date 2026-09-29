@@ -29,11 +29,14 @@ namespace Nex.BilliardRogue
         FieldObjectView? crate;
         JuiceConfig.LabelSettings? labels;
         bool hpVisible = true;
+        float appliedScale = 1f;
 
         public int Id { get; private set; }
         public RectTransform Rect => rect;
         public Vector3 WorldPosition => enemy != null ? enemy.LabelAnchor : crate != null ? crate.LabelAnchor : Vector3.zero;
         public bool Attached => enemy != null || crate != null;
+        /// <summary>The enemy's spawn pop scale (1 for crates and once popped); WorldLabelLayer applies it.</summary>
+        public float PopScale => enemy != null ? enemy.PopScale : 1f;
 
         #region Public Methods
 
@@ -94,6 +97,14 @@ namespace Nex.BilliardRogue
             telegraphIcon.enabled = icon != null;
         }
 
+        /// <summary>Scales the label (only when the value changed, so settled labels never touch their transform).</summary>
+        public void ApplyScale(float scale)
+        {
+            if (Mathf.Approximately(scale, appliedScale)) return;
+            appliedScale = scale;
+            rect.localScale = new Vector3(scale, scale, 1f);
+        }
+
         public void Release()
         {
             enemy = null;
@@ -125,6 +136,8 @@ namespace Nex.BilliardRogue
 
             telegraphIcon.enabled = false;
             rect.anchoredPosition = new Vector2(-9999f, -9999f);
+            appliedScale = 1f;
+            rect.localScale = Vector3.one;
         }
 
         #endregion

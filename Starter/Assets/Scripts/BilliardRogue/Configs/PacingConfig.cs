@@ -35,6 +35,8 @@ namespace Nex.BilliardRogue
         [SerializeField, Range(0.05f, 2f)] float enemyAttackDuration = 0.35f;
         [SerializeField, Range(0f, 0.5f)] float enemyStagger = 0.04f;
         [SerializeField, Range(0.05f, 2f)] float waveSpawnDuration = 0.4f;
+        [Tooltip("Seconds between two pop-ins of a spawn batch (GDD v2 §5); waveSpawnDuration follows the last one.")]
+        [SerializeField, Range(0f, 0.3f)] float batchSpawnStagger = 0.06f;
         [Tooltip("Multiplier applied to every enemy-phase duration when the debug fast enemy phase is on.")]
         [SerializeField, Range(0.05f, 1f)] float fastEnemyPhaseScale = 0.25f;
 
@@ -42,6 +44,8 @@ namespace Nex.BilliardRogue
         [SerializeField, Range(0.2f, 5f)] float stageIntroDuration = 1.4f;
         [SerializeField, Range(0.2f, 5f)] float shooterBannerDuration = 1f;
         [SerializeField, Range(0.2f, 5f)] float turnBannerDuration = 0.8f;
+        [Tooltip("Hold of the \"Enemies incoming!\" ribbon while a spawn batch pops in (the next turn banner replaces it).")]
+        [SerializeField, Range(0.2f, 5f)] float incomingBannerDuration = 0.9f;
         [SerializeField, Range(0.2f, 5f)] float stageClearDuration = 1.2f;
         [SerializeField, Range(0.2f, 5f)] float bossIntroDuration = 0.8f;
         [SerializeField, Range(0.2f, 5f)] float defeatDuration = 1.6f;
@@ -73,10 +77,12 @@ namespace Nex.BilliardRogue
         public float EnemyAttackDuration => enemyAttackDuration;
         public float EnemyStagger => enemyStagger;
         public float WaveSpawnDuration => waveSpawnDuration;
+        public float BatchSpawnStagger => batchSpawnStagger;
         public float FastEnemyPhaseScale => fastEnemyPhaseScale;
         public float StageIntroDuration => stageIntroDuration;
         public float ShooterBannerDuration => shooterBannerDuration;
         public float TurnBannerDuration => turnBannerDuration;
+        public float IncomingBannerDuration => incomingBannerDuration;
         public float StageClearDuration => stageClearDuration;
         public float BossIntroDuration => bossIntroDuration;
         public float DefeatDuration => defeatDuration;

@@ -13,7 +13,9 @@ namespace Nex.BilliardRogue
     /// </summary>
     public sealed class BoardEventPlayer
     {
-        const int SfxSlots = 200;
+        // One slot per SoundEffect value (+1 for None = -1); the game effects use values 200..607, so the table must
+        // cover them or PlaySfx drops them.
+        const int SfxSlots = 1024;
 
         readonly BoardViews views;
         readonly WorldLabelLayer labels;

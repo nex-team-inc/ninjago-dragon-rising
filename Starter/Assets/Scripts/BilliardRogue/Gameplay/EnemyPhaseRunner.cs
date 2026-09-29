@@ -21,6 +21,7 @@ namespace Nex.BilliardRogue
         readonly SessionServices services;
         int enemiesAdvanced;
         int damageTaken;
+        int turn;
 
         public EnemyPhaseRunner(SessionServices aServices)
         {
@@ -33,6 +34,8 @@ namespace Nex.BilliardRogue
         public UniTask Begin(CancellationToken ct)
         {
             var run = services.Run;
+            // The turn being closed, as turn_start reported it: the phase may jump turnInStage past skipped empty turns.
+            turn = run.turnInStage + 1;
             var hpBefore = run.playerHp;
             var takenBefore = run.stats.damageTaken;
             var godMode = services.GodMode;
@@ -60,8 +63,6 @@ namespace Nex.BilliardRogue
             var defeated = run.outcome == RunOutcome.Defeat;
             services.Hud.RefreshHp();
             services.Hud.RefreshBoss();
-            // The resolver only counts the turn when the player survives it.
-            var turn = defeated ? run.turnInStage + 1 : run.turnInStage;
             services.Analytics.TurnEnd(run.stageNumber, turn, enemiesAdvanced, damageTaken, run.playerHp);
             return defeated;
         }

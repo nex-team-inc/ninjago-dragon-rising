@@ -33,6 +33,8 @@ namespace Nex.BilliardRogue
             ops = new BoardOps(rules);
             balls = new BallSimulator(rules, ops);
             resolver = new EnemyPhaseResolver(rules, ops);
+            // A run saved before GDD v2 §5 continues its stage with batches.
+            StageSchedule.UpgradeLegacyStage(rules, run);
         }
 
         public GameRules Rules => rules;
@@ -52,6 +54,21 @@ namespace Nex.BilliardRogue
         public void CompleteStage() => factory.CompleteStage(rules, run, events);
 
         public bool AdvanceToNextStage() => factory.AdvanceToNextStage(rules, run);
+
+        /// <summary>
+        /// Debug start overrides (DebugSettings.fixedSeed, forceStartStage) before the first BeginStage: nothing has
+        /// consumed the RNG yet, so reseeding keeps the run deterministic.
+        /// </summary>
+        public void ApplyDebugStart(int fixedSeed, int forceStartStage)
+        {
+            if (fixedSeed != 0)
+            {
+                run.seed = fixedSeed;
+                run.rngState = SimRandom.SeedToState(fixedSeed);
+            }
+
+            if (forceStartStage > 0 && forceStartStage < SimConstants.StageCount) SetStage(forceStartStage);
+        }
 
         /// <summary>Points the run at stage number 0..StageCount-1 without generating it (debug GotoStage, forceStartStage); call BeginStage next.</summary>
         public void SetStage(int stageNumber)

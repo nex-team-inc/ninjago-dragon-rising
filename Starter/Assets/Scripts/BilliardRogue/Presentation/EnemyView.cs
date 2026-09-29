@@ -63,6 +63,8 @@ namespace Nex.BilliardRogue
         /// <summary>Uniform scale applied to the authored model so its footprint fills the configured cell fraction.</summary>
         public float ModelScale => modelScale;
         public bool IsAnimating => hopT < 1f || lungeT < 1f || castT < 1f || deathT < 1f || popT < 1f;
+        /// <summary>Spawn pop scale (0 → overshoot → 1), 1 once popped: the HP label grows in with the model.</summary>
+        public float PopScale => popT < 1f ? Mathf.Max(0f, Easing.OutBack(popT)) : 1f;
 
         #region Life Cycle
 

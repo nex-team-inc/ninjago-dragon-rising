@@ -42,7 +42,7 @@ namespace Nex.BilliardRogue
         [SerializeField] GameObject? playerShotInputPrefab;
 
         [Header("Debug (wired by FlowPrefabsBuilder)")]
-        [Tooltip("Control lab readout (DebugSettings.showControlDebug); instantiated in Editor / development / ENABLE_DEBUG_SETTINGS builds only.")]
+        [Tooltip("Control lab readout (DebugSettings.showControlReadout, off by default); instantiated in Editor / development / ENABLE_DEBUG_SETTINGS builds only.")]
         [SerializeField] ControlReadoutOverlay? controlReadoutPrefab;
 
         RunPersistence persistence = null!;
@@ -169,7 +169,7 @@ namespace Nex.BilliardRogue
         // rewards, stage intros and Debug Settings.
         bool IsControlReadoutShown()
         {
-            if (!PlayerDataManager.Instance.DebugSettings.showControlDebug) return false;
+            if (!PlayerDataManager.Instance.DebugSettings.showControlReadout) return false;
             return viewManager.TopViewIdentifier is View.ViewIdentifier.Calibration or View.ViewIdentifier.Gameplay
                 or View.ViewIdentifier.TrackingLost;
         }

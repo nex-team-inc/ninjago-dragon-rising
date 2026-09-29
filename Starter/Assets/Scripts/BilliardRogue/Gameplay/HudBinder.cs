@@ -158,6 +158,8 @@ namespace Nex.BilliardRogue
 
         public void ShowShooterBanner(int playerIndex) => hud.ShowShooterBanner(playerIndex);
 
+        public void ShowIncomingBanner() => hud.ShowIncomingBanner();
+
         #endregion
     }
 }

@@ -1,5 +1,6 @@
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
@@ -8,11 +9,16 @@ using UnityEngine;
 
 namespace Nex.BilliardRogue
 {
-    /// <summary>The session's view of BoardPresenter; every call is a no-op in headless smoke runs (no presenter).</summary>
+    /// <summary>
+    /// The session's view of BoardPresenter; every call is a no-op in headless smoke runs (no presenter). BatchIncoming runs
+    /// whenever a spawn batch starts popping in (stage start and enemy phase, GDD v2 §5).
+    /// </summary>
     public sealed class BoardDriver
     {
         readonly BoardPresenter presenter;
         readonly bool enabled;
+
+        public Action? BatchIncoming { get; set; }
 
         public BoardDriver(BoardPresenter? aPresenter)
         {
@@ -37,7 +43,18 @@ namespace Nex.BilliardRogue
 
         public UniTask PlayEnemyPhaseAsync(List<SimEvent> events, RunState run, CancellationToken ct)
         {
-            return enabled ? presenter.PlayEnemyPhaseAsync(events, run, ct) : UniTask.CompletedTask;
+            return enabled ? presenter.PlayEnemyPhaseAsync(events, run, BatchIncoming, ct) : UniTask.CompletedTask;
+        }
+
+        /// <summary>Stage start: rebuilds the board with the first batch (BeginStage's events) hidden for its pop-in.</summary>
+        public void RebuildForPopIn(RunState run, List<SimEvent> spawnEvents)
+        {
+            if (enabled) presenter.RebuildForPopIn(run, spawnEvents);
+        }
+
+        public UniTask PlayBatchSpawnAsync(List<SimEvent> spawnEvents, RunState run, CancellationToken ct)
+        {
+            return enabled ? presenter.PlayBatchSpawnAsync(spawnEvents, run, BatchIncoming, ct) : UniTask.CompletedTask;
         }
 
         public void SetAim(int shooterIndex, float launchX01, Vector2 direction, int predictedCount, Vector2[] predictedPoints, bool visible)

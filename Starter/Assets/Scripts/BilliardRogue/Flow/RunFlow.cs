@@ -81,6 +81,7 @@ namespace Nex.BilliardRogue
             var gameplay = UnityEngine.Object.Instantiate(ctx.gameplayViewPrefab);
             gameplay.Initialize(new GameplayViewContext
             {
+                viewManager = ctx.viewManager,
                 config = ctx.config,
                 rules = ctx.rules,
                 run = run,

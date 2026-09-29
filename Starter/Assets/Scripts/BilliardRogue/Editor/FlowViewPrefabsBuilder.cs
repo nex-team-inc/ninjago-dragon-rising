@@ -286,8 +286,15 @@ namespace Nex.BilliardRogue.Editor
             var labelLayer = FlowUiFactory.CreateUIObject("WorldLabelLayer", root.transform);
             FlowUiFactory.Stretch(labelLayer);
 
+            // GameplayView calls the HUD directly: build UI-Views (UiViewsBuilder) first.
             var hud = FlowUiFactory.InstantiateNested(GameplayHudPath, root.transform, "UI-Views");
-            if (hud != null) hud.name = "Hud";
+            if (hud == null)
+            {
+                Object.DestroyImmediate(root);
+                throw new System.InvalidOperationException($"{GameplayHudPath} missing: run UiViewsBuilder first.");
+            }
+
+            hud.name = "Hud";
 
             var sessionGo = FlowUiFactory.CreateUIObject("Session", root.transform);
             var session = sessionGo.AddComponent<GameSession>();
@@ -299,6 +306,7 @@ namespace Nex.BilliardRogue.Editor
             so.FindProperty("entryAnimator").objectReferenceValue = entry;
             so.FindProperty("keyResponder").objectReferenceValue = graph;
             so.FindProperty("worldLabelLayer").objectReferenceValue = labelLayer.transform;
+            so.FindProperty("hud").objectReferenceValue = hud.GetComponent<GameplayHud>();
             so.FindProperty("session").objectReferenceValue = session;
             so.FindProperty("timeScale").objectReferenceValue = timeScale;
             so.FindProperty("inputRoot").objectReferenceValue = inputRoot.transform;

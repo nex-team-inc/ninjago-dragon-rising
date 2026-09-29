@@ -8,6 +8,8 @@ namespace Nex.BilliardRogue
     /// <summary>Everything the GameplayView needs to host a run, assembled by BilliardRogueCoordinator.</summary>
     public sealed class GameplayViewContext
     {
+        /// <summary>The manager the view is pushed on: overlays and the pause events use it until the view dies.</summary>
+        public ViewManager viewManager = null!;
         public BilliardRogueConfig config = null!;
         public GameRules rules = null!;
         public RunState run = null!;

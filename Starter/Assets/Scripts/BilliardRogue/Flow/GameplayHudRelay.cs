@@ -2,51 +2,48 @@
 
 using System.Collections.Generic;
 using Nex.BilliardRogue.Simulation;
-using UnityEngine;
 
 namespace Nex.BilliardRogue
 {
     /// <summary>
     /// The HUD surface GameSession talks to: forwards every call to the GameplayHud nested in the GameplayView prefab
-    /// (UI-Views module) and mirrors the active shooter into the PiP indicators. With no HUD prefab built yet it is a
-    /// no-op HUD so integration playtests still run.
+    /// (UI-Views module) and mirrors the active shooter into the PiP indicators.
     /// </summary>
     public sealed class GameplayHudRelay : IGameplayHud
     {
-        readonly IGameplayHud? inner;
+        readonly IGameplayHud inner;
         readonly GameplayPip pip;
 
-        public GameplayHudRelay(IGameplayHud? aInner, GameplayPip aPip)
+        public GameplayHudRelay(IGameplayHud aInner, GameplayPip aPip)
         {
             inner = aInner;
             pip = aPip;
-            if (inner == null) Debug.LogWarning("[GameplayView] No GameplayHud in the prefab; HUD calls are dropped.");
         }
 
-        public void SetHp(int cur, int max) => inner?.SetHp(cur, max);
+        public void SetHp(int cur, int max) => inner.SetHp(cur, max);
 
-        public void SetBallQueue(IReadOnlyList<BallInstance> bag, int nextIndex, int extraBalls) => inner?.SetBallQueue(bag, nextIndex, extraBalls);
+        public void SetBallQueue(IReadOnlyList<BallInstance> bag, int nextIndex, int extraBalls) => inner.SetBallQueue(bag, nextIndex, extraBalls);
 
-        public void SetBallsRemaining(int remaining, int total) => inner?.SetBallsRemaining(remaining, total);
+        public void SetBallsRemaining(int remaining, int total) => inner.SetBallsRemaining(remaining, total);
 
-        public void SetStage(int actIndex, int stageInAct, bool isBoss) => inner?.SetStage(actIndex, stageInAct, isBoss);
+        public void SetStage(int actIndex, int stageInAct, bool isBoss) => inner.SetStage(actIndex, stageInAct, isBoss);
 
         public void SetActivePlayer(int playerIndex, int numPlayers)
         {
             pip.SetActivePlayer(numPlayers > 1 ? playerIndex : -1);
-            inner?.SetActivePlayer(playerIndex, numPlayers);
+            inner.SetActivePlayer(playerIndex, numPlayers);
         }
 
-        public void SetBossHp(bool visible, int hp, int maxHp, EnemyType type) => inner?.SetBossHp(visible, hp, maxHp, type);
+        public void SetBossHp(bool visible, int hp, int maxHp, EnemyType type) => inner.SetBossHp(visible, hp, maxHp, type);
 
-        public void SetFastForward(bool on) => inner?.SetFastForward(on);
+        public void SetFastForward(bool on) => inner.SetFastForward(on);
 
-        public void SetPowerArmed(bool armed) => inner?.SetPowerArmed(armed);
+        public void SetPowerArmed(bool armed) => inner.SetPowerArmed(armed);
 
-        public void ShowTurnBanner(int turn) => inner?.ShowTurnBanner(turn);
+        public void ShowTurnBanner(int turn) => inner.ShowTurnBanner(turn);
 
-        public void ShowShooterBanner(int playerIndex) => inner?.ShowShooterBanner(playerIndex);
+        public void ShowShooterBanner(int playerIndex) => inner.ShowShooterBanner(playerIndex);
 
-        public void SetTrackingWarning(int playerIndex, bool lost) => inner?.SetTrackingWarning(playerIndex, lost);
+        public void SetTrackingWarning(int playerIndex, bool lost) => inner.SetTrackingWarning(playerIndex, lost);
     }
 }

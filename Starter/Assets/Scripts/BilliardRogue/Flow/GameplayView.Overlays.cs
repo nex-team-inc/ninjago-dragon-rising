@@ -10,7 +10,8 @@ using UnityEngine;
 namespace Nex.BilliardRogue
 {
     // IGameFlowHost: the session's overlays (UI-Views module prefabs) pushed on top of this view. Every push waits
-    // for the ViewManager to be idle, because the session asks from its own loop while a pause may be in flight.
+    // for the ViewManager to be idle, because the session asks from its own loop while a pause may be in flight, and
+    // session overlays also wait while paused, so the pause view always stays the top view.
     public sealed partial class GameplayView
     {
         [Header("Overlays (UI-Views module prefabs, wired by FlowPrefabsBuilder)")]
@@ -27,7 +28,7 @@ namespace Nex.BilliardRogue
         {
             // The act look fades in behind the intro overlay (a no-op for every stage after the act's first).
             context.environment.ApplyAct(context.config.Acts[actIndex]);
-            await UniTask.WaitWhile(managerInTransition, cancellationToken: ct);
+            await UniTask.WaitWhile(overlaysBlocked, cancellationToken: ct);
             // The band covers the middle of the screen: the HUD leaves first and slides back in after it.
             SetHudRevealed(false);
             var view = Instantiate(stageIntroViewPrefab);
@@ -41,7 +42,7 @@ namespace Nex.BilliardRogue
 
         public async UniTask<int> ChooseRewardAsync(IReadOnlyList<RewardOption> options, RunState run, CancellationToken ct)
         {
-            await UniTask.WaitWhile(managerInTransition, cancellationToken: ct);
+            await UniTask.WaitWhile(overlaysBlocked, cancellationToken: ct);
             var view = Instantiate(rewardViewPrefab);
             view.Initialize(context.config.Pacing);
             activeReward = view;
@@ -62,7 +63,7 @@ namespace Nex.BilliardRogue
 
         public async UniTask ShowTrackingLostAsync(int playerIndex, CancellationToken ct)
         {
-            await UniTask.WaitWhile(managerInTransition, cancellationToken: ct);
+            await UniTask.WaitWhile(overlaysBlocked, cancellationToken: ct);
             var input = context.inputs[playerIndex];
             var lostAt = Time.realtimeSinceStartup;
             var view = Instantiate(trackingLostViewPrefab);
@@ -77,21 +78,30 @@ namespace Nex.BilliardRogue
             catch (OperationCanceledException)
             {
                 // The run ended (or the view host died) while the player was away: let the overlay close itself.
-                if (view != null) view.RequestClose();
+                if (view != null)
+                {
+                    view.RequestClose();
+                }
+
                 throw;
             }
 
-            context.analytics.TrackingLost(playerIndex, Time.realtimeSinceStartup - lostAt);
+            // The single tracking_lost emitter (real time away). Save & Quit unwinds the overlay without cancelling
+            // ct, after run_end: nothing to report then.
+            if (!pauseGate.RunEnded)
+            {
+                context.analytics.TrackingLost(playerIndex, Time.realtimeSinceStartup - lostAt);
+            }
         }
 
         #endregion
 
         #region Pause overlay
 
-        async UniTask PushPauseOverlayAsync(CancellationToken ct)
+        async UniTaskVoid PushPauseOverlayAsync(CancellationToken ct)
         {
             await UniTask.WaitWhile(managerInTransition, cancellationToken: ct);
-            if (!paused) return;
+            if (!pauseGate.TryShowOverlay()) return;
             await manager.PushView(Instantiate(pauseViewPrefab));
         }
 

@@ -139,6 +139,7 @@ MonoBehaviour:
   keyResponder: {fileID: 7430184777950287574}
   disableCanvasOnBackground: 0
   worldLabelLayer: {fileID: 4334209134612566536}
+  hud: {fileID: 2757949939127890668}
   session: {fileID: 7821862214150089085}
   timeScale: {fileID: 3680814695861652745}
   inputRoot: {fileID: 1081127682655198282}
@@ -549,7 +550,7 @@ MonoBehaviour:
   DebugActive: 0
   InScriptDrivenPause: 0
   FeedbacksList:
-  - rid: 9105972324008198291
+  - rid: 9105972324008198296
   KeepPlayModeChanges: 0
   PerformanceMode: 0
   RestoreInitialValuesOnDisable: 0
@@ -558,11 +559,11 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 9105972324008198291
+    - rid: 9105972324008198296
       type: {class: MMF_CanvasGroup, ns: MoreMountains.Feedbacks, asm: MoreMountains.Tools}
       data:
         Active: 1
-        UniqueID: 1383872443
+        UniqueID: -2055241478
         Label: CanvasGroup
         OriginalLabel: CanvasGroup
         ChannelMode: 0
@@ -910,6 +911,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 6f369fdef5b1548ebaffc28daae65073, type: 3}
+--- !u!114 &2757949939127890668 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1041958428948603098, guid: 6f369fdef5b1548ebaffc28daae65073, type: 3}
+  m_PrefabInstance: {fileID: 2896926651217842742}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 28ec574e801f94f2b8998eb603caa60c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Nex.BilliardRogue.GameplayHud
 --- !u!224 &7467632176112715532 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 5733549166849316154, guid: 6f369fdef5b1548ebaffc28daae65073, type: 3}

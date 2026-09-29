@@ -13,7 +13,8 @@ namespace Nex.BilliardRogue
 {
     /// <summary>
     /// Three reward cards (left/right + Enter). ChooseAsync fills the cards, waits until the view is on top, reveals
-    /// them one by one, waits for a pick, plays the pick animation, pops itself and returns the chosen index.
+    /// them one by one, waits for a pick, plays the pick animation, pops itself once it is on top again and returns
+    /// the chosen index.
     /// Usage: Instantiate → Initialize → PushView (don't await first) → await ChooseAsync.
     /// </summary>
     public sealed class RewardView : RogueView
@@ -76,6 +77,8 @@ namespace Nex.BilliardRogue
             interactable = true;
             var index = await choice.Task.AttachExternalCancellation(linked.Token);
             await PickAsync(index, linked.Token);
+            // A pause pushed during the pick animation: pop once we are the top view again (PopSelf pops the top).
+            await UniTask.WaitUntil(() => IsActive, cancellationToken: linked.Token);
             await PopSelf();
             return index;
         }
@@ -83,14 +86,20 @@ namespace Nex.BilliardRogue
         /// <summary>Motion/CLI hover: moves the keyboard highlight to a card.</summary>
         public void Hover(int index)
         {
-            if (!IsActive || index < 0 || index >= shownCount) return;
+            if (!IsActive) return;
+            if (index < 0) return;
+            if (index >= shownCount) return;
             cardsGroup.NavigateTo(cards[index].Responder);
         }
 
         /// <summary>Debug/CLI pick (DebugHooks.ChooseReward). False while the cards are not selectable yet.</summary>
         public bool TryChoose(int index)
         {
-            if (!IsActive || !interactable || index < 0 || index >= shownCount) return false;
+            if (!IsActive || !interactable || index < 0 || index >= shownCount)
+            {
+                return false;
+            }
+
             HandleChoose(index);
             return true;
         }
@@ -101,7 +110,9 @@ namespace Nex.BilliardRogue
 
         void HandleChoose(int index)
         {
-            if (!IsActive || !interactable || index >= shownCount) return;
+            if (!IsActive) return;
+            if (!interactable) return;
+            if (index >= shownCount) return;
             interactable = false;
             TrackButton("card", index);
             choice?.TrySetResult(index);

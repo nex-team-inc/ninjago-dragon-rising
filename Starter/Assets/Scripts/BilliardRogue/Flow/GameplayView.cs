@@ -20,6 +20,8 @@ namespace Nex.BilliardRogue
         [Header("Hosted")]
         [Tooltip("Full-screen layer BoardPresenter fills with HP labels and damage numbers (behind the HUD).")]
         [SerializeField] RectTransform worldLabelLayer = null!;
+        [Tooltip("The nested GameplayHud prefab instance (UI-Views module), wired by FlowViewPrefabsBuilder.")]
+        [SerializeField] GameplayHud hud = null!;
         [SerializeField] GameSession session = null!;
         [SerializeField] TimeScaleController timeScale = null!;
         [Tooltip("Parent for the per-player shot input instances.")]
@@ -32,28 +34,27 @@ namespace Nex.BilliardRogue
             + "under it and it fades once the first overlay (stage intro or reward) is on top.")]
         [SerializeField] CanvasGroup curtain = null!;
 
+        readonly GameplayPauseGate pauseGate = new();
         GameplayViewContext context = null!;
-        // View.Manager is cleared when the view is dismissed; the pause events need it until OnDestroy.
+        // View.Manager is cleared when the view is dismissed; the pause events and overlays need it until OnDestroy.
         ViewManager manager = null!;
         GameplayPip pip = null!;
-        GameplayHud? hudWidget;
         Func<bool> managerInTransition = null!;
+        Func<bool> overlaysBlocked = null!;
         bool hudRevealed;
         bool worldRevealed;
         // Overlay currently covering this view (the PiP overlay canvas would draw above it); null when on top.
         ViewIdentifier? coveringOverlay;
         bool runStarted;
-        bool runEnded;
-        bool paused;
 
         /// <summary>
-        /// The run, how GameSession.RunAsync ended (Abandoned = Save &amp; Quit / cancelled, never written into the
-        /// run) and whether the finished run set a new best stage.
+        /// The run, how GameSession.RunAsync ended (Abandoned = Save &amp; Quit / cancelled / a faulted run loop, never
+        /// written into the run) and whether the finished run set a new best stage.
         /// </summary>
         public event Action<RunState, RunOutcome, bool>? RunEnded;
 
         public RunState Run => context.run;
-        public bool IsPaused => paused;
+        public bool IsPaused => pauseGate.IsPaused;
         public Transform InputRoot => inputRoot;
 
         public override ViewIdentifier Identifier => ViewIdentifier.Gameplay;
@@ -93,6 +94,12 @@ namespace Nex.BilliardRogue
         public void Initialize(GameplayViewContext ctx)
         {
             context = ctx;
+            manager = ctx.viewManager;
+            managerInTransition = () => manager.IsInTransition;
+            overlaysBlocked = () => pauseGate.BlocksOverlays || manager.IsInTransition;
+            manager.PauseViewResumeClicked += HandlePauseResume;
+            manager.PauseViewHomeClicked += HandlePauseHome;
+
             var detection = ctx.camera.Detection;
             // Its own Screen Space Overlay canvas (TDD D5), so it lives as a scene root and dies with this view.
             pip = Instantiate(pipPrefab);
@@ -100,21 +107,15 @@ namespace Nex.BilliardRogue
             pip.SetActivePlayer(ctx.run.numPlayers > 1 ? ctx.run.activePlayerIndex : -1);
             pip.SetVisible(false);
 
-            // The HUD prefab (UI-Views) is nested by FlowPrefabsBuilder; a missing one degrades to a no-op relay.
-            hudWidget = GetComponentInChildren<GameplayHud>(true);
-            if (hudWidget != null)
-            {
-                hudWidget.Initialize(ctx.config.Balls, ctx.config.Pacing);
-                // Revealed after the first stage intro band (or by the first turn banner).
-                hudWidget.SetRevealed(false, false);
-            }
+            hud.Initialize(ctx.config.Balls, ctx.config.Pacing);
+            // Revealed after the first stage intro band (or by the first turn banner).
+            hud.SetRevealed(false, false);
 
             // Calibration has faded to the curtain colour: cover the screen from now on (the canvas renders on top
             // until the push gives it its camera), so its pop and the board build never show.
             curtain.alpha = 1f;
             canvas.enabled = true;
 
-            var hud = new GameplayHudRelay(hudWidget, pip);
             ctx.board.Initialize(ctx.config, ctx.rules, ctx.layout, ctx.display, worldLabelLayer);
             session.Initialize(new GameSessionContext
             {
@@ -123,7 +124,7 @@ namespace Nex.BilliardRogue
                 run = ctx.run,
                 isContinue = ctx.isContinue,
                 board = ctx.board,
-                hud = hud,
+                hud = new GameplayHudRelay(hud, pip),
                 flowHost = this,
                 inputs = ctx.inputs,
                 persistence = ctx.persistence,
@@ -131,9 +132,6 @@ namespace Nex.BilliardRogue
                 timeScale = timeScale,
                 display = ctx.display,
             });
-
-            // Subscribe replays the current value; only a true pauses, the player resumes through the pause view.
-            CherryIntegrationManager.Instance.PreferGameStopped.Subscribe(HandlePreferGameStopped, destroyCancellationToken);
         }
 
         public override void ViewDidBecomeTopView(bool afterPush)
@@ -142,28 +140,25 @@ namespace Nex.BilliardRogue
             if (!runStarted)
             {
                 runStarted = true;
-                manager = Manager;
-                managerInTransition = () => manager.IsInTransition;
-                manager.PauseViewResumeClicked += HandlePauseResume;
-                manager.PauseViewHomeClicked += HandlePauseHome;
                 RunAsync(destroyCancellationToken).Forget();
                 return;
             }
 
-            // Safety net: a pause view dismissed through the top-level Back without announcing a resume.
-            if (paused) HandlePauseResume();
+            if (!pauseGate.ShouldResumeOnTop()) return;
+            HandlePauseResume();
         }
 
         void OnDestroy()
         {
-            if (manager != null)
+            manager.PauseViewResumeClicked -= HandlePauseResume;
+            manager.PauseViewHomeClicked -= HandlePauseHome;
+            // A scene root of its own: on scene unload it can be destroyed before this view.
+            if (pip != null)
             {
-                manager.PauseViewResumeClicked -= HandlePauseResume;
-                manager.PauseViewHomeClicked -= HandlePauseHome;
+                Destroy(pip.gameObject);
             }
 
-            if (pip != null) Destroy(pip.gameObject);
-            if (context != null) context.board.Clear();
+            context.board.Clear();
         }
 
         #endregion
@@ -174,14 +169,29 @@ namespace Nex.BilliardRogue
         {
             // Leave the push continuation before the session pushes its first overlay.
             await UniTask.Yield(PlayerLoopTiming.Update, ct);
-            var outcome = await session.RunAsync(ct);
-            runEnded = true;
+            var outcome = RunOutcome.Abandoned;
+            try
+            {
+                var run = session.RunAsync(ct);
+                // Subscribe replays the current value, so a run that starts while the platform is stopped opens on
+                // the pause view. Only a true pauses: the player resumes through the pause view.
+                CherryIntegrationManager.Instance.PreferGameStopped.Subscribe(HandlePreferGameStopped, ct);
+                outcome = await run;
+            }
+            catch (Exception e) when (e is not OperationCanceledException)
+            {
+                // A faulted run loop still hands the flow back: the coordinator returns to the title and the last
+                // turn-boundary save stays on disk.
+                Debug.LogException(e);
+            }
+
+            pauseGate.EndRun();
             RunEnded?.Invoke(context.run, outcome, session.NewRecord);
         }
 
         public void NotifyRunEnded(RunState run)
         {
-            runEnded = true;
+            pauseGate.EndRun();
             pip.SetActivePlayer(-1);
         }
 
@@ -201,7 +211,7 @@ namespace Nex.BilliardRogue
         void SetHudRevealed(bool show)
         {
             hudRevealed = show;
-            if (hudWidget != null) hudWidget.SetRevealed(show, true);
+            hud.SetRevealed(show, true);
             UpdatePip();
         }
 
@@ -218,31 +228,27 @@ namespace Nex.BilliardRogue
 
         #region Pause
 
-        public override void OnBackButton()
-        {
-            RequestPause();
-        }
+        public override void OnBackButton() => RequestPause();
 
-        /// <summary>Single pause entry point: top-level Back, Escape and the platform pause.</summary>
+        /// <summary>Top-level Back and Escape; the platform pause goes through HandlePreferGameStopped.</summary>
         public void RequestPause()
         {
-            if (!IsActive || paused || runEnded) return;
+            if (!IsActive) return;
             BeginPause();
         }
 
         void HandlePreferGameStopped(bool stopped)
         {
-            if (!stopped || !runStarted || paused || runEnded) return;
+            if (!stopped) return;
             BeginPause();
         }
 
-        // GameSession.RequestPause owns the pause analytics; this only adds the camera and the overlay.
+        // Also runs while an overlay is on top or closing: the pause view is pushed once the ViewManager is idle, and
+        // GameSession.RequestPause owns the pause analytics.
         void BeginPause()
         {
-            // Also the tracking-lost overlay's Back (IsActive is false there): one pause at a time, none after the run.
-            if (paused || runEnded) return;
+            if (!pauseGate.TryBegin()) return;
             RevealWorld();
-            paused = true;
             session.RequestPause(true);
             context.camera.Pause();
             manager.AnnouncePaused();
@@ -251,15 +257,14 @@ namespace Nex.BilliardRogue
 
         void HandlePauseResume()
         {
-            if (!paused) return;
-            paused = false;
+            if (!pauseGate.TryResume()) return;
             session.RequestPause(false);
             context.camera.UnPause();
         }
 
         void HandlePauseHome()
         {
-            if (!paused) return;
+            if (!pauseGate.IsPaused) return;
             // Save & Quit: the last turn-boundary save stays on disk, RunAsync completes with Abandoned and the
             // coordinator unwinds to the title.
             session.RequestSaveAndQuit();

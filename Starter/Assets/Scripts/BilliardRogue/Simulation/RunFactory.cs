@@ -42,9 +42,10 @@ namespace Nex.BilliardRogue.Simulation
         /// <summary>
         /// Generates run.stage for the current act/stage (StageGenerator), clears the board, copies the plan's field
         /// objects (same ids; crates without hp get balance.crateHp; board.nextId = max id + 1), resets
-        /// turnInStage/nextWaveIndex/extraBalls and spawns the opening waves: normal stage waves[0] into row 1 and
-        /// waves[1] into row 0; boss stage waves[0] (the boss) into row 0. Stores rng.State into run.rngState.
-        /// The post-boss heal happens in CompleteStage, before the reward.
+        /// turnInStage/nextWaveIndex/nextBatchIndex/extraBalls and spawns the stage's first turn (GDD v2 §5): a boss stage
+        /// first places the act boss at col (columns − width) / 2, row 0 (EnemySpawned without the pop-in flag), then the
+        /// first batch pops in (StageSchedule.SpawnNext; the next one is due spawnEveryNTurns later). Stores rng.State into
+        /// run.rngState. The post-boss heal happens in CompleteStage, before the reward.
         /// </summary>
         public void BeginStage(GameRules rules, RunState run, SimRandom rng, List<SimEvent> events)
         {
@@ -77,37 +78,30 @@ namespace Nex.BilliardRogue.Simulation
             board.nextId = maxId + 1;
             run.turnInStage = 0;
             run.nextWaveIndex = 0;
+            run.nextBatchIndex = 0;
+            run.nextBatchTurn = 0;
             run.extraBalls = 0;
             if (plan.isBoss)
             {
-                SpawnNextWave(ops, run, 0, events);
+                var bossType = rules.acts[run.actIndex].bossType;
+                var width = Math.Max(1, rules.enemies[(int)bossType].width);
+                ops.SpawnEnemy(run, bossType, Math.Max(0, (rules.arena.columns - width) / 2), 0, events);
             }
-            else
-            {
-                SpawnNextWave(ops, run, 1, events);
-                SpawnNextWave(ops, run, 0, events);
-            }
+            StageSchedule.SpawnNext(rules, ops, run, 0, rng, events);
             run.rngState = rng.State;
         }
 
         /// <summary>
-        /// True when every scheduled wave has spawned (normal stage) or the boss is dead (boss stage), and no enemy
-        /// other than BoneWall remains on the board.
+        /// True when no batch can spawn any more (normal stage: all planned batches spawned; boss stage: the boss is dead)
+        /// and no enemy other than BoneWall remains on the board.
         /// </summary>
         public bool IsStageCleared(RunState run)
         {
-            if (!run.stage.isBoss && run.nextWaveIndex < run.stage.waves.Count)
+            if (!run.stage.isBoss && StageSchedule.BatchesLeft(run) > 0)
             {
                 return false;
             }
-            foreach (var e in run.board.enemies)
-            {
-                if (e.type != EnemyType.BoneWall)
-                {
-                    return false;
-                }
-            }
-            return true;
+            return StageSchedule.IsFieldEmpty(run);
         }
 
         /// <summary>
@@ -169,12 +163,6 @@ namespace Nex.BilliardRogue.Simulation
         static bool IsFinalStage(GameRules rules, RunState run)
         {
             return run.actIndex >= rules.acts.Length - 1 && run.stageInAct >= rules.acts[run.actIndex].normalStages;
-        }
-
-        static void SpawnNextWave(BoardOps ops, RunState run, int row, List<SimEvent> events)
-        {
-            if (run.nextWaveIndex >= run.stage.waves.Count) return;
-            ops.SpawnWaveRow(run, run.stage.waves[run.nextWaveIndex++], row, events);
         }
 
         BoardOps OpsFor(GameRules rules)

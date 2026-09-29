@@ -7,11 +7,11 @@ using UnityEngine;
 namespace Nex.BilliardRogue.Simulation
 {
     /// <summary>
-    /// Builds the deterministic wave schedule and static field objects for one stage (GDD §7).
+    /// Builds the deterministic batch plan and static field objects for one stage (GDD §7, v2 §5).
     /// </summary>
     public sealed class StageGenerator
     {
-        // Rows 0-1 receive spawning waves and the danger row must stay reachable, so objects live in between.
+        // Rows 0-1 hold the boss footprint on boss stages; objects start below it.
         const int FirstObjectRow = 2;
 
         readonly List<int> startColumns = new();
@@ -21,21 +21,21 @@ namespace Nex.BilliardRogue.Simulation
         #region Public Methods
 
         /// <summary>
-        /// Normal stage: minWaves..maxWaves rows drawn from the act's weighted enemy pool with a difficulty budget
-        /// of baseBudgetPerRow + budgetGrowthPerStage × stageNumber per row (enemy cost subtracts from it), 20%
-        /// (balance.pickupChancePerRow) of rows carry one pickup cell, and 0..maxFieldObjects static objects
-        /// (pillar, crate, portal pair, mud) are placed on free grid cells outside rows 0-1 and the danger row.
-        /// Boss stage: wave 0 holds the act boss at the top-centre footprint (col = (columns − width) / 2) plus
-        /// bossEscortWaves escort rows with half the budget that avoid the boss columns; EnemyPhaseResolver spawns
-        /// further escorts every bossEscortEveryNTurns while the boss lives.
-        /// Field object ids are 1..N (portal pairs reference each other through pairId); crates get balance.crateHp
-        /// scaled like enemy HP. Every draw comes from rng so a seed reproduces the plan.
+        /// GDD v2 §5: act.batchesPerStage batches, each with act.minEnemiesPerBatch enemies drawn from the act's weighted
+        /// pool within a budget of batchBudgetRows × (baseBudgetPerRow + budgetGrowthPerStage × stageNumber) (a boss
+        /// stage's escort batches get half; when the budget runs short the cheapest entries fill the batch) followed by
+        /// act.pickupsPerBatch pickups. Where they spawn is decided when they spawn (BoardOps.SpawnBatch). The boss of a
+        /// boss stage is not in the plan: RunFactory.BeginStage places act.bossType at the top centre.
+        /// 0..maxFieldObjects static objects (pillar, crate, portal pair, mud) go on distinct columns in rows
+        /// 2..min(dangerRow − 1, last spawn row), outside the boss columns. Field object ids are 1..N (portal pairs
+        /// reference each other through pairId); crates get balance.crateHp scaled like enemy HP. Every draw comes from
+        /// rng so a seed reproduces the plan.
         /// </summary>
         public StagePlan Generate(GameRules rules, int actIndex, int stageInAct, int stageNumber, SimRandom rng)
         {
             var act = rules.acts[actIndex];
             var plan = new StagePlan { actIndex = actIndex, stageInAct = stageInAct, isBoss = stageInAct >= act.normalStages };
-            var budget = act.baseBudgetPerRow + act.budgetGrowthPerStage * stageNumber;
+            var budget = Math.Max(1, act.batchBudgetRows) * (act.baseBudgetPerRow + act.budgetGrowthPerStage * stageNumber);
             var blockedStart = 0;
             var blockedWidth = 0;
             if (plan.isBoss)
@@ -43,22 +43,13 @@ namespace Nex.BilliardRogue.Simulation
                 var boss = rules.enemies[(int)act.bossType];
                 blockedWidth = Math.Min(boss.width, rules.arena.columns);
                 blockedStart = (rules.arena.columns - blockedWidth) / 2;
-                var bossRow = new WaveRow();
-                bossRow.cells.Add(new WaveCell { col = blockedStart, enemy = act.bossType });
-                plan.waves.Add(bossRow);
-                var escortBudget = Math.Max(1, budget / 2);
-                for (var i = 0; i < act.bossEscortWaves; i++)
-                {
-                    plan.waves.Add(BuildRow(rules, act, escortBudget, blockedStart, blockedWidth, rng));
-                }
+                budget = Math.Max(1, budget / 2);
             }
-            else
+
+            var batchCount = Math.Max(1, act.batchesPerStage);
+            for (var i = 0; i < batchCount; i++)
             {
-                var waveCount = rng.Range(act.minWaves, act.maxWaves + 1);
-                for (var i = 0; i < waveCount; i++)
-                {
-                    plan.waves.Add(BuildRow(rules, act, budget, 0, 0, rng));
-                }
+                plan.batches.Add(BuildBatch(rules, act, budget, rng));
             }
 
             PlaceFieldObjects(rules, act, plan, stageNumber, blockedStart, blockedWidth, rng);
@@ -67,62 +58,40 @@ namespace Nex.BilliardRogue.Simulation
 
         #endregion
 
-        #region Waves
+        #region Batches
 
-        WaveRow BuildRow(GameRules rules, ActRules act, int budget, int blockedStart, int blockedWidth, SimRandom rng)
+        SpawnBatch BuildBatch(GameRules rules, ActRules act, int budget, SimRandom rng)
         {
-            var columnCount = rules.arena.columns;
-            ResetTaken(columnCount, blockedStart, blockedWidth);
-            var row = new WaveRow();
-            var free = CollectStarts(columnCount, 1);
-            // Open columns keep every row passable for a ball (act.minOpenColumnsPerRow).
-            var minOpen = Math.Max(0, act.minOpenColumnsPerRow);
-
-            if (free > minOpen + 1 && rng.Chance(rules.balance.pickupChancePerRow))
-            {
-                var col = startColumns[rng.Range(0, free)];
-                row.cells.Add(new WaveCell { col = col, isPickup = true, pickup = (PickupType)rng.Range(0, SimConstants.PickupTypeCount) });
-                Mark(col, 1);
-                free--;
-            }
-
-            var maxEnemies = Math.Max(1, free - minOpen);
+            var batch = new SpawnBatch();
+            var count = Math.Max(1, act.minEnemiesPerBatch);
+            var minCost = CheapestCost(rules, act);
             var remaining = budget;
-            for (var placed = 0; placed < maxEnemies; placed++)
+            for (var slot = 0; slot < count; slot++)
             {
-                var entry = DrawEntry(rules, act, remaining, columnCount, rng);
-                if (entry == null && placed == 0)
-                {
-                    entry = DrawEntry(rules, act, int.MaxValue, columnCount, rng);
-                }
-
+                // Leave enough budget for the cheapest entry in every slot still to fill.
+                var cap = remaining - (count - slot - 1) * minCost;
+                var entry = DrawEntry(rules, act, cap, rng) ?? DrawEntry(rules, act, minCost, rng);
                 if (entry == null) break;
-
-                var width = rules.enemies[(int)entry.type].width;
-                var starts = CollectStarts(columnCount, width);
-                var col = startColumns[rng.Range(0, starts)];
-                row.cells.Add(new WaveCell { col = col, enemy = entry.type });
-                Mark(col, width);
+                batch.entries.Add(new BatchEntry { enemy = entry.type });
                 remaining -= Cost(entry);
             }
 
-            return row;
+            for (var p = 0; p < act.pickupsPerBatch; p++)
+            {
+                batch.entries.Add(new BatchEntry { isPickup = true, pickup = (PickupType)rng.Range(0, SimConstants.PickupTypeCount) });
+            }
+
+            return batch;
         }
 
-        /// <summary>Weighted draw among non-boss pool entries that fit the budget and still have room in the row.</summary>
-        WaveEntryWeight? DrawEntry(GameRules rules, ActRules act, int budgetCap, int columnCount, SimRandom rng)
+        /// <summary>Weighted draw among non-boss pool entries whose cost fits the cap; null when none does.</summary>
+        WaveEntryWeight? DrawEntry(GameRules rules, ActRules act, int budgetCap, SimRandom rng)
         {
             candidates.Clear();
             var total = 0f;
             foreach (var entry in act.enemyPool)
             {
-                if (entry.weight <= 0f || Cost(entry) > budgetCap)
-                {
-                    continue;
-                }
-
-                var enemy = rules.enemies[(int)entry.type];
-                if (enemy.isBoss || CollectStarts(columnCount, enemy.width) == 0)
+                if (entry.weight <= 0f || Cost(entry) > budgetCap || rules.enemies[(int)entry.type].isBoss)
                 {
                     continue;
                 }
@@ -142,6 +111,18 @@ namespace Nex.BilliardRogue.Simulation
             return candidates[candidates.Count - 1];
         }
 
+        static int CheapestCost(GameRules rules, ActRules act)
+        {
+            var cheapest = int.MaxValue;
+            foreach (var entry in act.enemyPool)
+            {
+                if (entry.weight <= 0f || rules.enemies[(int)entry.type].isBoss) continue;
+                cheapest = Math.Min(cheapest, Cost(entry));
+            }
+
+            return cheapest == int.MaxValue ? 1 : cheapest;
+        }
+
         static int Cost(WaveEntryWeight entry) => Math.Max(1, entry.cost);
 
         #endregion
@@ -151,7 +132,8 @@ namespace Nex.BilliardRogue.Simulation
         void PlaceFieldObjects(GameRules rules, ActRules act, StagePlan plan, int stageNumber, int blockedStart, int blockedWidth, SimRandom rng)
         {
             var arena = rules.arena;
-            var lastRow = ArenaGeometry.DangerRow(arena) - 1;
+            // Objects follow the spawn rule too: never in the rows nearest the player.
+            var lastRow = Math.Min(ArenaGeometry.DangerRow(arena) - 1, BoardSpawning.SpawnLastRow(arena, act));
             if (lastRow < FirstObjectRow) return;
 
             ResetTaken(arena.columns, blockedStart, blockedWidth);

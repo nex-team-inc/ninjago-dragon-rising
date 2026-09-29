@@ -40,7 +40,7 @@ namespace Nex.BilliardRogue.Simulation.Tests
         }
 
         [Test]
-        public void NormalStageWaveCountStaysWithinTheActRange()
+        public void EveryStagePlansItsBatchesWithTenEnemiesAndAFewPickups()
         {
             var rules = TestRules.Create();
             for (var seed = 0; seed < SeedCount; seed++)
@@ -48,74 +48,90 @@ namespace Nex.BilliardRogue.Simulation.Tests
                 foreach (var (act, stage) in AllStages())
                 {
                     var plan = Generate(rules, act, stage, seed);
-                    if (plan.isBoss) continue;
                     var rulesAct = rules.acts[act];
-                    Assert.That(plan.waves.Count, Is.InRange(rulesAct.minWaves, rulesAct.maxWaves));
-                }
-            }
-        }
-
-        [Test]
-        public void EveryRowHasAnEnemyAndCellsUseDistinctColumnsInsideTheGrid()
-        {
-            var rules = TestRules.Create();
-            var columns = rules.arena.columns;
-            for (var seed = 0; seed < SeedCount; seed++)
-            {
-                foreach (var (act, stage) in AllStages())
-                {
-                    foreach (var wave in Generate(rules, act, stage, seed).waves)
+                    Assert.AreEqual(0, plan.waves.Count, "no v1 row waves");
+                    Assert.AreEqual(rulesAct.batchesPerStage, plan.batches.Count, $"act {act} stage {stage}");
+                    foreach (var batch in plan.batches)
                     {
-                        var used = new bool[columns];
                         var enemies = 0;
-                        foreach (var cell in wave.cells)
+                        var pickups = 0;
+                        var seenPickup = false;
+                        foreach (var entry in batch.entries)
                         {
-                            var width = cell.isPickup ? 1 : rules.enemies[(int)cell.enemy].width;
-                            Assert.That(cell.col, Is.GreaterThanOrEqualTo(0));
-                            Assert.That(cell.col + width, Is.LessThanOrEqualTo(columns));
-                            for (var c = cell.col; c < cell.col + width; c++)
+                            if (entry.isPickup)
                             {
-                                Assert.IsFalse(used[c], $"column {c} used twice (seed {seed}, act {act}, stage {stage})");
-                                used[c] = true;
+                                pickups++;
+                                seenPickup = true;
+                                continue;
                             }
 
-                            if (!cell.isPickup)
-                            {
-                                enemies++;
-                            }
+                            Assert.IsFalse(seenPickup, "pickups come after the enemies (dropped first when cells run out)");
+                            Assert.IsFalse(rules.enemies[(int)entry.enemy].isBoss, "no boss in a batch");
+                            Assert.IsTrue(System.Array.Exists(rulesAct.enemyPool, e => e.type == entry.enemy && e.weight > 0f), $"{entry.enemy} not in the act {act} pool");
+                            enemies++;
                         }
 
-                        Assert.That(enemies, Is.GreaterThanOrEqualTo(1));
+                        Assert.AreEqual(rulesAct.minEnemiesPerBatch, enemies);
+                        Assert.AreEqual(rulesAct.pickupsPerBatch, pickups);
                     }
                 }
             }
         }
 
         [Test]
-        public void BossStageWaveZeroHoldsTheActBossAtTheTopCentre()
+        public void BatchCostStaysWithinTheBudgetAndGrowsWithTheStage()
         {
             var rules = TestRules.Create();
             for (var act = 0; act < SimConstants.ActCount; act++)
             {
                 var rulesAct = rules.acts[act];
-                var plan = Generate(rules, act, rulesAct.normalStages, 77);
-                Assert.IsTrue(plan.isBoss);
-                Assert.AreEqual(1 + rulesAct.bossEscortWaves, plan.waves.Count);
-                Assert.AreEqual(1, plan.waves[0].cells.Count);
-                var bossCell = plan.waves[0].cells[0];
-                var boss = rules.enemies[(int)rulesAct.bossType];
-                Assert.AreEqual(rulesAct.bossType, bossCell.enemy);
-                Assert.IsFalse(bossCell.isPickup);
-                Assert.AreEqual((rules.arena.columns - boss.width) / 2, bossCell.col);
-
-                for (var w = 1; w < plan.waves.Count; w++)
+                var cheapest = int.MaxValue;
+                foreach (var entry in rulesAct.enemyPool) cheapest = Mathf.Min(cheapest, Mathf.Max(1, entry.cost));
+                var firstStageCost = 0f;
+                var lastStageCost = 0f;
+                for (var seed = 0; seed < SeedCount; seed++)
                 {
-                    foreach (var cell in plan.waves[w].cells)
+                    for (var stage = 0; stage < rulesAct.normalStages; stage++)
                     {
-                        var width = cell.isPickup ? 1 : rules.enemies[(int)cell.enemy].width;
-                        var overlapsBoss = cell.col < bossCell.col + boss.width && cell.col + width > bossCell.col;
-                        Assert.IsFalse(overlapsBoss, $"escort in boss columns (act {act}, wave {w})");
-                        Assert.IsFalse(!cell.isPickup && rules.enemies[(int)cell.enemy].isBoss);
+                        var stageNumber = act * SimConstants.StagesPerAct + stage;
+                        var budget = rulesAct.batchBudgetRows * (rulesAct.baseBudgetPerRow + rulesAct.budgetGrowthPerStage * stageNumber);
+                        foreach (var batch in Generate(rules, act, stage, seed).batches)
+                        {
+                            var cost = 0;
+                            foreach (var entry in batch.entries)
+                            {
+                                if (entry.isPickup) continue;
+                                cost += Mathf.Max(1, System.Array.Find(rulesAct.enemyPool, e => e.type == entry.enemy).cost);
+                            }
+
+                            Assert.That(cost, Is.LessThanOrEqualTo(Mathf.Max(budget, rulesAct.minEnemiesPerBatch * cheapest)), $"act {act} stage {stage} seed {seed}");
+                            if (stage == 0) firstStageCost += cost;
+                            if (stage == rulesAct.normalStages - 1) lastStageCost += cost;
+                        }
+                    }
+                }
+
+                Assert.That(lastStageCost, Is.GreaterThanOrEqualTo(firstStageCost), $"act {act}: later stages are not cheaper");
+            }
+        }
+
+        [Test]
+        public void BossStagePlansEscortBatchesAndKeepsTheBossColumnsFreeOfObjects()
+        {
+            var rules = TestRules.Create();
+            for (var act = 0; act < SimConstants.ActCount; act++)
+            {
+                var rulesAct = rules.acts[act];
+                var boss = rules.enemies[(int)rulesAct.bossType];
+                var bossCol = (rules.arena.columns - boss.width) / 2;
+                for (var seed = 0; seed < SeedCount; seed++)
+                {
+                    var plan = Generate(rules, act, rulesAct.normalStages, seed);
+                    Assert.IsTrue(plan.isBoss);
+                    Assert.AreEqual(rulesAct.batchesPerStage, plan.batches.Count);
+                    foreach (var obj in plan.fieldObjects)
+                    {
+                        Assert.IsFalse(obj.col >= bossCol && obj.col < bossCol + boss.width, $"object in boss columns (act {act}, seed {seed})");
                     }
                 }
             }
@@ -126,6 +142,7 @@ namespace Nex.BilliardRogue.Simulation.Tests
         {
             var rules = TestRules.Create();
             var dangerRow = ArenaGeometry.DangerRow(rules.arena);
+            var lastSpawnRow = rules.arena.rows - 1 - rules.acts[0].spawnForbiddenNearRows;
             for (var seed = 0; seed < SeedCount; seed++)
             {
                 foreach (var (act, stage) in AllStages())
@@ -138,6 +155,7 @@ namespace Nex.BilliardRogue.Simulation.Tests
                     {
                         Assert.That(obj.row, Is.GreaterThanOrEqualTo(2));
                         Assert.That(obj.row, Is.LessThan(dangerRow));
+                        Assert.That(obj.row, Is.LessThanOrEqualTo(lastSpawnRow), "objects follow the spawn rule: not in the nearest rows");
                         Assert.IsTrue(ArenaGeometry.IsInsideGrid(rules.arena, obj.col, obj.row));
                         Assert.IsTrue(ids.Add(obj.id), "duplicate field object id");
                         Assert.IsTrue(columnsUsed.Add(obj.col), "two field objects in one column");

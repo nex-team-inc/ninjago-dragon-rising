@@ -94,14 +94,36 @@ namespace Nex.BilliardRogue.Simulation
         public List<WaveCell> cells = new();
     }
 
+    /// <summary>One planned arrival of a GDD v2 §5 spawn batch: an enemy or a pickup, placed on a random free cell when it spawns.</summary>
+    [Serializable, Preserve]
+    public class BatchEntry
+    {
+        public bool isPickup;
+        public EnemyType enemy;
+        public PickupType pickup;
+    }
+
+    /// <summary>GDD v2 §5: enemies (at least ActRules.minEnemiesPerBatch) and a few pickups that pop in together.</summary>
+    [Serializable, Preserve]
+    public class SpawnBatch
+    {
+        public List<BatchEntry> entries = new();
+    }
+
     [Serializable, Preserve]
     public class StagePlan
     {
         public int actIndex;
         public int stageInAct;
         public bool isBoss;
+        /// <summary>v1 row waves: only a save from before GDD v2 §5 has them (StageSchedule.UpgradeLegacyStage converts the rest into batches).</summary>
         public List<WaveRow> waves = new();
         public List<FieldObjectState> fieldObjects = new();
+        /// <summary>
+        /// GDD v2 §5 batches in spawn order. A normal stage spawns each once; a boss stage cycles them (escorts) every
+        /// ActRules.spawnEveryNTurns while the boss lives.
+        /// </summary>
+        public List<SpawnBatch> batches = new();
     }
 
     [Serializable, Preserve]
@@ -154,7 +176,12 @@ namespace Nex.BilliardRogue.Simulation
         public List<BallInstance> bag = new();
         public BoardState board = new();
         public StagePlan stage = new();
+        /// <summary>v1 row waves spawned so far (legacy saves only).</summary>
         public int nextWaveIndex;
+        /// <summary>Batches spawned so far in this stage (a boss stage keeps counting while it cycles its escort batches).</summary>
+        public int nextBatchIndex;
+        /// <summary>turnInStage at which the next batch spawns (end of the enemy phase that reaches it).</summary>
+        public int nextBatchTurn;
         public int activePlayerIndex;
         public RunStats stats = new();
         public RunOutcome outcome;

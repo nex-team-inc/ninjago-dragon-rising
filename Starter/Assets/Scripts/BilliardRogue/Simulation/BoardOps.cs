@@ -17,6 +17,7 @@ namespace Nex.BilliardRogue.Simulation
     {
         readonly GameRules rules;
         readonly BoardDamage damage;
+        readonly BoardSpawning spawning;
 
         #region Life Cycle
 
@@ -24,6 +25,7 @@ namespace Nex.BilliardRogue.Simulation
         {
             this.rules = rules;
             damage = new BoardDamage(rules);
+            spawning = new BoardSpawning(rules);
         }
 
         #endregion
@@ -82,7 +84,22 @@ namespace Nex.BilliardRogue.Simulation
         }
 
         /// <summary>
-        /// Spawns one planned wave row into grid row <paramref name="row"/>: enemies via SpawnEnemy and pickups as
+        /// GDD v2 §5: pops a batch in at random free cells of rows 0..rows − 1 − act.spawnForbiddenNearRows (one rng draw per
+        /// placed entry, each row keeping act.minOpenColumnsPerRow free cells), entries in plan order: enemies through
+        /// SpawnEnemy with EnemySpawned.flag = true and value2 = stagger index, pickups with PickupSpawned (same fields).
+        /// Entries without a free cell are dropped. Ends with BatchSpawned (value = batchIndex, value2 = entries spawned,
+        /// flag = something dropped, sourceId = skippedTurns). Returns the entries spawned.
+        /// </summary>
+        public int SpawnBatch(RunState run, SpawnBatch batch, int batchIndex, int skippedTurns, SimRandom rng, List<SimEvent> events)
+        {
+            return spawning.Spawn(this, run, batch, batchIndex, skippedTurns, rng, events);
+        }
+
+        /// <summary>Last grid row a batch may spawn into for the run's act.</summary>
+        public int SpawnLastRow(RunState run) => BoardSpawning.SpawnLastRow(rules.arena, rules.acts[run.actIndex]);
+
+        /// <summary>
+        /// v1 (legacy saves): spawns one planned wave row into grid row <paramref name="row"/>: enemies via SpawnEnemy and pickups as
         /// PickupState. A cell whose planned column is occupied moves to the nearest free column of the row (closer
         /// wins, left on ties) so the planned enemy count survives congestion; only a row without room drops cells.
         /// Appends WaveSpawned (value = row, value2 = cells spawned, flag = a cell was dropped). Pickups have no spawn

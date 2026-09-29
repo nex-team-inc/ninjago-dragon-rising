@@ -124,6 +124,7 @@ namespace Nex.BilliardRogue.Simulation
         /// <summary>HP healed after every stage clear (GDD v2 §1: replaces the Heal card); a boss adds bossHealFraction.</summary>
         public int stageClearHeal = 4;
         public int pickupHealAmount = 4;
+        /// <summary>v1 row-wave pickups (unused since GDD v2 §5: ActRules.pickupsPerBatch).</summary>
         public float pickupChancePerRow = 0.2f;
         public int poisonMax = 5;
         public int crateHp = 3;
@@ -154,6 +155,7 @@ namespace Nex.BilliardRogue.Simulation
     {
         public int actIndex;
         public int normalStages = 3;
+        /// <summary>v1 row waves (unused since GDD v2 §5 batches; kept so older assets and saves still load).</summary>
         public int minWaves = 5;
         public int maxWaves = 8;
         public WaveEntryWeight[] enemyPool = Array.Empty<WaveEntryWeight>();
@@ -163,10 +165,28 @@ namespace Nex.BilliardRogue.Simulation
         public int maxFieldObjects = 3;
         /// <summary>Common / Uncommon / Rare reward weights.</summary>
         public float[] rarityWeights = { 0.6f, 0.3f, 0.1f };
+        /// <summary>v1 boss escorts (unused since GDD v2 §5: escort batches follow spawnEveryNTurns).</summary>
         public int bossEscortWaves = 3;
         public int bossEscortEveryNTurns = 2;
-        /// <summary>Columns every generated wave row leaves open so a ball can always slip past it.</summary>
+        /// <summary>Columns every row keeps free when a batch spawns into it, so a ball can always slip past.</summary>
         public int minOpenColumnsPerRow = 1;
+
+        // GDD v2 §5: enemies pop in as batches at random free cells.
+        /// <summary>Enemies per batch; fewer spawn only when the free cells run out.</summary>
+        public int minEnemiesPerBatch = 10;
+        /// <summary>A batch spawns on the stage's first turn and then every N turns (turn 1, 1 + N, 1 + 2N, …).</summary>
+        public int spawnEveryNTurns = 3;
+        /// <summary>Batches of a normal stage; a boss stage generates this many escort batches and cycles them.</summary>
+        public int batchesPerStage = 3;
+        /// <summary>Rows nearest the player (the danger row included) that nothing spawns into.</summary>
+        public int spawnForbiddenNearRows = 3;
+        /// <summary>Pickups added to each batch (they spawn after its enemies, on the same free-cell rule).</summary>
+        public int pickupsPerBatch = 2;
+        /// <summary>
+        /// Difficulty budget of a batch = batchBudgetRows × (baseBudgetPerRow + budgetGrowthPerStage × stageNumber); a boss
+        /// stage's escort batches get half. Enemy costs are drawn within it, cheapest entries fill up to minEnemiesPerBatch.
+        /// </summary>
+        public int batchBudgetRows = 4;
     }
 
     public sealed class GameRules

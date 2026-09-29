@@ -113,7 +113,7 @@ namespace Nex.BilliardRogue.Editor
             if (!Check(report, "save-loads", loaded != null)) return false;
             var run = loaded!;
             var ok = Check(report, "save-stage", run.stageNumber == 1 && run.turnInStage >= 1)
-                     & Check(report, "save-board", run.board.enemies.Count > 0 && run.stage.waves.Count > 0)
+                     & Check(report, "save-board", run.board.enemies.Count > 0 && run.stage.batches.Count > 0)
                      & Check(report, "save-outcome-none", run.outcome == RunOutcome.None)
                      & Check(report, "save-bag", run.bag.Count >= 4);
             var savedTurn = run.turnInStage;

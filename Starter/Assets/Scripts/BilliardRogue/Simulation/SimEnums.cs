@@ -104,6 +104,7 @@ namespace Nex.BilliardRogue.Simulation
         EnemyBlocked = 11,
         EnemyKilled = 12,
         EnemyHealed = 13,
+        /// <summary>value = hp, sourceId = caster (0 = a batch); flag = batch pop-in, value2 = its stagger index in the batch.</summary>
         EnemySpawned = 14,
         /// <summary>position = from, position2 = to.</summary>
         EnemyMoved = 15,
@@ -124,6 +125,8 @@ namespace Nex.BilliardRogue.Simulation
         CrateBroken = 31,
         PickupCollected = 32,
         PickupExpired = 33,
+        /// <summary>Batch pickup popping in: targetId = pickup id, pickup, position, flag = true, value2 = stagger index.</summary>
+        PickupSpawned = 34,
         /// <summary>value = damage.</summary>
         PlayerDamaged = 40,
         /// <summary>value = heal amount.</summary>
@@ -133,8 +136,14 @@ namespace Nex.BilliardRogue.Simulation
         /// <summary>ballId, value = combo.</summary>
         ComboChanged = 50,
         BossPhaseChanged = 51,
+        /// <summary>v1 row wave (legacy saves only).</summary>
         WaveSpawned = 52,
         StageCleared = 53,
+        /// <summary>
+        /// After a batch's EnemySpawned / PickupSpawned events: value = batch index in the stage, value2 = entries spawned,
+        /// flag = entries dropped for lack of free cells, sourceId = empty turns skipped to spawn it (0 = on its turn).
+        /// </summary>
+        BatchSpawned = 54,
     }
 
     /// <summary>Sizes of the enum-indexed tables so callers never need Enum.GetValues at runtime.</summary>

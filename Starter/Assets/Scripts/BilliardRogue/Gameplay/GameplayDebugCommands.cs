@@ -176,7 +176,7 @@ namespace Nex.BilliardRogue
                 .Append(" balls=").Append(services.Sequencer.Remaining).Append('/').Append(services.Sequencer.Total)
                 .Append(" inFlight=").Append(services.Sim.ActiveBalls)
                 .Append(" enemies=").Append(run.board.enemies.Count)
-                .Append(" wavesLeft=").Append(run.stage.waves.Count - run.nextWaveIndex)
+                .Append(" batchesLeft=").Append(StageSchedule.BatchesLeft(run)).Append(" nextBatchTurn=").Append(run.nextBatchTurn + 1)
                 .Append(" outcome=").Append(run.outcome)
                 .Append(" timeScale=").Append(services.TimeScale.GameplayTimeScale)
                 .Append(" hype=").Append(turns.Loop.Hype.Hype.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)).Append(" tier=").Append(turns.Loop.Hype.Tier)

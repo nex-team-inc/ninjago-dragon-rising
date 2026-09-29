@@ -63,10 +63,11 @@ namespace Nex.BilliardRogue.Simulation
         /// diagonally toward the centre column, else stops (EnemyMoved position → position2, value = rows moved).
         /// Enemies never move past the danger row.
         /// step 3: danger-row attacks (EnemyAttack flag = false, PlayerDamaged, PlayerDied).
-        /// step 4: freeze expiry, turnInStage++ and stats.turns++, then the next planned wave into row 0 (WaveSpawned);
-        /// on a boss stage with the plan exhausted, escort wave waves[1 + k % (waves.Count - 1)] every
-        /// bossEscortEveryNTurns turns (k = turnInStage / bossEscortEveryNTurns). A boss stage spawns nothing once the
-        /// boss is dead.
+        /// step 4: freeze expiry, turnInStage++ and stats.turns++, then StageSchedule.OnPhaseEnd (GDD v2 §5): the batch due
+        /// on the coming turn pops in at random free cells outside the rows nearest the player (EnemySpawned / PickupSpawned
+        /// with flag = true, then BatchSpawned); with the field empty and a batch left, the next batch spawns now and
+        /// turnInStage jumps to its turn (BatchSpawned.sourceId = turns skipped; stats.turns counts played turns only).
+        /// A boss stage cycles its escort batches while the boss lives and spawns nothing once it is dead.
         /// Stops after the step in which the player dies. Stores rng.State into run.rngState.
         /// holdBeforeDangerRow (debug practice mode) stops every advance one row short of the danger row.
         /// </summary>
@@ -92,7 +93,7 @@ namespace Nex.BilliardRogue.Simulation
             if (run.outcome == RunOutcome.None)
             {
                 mark = events.Count;
-                EndPhase(run, events);
+                EndPhase(run, rng, events);
                 Stamp(events, mark, StepSpawn);
             }
             run.rngState = rng.State;
@@ -204,7 +205,7 @@ namespace Nex.BilliardRogue.Simulation
             }
         }
 
-        void EndPhase(RunState run, List<SimEvent> events)
+        void EndPhase(RunState run, SimRandom rng, List<SimEvent> events)
         {
             foreach (var e in frozen)
             {
@@ -220,40 +221,12 @@ namespace Nex.BilliardRogue.Simulation
             }
             run.turnInStage++;
             run.stats.turns++;
-            if (run.stage.isBoss && !IsBossAlive(run))
-            {
-                return;
-            }
-            var waves = run.stage.waves;
-            if (run.nextWaveIndex < waves.Count)
-            {
-                ops.SpawnWaveRow(run, waves[run.nextWaveIndex++], 0, events);
-                return;
-            }
-            var every = rules.acts[run.actIndex].bossEscortEveryNTurns;
-            if (!run.stage.isBoss || every <= 0 || waves.Count < 2 || run.turnInStage % every != 0)
-            {
-                return;
-            }
-            var k = run.turnInStage / every;
-            ops.SpawnWaveRow(run, waves[1 + k % (waves.Count - 1)], 0, events);
+            StageSchedule.OnPhaseEnd(rules, ops, run, rng, events);
         }
 
         #endregion
 
         #region Helpers
-
-        bool IsBossAlive(RunState run)
-        {
-            foreach (var e in run.board.enemies)
-            {
-                if (rules.enemies[(int)e.type].isBoss)
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
 
         SimEvent StatusTick(EnemyState e, StatusType status, int damage)
         {

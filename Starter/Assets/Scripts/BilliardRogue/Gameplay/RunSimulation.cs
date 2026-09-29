@@ -154,8 +154,12 @@ namespace Nex.BilliardRogue
             }
         }
 
-        /// <summary>Marks every planned wave as spawned so a normal stage counts as cleared once the board is empty (debug ClearStage).</summary>
-        public void ExhaustWaves() => run.nextWaveIndex = run.stage.waves.Count;
+        /// <summary>Marks every planned batch (and v1 wave) as spawned so a normal stage counts as cleared once the board is empty (debug ClearStage).</summary>
+        public void ExhaustWaves()
+        {
+            run.nextWaveIndex = run.stage.waves.Count;
+            if (!run.stage.isBoss) run.nextBatchIndex = run.stage.batches.Count;
+        }
 
         #endregion
 

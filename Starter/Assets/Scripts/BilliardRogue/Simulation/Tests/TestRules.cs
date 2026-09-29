@@ -126,6 +126,7 @@ namespace Nex.BilliardRogue.Simulation.Tests
                 0 => new ActRules
                 {
                     actIndex = 0, bossType = EnemyType.KingSlime, baseBudgetPerRow = 3, budgetGrowthPerStage = 1, maxFieldObjects = 2,
+                    minEnemiesPerBatch = 10, spawnEveryNTurns = 3, batchesPerStage = 3, spawnForbiddenNearRows = 3, pickupsPerBatch = 2, batchBudgetRows = 4,
                     rarityWeights = new[] { 0.6f, 0.3f, 0.1f },
                     enemyPool = new[]
                     {
@@ -136,6 +137,7 @@ namespace Nex.BilliardRogue.Simulation.Tests
                 1 => new ActRules
                 {
                     actIndex = 1, bossType = EnemyType.BoneLich, baseBudgetPerRow = 4, budgetGrowthPerStage = 1, maxFieldObjects = 3,
+                    minEnemiesPerBatch = 10, spawnEveryNTurns = 3, batchesPerStage = 3, spawnForbiddenNearRows = 3, pickupsPerBatch = 2, batchBudgetRows = 4,
                     rarityWeights = new[] { 0.45f, 0.4f, 0.15f },
                     enemyPool = new[]
                     {
@@ -146,6 +148,7 @@ namespace Nex.BilliardRogue.Simulation.Tests
                 _ => new ActRules
                 {
                     actIndex = 2, bossType = EnemyType.CrystalGolem, baseBudgetPerRow = 5, budgetGrowthPerStage = 1, maxFieldObjects = 3,
+                    minEnemiesPerBatch = 10, spawnEveryNTurns = 3, batchesPerStage = 3, spawnForbiddenNearRows = 3, pickupsPerBatch = 2, batchBudgetRows = 4,
                     rarityWeights = new[] { 0.3f, 0.45f, 0.25f },
                     enemyPool = new[]
                     {

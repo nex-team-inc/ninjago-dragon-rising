@@ -6,7 +6,10 @@ using UnityEngine;
 
 namespace Nex.BilliardRogue.Simulation.Tests
 {
-    /// <summary>Wave spawning, stage clear, reward rng persistence and the RunState JSON round-trip (TDD §3.6).</summary>
+    /// <summary>
+    /// v1 wave rows (legacy saves), stage clear, reward rng persistence and the RunState JSON round-trip (TDD §3.6);
+    /// GDD v2 §5 batches are in BatchSpawnTests.
+    /// </summary>
     public class RunFlowTests
     {
         GameRules rules = null!;
@@ -19,42 +22,6 @@ namespace Nex.BilliardRogue.Simulation.Tests
             rules = SimTest.Rules();
             factory = new RunFactory();
             ops = new BoardOps(rules);
-        }
-
-        static int PlannedEnemies(WaveRow wave)
-        {
-            var n = 0;
-            foreach (var cell in wave.cells)
-            {
-                if (!cell.isPickup) n++;
-            }
-            return n;
-        }
-
-        [Test]
-        public void BeginStageSpawnsTwoWavesAndEachPhaseSpawnsTheNext()
-        {
-            var run = factory.NewRun(rules, 3, 1);
-            var rng = new SimRandom(run.rngState);
-            var events = new List<SimEvent>();
-            factory.BeginStage(rules, run, rng, events);
-            Assert.AreEqual(2, run.nextWaveIndex);
-            Assert.AreEqual(2, SimTest.Count(events, SimEventKind.WaveSpawned));
-            Assert.AreEqual(PlannedEnemies(run.stage.waves[0]) + PlannedEnemies(run.stage.waves[1]), run.board.enemies.Count);
-            foreach (var e in run.board.enemies)
-            {
-                Assert.That(e.row, Is.InRange(0, 1));
-            }
-            Assert.AreEqual(rng.State, run.rngState);
-
-            var resolver = new EnemyPhaseResolver(rules, ops);
-            var phase = SimTest.Resolve(resolver, run, rng);
-            Assert.AreEqual(3, run.nextWaveIndex);
-            var wave = phase.Find(e => e.kind == SimEventKind.WaveSpawned);
-            Assert.AreEqual(0, wave.value);
-            Assert.AreEqual(run.stage.waves[2].cells.Count, wave.value2, "row 0 was vacated, nothing dropped");
-            Assert.IsFalse(wave.flag);
-            Assert.AreEqual(4, wave.step);
         }
 
         [Test]
@@ -90,7 +57,7 @@ namespace Nex.BilliardRogue.Simulation.Tests
         }
 
         [Test]
-        public void StageClearsOnlyAfterEveryWaveSpawnedAndNoEnemyButBoneWallsRemain()
+        public void ALegacyStageClearsOnlyAfterEveryWaveSpawnedAndNoEnemyButBoneWallsRemain()
         {
             var run = SimTest.NewRun(rules);
             run.stage.waves.Add(new WaveRow());
@@ -216,6 +183,10 @@ namespace Nex.BilliardRogue.Simulation.Tests
             Assert.AreEqual(run.runId, back.runId);
             Assert.AreEqual(run.board.enemies.Count, back.board.enemies.Count);
             Assert.AreEqual(run.stage.waves.Count, back.stage.waves.Count);
+            Assert.AreEqual(run.stage.batches.Count, back.stage.batches.Count);
+            Assert.AreEqual(run.stage.batches[1].entries.Count, back.stage.batches[1].entries.Count);
+            Assert.AreEqual(run.nextBatchIndex, back.nextBatchIndex);
+            Assert.AreEqual(run.nextBatchTurn, back.nextBatchTurn);
             Assert.AreEqual(3, back.board.enemies[0].status.burn);
             Assert.IsTrue(back.board.enemies[0].status.burnSpreads);
             Assert.IsTrue(back.board.enemies[0].halfHpSummonPending);

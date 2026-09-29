@@ -59,7 +59,9 @@ namespace Nex.BilliardRogue
 
         public override void OnBackButton()
         {
-            if (!IsActive || closeRequested || requestPause == null) return;
+            if (!IsActive) return;
+            if (closeRequested) return;
+            if (requestPause == null) return;
             TrackBack();
             requestPause();
         }
@@ -84,7 +86,8 @@ namespace Nex.BilliardRogue
                 waitingGroup.SetActive(false);
                 resumingGroup.SetActive(true);
                 await UniTask.Delay(TimeSpan.FromSeconds(theme.TrackingResumeHold), DelayType.UnscaledDeltaTime, cancellationToken: ct);
-                if (closeRequested || isTracked()) break;
+                if (closeRequested) break;
+                if (isTracked()) break;
                 waitingGroup.SetActive(true);
                 resumingGroup.SetActive(false);
             }

@@ -158,7 +158,11 @@ namespace Nex.BilliardRogue
                 Destroy(pip.gameObject);
             }
 
-            context.board.Clear();
+            // Same for the board presenter: its pooled views and guides go with it, so there is nothing to clear.
+            if (context.board != null)
+            {
+                context.board.Clear();
+            }
         }
 
         #endregion

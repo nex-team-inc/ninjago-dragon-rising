@@ -34,12 +34,17 @@ namespace Nex.BilliardRogue.Editor
             var model = WorldPrefabModels.InstantiateModel("Player/Cat_Hero.fbx", root.transform, "Model", PrimitiveType.Capsule, new Vector3(0.5f, 0.9f, 0.5f), layer, out _);
             var renderers = new List<Renderer>();
             WorldPrefabModels.ApplyMaterial(model, paletteP1, renderers);
+            WorldPrefabModels.CastShadowsFrom(renderers, WorldPrefabModels.FindFirstPart(model.transform, "Body"));
             var modelTransform = model.transform;
             var pawR = WorldPrefabModels.FindPart(modelTransform, "PawR");
             // The cue hangs from the FBX root (merged Body) so it follows the body pose but not the container tweens.
             var cue = WorldPrefabModels.InstantiateModel("Player/Cue_Stick.fbx", WorldPrefabModels.FbxRoot(model), "Cue", PrimitiveType.Cylinder, new Vector3(0.06f, 0.6f, 0.06f), layer, out var cuePlaceholder);
             var cueRenderers = new List<Renderer>();
             WorldPrefabModels.ApplyMaterial(cue, paletteP1, cueRenderers);
+            foreach (var renderer in cueRenderers)
+            {
+                renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            }
             cue.transform.localPosition = pawR != null ? pawR.localPosition + new Vector3(0f, 0f, -0.15f) : new Vector3(-0.14f, 0.385f, -0.15f);
             if (cuePlaceholder)
             {
@@ -258,11 +263,14 @@ namespace Nex.BilliardRogue.Editor
             // The waiting ball at the cue: a real lit ball (M_Ball_Basic + emission), not an additive glow disc.
             var ghostMaterial = WorldPrefabModels.Ball(BallType.Basic);
             var ghost = WorldPrefabModels.CreatePrimitive(go.transform, "GhostBall", PrimitiveType.Sphere, Vector3.zero, Vector3.one * 0.4f, ghostMaterial != null ? ghostMaterial : glow, layer);
+            // Guides are overlays: no shadow from the ghost ball or the bounce markers.
+            ghost.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             var markers = new List<Transform>();
             var markerRenderers = new List<Renderer>();
             for (var i = 0; i < BounceMarkers; i++)
             {
                 var marker = WorldPrefabModels.CreatePrimitive(go.transform, $"Marker{i}", PrimitiveType.Sphere, Vector3.zero, Vector3.one * 0.16f, glow, layer);
+                marker.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                 marker.SetActive(false);
                 markers.Add(marker.transform);
                 markerRenderers.Add(marker.GetComponent<Renderer>());

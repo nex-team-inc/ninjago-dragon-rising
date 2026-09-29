@@ -184,6 +184,7 @@ namespace Nex.BilliardRogue.Editor
             var model = WorldPrefabModels.InstantiateModel($"Props/Prop_{type}.fbx", root.transform, "Model", primitive, scale, layer, out var placeholder);
             var renderers = new List<Renderer>();
             WorldPrefabModels.ApplyMaterial(model, palette, renderers);
+            WorldPrefabModels.CastShadowsFrom(renderers, null);
             var emissive = WorldPrefabModels.CollectEmissive(renderers);
             // Game-scale readability (TDD §14.1 models are authored inside one cell): the pillar rises well above the
             // balls and casts a real shadow, crates / portals fill their cell. The view animates the container, so the
@@ -235,6 +236,7 @@ namespace Nex.BilliardRogue.Editor
             if (!placeholder) WorldPrefabModels.FbxRoot(model).localScale = Vector3.one * PickupScale;
             var renderers = new List<Renderer>();
             WorldPrefabModels.ApplyMaterial(model, palette, renderers);
+            WorldPrefabModels.CastShadowsFrom(renderers, null);
             var emissive = WorldPrefabModels.CollectEmissive(renderers);
             var view = root.AddComponent<PickupView>();
             var so = new SerializedObject(view);

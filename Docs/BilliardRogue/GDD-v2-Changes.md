@@ -51,3 +51,13 @@ These override GDD.md where they conflict. Every number is a default in a config
 - `BoardPresenter.SetHype(float hype01)` (juice scaling).
 - `BallSimulator.SetHype(float speedMultiplier, float damageMultiplier)` (applied every step to all balls in flight).
 - `RewardView.SetPawPointer(IPawPointer? pointer, int chooserIndex, int numPlayers)` (called by GameplayView before `ChooseAsync`).
+
+## 5. Enemy spawning (playtest round 2, 2026-09-29)
+- Enemies **appear on the field from nowhere** (pop-in with a spawn VFX + SFX, small stagger between them) at **random free cells** anywhere in the grid **except the 3 rows nearest the player** (with 10 rows: rows 0..6; never rows 7, 8, 9 — the danger row is 9). They no longer march in as rows from the top.
+- Spawning is in **batches**: a batch of **at least 10 enemies** (`ActRules.minEnemiesPerBatch`, default 10; composition from the act's weighted pool and difficulty budget, HP scaling unchanged) every **3 turns** (`ActRules.spawnEveryNTurns`, default 3), starting with a batch on the stage's first turn. A normal stage has `ActRules.batchesPerStage` batches (default 3). If fewer free cells exist than the batch size, as many as fit spawn. Pickups (a few per batch) and field objects follow the same free-cell rule.
+- **Skip empty turns**: if after the enemy phase the field has no enemies (ignoring Bone Walls) and batches remain, the next batch spawns immediately (the turn counter jumps to the next spawn turn) — the player never gets a turn with nothing to shoot. With no batches left and no enemies, the stage is cleared.
+- Boss stages: the boss appears at start (2×2, rows 0–1, centre) together with the first escort batch; escort batches follow every `spawnEveryNTurns` while the boss lives (same ≥10 rule, fewer if cells run out).
+- Enemies still advance one row per enemy phase and attack from the danger row as before.
+
+## 6. Debug overlay hidden by default
+- The control readout (debug canvas) is hidden by default in every build, including the control demo; it stays available as the Debug Settings toggle "Show Control Readout". The DebugPrinter stays off by default.

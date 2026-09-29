@@ -312,54 +312,74 @@ def build_ball(mat):
 
 # =============================================================================================== props
 def build_pillar(mat):
-    """0.9 m stone pillar (low enough not to hide the enemy/ball behind it from the 58 deg camera), mossy cap and
-    plinth, dim teal rune band (child part Runes_Emissive) so it separates from grey stone floors and walls."""
+    """Carved stone column, 1.415 m (Unity x1.05 -> ~1.49 m: well above the balls; slim, so the row behind still
+    shows around it from the ~52 deg camera). Reads as a column at ~29 px per cell through its silhouette, not
+    texture: a low square plinth, a torus base, a slim tapering shaft with 8 carved flutes (light ridges, dark grooves
+    = vertical stripes), a dark neck under a flared echinus and a ROUND abacus (the old square cap read as a cube /
+    crate from above). Tops stay mid-grey (lit tops bloomed to white on the old block); moss only in small side
+    patches (the old camera-facing moss rings read as a green belt). Child part Runes_Emissive: a dim teal rune
+    lozenge on each cardinal ridge (one faces the camera). <= 300 tris (TDD 14.1)."""
     m = Mesh()
     stone = lambda s: C("gray", s)  # noqa: E731
-    moss = C("green", 6)
+    moss = C("green", 5)
 
     def plinth_color(fi):
         if fi.tag == "cap1":
-            return stone(10)
-        if fi.i == 1 and fi.j in (1, 2, 5):
-            return moss  # moss creeping up the plinth on a few sides
-        return stone(7 if fi.i == 0 else 9)
+            return stone(6)
+        if fi.i == 1 and fi.j in (0, 7):
+            return moss  # moss creeping over the plinth's chamfered edge on the right-hand side
+        return stone(5 if fi.i == 0 else 7)
 
-    m.block([(0.9, 0.9, 0.1, 0.0), (0.9, 0.9, 0.1, 0.085), (0.8, 0.8, 0.09, 0.14)], plinth_color)
-    prof = [(0.3, 0.135), (0.3, 0.19), (0.262, 0.215), (0.262, 0.39), (0.24, 0.405), (0.24, 0.49), (0.262, 0.505),
-            (0.262, 0.655), (0.3, 0.68), (0.3, 0.73)]
-    shaft_c = {0: stone(10), 1: stone(8), 3: stone(6), 4: stone(3), 5: stone(6), 7: stone(8), 8: stone(10)}
+    m.block([(0.74, 0.74, 0.08, 0.0), (0.74, 0.74, 0.08, 0.1), (0.6, 0.6, 0.07, 0.15)], plinth_color, cap0=False)
+    # torus base: an outward band and a sun-facing band tucking into the shaft
+    m.lathe([(0.25, 0.15), (0.265, 0.18), (0.205, 0.225)], 12, lambda fi: stone(7 if fi.i == 0 else 8),
+            phase=math.radians(15.0), cap0=False, cap1=False, smooth=False)
 
-    def shaft_color(fi):
-        if fi.i in shaft_c:
-            return shaft_c[fi.i]
-        return stone(9) if fi.j % 2 == 0 else stone(7)  # fluting
+    # fluted shaft: 8 flutes, each = a flat ridge (30 deg) + a V groove (15 deg), linear taper (one band)
+    z0, z1 = 0.22, 1.235
+    r_ridge, r_groove = (0.2, 0.178), (0.168, 0.15)
+    half = math.radians(15.0)
 
-    m.lathe(prof, 8, shaft_color, phase=math.radians(22.5), cap0=False, cap1=False, smooth=False)
+    def flute_ring(z, rr, rg):
+        pts = []
+        for k in range(8):
+            a = math.radians(45.0 * k)  # ridge centres at 0, 45, 90 ... (90 deg = Blender +Y = toward the camera)
+            for ang, r in ((a - half, rr), (a + half, rr), (a + math.radians(22.5), rg)):
+                pts.append((math.cos(ang) * r, math.sin(ang) * r, z))
+        return pts
 
-    def cap_color(fi):
+    m.loft([flute_ring(z0, r_ridge[0], r_groove[0]), flute_ring(z1, r_ridge[1], r_groove[1])],
+           lambda fi: stone(9) if fi.j % 3 == 0 else stone(5), smooth=False)
+
+    # capital: astragal ring, dark neck (shadow line under the flare), echinus, round abacus with a bevelled top
+    def capital_color(fi):
         if fi.tag == "cap1":
-            return stone(9)
-        if fi.i == 2:
-            return moss if fi.j in (1, 2, 5) else stone(11)  # moss patches on the capital's top ring
-        if fi.i == 1 and fi.j in (1, 2):
-            return C("green", 5)  # moss hanging over the capital's edge
-        return {0: stone(7), 1: stone(10), 3: stone(7)}.get(fi.i, stone(10))
+            return stone(7)
+        if fi.i == 4 and fi.j in (0, 11):
+            return moss  # a moss patch on the abacus bevel (right-hand side)
+        return {0: stone(9), 1: stone(4), 2: stone(9), 3: stone(6)}.get(fi.i, stone(8))
 
-    m.block([(0.72, 0.72, 0.08, 0.72), (0.86, 0.86, 0.1, 0.79), (0.86, 0.86, 0.1, 0.9), (0.68, 0.68, 0.07, 0.9),
-             (0.68, 0.68, 0.07, 0.88)], cap_color, cap0=False)
+    m.lathe([(0.2, 1.22), (0.2, 1.255), (0.178, 1.27), (0.26, 1.345), (0.275, 1.395), (0.25, 1.415)], 12,
+            capital_color, phase=math.radians(15.0), cap0=False, cap1=True, smooth=False)
     obj = m.to_object("Pillar", mat, origin=(0, 0, 0))
-    # rune glyphs: plates on the 4 cardinal recessed facets (one faces the camera), dim emissive teal
+
+    # runes: a lozenge on each cardinal ridge face, lying in the (tapered) ridge plane, slightly lifted
     r = Mesh()
+    zc, hh, hw = 0.72, 0.12, 0.042
+
+    def on_ridge(n, side, s, z):
+        t = (z - z0) / (z1 - z0)
+        d = (r_ridge[0] + (r_ridge[1] - r_ridge[0]) * t) * math.cos(half) + 0.004
+        return n * d + side * s + Vector((0.0, 0.0, z))
+
     for k in range(4):
-        a = math.radians(90.0 * k)  # facet centres sit at multiples of 45 deg (lathe phase 22.5)
+        a = math.radians(90.0 * k)
         n = Vector((math.cos(a), math.sin(a), 0.0))
         side = Vector((-n.y, n.x, 0.0))
-        cen = n * (0.24 * math.cos(math.radians(22.5)) + 0.004) + Vector((0, 0, 0.4475))
-        glyph = [cen + side * 0.055 + Vector((0, 0, 0.032)), cen - side * 0.055 + Vector((0, 0, 0.032)),
-                 cen - side * 0.055 + Vector((0, 0, -0.032)), cen + side * 0.055 + Vector((0, 0, -0.032))]
+        glyph = [on_ridge(n, side, 0.0, zc + hh), on_ridge(n, side, -hw, zc), on_ridge(n, side, 0.0, zc - hh),
+                 on_ridge(n, side, hw, zc)]
         r.polygon(glyph, C("teal", 10, True), normal=n)
-    runes = r.to_object("Runes_Emissive", mat, origin=(0, 0, 0.4475), parent=obj)
+    runes = r.to_object("Runes_Emissive", mat, origin=(0, 0, zc), parent=obj)
     return obj, [obj, runes]
 
 

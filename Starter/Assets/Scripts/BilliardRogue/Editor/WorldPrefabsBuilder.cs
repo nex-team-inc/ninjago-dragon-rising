@@ -215,7 +215,8 @@ namespace Nex.BilliardRogue.Editor
         /// <summary>Authored-scale multiplier of the field-object FBX roots (designer-tunable here; re-run the builder).</summary>
         static Vector3 FieldObjectScale(FieldObjectType type) => type switch
         {
-            FieldObjectType.Pillar => new Vector3(1.05f, 1.6f, 1.05f),
+            // Prop_Pillar is authored at its game height (1.415 m carved column), so it scales uniformly.
+            FieldObjectType.Pillar => new Vector3(1.05f, 1.05f, 1.05f),
             FieldObjectType.Crate => new Vector3(1.1f, 1.1f, 1.1f),
             FieldObjectType.Portal => new Vector3(1.12f, 1f, 1.12f),
             _ => new Vector3(1.04f, 1f, 1.04f),

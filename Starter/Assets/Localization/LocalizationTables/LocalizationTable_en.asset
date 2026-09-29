@@ -146,12 +146,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 192599009853956118
-    m_Localized: 'Hold your left paw up: that''s the ball. Your right paw is the
-      cue.'
+    m_Localized: 'Hold one paw up high: that''s the ball. Your lower paw is the cue.'
     m_Metadata:
       m_Items: []
   - m_Id: 192599009853956119
-    m_Localized: Snap your right paw into your left paw!
+    m_Localized: Snap your lower paw up into your upper paw!
     m_Metadata:
       m_Items: []
   - m_Id: 192599009853956120
@@ -168,16 +167,12 @@ MonoBehaviour:
     m_Metadata:
       m_Items:
       - rid: 3461314759755304034
-  - m_Id: 192599009853956123
-    m_Localized: 'Left-handed cue is on: paws are swapped.'
-    m_Metadata:
-      m_Items: []
   - m_Id: 192599009853956124
     m_Localized: "Starting the camera\u2026"
     m_Metadata:
       m_Items: []
   - m_Id: 192599009853956125
-    m_Localized: "Left paw = ball \xB7 Right paw = cue"
+    m_Localized: "Upper paw = ball \xB7 Lower paw = cue"
     m_Metadata:
       m_Items: []
   - m_Id: 192599009853956126
@@ -186,14 +181,6 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 192599009853956127
     m_Localized: Everyone's ready. Let's go!
-    m_Metadata:
-      m_Items: []
-  - m_Id: 192599009853956128
-    m_Localized: L
-    m_Metadata:
-      m_Items: []
-  - m_Id: 192599009853956129
-    m_Localized: R
     m_Metadata:
       m_Items: []
   - m_Id: 192599009853956130
@@ -618,10 +605,6 @@ MonoBehaviour:
     m_Localized: Long
     m_Metadata:
       m_Items: []
-  - m_Id: 192599009853956230
-    m_Localized: Left-handed cue
-    m_Metadata:
-      m_Items: []
   - m_Id: 192599009853956231
     m_Localized: Screen shake
     m_Metadata:
@@ -919,15 +902,15 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 192615657893781505
-    m_Localized: 'Left paw: move the ball'
+    m_Localized: 'Upper paw: move the ball'
     m_Metadata:
       m_Items: []
   - m_Id: 192615657893781506
-    m_Localized: 'Right paw: aim the cue'
+    m_Localized: 'Lower paw: aim the cue'
     m_Metadata:
       m_Items: []
   - m_Id: 192615657893781507
-    m_Localized: 'Snap right paw into left paw: shoot!'
+    m_Localized: 'Snap lower paw into upper paw: shoot!'
     m_Metadata:
       m_Items: []
   - m_Id: 192704631689699328
@@ -1019,6 +1002,23 @@ MonoBehaviour:
     m_Localized: Enemies incoming!
     m_Metadata:
       m_Items: []
+  - m_Id: 192828160439476224
+    m_Localized: Ball
+    m_Metadata:
+      m_Items: []
+  - m_Id: 192828160443670528
+    m_Localized: Cue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 192828160447864832
+    m_Localized: Energy {0}
+    m_Metadata:
+      m_Items:
+      - rid: 3461314759755304034
+  - m_Id: 192828160447864833
+    m_Localized: No energy!
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds:
@@ -1058,3 +1058,4 @@ MonoBehaviour:
         - id: 192599009853956201
         - id: 192599009853956207
         - id: 192704631698087949
+        - id: 192828160447864832

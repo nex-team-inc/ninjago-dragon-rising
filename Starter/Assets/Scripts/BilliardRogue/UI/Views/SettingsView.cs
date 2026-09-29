@@ -8,7 +8,8 @@ using UnityEngine.Localization.Settings;
 namespace Nex.BilliardRogue
 {
     /// <summary>
-    /// Language, master/music/SFX volume, aim guide length, left-handed cue and screen shake. Up/Down picks a row,
+    /// Language, master/music/SFX volume, aim guide length and screen shake (no handedness since GDD v2 §16: the upper
+    /// paw is always the ball). Up/Down picks a row,
     /// Left/Right (or Enter) changes it. Changes apply and persist immediately (volumes through PlayerDataManager's
     /// reactive properties, which VolumeManager applies and saves); Back just closes.
     /// </summary>
@@ -24,7 +25,6 @@ namespace Nex.BilliardRogue
         [SerializeField] SettingRow musicRow = null!;
         [SerializeField] SettingRow sfxRow = null!;
         [SerializeField] SettingRow aimGuideRow = null!;
-        [SerializeField] SettingRow leftHandedRow = null!;
         [SerializeField] SettingRow screenShakeRow = null!;
 
         static readonly string[] aimGuideKeys =
@@ -49,7 +49,6 @@ namespace Nex.BilliardRogue
             musicRow.Stepped += HandleVolume;
             sfxRow.Stepped += HandleVolume;
             aimGuideRow.Stepped += HandleAimGuide;
-            leftHandedRow.Stepped += HandleToggle;
             screenShakeRow.Stepped += HandleToggle;
             RefreshAll();
         }
@@ -113,22 +112,10 @@ namespace Nex.BilliardRogue
         void HandleToggle(SettingRow row, int direction)
         {
             if (!IsActive) return;
-            var leftHanded = row == leftHandedRow;
-            var preference = PlayerDataManager.Instance.PlayerPreference;
-            var value = !(leftHanded ? preference.leftHandedCue : preference.screenShake);
-            PlayerDataManager.Instance.ScopedPlayerPreferenceUpdate(p =>
-            {
-                if (leftHanded)
-                {
-                    p.leftHandedCue = value;
-                }
-                else
-                {
-                    p.screenShake = value;
-                }
-            });
+            var value = !PlayerDataManager.Instance.PlayerPreference.screenShake;
+            PlayerDataManager.Instance.ScopedPlayerPreferenceUpdate(p => p.screenShake = value);
             RefreshToggle(row, value);
-            Changed(leftHanded ? "left_handed_cue" : "screen_shake", value ? "on" : "off");
+            Changed("screen_shake", value ? "on" : "off");
         }
 
         #endregion
@@ -157,7 +144,6 @@ namespace Nex.BilliardRogue
             musicRow.SetFraction(data.BgmVolumeProperty.Value);
             sfxRow.SetFraction(data.SfxVolumeProperty.Value);
             RefreshAimGuide();
-            RefreshToggle(leftHandedRow, data.PlayerPreference.leftHandedCue);
             RefreshToggle(screenShakeRow, data.PlayerPreference.screenShake);
         }
 

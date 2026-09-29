@@ -12,10 +12,16 @@ namespace Nex.BilliardRogue
     [CreateAssetMenu(fileName = "ControlConfig", menuName = "Nex/Billiard Rogue/Control Config", order = 52)]
     public sealed class ControlConfig : ScriptableObject
     {
+        [Header("Paw roles (GDD v2 §16: the upper paw holds the ball, the lower paw is the cue)")]
+        [Tooltip("The cue paw must be this much higher than the ball paw before the roles swap.")]
+        [SerializeField, Range(0f, 20f)] float roleSwapMarginInches = 4f;
+        [Tooltip("...and stay that much higher this long (never during a strike).")]
+        [SerializeField, Range(0f, 2f)] float roleSwapSeconds = 0.25f;
+
         [Header("Launch position")]
-        [Tooltip("Ball-paw x offset from the chest mapped to the left edge of the launch line (right-handed; mirrored for left-handed).")]
+        [Tooltip("Ball-paw x offset from the chest mapped to the left edge of the launch line while the left paw holds the ball (mirrored for the right paw).")]
         [SerializeField, Range(-40f, 0f)] float launchXMinInches = -26f;
-        [Tooltip("Ball-paw x offset from the chest mapped to the right edge of the launch line (right-handed; mirrored for left-handed).")]
+        [Tooltip("Ball-paw x offset from the chest mapped to the right edge of the launch line while the left paw holds the ball (mirrored for the right paw).")]
         [SerializeField, Range(0f, 40f)] float launchXMaxInches = 8f;
         [Tooltip("OneEuro min cutoff (Hz) of the launch position filter.")]
         [SerializeField, Range(0.1f, 10f)] float launchXMinCutoff = 1f;
@@ -156,6 +162,8 @@ namespace Nex.BilliardRogue
 
         #region Accessors
 
+        public float RoleSwapMarginInches => roleSwapMarginInches;
+        public float RoleSwapSeconds => roleSwapSeconds;
         public float LaunchXMinInches => launchXMinInches;
         public float LaunchXMaxInches => launchXMaxInches;
         public float LaunchXMinCutoff => launchXMinCutoff;
@@ -264,7 +272,7 @@ namespace Nex.BilliardRogue
         /// <summary>Aim OneEuro min cutoff with the live tuning applied (a higher smoothing scale filters harder).</summary>
         public float AimMinCutoffFor(in ControlTuning tuning) => aimMinCutoff / tuning.aimSmoothing;
 
-        /// <summary>Right-handed ball-paw range (inches from the chest) scaled around its centre by tuning.launchRange.</summary>
+        /// <summary>Left-paw ball range (inches from the chest; mirror it for the right paw) scaled around its centre by tuning.launchRange.</summary>
         public void LaunchRangeFor(in ControlTuning tuning, out float minInches, out float maxInches)
         {
             var center = (launchXMinInches + launchXMaxInches) * 0.5f;

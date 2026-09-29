@@ -95,7 +95,7 @@ namespace Nex.BilliardRogue
             playersGroup.alpha = 0f;
             placeholderGroup.alpha = 1f;
             setupTipGroup.alpha = 1f;
-            hintLabel.gameObject.SetActive(PlayerDataManager.Instance.PlayerPreference.leftHandedCue);
+            hintLabel.gameObject.SetActive(true);
             for (var i = 0; i < playerCards.Length; i++)
             {
                 var shown = i < numPlayers;

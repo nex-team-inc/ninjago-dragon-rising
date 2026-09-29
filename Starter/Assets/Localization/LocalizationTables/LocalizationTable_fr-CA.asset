@@ -146,12 +146,12 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 192599009853956118
-    m_Localized: "L\xE8ve ta patte gauche\_: c\u2019est la boule. Ta patte droite,
-      c\u2019est la queue."
+    m_Localized: "L\xE8ve une patte bien haut\_: c\u2019est la boule. Ta patte du
+      bas, c\u2019est la queue."
     m_Metadata:
       m_Items: []
   - m_Id: 192599009853956119
-    m_Localized: Frappe ta patte gauche avec ta patte droite!
+    m_Localized: Frappe ta patte du haut avec ta patte du bas!
     m_Metadata:
       m_Items: []
   - m_Id: 192599009853956120
@@ -168,16 +168,12 @@ MonoBehaviour:
     m_Metadata:
       m_Items:
       - rid: 3461314759755304037
-  - m_Id: 192599009853956123
-    m_Localized: "Mode gaucher activ\xE9\_: les pattes sont invers\xE9es."
-    m_Metadata:
-      m_Items: []
   - m_Id: 192599009853956124
     m_Localized: "D\xE9marrage de la cam\xE9ra\u2026"
     m_Metadata:
       m_Items: []
   - m_Id: 192599009853956125
-    m_Localized: "Patte gauche = boule \xB7 Patte droite = queue"
+    m_Localized: "Patte du haut = boule \xB7 Patte du bas = queue"
     m_Metadata:
       m_Items: []
   - m_Id: 192599009853956126
@@ -186,14 +182,6 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 192599009853956127
     m_Localized: "Tout le monde est pr\xEAt. C\u2019est parti!"
-    m_Metadata:
-      m_Items: []
-  - m_Id: 192599009853956128
-    m_Localized: G
-    m_Metadata:
-      m_Items: []
-  - m_Id: 192599009853956129
-    m_Localized: D
     m_Metadata:
       m_Items: []
   - m_Id: 192599009853956130
@@ -618,10 +606,6 @@ MonoBehaviour:
     m_Localized: Long
     m_Metadata:
       m_Items: []
-  - m_Id: 192599009853956230
-    m_Localized: Mode gaucher
-    m_Metadata:
-      m_Items: []
   - m_Id: 192599009853956231
     m_Localized: "Tremblement d\u2019\xE9cran"
     m_Metadata:
@@ -921,15 +905,15 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 192615657893781505
-    m_Localized: "Patte gauche\_: place la boule"
+    m_Localized: "Patte du haut\_: place la boule"
     m_Metadata:
       m_Items: []
   - m_Id: 192615657893781506
-    m_Localized: "Patte droite\_: vise avec la queue"
+    m_Localized: "Patte du bas\_: vise avec la queue"
     m_Metadata:
       m_Items: []
   - m_Id: 192615657893781507
-    m_Localized: "Frappe la patte gauche avec la droite\_: tir!"
+    m_Localized: "Frappe la patte du haut avec celle du bas\_: tir!"
     m_Metadata:
       m_Items: []
   - m_Id: 192704631689699328
@@ -1021,6 +1005,23 @@ MonoBehaviour:
     m_Localized: Ennemis en approche!
     m_Metadata:
       m_Items: []
+  - m_Id: 192828160439476224
+    m_Localized: Boule
+    m_Metadata:
+      m_Items: []
+  - m_Id: 192828160443670528
+    m_Localized: Queue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 192828160447864832
+    m_Localized: "\xC9nergie {0}"
+    m_Metadata:
+      m_Items:
+      - rid: 3461314759755304037
+  - m_Id: 192828160447864833
+    m_Localized: "Plus d\u2019\xE9nergie!"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds:
@@ -1060,3 +1061,4 @@ MonoBehaviour:
         - id: 192599009853956201
         - id: 192599009853956207
         - id: 192704631698087949
+        - id: 192828160447864832

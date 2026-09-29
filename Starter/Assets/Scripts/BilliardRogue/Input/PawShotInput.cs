@@ -9,8 +9,9 @@ using UnityEngine;
 namespace Nex.BilliardRogue
 {
     /// <summary>
-    /// Body input for one player (GDD §3.1, TDD §6 / D6). The ball paw (left, or right when left-handed) sets the
-    /// launch position from its x offset to the chest; the cue→ball paw vector is the aim. Both come from the
+    /// Body input for one player (GDD §3.1, TDD §6 / D6). The upper paw holds the ball and the lower paw is the cue
+    /// (GDD v2 §16, PawRoles, decided on the raw camera frames); the ball paw sets the launch position from its x offset
+    /// to the chest, the cue→ball paw vector is the aim. Both come from the
     /// engine's smoothed nodes, filtered again with OneEuro. Strikes come from the raw nodes, sampled once per camera
     /// frame (original.frameTime changes, ~30 Hz) and fed to StrikeDetector; the strike direction is the aim from
     /// aimSampleDelaySeconds before the thrust started. Units are body-normalized inches, so height and distance to
@@ -31,7 +32,7 @@ namespace Nex.BilliardRogue
         OneEuroFilter launchFilter = null!;
         OneEuroFilter aimFilterX = null!;
         OneEuroFilter aimFilterY = null!;
-        bool leftHanded;
+        PawRoles roles = null!;
         double lastRawFrameTime = double.NegativeInfinity;
         float lastPoseTime = float.NegativeInfinity;
         float lastRawFrameArrival = float.NegativeInfinity;
@@ -49,7 +50,8 @@ namespace Nex.BilliardRogue
         public float LaunchX01 { get; private set; } = 0.5f;
         /// <summary>Held at the pre-strike aim while a strike is in progress so the guide does not wobble.</summary>
         public Vector2 AimDirection => detector.IsApproaching ? heldAim : liveAim;
-        public bool LeftHanded => leftHanded;
+        /// <summary>The right paw holds the ball (it is the upper paw); the left paw is the cue.</summary>
+        public bool BallIsRight => roles.BallIsRight;
         /// <summary>Strike detector state (debug display).</summary>
         public StrikeState StrikeState => detector.State;
 
@@ -71,14 +73,13 @@ namespace Nex.BilliardRogue
         #region Life Cycle
 
         /// <summary>aTuning is polled every frame (ControlTuning.Identity keeps the asset values).</summary>
-        public void Initialize(int playerIndex, OnePlayerDetectionEngine aEngine, ControlConfig aConfig, ArenaRules aArena, bool aLeftHanded,
-            Func<ControlTuning> aTuning)
+        public void Initialize(int playerIndex, OnePlayerDetectionEngine aEngine, ControlConfig aConfig, ArenaRules aArena, Func<ControlTuning> aTuning)
         {
             PlayerIndex = playerIndex;
             engine = aEngine;
             config = aConfig;
             arena = aArena;
-            leftHanded = aLeftHanded;
+            roles = new PawRoles(config.RoleSwapMarginInches, config.RoleSwapSeconds);
             tuningSource = aTuning;
             tuning = tuningSource();
             detector = new StrikeDetector(config.StrikeSettingsFor(tuning));
@@ -141,20 +142,6 @@ namespace Nex.BilliardRogue
 
         #endregion
 
-        #region Public Methods
-
-        /// <summary>Swaps the ball and cue paws (PlayerPreference.leftHandedCue changed).</summary>
-        public void SetLeftHanded(bool value)
-        {
-            if (value == leftHanded) return;
-            leftHanded = value;
-            aimHistory.Clear();
-            ResetFilters();
-            ResetStrike();
-        }
-
-        #endregion
-
         #region Detection
 
         // The smoother re-emits the last detection every Update; only a new camera frame is a new raw sample. Whether
@@ -178,6 +165,7 @@ namespace Nex.BilliardRogue
                 lastRawFrameTime = frameTime;
                 lastRawFrameArrival = now;
                 rawPoseDetected = PawSampling.ArePawsDetected(result.original, PlayerIndex);
+                if (rawPoseDetected) UpdateRoles(frameTime, now);
             }
 
             if (rawPoseDetected && TrySamplePaws(true, out var ball, out var cue))
@@ -244,14 +232,33 @@ namespace Nex.BilliardRogue
 
         #region Helpers
 
+        // Raw paws, once per camera frame. A new tracking segment gives the ball to the higher paw at once; a swap
+        // later restarts the filters, the aim history and the strike (the paws' jobs changed under them).
+        void UpdateRoles(double frameTime, float now)
+        {
+            if (!PawSampling.TrySampleHands(engine, false, out var left, out var right)) return;
+            if (now - lastPoseTime > config.TrackingDropSeconds)
+            {
+                roles.Assign(left, right);
+                return;
+            }
+
+            roles.SwapMarginInches = config.RoleSwapMarginInches;
+            roles.SwapSeconds = config.RoleSwapSeconds;
+            if (!roles.Update(frameTime, left, right, detector.IsApproaching)) return;
+            aimHistory.Clear();
+            ResetFilters();
+            detector.Reset();
+        }
+
         /// <summary>Ball and cue paw positions in inches relative to the chest (x = screen right = the player's right).</summary>
         bool TrySamplePaws(bool smoothed, out Vector2 ball, out Vector2 cue)
         {
             ball = default;
             cue = default;
             if (!PawSampling.TrySampleHands(engine, smoothed, out var leftInches, out var rightInches)) return false;
-            ball = leftHanded ? rightInches : leftInches;
-            cue = leftHanded ? leftInches : rightInches;
+            ball = roles.Ball(leftInches, rightInches);
+            cue = roles.Cue(leftInches, rightInches);
             return true;
         }
 
@@ -259,8 +266,9 @@ namespace Nex.BilliardRogue
         {
             var x = launchFilter.Filter(ballX, now);
             config.LaunchRangeFor(tuning, out var rangeMin, out var rangeMax);
-            var min = leftHanded ? -rangeMax : rangeMin;
-            var max = leftHanded ? -rangeMin : rangeMax;
+            var mirrored = roles.BallIsRight;
+            var min = mirrored ? -rangeMax : rangeMin;
+            var max = mirrored ? -rangeMin : rangeMax;
             LaunchX01 = RemapUtils.RemapAndClamp(x, min, max, 0f, 1f);
         }
 

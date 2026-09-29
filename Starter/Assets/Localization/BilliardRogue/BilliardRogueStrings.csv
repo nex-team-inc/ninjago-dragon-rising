@@ -72,23 +72,22 @@ br.ui.playerMode.soloHint,"Solo: one cat, one cue","Solo : un chat, une queue","
 br.ui.calibration.header,"Camera setup","Réglage de la caméra","摄像头设置","攝影機設定","カメラ設定",false
 br.ui.calibration.moveIn,"Move into the frame","Place-toi dans le cadre","请走进画面","請走進畫面","画面の中に入ろう",false
 br.ui.calibration.raiseHand,"Raise your hand","Lève la main","请举起一只手","請舉起一隻手","手を挙げよう",false
-br.ui.calibration.poseTutorial,"Hold your left paw up: that's the ball. Your right paw is the cue.","Lève ta patte gauche : c’est la boule. Ta patte droite, c’est la queue.","举起左手，那就是球。右手就是球杆。","舉起左手，那就是球。右手就是球桿。","左手を上げよう。それがボール。右手はキューだよ。",false
-br.ui.calibration.testStrike,"Snap your right paw into your left paw!","Frappe ta patte gauche avec ta patte droite!","用右手快速拍向左手！","用右手快速拍向左手！","右手で左手をパシッとたたこう！",false
+br.ui.calibration.poseTutorial,"Hold one paw up high: that's the ball. Your lower paw is the cue.","Lève une patte bien haut : c’est la boule. Ta patte du bas, c’est la queue.","把一只手举高，那就是球。下面的手就是球杆。","把一隻手舉高，那就是球。下面的手就是球桿。","片手を高く上げよう。それがボール。下の手はキューだよ。",false
+br.ui.calibration.testStrike,"Snap your lower paw up into your upper paw!","Frappe ta patte du haut avec ta patte du bas!","用下面的手快速向上拍向上面的手！","用下面的手快速向上拍向上面的手！","下の手で上の手をパシッとたたこう！",false
 br.ui.calibration.ready,"Ready!","C’est prêt!","准备就绪！","準備就緒！","準備OK！",false
 br.ui.calibration.playerReady,"Player {0} ready","Joueur {0} : prêt","玩家{0}已就绪","玩家{0}已就緒","プレイヤー{0} 準備OK",true
 br.ui.calibration.waiting,"Waiting for player {0}…","En attente du joueur {0}…","等待玩家{0}…","等待玩家{0}…","プレイヤー{0}を待っています…",true
-br.ui.calibration.leftHandedHint,"Left-handed cue is on: paws are swapped.","Mode gaucher activé : les pattes sont inversées.","左手模式已开启：左右手互换。","左手模式已開啟：左右手互換。","左きき設定オン：左右の手が入れ替わります。",false
 br.ui.calibration.starting,"Starting the camera…","Démarrage de la caméra…","正在启动摄像头…","正在啟動攝影機…","カメラを起動中…",false
-br.ui.calibration.tutorialHint,"Left paw = ball · Right paw = cue","Patte gauche = boule · Patte droite = queue","左手 = 球 · 右手 = 球杆","左手 = 球 · 右手 = 球桿","左手 = ボール · 右手 = キュー",false
+br.ui.calibration.tutorialHint,"Upper paw = ball · Lower paw = cue","Patte du haut = boule · Patte du bas = queue","上面的手 = 球 · 下面的手 = 球杆","上面的手 = 球 · 下面的手 = 球桿","上の手 = ボール · 下の手 = キュー",false
 br.ui.calibration.strikeSuccess,"Nice strike!","Beau coup!","漂亮的一击！","漂亮的一擊！","ナイスショット！",false
 br.ui.calibration.allReady,"Everyone's ready. Let's go!","Tout le monde est prêt. C’est parti!","全员就绪，出发！","全員就緒，出發！","みんな準備OK。さあ行こう！",false
 # Proposed (not yet in LocKeys): paw tags drawn in the calibration tutorial illustration (FlowViewPrefabsBuilder hard-codes L and R).
-br.ui.calibration.leftPawTag,"L","G","左","左","左",false
-br.ui.calibration.rightPawTag,"R","D","右","右","右",false
+br.ui.calibration.ballPawTag,"Ball","Boule","球","球","ボール",false
+br.ui.calibration.cuePawTag,"Cue","Queue","球杆","球桿","キュー",false
 br.ui.calibration.controlsHeader,"How to play","Comment jouer","玩法","玩法","あそびかた",false
-br.ui.calibration.controlBall,"Left paw: move the ball","Patte gauche : place la boule","左手：移动球的位置","左手：移動球的位置","左手：ボールを動かす",false
-br.ui.calibration.controlCue,"Right paw: aim the cue","Patte droite : vise avec la queue","右手：用球杆瞄准","右手：用球桿瞄準","右手：キューでねらう",false
-br.ui.calibration.controlStrike,"Snap right paw into left paw: shoot!","Frappe la patte gauche avec la droite : tir!","右手快速拍向左手：出杆！","右手快速拍向左手：出桿！","右手で左手をたたく：ショット！",false
+br.ui.calibration.controlBall,"Upper paw: move the ball","Patte du haut : place la boule","上面的手：移动球的位置","上面的手：移動球的位置","上の手：ボールを動かす",false
+br.ui.calibration.controlCue,"Lower paw: aim the cue","Patte du bas : vise avec la queue","下面的手：用球杆瞄准","下面的手：用球桿瞄準","下の手：キューでねらう",false
+br.ui.calibration.controlStrike,"Snap lower paw into upper paw: shoot!","Frappe la patte du haut avec celle du bas : tir!","下面的手拍向上面的手：出杆！","下面的手拍向上面的手：出桿！","下の手で上の手をたたく：ショット！",false
 # ---- Setup hints (SetupWarningMessage)
 br.setup.noPlayer,"No player","Aucun joueur","未检测到玩家","未偵測到玩家","プレイヤーがいません",false
 br.setup.stepBack,"Step back","Recule","请后退","請後退","うしろに下がって",false
@@ -198,7 +197,6 @@ br.ui.settings.aimGuide,"Aim guide","Guide de visée","瞄准线","瞄準線","�
 br.ui.settings.aimGuide.short,"Short","Court","短","短","短い",false
 br.ui.settings.aimGuide.normal,"Normal","Normal","标准","標準","ふつう",false
 br.ui.settings.aimGuide.long,"Long","Long","长","長","長い",false
-br.ui.settings.leftHanded,"Left-handed cue","Mode gaucher","左手模式","左手模式","左きき",false
 br.ui.settings.screenShake,"Screen shake","Tremblement d’écran","画面震动","畫面震動","画面の揺れ",false
 br.ui.settings.on,"On","Activé","开","開","オン",false
 br.ui.settings.off,"Off","Désactivé","关","關","オフ",false
@@ -298,4 +296,6 @@ br.hud.hypeTier2,"×1.9!!","×1.9!!","×1.9！！","×1.9！！","×1.9！！",f
 br.hud.hypeTier3,"MAX!!!","MAX!!!","MAX！！！","MAX！！！","MAX！！！",false
 br.hud.movePrompt,"MOVE!","BOUGE!","动起来！","動起來！","うごいて！",false
 br.hud.moveHint,"Dance to power up the balls!","Danse pour booster les boules!","跳起来为球充能！","跳起來為球充能！","おどってボールをパワーアップ！",false
+br.hud.energy,"Energy {0}","Énergie {0}","能量 {0}","能量 {0}","エネルギー {0}",true
+br.hud.noEnergy,"No energy!","Plus d’énergie!","没有能量了！","沒有能量了！","エネルギー切れ！",false
 br.hud.incoming,"Enemies incoming!","Ennemis en approche!","敌人来袭！","敵人來襲！","敵が来るぞ！",false

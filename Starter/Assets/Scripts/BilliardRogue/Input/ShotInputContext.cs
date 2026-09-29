@@ -13,11 +13,6 @@ namespace Nex.BilliardRogue
         /// <summary>Arena clamp for every input and the bot's private PredictPath simulator.</summary>
         public GameRules rules = null!;
         /// <summary>
-        /// Polled every frame so a Settings change mid-run applies at once, e.g.
-        /// <c>() =&gt; PlayerDataManager.Instance.PlayerPreference.leftHandedCue</c>.
-        /// </summary>
-        public Func<bool> leftHanded = AlwaysFalse;
-        /// <summary>
         /// Editor / debug builds: polled every frame; true selects the mouse/keyboard input even while the paws are
         /// tracked, e.g. <c>() =&gt; PlayerDataManager.Instance.DebugSettings.forceDebugInput</c>. Ignored in release.
         /// </summary>

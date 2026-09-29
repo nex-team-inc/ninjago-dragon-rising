@@ -124,7 +124,7 @@ namespace Nex.BilliardRogue
             var readout = paw.StrikeReadout;
             var settings = readout.settings;
             RefreshHeader(paw);
-            RefreshAim(paw.LeftHanded);
+            RefreshAim(paw.BallIsRight);
             RefreshSpeed(readout, settings, now);
             RefreshDistance(readout, settings);
             RefreshState(readout);
@@ -160,7 +160,7 @@ namespace Nex.BilliardRogue
             trackingLabel.color = tracking == 0 ? goodColor : tracking == 1 ? warnColor : badColor;
         }
 
-        void RefreshAim(bool leftHanded)
+        void RefreshAim(bool ballIsRight)
         {
             var launch = Mathf.RoundToInt(router.LaunchX01 * 100f);
             if (launch != shownLaunch)
@@ -177,10 +177,11 @@ namespace Nex.BilliardRogue
                 aimLabel.SetText("AIM {0:0}°", degrees);
             }
 
-            var hand = leftHanded ? 1 : 0;
+            // Which paw is up and holds the ball (GDD v2 §16).
+            var hand = ballIsRight ? 1 : 0;
             if (hand == shownHand) return;
             shownHand = hand;
-            handLabel.SetText(leftHanded ? "L-HAND" : "R-HAND");
+            handLabel.SetText(ballIsRight ? "BALL R" : "BALL L");
         }
 
         void RefreshSpeed(in StrikeReadout readout, in StrikeSettings settings, float now)

@@ -41,7 +41,6 @@ namespace Nex.BilliardRogue
         IMotionEnergy? debugEnergy;
         IPawPointer? debugPointer;
         IMotionEnergy? botEnergy;
-        Func<bool>? leftHandedSource;
 #if ENABLE_DEBUG_SETTINGS || DEVELOPMENT_BUILD || UNITY_EDITOR
         Func<bool>? forceDebugSource;
 #endif
@@ -67,11 +66,10 @@ namespace Nex.BilliardRogue
         /// <summary>Wires this prefab's paw, debug and bot inputs and starts routing.</summary>
         public void Initialize(int playerIndex, OnePlayerDetectionEngine engine, ShotInputContext ctx)
         {
-            leftHandedSource = ctx.leftHanded;
 #if ENABLE_DEBUG_SETTINGS || DEVELOPMENT_BUILD || UNITY_EDITOR
             forceDebugSource = ctx.forceDebugInput;
 #endif
-            pawInput.Initialize(playerIndex, engine, ctx.control, ctx.rules.arena, leftHandedSource(), ctx.tuning);
+            pawInput.Initialize(playerIndex, engine, ctx.control, ctx.rules.arena, ctx.tuning);
             // Guarded: a PlayerShotInput.prefab built before v2 has no meter / pointer (rebuild with InputPrefabsBuilder).
             if (motionMeter != null)
             {
@@ -131,10 +129,6 @@ namespace Nex.BilliardRogue
 
         void Update()
         {
-            if (leftHandedSource != null)
-            {
-                pawInput.SetLeftHanded(leftHandedSource());
-            }
             var source = SelectSource();
             if (source != ActiveSource)
             {

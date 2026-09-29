@@ -20,6 +20,7 @@ namespace Nex
         // "" = platform/system locale.
         public string localeCode = "";
         public int numPlayers = 1;
+        /// <summary>Unused since GDD v2 §16 (the upper paw is always the ball); kept so older saves load unchanged.</summary>
         public bool leftHandedCue;
         // 0 short, 1 normal, 2 long.
         public int aimGuideLength = 1;

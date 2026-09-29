@@ -54,12 +54,11 @@ namespace Nex.BilliardRogue
             public const string Header = "br.ui.calibration.header";          // en: Camera setup
             public const string MoveIn = "br.ui.calibration.moveIn";          // en: Move into the frame
             public const string RaiseHand = "br.ui.calibration.raiseHand";    // en: Raise your hand
-            public const string PoseTutorial = "br.ui.calibration.poseTutorial"; // en: Hold your left paw up: that's the ball. Your right paw is the cue.
-            public const string TestStrike = "br.ui.calibration.testStrike";  // en: Snap your right paw into your left paw!
+            public const string PoseTutorial = "br.ui.calibration.poseTutorial"; // en: Hold one paw up high: that's the ball. Your lower paw is the cue.
+            public const string TestStrike = "br.ui.calibration.testStrike";  // en: Snap your lower paw up into your upper paw!
             public const string Ready = "br.ui.calibration.ready";            // en: Ready!
             public const string PlayerReady = "br.ui.calibration.playerReady"; // en: Player {0} ready (smart)
             public const string Waiting = "br.ui.calibration.waiting";        // en: Waiting for player {0}… (smart)
-            public const string LeftHandedHint = "br.ui.calibration.leftHandedHint"; // en: Left-handed cue is on: paws are swapped.
         }
 
         // Keys shared with SetupWarningMessage (starter setup hints).
@@ -188,7 +187,6 @@ namespace Nex.BilliardRogue
             public const string AimGuideShort = "br.ui.settings.aimGuide.short";   // en: Short
             public const string AimGuideNormal = "br.ui.settings.aimGuide.normal"; // en: Normal
             public const string AimGuideLong = "br.ui.settings.aimGuide.long";     // en: Long
-            public const string LeftHanded = "br.ui.settings.leftHanded";     // en: Left-handed cue
             public const string ScreenShake = "br.ui.settings.screenShake";   // en: Screen shake
             public const string On = "br.ui.settings.on";                     // en: On
             public const string Off = "br.ui.settings.off";                   // en: Off

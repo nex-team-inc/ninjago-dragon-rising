@@ -158,8 +158,7 @@ namespace Nex.BilliardRogue.Editor
             var music = Row(kit, r, "MusicVolumeRow", LocKeys.Settings.MusicVolume, 2, true);
             var sfx = Row(kit, r, "SfxVolumeRow", LocKeys.Settings.SfxVolume, 3, true);
             var aim = Row(kit, r, "AimGuideRow", LocKeys.Settings.AimGuide, 4, false);
-            var leftHanded = Row(kit, r, "LeftHandedRow", LocKeys.Settings.LeftHanded, 5, false);
-            var shake = Row(kit, r, "ScreenShakeRow", LocKeys.Settings.ScreenShake, 6, false);
+            var shake = Row(kit, r, "ScreenShakeRow", LocKeys.Settings.ScreenShake, 5, false);
             var hint = kit.Label(panel.transform, "Hint", LocKeys.Settings.Hint, 32, theme.TextMuted, Kit.Bottom, new Vector2(0f, 36f), new Vector2(1056f, 48f));
             hint.transform.SetAsLastSibling();
 
@@ -169,7 +168,6 @@ namespace Nex.BilliardRogue.Editor
             UiFields.Set(view, "musicRow", music);
             UiFields.Set(view, "sfxRow", sfx);
             UiFields.Set(view, "aimGuideRow", aim);
-            UiFields.Set(view, "leftHandedRow", leftHanded);
             UiFields.Set(view, "screenShakeRow", shake);
             UiFields.Set(view, "keyResponder", graph);
             UiFields.Set(view, "popTarget", panel.transform);

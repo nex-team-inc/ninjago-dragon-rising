@@ -31,7 +31,6 @@ namespace Nex.BilliardRogue
             {
                 control = control,
                 rules = rules,
-                leftHanded = () => PlayerDataManager.Instance.PlayerPreference.leftHandedCue,
                 forceDebugInput = () => PlayerDataManager.Instance.DebugSettings.forceDebugInput,
                 run = activeRun,
                 worldCamera = worldCamera,

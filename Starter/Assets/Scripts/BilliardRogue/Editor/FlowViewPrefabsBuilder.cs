@@ -56,7 +56,7 @@ namespace Nex.BilliardRogue.Editor
             // Navy strip behind the prompt: the cat and the arena show through the bottom of the screen.
             kit.Image(u, "PromptBacking", theme.Chip, Kit.Bottom, new Vector2(0f, 88f), new Vector2(1280f, 80f), Fill.Sliced, new Color(1f, 1f, 1f, 0.92f));
             var prompt = kit.Label(u, "Prompt", LocKeys.Calibration.Starting, 48, theme.TextPrimary, Kit.Bottom, new Vector2(0f, 96f), new Vector2(1728f, 64f));
-            var hint = kit.Label(u, "Hint", LocKeys.Calibration.LeftHandedHint, 32, theme.Accent, Kit.Bottom, new Vector2(0f, 40f), new Vector2(1728f, 48f));
+            var hint = kit.Label(u, "Hint", LocKeys.Calibration.TutorialHint, 32, theme.Accent, Kit.Bottom, new Vector2(0f, 40f), new Vector2(1728f, 48f));
 
             var inputRoot = FlowUiFactory.CreateUIObject("InputRoot", root.transform);
             var previews = FlowUiFactory.InstantiateNested(PreviewsManagerPath, root.transform, "starter");
@@ -138,26 +138,27 @@ namespace Nex.BilliardRogue.Editor
             var stage = kit.Image(card, "Stage", theme.BarBackground, Kit.Top, new Vector2(0f, -104f), new Vector2(576f, 288f), Fill.Sliced);
             stage.gameObject.AddComponent<RectMask2D>();
             var s = stage.transform;
-            var leftPaw = Paw(kit, s, "LeftPaw", new Vector2(-120f, -8f), 0f, LocKeys.Calibration.LeftPawTag);
-            var ball = kit.Image(s, "Ball", theme.Ball, Kit.Center, new Vector2(-120f, 64f), new Vector2(64f, 64f));
+            // GDD v2 §16: the upper paw holds the ball, the lower paw (the cue) thrusts up into it.
+            var ballPaw = Paw(kit, s, "BallPaw", new Vector2(-24f, 20f), 0f, LocKeys.Calibration.BallPawTag, new Vector2(-120f, 0f));
+            var ball = kit.Image(s, "Ball", theme.Ball, Kit.Center, new Vector2(-24f, 92f), new Vector2(64f, 64f));
             var ballGroup = ball.gameObject.AddComponent<CanvasGroup>();
             var burst = kit.Image(s, "Burst", theme.Strike, Kit.Center, Vector2.zero, new Vector2(64f, 64f));
             var burstGroup = burst.gameObject.AddComponent<CanvasGroup>();
             burstGroup.alpha = 0f;
-            // Toes point at the ball: the cue paw strikes leftwards (the screen is a mirror).
-            var rightPaw = Paw(kit, s, "RightPaw", new Vector2(112f, -32f), 90f, LocKeys.Calibration.RightPawTag);
+            // Toes point up at the ball paw.
+            var cuePaw = Paw(kit, s, "CuePaw", new Vector2(48f, -84f), 20f, LocKeys.Calibration.CuePawTag, new Vector2(120f, 0f));
             ball.transform.SetAsLastSibling();
 
             var illustration = stage.gameObject.AddComponent<CalibrationTutorialIllustration>();
-            UiFields.Set(illustration, "leftPaw", leftPaw);
-            UiFields.Set(illustration, "rightPaw", rightPaw);
+            UiFields.Set(illustration, "ballPaw", ballPaw);
+            UiFields.Set(illustration, "cuePaw", cuePaw);
             UiFields.Set(illustration, "ball", ball.rectTransform);
             UiFields.Set(illustration, "ballGroup", ballGroup);
             UiFields.Set(illustration, "burst", burst.rectTransform);
             UiFields.Set(illustration, "burstGroup", burstGroup);
             var so = new SerializedObject(illustration);
-            so.FindProperty("restOffset").vector2Value = new Vector2(232f, -24f);
-            so.FindProperty("contactOffset").vector2Value = new Vector2(88f, -16f);
+            so.FindProperty("restOffset").vector2Value = new Vector2(72f, -104f);
+            so.FindProperty("contactOffset").vector2Value = new Vector2(8f, -64f);
             so.FindProperty("ballOffset").vector2Value = new Vector2(0f, 72f);
             so.FindProperty("ballFlyHeight").floatValue = 112f;
             so.ApplyModifiedPropertiesWithoutUndo();
@@ -168,16 +169,16 @@ namespace Nex.BilliardRogue.Editor
             return illustration;
         }
 
-        /// <summary>Paw root (moved by the illustration) with the glyph (rotated) and an unrotated L/R tag under it.</summary>
-        static RectTransform Paw(Kit kit, Transform parent, string name, Vector2 pos, float rotation, string tagKey)
+        /// <summary>Paw root (moved by the illustration) with the glyph (rotated) and an unrotated Ball / Cue tag beside it.</summary>
+        static RectTransform Paw(Kit kit, Transform parent, string name, Vector2 pos, float rotation, string tagKey, Vector2 tagOffset)
         {
             var theme = kit.Theme;
             var root = kit.Ui(name, parent);
             var rect = Kit.Place(root, Kit.Center, pos, new Vector2(96f, 96f));
             var glyph = kit.Image(root.transform, "Glyph", theme.Paw, Kit.Center, Vector2.zero, new Vector2(96f, 96f));
             glyph.rectTransform.localRotation = Quaternion.Euler(0f, 0f, rotation);
-            var tag = kit.Image(root.transform, "Tag", theme.Chip, Kit.Center, new Vector2(0f, -80f), new Vector2(64f, 48f), Fill.Sliced);
-            kit.Label(tag.transform, "Label", tagKey, 32, theme.Accent, Kit.Center, new Vector2(0f, 2f), new Vector2(56f, 48f));
+            var tag = kit.Image(root.transform, "Tag", theme.Chip, Kit.Center, tagOffset, new Vector2(128f, 48f), Fill.Sliced);
+            kit.Label(tag.transform, "Label", tagKey, 32, theme.Accent, Kit.Center, new Vector2(0f, 2f), new Vector2(120f, 48f));
             return rect;
         }
 

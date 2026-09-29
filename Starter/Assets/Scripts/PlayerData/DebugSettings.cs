@@ -91,14 +91,6 @@ namespace Nex
 #endif
         }
 
-        // Same preference as Settings > Left-Handed Cue; the shot inputs poll it, so it applies mid-run. Saving first
-        // keeps the tuning edits made in the same panel visit.
-        [DebugOrder(28), Description("Input: Toggle Left-Handed Cue"), SaveBeforeInvoking]
-        public void ToggleLeftHandedCue()
-        {
-            PlayerDataManager.Instance.ScopedPlayerPreferenceUpdate(preference => preference.leftHandedCue = !preference.leftHandedCue);
-        }
-
         [DebugOrder(63), Description("Save: Reset Meta Progress"), SaveBeforeInvoking]
         public void ResetMetaProgress() => PlayerDataManager.Instance.ResetMetaProgress();
 

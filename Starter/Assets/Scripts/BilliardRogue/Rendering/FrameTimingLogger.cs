@@ -62,13 +62,22 @@ namespace Nex.BilliardRogue
             var on = Requested();
             if (on != running)
             {
-                if (on) Begin();
-                else End();
+                if (on)
+                {
+                    Begin();
+                }
+                else
+                {
+                    End();
+                }
             }
 
             if (!running) return;
             Sample();
-            if (Time.unscaledTime - windowStart >= intervalSeconds) Flush();
+            if (Time.unscaledTime - windowStart >= intervalSeconds)
+            {
+                Flush();
+            }
         }
 
         void OnDisable() => End();
@@ -97,7 +106,7 @@ namespace Nex.BilliardRogue
                 + $"shaderLevel={SystemInfo.graphicsShaderLevel} cpu={SystemInfo.processorType} x{SystemInfo.processorCount} "
                 + $"screen={Screen.width}x{Screen.height}@{Screen.currentResolution.refreshRateRatio.value:0} vSync={QualitySettings.vSyncCount} "
                 + $"targetFps={Application.targetFrameRate} frameTiming={(FrameTimingManager.IsFeatureEnabled() ? "on" : "off (fps only)")} "
-                + $"tier={rig.Tier} every {intervalSeconds:0}s");
+                + $"every {intervalSeconds:0}s");
             Reset();
         }
 
@@ -125,14 +134,21 @@ namespace Nex.BilliardRogue
         {
             frames++;
             var deltaMs = Time.unscaledDeltaTime * 1000f;
-            if (deltaMs > budgetMs * 1.2f) missed++;
-            if (deltaMs > maxDeltaMs) maxDeltaMs = deltaMs;
+            if (deltaMs > budgetMs * 1.2f)
+            {
+                missed++;
+            }
+
+            maxDeltaMs = Mathf.Max(maxDeltaMs, deltaMs);
 
             if (gcAllocated.Valid)
             {
                 var bytes = gcAllocated.LastValue;
                 gcBytes += bytes;
-                if (bytes > 0) gcFrames++;
+                if (bytes > 0)
+                {
+                    gcFrames++;
+                }
             }
 
             if (batches.Valid)
@@ -155,9 +171,9 @@ namespace Nex.BilliardRogue
             renderSum += timing.cpuRenderThreadFrameTime;
             gpuSum += timing.gpuFrameTime;
             waitSum += timing.cpuMainThreadPresentWaitTime;
-            if (main > mainMax) mainMax = main;
-            if (timing.cpuRenderThreadFrameTime > renderMax) renderMax = timing.cpuRenderThreadFrameTime;
-            if (timing.gpuFrameTime > gpuMax) gpuMax = timing.gpuFrameTime;
+            mainMax = System.Math.Max(mainMax, main);
+            renderMax = System.Math.Max(renderMax, timing.cpuRenderThreadFrameTime);
+            gpuMax = System.Math.Max(gpuMax, timing.gpuFrameTime);
         }
 
         void Flush()
@@ -195,12 +211,26 @@ namespace Nex.BilliardRogue
             Reset();
         }
 
+        // Averages over budget name the limiting side; all under budget while frames are still missed points at spikes
+        // (see the max values) or at pacing (present wait).
         string Bottleneck(double main, double render, double gpu)
         {
-            if (gpu > budgetMs && gpu >= main && gpu >= render) return "GPU-bound";
-            if (main > budgetMs && main >= render) return "CPU-main-bound";
-            if (render > budgetMs) return "CPU-render-bound";
-            return "within budget";
+            if (gpu > budgetMs && gpu >= main && gpu >= render)
+            {
+                return "GPU-bound";
+            }
+
+            if (main > budgetMs && main >= render)
+            {
+                return "CPU-main-bound";
+            }
+
+            if (render > budgetMs)
+            {
+                return "CPU-render-bound";
+            }
+
+            return missed * 10 > frames ? "missing frames under budget (spikes or pacing)" : "within budget";
         }
 
         // First two words of DebugHooks.State(): the top view on menus, the turn phase and act in a run.

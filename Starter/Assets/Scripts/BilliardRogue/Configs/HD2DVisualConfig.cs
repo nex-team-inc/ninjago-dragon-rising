@@ -101,7 +101,11 @@ namespace Nex.BilliardRogue
         /// <summary>Tier for this GPU: Low for a listed device name or a shader level at or below lowTierMaxShaderLevel.</summary>
         public RenderQualityTier DetectTier(string graphicsDeviceName, int graphicsShaderLevel)
         {
-            if (graphicsShaderLevel <= lowTierMaxShaderLevel) return RenderQualityTier.Low;
+            if (graphicsShaderLevel <= lowTierMaxShaderLevel)
+            {
+                return RenderQualityTier.Low;
+            }
+
             for (var i = 0; i < lowTierGpuNames.Length; i++)
             {
                 var name = lowTierGpuNames[i];

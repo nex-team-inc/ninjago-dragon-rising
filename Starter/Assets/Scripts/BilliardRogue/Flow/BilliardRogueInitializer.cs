@@ -39,6 +39,10 @@ namespace Nex.BilliardRogue
             // Editor CLI sessions drive play mode from an unfocused Editor, which otherwise pauses the player loop
             // (the starter examples do the same; Android TV ignores this flag).
             Application.runInBackground = true;
+#else
+            // The project logs Full stack traces; for plain Log lines ([Analytics] on every shot, [Perf]) the native
+            // unwind costs milliseconds per line on the Playground's CPU, a hitch on each shot in development builds.
+            Application.SetStackTraceLogType(LogType.Log, StackTraceLogType.ScriptOnly);
 #endif
             BootAsync(destroyCancellationToken).Forget();
         }

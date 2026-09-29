@@ -44,6 +44,12 @@ read this file + `git log -- Starter/Assets/Scripts/BilliardRogue/Rendering Star
   BallDefinition glow (Presentation pulses `_EmissionStrength`).
 - `Nex.VolumeManager` (starter audio) shadows `UnityEngine.Rendering.VolumeManager` inside `Nex.BilliardRogue`; use the fully qualified name.
 - The project renders in Gamma colour space (`UNITY_COLORSPACE_GAMMA`); PixelWorldDisplay picks the RT format from the active colour space.
+- (Perf pass 3, `final-perf.md`) The view manager's RootCamera is the only screen camera (Base, HDR / MSAA / post /
+  shadows off, World layers culled; built by FlowPrefabsBuilder); there is no Main Camera and no camera stack, so the
+  1080p UI renders straight into the surface. Android Blit Type Auto, Frame Timing Stats on (RenderPipelineBuilder).
+- Low-end GPU tier: `HD2DVisualConfig.DetectTier` (GPU name list, shader level) → `WorldCameraRig` enables LowTierVolume
+  (`Volume_LowTier`: bloom mip count / resolution, tilt-shift taps; priority 50, between the act looks and the feature
+  switches); `DebugSettings.renderTier` 0 auto / 1 full / 2 low. `FrameTimingLogger` on the rig prints `[Perf]` lines.
 
 ## API exposed to other modules
 

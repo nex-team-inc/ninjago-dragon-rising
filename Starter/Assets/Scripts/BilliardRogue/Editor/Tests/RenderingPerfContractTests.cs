@@ -35,13 +35,20 @@ namespace Nex.BilliardRogue.Editor.Tests
             Assert.AreEqual(CameraOverrideOption.Off, data.requiresDepthOption);
             Assert.AreEqual(CameraOverrideOption.Off, data.requiresColorOption);
             var world = LayerMask.NameToLayer(RenderPipelineBuilder.WorldLayerName);
-            if (world >= 0) Assert.AreEqual(0, camera.cullingMask & (1 << world), "the UI camera culls the World layer");
+            if (world >= 0)
+            {
+                Assert.AreEqual(0, camera.cullingMask & (1 << world), "the UI camera culls the World layer");
+            }
         }
 
         [Test]
         public void MainSceneHasNoSecondScreenCamera()
         {
-            if (AssetDatabase.LoadAssetAtPath<SceneAsset>(MainSceneBuilder.ScenePath) == null) Assert.Ignore("Main.unity not built");
+            if (AssetDatabase.LoadAssetAtPath<SceneAsset>(MainSceneBuilder.ScenePath) == null)
+            {
+                Assert.Ignore("Main.unity not built");
+            }
+
             var scene = EditorSceneManager.OpenPreviewScene(MainSceneBuilder.ScenePath);
             try
             {
@@ -146,11 +153,19 @@ namespace Nex.BilliardRogue.Editor.Tests
 
         #endregion
 
+        #region Helpers
+
         static T LoadOrIgnore<T>(string path) where T : Object
         {
             var asset = AssetDatabase.LoadAssetAtPath<T>(path);
-            if (asset == null) Assert.Ignore($"{path} not built (run Build All)");
+            if (asset == null)
+            {
+                Assert.Ignore($"{path} not built (run Build All)");
+            }
+
             return asset!;
         }
+
+        #endregion
     }
 }

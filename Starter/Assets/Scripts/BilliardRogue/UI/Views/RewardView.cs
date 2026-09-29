@@ -48,7 +48,6 @@ namespace Nex.BilliardRogue
         readonly float[] hoverAmounts = new float[RewardPawPicker.MaxBalls];
         PacingConfig pacing = null!;
         Camera? vfxCamera;
-        Canvas? canvas;
         IPawPointer? pointer;
         UniTaskCompletionSource<int>? choice;
         int shownCount;
@@ -71,7 +70,6 @@ namespace Nex.BilliardRogue
         protected override void Awake()
         {
             base.Awake();
-            canvas = GetComponentInParent<Canvas>();
             for (var i = 0; i < options.Length; i++)
             {
                 var index = i;
@@ -379,7 +377,7 @@ namespace Nex.BilliardRogue
         void PlayPickVfx(Vector3 uiWorld)
         {
             if (vfxCamera == null) return;
-            var screen = RectTransformUtility.WorldToScreenPoint(canvas != null ? canvas.worldCamera : null, uiWorld);
+            var screen = RectTransformUtility.WorldToScreenPoint(canvas.worldCamera, uiWorld);
             var ray = vfxCamera.ScreenPointToRay(screen);
             var floor = new Plane(Vector3.up, Vector3.zero);
             var point = floor.Raycast(ray, out var enter) ? ray.GetPoint(enter) : ray.GetPoint(10f);

@@ -86,15 +86,25 @@ namespace Nex.BilliardRogue.Editor
             android.name = AndroidPlatform;
             importer.SetPlatformTextureSettings(android);
             var after = EditorJsonUtility.ToJson(importer) + JsonUtility.ToJson(importer.GetPlatformTextureSettings(AndroidPlatform));
-            if (after != before) importer.SaveAndReimport();
+            if (after != before)
+            {
+                importer.SaveAndReimport();
+            }
         }
 
         static bool SameBytes(byte[] a, byte[] b)
         {
-            if (a.Length != b.Length) return false;
+            if (a.Length != b.Length)
+            {
+                return false;
+            }
+
             for (var i = 0; i < a.Length; i++)
             {
-                if (a[i] != b[i]) return false;
+                if (a[i] != b[i])
+                {
+                    return false;
+                }
             }
 
             return true;

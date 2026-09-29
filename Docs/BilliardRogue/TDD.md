@@ -185,6 +185,10 @@ public sealed class RunFactory { public RunState NewRun(GameRules rules, int see
 ```
 `DamageSource` struct: `{ BallType ballType; int ballId; bool isStatusTick; bool isExplosion; bool isChain; bool isCrit; }`.
 **Implemented (2026-09-28, `109f1fca`).** `BoardOps` also exposes `IsFootprintFree`, `EnemyAt`, `SpawnWaveRow`, `ApplyStatus`, `HealEnemy`, `DamageCrate`, `CollectPickup`, `DamagePlayer`, `HealPlayer`; `RunFactory` adds `CompleteStage`; `StatusStacks.burnSpreads` added. Binding rule decisions (footprints, cadence, freeze, escorts, pickups, splitter/bomb/piercer semantics) are in `HANDOFF.md` §3–§4.
+**GDD v2 §5 (2026-09-29):** batch spawning replaces the row waves above: `StagePlan.batches` (`SpawnBatch` / `BatchEntry`),
+`RunState.nextBatchIndex` / `nextBatchTurn`, `BoardOps.SpawnBatch` (random free cells outside the rows nearest the player),
+`StageSchedule` (cadence, skipped empty turns, v1 save upgrade), events `PickupSpawned` / `BatchSpawned`, new `ActRules`
+fields. `waves` / `WaveRow` / `SpawnWaveRow` / `WaveSpawned` stay for v1 saves only. Rules in `HANDOFF.md` §4.
 
 ### 3.5 Events (`SimEvent` struct, appended to a caller-owned `List<SimEvent>`; no allocations)
 ```csharp

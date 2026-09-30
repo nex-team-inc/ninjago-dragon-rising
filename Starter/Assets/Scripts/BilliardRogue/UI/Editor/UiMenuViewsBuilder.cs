@@ -25,9 +25,6 @@ namespace Nex.BilliardRogue.Editor
             kit.StretchImage(c, "Vignette", theme.Vignette, 0f, Fill.Simple, theme.VignetteColor).preserveAspect = false;
             kit.Image(c, "Logo", theme.Logo, Kit.Top, new Vector2(0f, -32f), new Vector2(1280f, 400f));
             kit.Label(c, "Tagline", LocKeys.Title.Tagline, 32, theme.TextPrimary, Kit.Top, new Vector2(0f, -448f), new Vector2(1200f, 48f));
-            kit.Image(c, "PortraitP1", theme.PortraitP1, Kit.Center, new Vector2(-608f, -176f), new Vector2(256f, 256f));
-            var p2 = kit.Image(c, "PortraitP2", theme.PortraitP2, Kit.Center, new Vector2(608f, -176f), new Vector2(256f, 256f));
-            p2.rectTransform.localScale = new Vector3(-1f, 1f, 1f);
 
             var menu = kit.Ui("Menu", c);
             Kit.Place(menu, Kit.Center, new Vector2(0f, 40f), new Vector2(640f, 400f), Kit.Top);

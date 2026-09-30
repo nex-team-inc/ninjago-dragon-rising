@@ -43,16 +43,10 @@ namespace Nex.BilliardRogue.Editor.Tests
             Assert.AreEqual(-UiHudBuilder.Margin, right.anchoredPosition.x, 0.01f);
             Assert.LessOrEqual(UiHudBuilder.Margin + UiHudBuilder.ColumnWidth, ScreenWidth * 0.25f, "left column reaches into the arena band");
 
-            // The first panel starts at the column top.
-            var bottom = UiHudBuilder.Gutter;
-            foreach (var name in new[] { "CameraPanel", "StagePanel", "HpPanel", "TrackingWarnings" })
-            {
-                var panel = Child(left.gameObject, name);
-                Assert.LessOrEqual(panel.sizeDelta.x, UiHudBuilder.ColumnWidth, name);
-                var top = panel.anchoredPosition.y;
-                Assert.LessOrEqual(top, bottom - UiHudBuilder.Gutter + 0.01f, $"{name} overlaps the panel above (or has no gutter)");
-                bottom = top - panel.sizeDelta.y;
-            }
+            // The camera is a small bottom-right panel, HP hearts sit bottom-left, act/stage/turn is top centre.
+            Assert.IsNotNull(hud.transform.Find("CameraPanel/Screen"), "camera screen missing");
+            Assert.IsNotNull(hud.transform.Find("HpHearts"), "HP hearts missing");
+            Assert.IsNotNull(hud.transform.Find("StageBar/Stage"), "stage text missing");
 
             foreach (RectTransform panel in right)
             {
@@ -64,10 +58,9 @@ namespace Nex.BilliardRogue.Editor.Tests
         public void PipFeedOverlayCoversTheHudCameraScreen()
         {
             var hud = Load(UiViewsBuilder.HudPath);
-            var screen = Child(hud, "LeftColumn/CameraPanel/Screen");
+            var screen = Child(hud, "CameraPanel/Screen");
             var panel = (RectTransform)screen.parent;
-            var screenFromTopLeft = new Vector2(UiHudBuilder.Margin + panel.anchoredPosition.x + screen.anchoredPosition.x,
-                -UiHudBuilder.Margin + panel.anchoredPosition.y + screen.anchoredPosition.y);
+            var screenFromTopLeft = panel.anchoredPosition + screen.anchoredPosition;
             Assert.AreEqual(UiHudBuilder.PipFeedScreenPosition, screenFromTopLeft);
             Assert.AreEqual(UiHudBuilder.PipFeedSize, screen.sizeDelta);
 

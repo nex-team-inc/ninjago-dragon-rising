@@ -26,10 +26,18 @@ namespace Nex.BilliardRogue.Editor
         const float Inset = 32f;
 
         /// <summary>Camera feed rect from the screen's top-left corner (FlowPrefabsBuilder places the PiP overlay on it).</summary>
-        public static readonly Vector2 PipFeedScreenPosition = new(Margin + Inset, -(Margin + PipFeedTop));
-        public static readonly Vector2 PipFeedSize = new(384f, 216f);
-        const float PipFeedTop = 80f;
-        const float PipPanelHeight = PipFeedTop + 216f + Inset;
+        public static readonly Vector2 PipFeedScreenPosition = new(CamPanelLeft + CamPad, -(CamPanelTop + CamHeader));
+        public static readonly Vector2 PipFeedSize = new(256f, 144f);
+        // A small camera panel in the bottom-right corner (GDD v2 §22).
+        const float CamPad = 20f;
+        const float CamHeader = 64f;
+        const float CamPanelWidth = 256f + 2f * CamPad;
+        const float CamPanelHeight = CamHeader + 144f + CamPad;
+        const float CamPanelLeft = 1920f - Margin - CamPanelWidth;
+        const float CamPanelTop = 1080f - Margin - CamPanelHeight;
+        const float HeartSize = 64f;
+        const float HeartPitch = 72f;
+        const int HeartSlots = 5;
 
         const int QueueSlots = 12;
         const int QueueColumns = 6;
@@ -53,12 +61,8 @@ namespace Nex.BilliardRogue.Editor
             Kit.Place(left, Kit.TopLeft, new Vector2(Margin, -Margin), new Vector2(ColumnWidth, 1080f - 2f * Margin));
             UiFields.Set(hud, "leftColumn", left.transform);
             UiFields.Set(hud, "leftGroup", left.AddComponent<CanvasGroup>());
-            var y = 0f;
-            y = BuildCameraPanel(kit, left.transform, hud, y);
-            y = BuildStagePanel(kit, left.transform, hud, y);
-            y = BuildHpPanel(kit, left.transform, hud, y);
             var warnings = kit.Ui("TrackingWarnings", left.transform);
-            Kit.Place(warnings, Kit.TopLeft, new Vector2(0f, y), new Vector2(ColumnWidth, 144f));
+            Kit.Place(warnings, Kit.TopLeft, Vector2.zero, new Vector2(ColumnWidth, 144f));
             Column(warnings, TextAnchor.UpperLeft);
             IsolateCanvas(warnings);
             var warningChips = new List<Object>
@@ -67,7 +71,13 @@ namespace Nex.BilliardRogue.Editor
                 Chip(kit, warnings.transform, "WarningP2", LocKeys.Hud.TrackingWarningPlayer, theme.Danger, new Vector2(ColumnWidth, 64f), true),
             };
             UiFields.SetArray(hud, "trackingWarnings", warningChips);
-            UiHypeBuilder.BuildMeter(kit, left.transform, hud, 1080f - 2f * Margin);
+            // The POWER meter sits above the HP hearts that occupy the bottom-left corner.
+            UiHypeBuilder.BuildMeter(kit, left.transform, hud, 1080f - 2f * Margin - HeartSize - Gutter);
+
+            // Act / stage / turn as plain grey text at the top centre, HP hearts bottom-left, the camera bottom-right.
+            BuildStageBar(kit, root.transform, hud);
+            BuildHearts(kit, root.transform, hud);
+            BuildCameraPanel(kit, root.transform, hud);
 
             var right = kit.Ui("RightColumn", root.transform);
             Kit.Place(right, Kit.TopRight, new Vector2(-Margin, -Margin), new Vector2(ColumnWidth, 1080f - 2f * Margin));
@@ -90,23 +100,24 @@ namespace Nex.BilliardRogue.Editor
             return UiViewsBuilder.SaveRoot(root, path);
         }
 
-        #region Left column
+        #region Corners & centre
 
-        /// <summary>Header (camera glyph, title, P1/P2 chips) over the feed screen; the placeholder shows until the first frame.</summary>
-        static float BuildCameraPanel(Kit kit, Transform parent, GameplayHud hud, float y)
+        /// <summary>Small camera panel in the bottom-right corner (header with the glyph, title and P1/P2 chips, then the feed screen).</summary>
+        static void BuildCameraPanel(Kit kit, Transform parent, GameplayHud hud)
         {
             var theme = kit.Theme;
-            var panel = kit.Image(parent, "CameraPanel", theme.Panel, Kit.TopLeft, new Vector2(0f, y), new Vector2(ColumnWidth, PipPanelHeight), Fill.Tiled).transform;
-            kit.Image(panel, "Glyph", theme.CameraGlyph, Kit.TopLeft, new Vector2(Inset - 4f, -20f), new Vector2(48f, 48f));
-            kit.Label(panel, "Title", LocKeys.Hud.PipTitle, 32, theme.TextMuted, Kit.TopLeft, new Vector2(Inset + 52f, -20f), new Vector2(176f, 48f),
+            var panel = kit.Image(parent, "CameraPanel", theme.Panel, Kit.TopLeft, new Vector2(CamPanelLeft, -CamPanelTop),
+                new Vector2(CamPanelWidth, CamPanelHeight), Fill.Tiled).transform;
+            IsolateCanvas(panel.gameObject);
+            kit.Image(panel, "Glyph", theme.CameraGlyph, Kit.TopLeft, new Vector2(CamPad - 4f, -16f), new Vector2(40f, 40f));
+            kit.Label(panel, "Title", LocKeys.Hud.PipTitle, 32, theme.TextMuted, Kit.TopLeft, new Vector2(CamPad + 40f, -16f), new Vector2(120f, 40f),
                 TextAlignmentOptions.Left);
             BuildPlayerTags(kit, panel, hud);
 
-            var screen = kit.Image(panel, "Screen", theme.BarBackground, Kit.TopLeft, new Vector2(Inset, -PipFeedTop), PipFeedSize, Fill.Sliced).transform;
+            var screen = kit.Image(panel, "Screen", theme.BarBackground, Kit.TopLeft, new Vector2(CamPad, -CamHeader), PipFeedSize, Fill.Sliced).transform;
             var placeholder = new Color(1f, 1f, 1f, 0.55f);
-            kit.Image(screen, "CameraGlyph", theme.CameraGlyph, Kit.Center, new Vector2(0f, 24f), new Vector2(96f, 96f), color: placeholder);
-            kit.Label(screen, "Tip", LocKeys.Setup.ShowBothPaws, 32, theme.TextMuted, Kit.Center, new Vector2(0f, -56f), new Vector2(352f, 48f));
-            return y - PipPanelHeight - Gutter;
+            kit.Image(screen, "CameraGlyph", theme.CameraGlyph, Kit.Center, new Vector2(0f, 18f), new Vector2(64f, 64f), color: placeholder);
+            kit.Label(screen, "Tip", LocKeys.Setup.ShowBothPaws, 32, theme.TextMuted, Kit.Center, new Vector2(0f, -44f), new Vector2(240f, 40f));
         }
 
         /// <summary>2-player runs only (the widget hides itself otherwise): the active shooter's chip is full size and bouncing.</summary>
@@ -114,16 +125,16 @@ namespace Nex.BilliardRogue.Editor
         {
             var theme = kit.Theme;
             var root = kit.Ui("PlayerTags", parent);
-            Kit.Place(root, Kit.TopRight, new Vector2(-Inset + 8f, -16f), new Vector2(208f, 56f));
+            Kit.Place(root, Kit.TopRight, new Vector2(-CamPad + 4f, -14f), new Vector2(180f, 48f));
             var tags = new List<Object>();
             var groups = new List<Object>();
             var tints = new List<Object>();
             var labels = new List<Object>();
             for (var i = 0; i < 2; i++)
             {
-                var tag = kit.Image(root.transform, $"TagP{i + 1}", theme.Chip, Kit.Center, new Vector2(-52f + i * 104f, 0f), new Vector2(96f, 56f), Fill.Sliced);
+                var tag = kit.Image(root.transform, $"TagP{i + 1}", theme.Chip, Kit.Center, new Vector2(-44f + i * 88f, 0f), new Vector2(80f, 48f), Fill.Sliced);
                 groups.Add(tag.gameObject.AddComponent<CanvasGroup>());
-                var label = kit.Label(tag.transform, "Label", LocKeys.Hud.PlayerTag, 48, theme.PlayerColor(i), Kit.Center, new Vector2(0f, 3f), new Vector2(88f, 56f));
+                var label = kit.Label(tag.transform, "Label", LocKeys.Hud.PlayerTag, 32, theme.PlayerColor(i), Kit.Center, new Vector2(0f, 2f), new Vector2(72f, 48f));
                 tags.Add(tag.transform);
                 tints.Add(label.Face);
                 labels.Add(label);
@@ -139,43 +150,44 @@ namespace Nex.BilliardRogue.Editor
             root.SetActive(false);
         }
 
-        static float BuildStagePanel(Kit kit, Transform parent, GameplayHud hud, float y)
+        /// <summary>Act / stage and turn as plain grey semi-transparent text at the top centre, no panel behind it.</summary>
+        static void BuildStageBar(Kit kit, Transform parent, GameplayHud hud)
         {
             var theme = kit.Theme;
-            const float height = 128f;
-            var panel = kit.Image(parent, "StagePanel", theme.Panel, Kit.TopLeft, new Vector2(0f, y), new Vector2(ColumnWidth, height), Fill.Tiled).transform;
-            UiFields.Set(hud, "stageLabel", kit.Label(panel, "Stage", LocKeys.Hud.Stage, 32, theme.TextPrimary, Kit.TopLeft, new Vector2(Inset, -24f),
-                new Vector2(272f, 48f), TextAlignmentOptions.Left));
-            UiFields.Set(hud, "turnLabel", kit.Label(panel, "Turn", LocKeys.Hud.Turn, 32, theme.TextMuted, Kit.TopLeft, new Vector2(Inset, -64f),
-                new Vector2(272f, 48f), TextAlignmentOptions.Left));
-            UiFields.Set(hud, "bossStageChip", Chip(kit, panel, "BossChip", LocKeys.Hud.Boss, theme.Danger, new Vector2(112f, 48f), true,
-                Kit.TopRight, new Vector2(-Inset + 8f, -24f)));
-            return y - height - Gutter;
+            var faint = new Color(0.86f, 0.88f, 0.94f, 0.6f);
+            var root = kit.Ui("StageBar", parent);
+            Kit.Place(root, Kit.Top, new Vector2(0f, -Margin), new Vector2(760f, 128f));
+            UiFields.Set(hud, "stageLabel", kit.Label(root.transform, "Stage", LocKeys.Hud.Stage, 48, faint, Kit.Top, new Vector2(0f, 0f),
+                new Vector2(760f, 56f), TextAlignmentOptions.Center, shadow: false));
+            UiFields.Set(hud, "turnLabel", kit.Label(root.transform, "Turn", LocKeys.Hud.Turn, 32, faint, Kit.Top, new Vector2(0f, -56f),
+                new Vector2(760f, 40f), TextAlignmentOptions.Center, shadow: false));
+            UiFields.Set(hud, "bossStageChip", Chip(kit, root.transform, "BossChip", LocKeys.Hud.Boss, theme.Danger, new Vector2(140f, 48f), true,
+                Kit.Top, new Vector2(0f, -96f)));
         }
 
-        static float BuildHpPanel(Kit kit, Transform parent, GameplayHud hud, float y)
+        /// <summary>HP as a row of hearts in the bottom-left corner, no panel behind it (HeartsWidget).</summary>
+        static void BuildHearts(Kit kit, Transform parent, GameplayHud hud)
         {
             var theme = kit.Theme;
-            const float height = 144f;
-            var panel = kit.Image(parent, "HpPanel", theme.Panel, Kit.TopLeft, new Vector2(0f, y), new Vector2(ColumnWidth, height), Fill.Tiled);
-            IsolateCanvas(panel.gameObject);
-            var shake = kit.Ui("Content", panel.transform);
-            Kit.Stretch(shake);
-            var s = shake.transform;
-            var heart = kit.Image(s, "Heart", theme.Heart, Kit.TopLeft, new Vector2(Inset - 4f, -24f), new Vector2(48f, 48f));
-            kit.Label(s, "HpLabel", LocKeys.Hud.Hp, 32, theme.TextMuted, Kit.TopLeft, new Vector2(Inset + 52f, -24f), new Vector2(128f, 48f), TextAlignmentOptions.Left);
-            var numbers = kit.Label(s, "Numbers", null, 48, theme.TextPrimary, Kit.TopRight, new Vector2(-Inset, -16f), new Vector2(224f, 64f),
-                TextAlignmentOptions.Right, numbersPreview: "30/30");
-            var (fill, ghost) = Bar(kit, s, theme.HpFill, new Vector2(Inset, -84f), ColumnWidth - 2f * Inset);
-            var widget = panel.gameObject.AddComponent<HpBarWidget>();
+            var width = (HeartSlots - 1) * HeartPitch + HeartSize;
+            var root = kit.Ui("HpHearts", parent);
+            Kit.Place(root, new Vector2(0f, 0f), new Vector2(Margin, Margin), new Vector2(width, HeartSize));
+            IsolateCanvas(root.gameObject);
+            var content = kit.Ui("Content", root.transform);
+            Kit.Stretch(content);
+            var hearts = new List<Object>();
+            for (var i = 0; i < HeartSlots; i++)
+            {
+                var heart = kit.Image(content.transform, $"Heart{i}", theme.Heart, new Vector2(0f, 0f), new Vector2(i * HeartPitch, 0f),
+                    new Vector2(HeartSize, HeartSize));
+                hearts.Add(heart);
+            }
+
+            var widget = root.AddComponent<HeartsWidget>();
             UiFields.Set(widget, "theme", theme);
-            UiFields.Set(widget, "fill", fill);
-            UiFields.Set(widget, "ghostFill", ghost);
-            UiFields.Set(widget, "numbers", numbers);
-            UiFields.Set(widget, "shakeTarget", shake.transform);
-            UiFields.Set(widget, "heart", heart.transform);
-            UiFields.Set(hud, "hpBar", widget);
-            return y - height - Gutter;
+            UiFields.Set(widget, "shakeTarget", content.transform);
+            UiFields.SetArray(widget, "hearts", hearts);
+            UiFields.Set(hud, "hp", widget);
         }
 
         #endregion

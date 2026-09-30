@@ -8,9 +8,9 @@ using UnityEngine;
 namespace Nex.BilliardRogue
 {
     /// <summary>
-    /// Gameplay HUD (IGameplayHud), laid out around a vertical centre arena: left column = camera panel (the PiP feed
-    /// overlay sits on its screen, P1/P2 shooter chips in its header), stage/turn, HP and tracking warnings; right
-    /// column = boss bar, ball queue and chips; turn/shooter ribbons slide in at the top centre. Both columns hide
+    /// Gameplay HUD (IGameplayHud): the act/stage/turn as plain grey text at the top centre, HP as hearts at the
+    /// bottom-left, a small camera panel at the bottom-right (the PiP feed overlay sits on its screen), the boss bar /
+    /// ball queue / chips in the right column, and turn/shooter ribbons at the top centre. The left/right columns hide
     /// while the stage intro band is up and slide in after it (SetRevealed). Every setter ignores unchanged values,
     /// so GameSession may push every frame without cost. Must sit under a canvas (GameplayView); the root carries a
     /// nested Canvas so HUD rebuilds never dirty the view canvas.
@@ -19,11 +19,11 @@ namespace Nex.BilliardRogue
     {
         [SerializeField] UiTheme theme = null!;
 
-        [Header("Left column")]
+        [Header("Top centre / corners")]
         [SerializeField] TextLabel stageLabel = null!;
         [SerializeField] HudChip bossStageChip = null!;
         [SerializeField] TextLabel turnLabel = null!;
-        [SerializeField] HpBarWidget hpBar = null!;
+        [SerializeField] HeartsWidget hp = null!;
         [SerializeField] PlayerTagsWidget playerTags = null!;
         [Tooltip("One per player (index = player).")]
         [SerializeField] HudChip[] trackingWarnings = null!;
@@ -81,7 +81,7 @@ namespace Nex.BilliardRogue
 
         public void SetHp(int cur, int max)
         {
-            hpBar.Set(cur, max);
+            hp.Set(cur, max);
         }
 
         public void SetBallQueue(IReadOnlyList<BallInstance> bag, int nextIndex, int extraBalls)

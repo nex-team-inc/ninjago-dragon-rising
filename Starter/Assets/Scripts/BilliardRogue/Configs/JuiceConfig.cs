@@ -121,8 +121,8 @@ namespace Nex.BilliardRogue
         }
 
         /// <summary>
-        /// Cat arms at the bottom of the screen (GDD v2 §19): one paw holds the waiting ball, the other grips the cue,
-        /// both reaching up from below the screen edge while a shot waits, so the player sees which paw does what.
+        /// Cat arms at the bottom of the screen (GDD v2 §19): a fist holds the cue at its end for the whole run, its arm
+        /// running along the stick from below the screen edge; an open paw holds the ball while a shot waits.
         /// Canvas units (1920 × 1080 reference); world points come from CatView.
         /// </summary>
         [Serializable]
@@ -133,17 +133,17 @@ namespace Nex.BilliardRogue
             [Range(0f, 200f)] public float ballPawSide = 48f;
             [Tooltip("...and this far below it (the launch line sits close to the screen bottom, so the cue fist fits under the ball).")]
             [Range(0f, 200f)] public float ballPawDrop = 10f;
-            [Tooltip("The cue paw grips the cue this far behind its tip, in cells...")]
-            [Range(0.2f, 3f)] public float gripFromTip = 0.9f;
-            [Tooltip("...but slides toward the tip to stay at least this high above the screen bottom.")]
-            [Range(0f, 300f)] public float minPawHeight = 40f;
+            [Tooltip("The fist grips the cue where it crosses this height above the screen bottom (mostly below the edge, so the shaft shows above it)...")]
+            [Range(-60f, 200f)] public float gripHeight = 12f;
+            [Tooltip("...but never further from the tip than this share of the cue (a flat cue that stays on screen is held near its butt).")]
+            [Range(0.2f, 1f)] public float gripAlongCue = 0.8f;
+            [Tooltip("...nor nearer than this share, so some shaft always shows between the fist and the ball.")]
+            [Range(0f, 0.8f)] public float gripMinAlongCue = 0.3f;
             [Tooltip("The ball arm's shoulder sits this far out to the side of its paw (away from the cue)...")]
             [Range(0f, 800f)] public float ballShoulderSpread = 260f;
-            [Tooltip("...the cue arm's this far out to the other side.")]
-            [Range(0f, 800f)] public float cueShoulderSpread = 110f;
-            [Tooltip("Both shoulders sit this far below their paws (below the screen edge).")]
+            [Tooltip("Each shoulder sits this far below its paw (below the screen edge).")]
             [Range(100f, 1000f)] public float shoulderDrop = 420f;
-            [Tooltip("Seconds for the arms to rise when a shot is ready, and to sink after it is fired.")]
+            [Tooltip("Seconds for an arm to rise into view or sink out of it.")]
             [Range(0.05f, 1f)] public float riseSeconds = 0.22f;
             [Tooltip("How far the arms sink out of view.")]
             [Range(50f, 600f)] public float sinkDistance = 260f;

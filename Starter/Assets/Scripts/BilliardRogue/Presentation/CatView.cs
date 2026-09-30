@@ -11,7 +11,7 @@ namespace Nex.BilliardRogue
     /// Rigid parts (Cat_Hero.fbx: Body, Head, EarL/R, Tail, PawL/R, Cape) are animated by code; P1/P2 palettes
     /// swap the model material (M_Palette / M_Palette_CatP2). JuiceConfig.cat.visible off hides the cat and skips its
     /// pose animation (it still walks, so its anchors keep marking the player's spot); only the cue shows, lying behind
-    /// the waiting ball along the aim while a shot waits, and thrusting on the strike.
+    /// the launch spot along the aim for the whole run (the cat arms hold it, GDD v2 §19) and thrusting on the strike.
     /// </summary>
     public sealed class CatView : MonoBehaviour
     {
@@ -69,9 +69,11 @@ namespace Nex.BilliardRogue
         public Vector3 Position { get; private set; }
         public Vector3 LabelAnchor => Position + Vector3.up * (labelHeight * layout.CellSize * settings.modelScale);
         public Vector3 Center => Position + Vector3.up * (0.5f * layout.CellSize * settings.modelScale);
-        /// <summary>The cue lies behind the waiting ball (no cat, a shot waits): the cat arms hold the ball and the cue.</summary>
+        /// <summary>The cue lies at the launch spot (no cat, active, not defeated): the cat arms hold it.</summary>
         public bool CueShown => cueShown && !visible;
-        /// <summary>Centre of the waiting ball (valid while CueShown).</summary>
+        /// <summary>A ball waits at the launch spot to be shot (the ball arm holds it).</summary>
+        public bool BallWaiting => aimVisible;
+        /// <summary>Centre of the launch spot's ball (valid while CueShown).</summary>
         public Vector3 BallWorld { get; private set; }
         /// <summary>Cue tip and butt (valid while CueShown; they follow the strike thrust).</summary>
         public Vector3 CueTipWorld { get; private set; }
@@ -301,11 +303,14 @@ namespace Nex.BilliardRogue
             model.localScale = Vector3.one * settings.modelScale;
         }
 
-        /// <summary>Without the cat: the cue lies behind the waiting ball along the aim, butt raised, and thrusts on a strike.</summary>
+        /// <summary>
+        /// Without the cat: the cue lies behind the launch spot along the aim, butt raised, and thrusts on a strike. It
+        /// stays there between shots (playtest 6: the stick keeps its place at the bottom, held by the cat arms).
+        /// </summary>
         void PlaceCue(float dt)
         {
             if (strikeT < 1f) strikeT = Mathf.Min(1f, strikeT + dt / settings.strikeDuration);
-            var shown = active && aimVisible && !defeated;
+            var shown = active && !defeated;
             if (shown != cueShown)
             {
                 cueShown = shown;

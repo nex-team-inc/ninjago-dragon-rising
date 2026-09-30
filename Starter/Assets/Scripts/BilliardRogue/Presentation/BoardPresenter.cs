@@ -77,7 +77,7 @@ namespace Nex.BilliardRogue
             layout = aLayout;
             var worldLayer = WorldLayers.Resolve();
             WorldLayers.Apply(gameObject, worldLayer);
-            if (catArmsPrefab != null) Instantiate(catArmsPrefab, labelLayer).Initialize(display, config.Juice, layout, cats);
+            if (catArmsPrefab != null) Instantiate(catArmsPrefab, labelLayer).Initialize(display, config.Juice, cats);
             labels = Instantiate(labelLayerPrefab, labelLayer);
             labels.Initialize(display, config.Juice, labelPrefab, damageNumberPrefab);
             cameraShaker.Initialize(display.WorldCamera, layout.GridCenterWorld, config.Visual.RenderResolution.y);

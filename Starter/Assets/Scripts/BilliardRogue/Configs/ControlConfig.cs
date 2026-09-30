@@ -23,10 +23,10 @@ namespace Nex.BilliardRogue
         [SerializeField, Range(-40f, 0f)] float launchXMinInches = -26f;
         [Tooltip("Ball-paw x offset from the chest mapped to the right edge of the launch line while the left paw holds the ball (mirrored for the right paw).")]
         [SerializeField, Range(0f, 40f)] float launchXMaxInches = 8f;
-        [Tooltip("Ball-paw y offset (inches above the chest) mapped to the ball paw's lowest launch nudge (GDD v2 §21).")]
-        [SerializeField, Range(-20f, 40f)] float launchYMinInches = 6f;
-        [Tooltip("...and to its highest; between them the ball rides ArenaRules.launchYRange up or down. Equal values turn the y nudge off.")]
-        [SerializeField, Range(-20f, 40f)] float launchYMaxInches = 26f;
+        [Tooltip("Ball-paw y offset (inches, + above the chest) at the bottom of the accept region (GDD v2 §21); centred on the chest, so this is below it.")]
+        [SerializeField, Range(-40f, 40f)] float launchYMinInches = -18f;
+        [Tooltip("...and at the top of the region. A tall region around the chest means the hand nudges the ball comfortably; equal values turn the y nudge off.")]
+        [SerializeField, Range(-40f, 40f)] float launchYMaxInches = 18f;
         [Tooltip("OneEuro min cutoff (Hz) of the launch position filter.")]
         [SerializeField, Range(0.1f, 10f)] float launchXMinCutoff = 1f;
         [Tooltip("OneEuro beta of the launch position filter (higher = less lag on fast moves).")]

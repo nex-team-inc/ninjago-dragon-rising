@@ -64,10 +64,18 @@ namespace Nex.BilliardRogue.Simulation
         }
 
         /// <summary>Launch origin on the launch line for a normalized cat position (0 = left wall, 1 = right wall).</summary>
-        public static Vector2 LaunchOrigin(ArenaRules a, float launchX01)
+        public static Vector2 LaunchOrigin(ArenaRules a, float launchX01) => LaunchOrigin(a, launchX01, 0.5f);
+
+        /// <summary>
+        /// Launch origin for a normalized cat position and a small vertical nudge (launchY01: 0.5 = the launch line,
+        /// 0/1 = launchYRange cells below/above it, kept inside the launch zone). GDD v2 §21: the ball paw moves the
+        /// ball a little on y as well as x.
+        /// </summary>
+        public static Vector2 LaunchOrigin(ArenaRules a, float launchX01, float launchY01)
         {
             var x = Mathf.Lerp(a.ballRadius, a.columns - a.ballRadius, Mathf.Clamp01(launchX01));
-            return new Vector2(x, a.launchY);
+            var y = a.launchY + (Mathf.Clamp01(launchY01) - 0.5f) * 2f * a.launchYRange;
+            return new Vector2(x, Mathf.Clamp(y, a.ballRadius, Mathf.Max(a.launchY, a.launchZoneHeight - a.ballRadius)));
         }
 
         /// <summary>Clamps an aim direction to [minAimAngleDeg, 180 - minAimAngleDeg] measured from +x, pointing up.</summary>

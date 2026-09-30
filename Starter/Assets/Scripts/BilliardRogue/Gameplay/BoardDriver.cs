@@ -58,9 +58,9 @@ namespace Nex.BilliardRogue
             return enabled ? presenter.PlayBatchSpawnAsync(spawnEvents, run, BatchIncoming, ct) : UniTask.CompletedTask;
         }
 
-        public void SetAim(int shooterIndex, float launchX01, Vector2 direction, int predictedCount, Vector2[] predictedPoints, bool visible)
+        public void SetAim(int shooterIndex, float launchX01, float launchY01, Vector2 direction, int predictedCount, Vector2[] predictedPoints, bool visible)
         {
-            if (enabled) presenter.SetAim(shooterIndex, launchX01, direction, predictedCount, predictedPoints, visible);
+            if (enabled) presenter.SetAim(shooterIndex, launchX01, launchY01, direction, predictedCount, predictedPoints, visible);
         }
 
         public void SetPlayers(int numPlayers)

@@ -23,6 +23,7 @@ namespace Nex.BilliardRogue
             public int next;
             public float timer;
             public float launchX01;
+            public float launchY01;
             public Vector2 direction;
             public bool powerShot;
             public float power01;
@@ -90,7 +91,7 @@ namespace Nex.BilliardRogue
             StopVolleys();
             for (var p = 0; p < services.Inputs.Length; p++)
             {
-                services.Board.SetAim(p, 0.5f, Vector2.up, 0, aimPoints, false);
+                services.Board.SetAim(p, 0.5f, 0.5f, Vector2.up, 0, aimPoints, false);
                 ClearTrackingWarning(p);
             }
 
@@ -188,6 +189,7 @@ namespace Nex.BilliardRogue
                 next = 0,
                 timer = 0f,
                 launchX01 = input.LaunchX01,
+                launchY01 = input.LaunchY01,
                 direction = ArenaGeometry.ClampAim(services.Rules.arena, strike.direction),
                 powerShot = strike.isPowerShot,
                 power01 = strike.power01,
@@ -220,7 +222,7 @@ namespace Nex.BilliardRogue
                 while (volley.timer <= 0f && volley.next < bag.Count)
                 {
                     var ball = bag[volley.next++];
-                    var origin = ArenaGeometry.LaunchOrigin(arena, volley.launchX01);
+                    var origin = ArenaGeometry.LaunchOrigin(arena, volley.launchX01, volley.launchY01);
                     services.Sim.Launch(ball, origin, volley.direction, volley.powerShot, p);
                     services.Analytics.ShotFired(ball.type, ball.level, Mathf.Atan2(volley.direction.y, volley.direction.x) * Mathf.Rad2Deg,
                         volley.power01, p);
@@ -275,6 +277,7 @@ namespace Nex.BilliardRogue
             var volley = volleys[player];
             var launching = volley.next >= 0;
             var launchX = launching ? volley.launchX01 : input.LaunchX01;
+            var launchY = launching ? volley.launchY01 : input.LaunchY01;
             var direction = launching ? volley.direction : ArenaGeometry.ClampAim(arena, input.AimDirection);
             var visible = launching || WantsStrike(player);
             var count = 0;
@@ -282,10 +285,10 @@ namespace Nex.BilliardRogue
             {
                 var pacing = services.Pacing;
                 var length = pacing.AimGuideLength(services.AimGuideSetting);
-                count = services.Sim.PredictPath(ArenaGeometry.LaunchOrigin(arena, launchX), direction, length, pacing.AimGuideMaxBounces, aimPoints);
+                count = services.Sim.PredictPath(ArenaGeometry.LaunchOrigin(arena, launchX, launchY), direction, length, pacing.AimGuideMaxBounces, aimPoints);
             }
 
-            services.Board.SetAim(player, launchX, direction, count, aimPoints, visible);
+            services.Board.SetAim(player, launchX, launchY, direction, count, aimPoints, visible);
         }
 
         void UpdateFastForward(float unscaledDeltaTime)

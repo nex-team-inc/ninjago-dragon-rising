@@ -28,6 +28,7 @@ namespace Nex.BilliardRogue.Editor.Tests
             public int Consumes;
             public bool IsTracking { get; set; } = true;
             public float LaunchX01 => 0.5f;
+            public float LaunchY01 => 0.5f;
             public Vector2 AimDirection => Vector2.up;
 
             public bool TryConsumeStrike(out StrikeInfo strike)
@@ -48,6 +49,7 @@ namespace Nex.BilliardRogue.Editor.Tests
             public int Strikes;
             public bool IsTracking => true;
             public float LaunchX01 { get; set; } = 0.5f;
+            public float LaunchY01 => 0.5f;
             public Vector2 AimDirection => Vector2.up;
 
             public bool TryConsumeStrike(out StrikeInfo strike)

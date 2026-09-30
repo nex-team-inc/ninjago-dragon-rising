@@ -179,6 +179,7 @@ namespace Nex.BilliardRogue.Editor
 
         public bool IsTracking => true;
         public float LaunchX01 { get; private set; } = 0.5f;
+        public float LaunchY01 => 0.5f;
         public Vector2 AimDirection { get; private set; } = Vector2.up;
 
         public bool TryConsumeStrike(out StrikeInfo strike)

@@ -30,6 +30,7 @@ namespace Nex.BilliardRogue
         ControlTuning tuning = ControlTuning.Identity;
         StrikeDetector detector = null!;
         OneEuroFilter launchFilter = null!;
+        OneEuroFilter launchYFilter = null!;
         OneEuroFilter aimFilterX = null!;
         OneEuroFilter aimFilterY = null!;
         PawRoles roles = null!;
@@ -48,6 +49,7 @@ namespace Nex.BilliardRogue
         public int PlayerIndex { get; private set; }
         public bool IsTracking { get; private set; }
         public float LaunchX01 { get; private set; } = 0.5f;
+        public float LaunchY01 { get; private set; } = 0.5f;
         /// <summary>Held at the pre-strike aim while a strike is in progress so the guide does not wobble.</summary>
         public Vector2 AimDirection => detector.IsApproaching ? heldAim : liveAim;
         /// <summary>The right paw holds the ball (it is the upper paw); the left paw is the cue.</summary>
@@ -176,7 +178,7 @@ namespace Nex.BilliardRogue
                     ResetFilters();
                 }
                 lastPoseTime = now;
-                UpdateLaunch(ball.x, now);
+                UpdateLaunch(ball, now);
                 UpdateAim(ball - cue, now);
             }
 
@@ -262,14 +264,19 @@ namespace Nex.BilliardRogue
             return true;
         }
 
-        void UpdateLaunch(float ballX, float now)
+        void UpdateLaunch(Vector2 ball, float now)
         {
-            var x = launchFilter.Filter(ballX, now);
+            var x = launchFilter.Filter(ball.x, now);
             config.LaunchRangeFor(tuning, out var rangeMin, out var rangeMax);
             var mirrored = roles.BallIsRight;
             var min = mirrored ? -rangeMax : rangeMin;
             var max = mirrored ? -rangeMin : rangeMax;
             LaunchX01 = RemapUtils.RemapAndClamp(x, min, max, 0f, 1f);
+            // The ball paw's height nudges the launch point a little on y (GDD v2 §21); equal min/max turns it off.
+            var y = launchYFilter.Filter(ball.y, now);
+            LaunchY01 = Mathf.Approximately(config.LaunchYMaxInches, config.LaunchYMinInches)
+                ? 0.5f
+                : RemapUtils.RemapAndClamp(y, config.LaunchYMinInches, config.LaunchYMaxInches, 0f, 1f);
         }
 
         void UpdateAim(Vector2 cueToBall, float now)
@@ -289,6 +296,7 @@ namespace Nex.BilliardRogue
         {
             var aimCutoff = config.AimMinCutoffFor(tuning);
             launchFilter = new OneEuroFilter(config.LaunchXMinCutoff, config.LaunchXBeta);
+            launchYFilter = new OneEuroFilter(config.LaunchXMinCutoff, config.LaunchXBeta);
             aimFilterX = new OneEuroFilter(aimCutoff, config.AimBeta);
             aimFilterY = new OneEuroFilter(aimCutoff, config.AimBeta);
         }

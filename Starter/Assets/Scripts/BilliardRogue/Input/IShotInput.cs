@@ -20,6 +20,8 @@ namespace Nex.BilliardRogue
         bool IsTracking { get; }
         /// <summary>Cat / ball position along the launch line, 0 = left wall, 1 = right wall.</summary>
         float LaunchX01 { get; }
+        /// <summary>Small vertical nudge of the ball paw, 0.5 = the launch line (ArenaGeometry.LaunchOrigin, GDD v2 §21).</summary>
+        float LaunchY01 { get; }
         /// <summary>Sim-space aim direction, normalized and clamped upward.</summary>
         Vector2 AimDirection { get; }
         /// <summary>Returns the strike detected since the last call (at most once per strike).</summary>

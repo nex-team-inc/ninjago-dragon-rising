@@ -87,6 +87,8 @@ namespace Nex.BilliardRogue.Simulation
         public int rows = 10;
         public float launchZoneHeight = 1.6f;
         public float launchY = 0.55f;
+        /// <summary>Cells the ball paw may nudge the launch point up or down from launchY (GDD v2 §21); kept in the launch zone.</summary>
+        public float launchYRange = 0.5f;
         public float ballRadius = 0.2f;
         public float ballSpeed = 13f;
         public float enemyInset = 0.08f;

@@ -243,12 +243,12 @@ namespace Nex.BilliardRogue
 
         #region Aim & cats
 
-        public void SetAim(int shooterIndex, float launchX01, Vector2 dir, int predictedCount, Vector2[] predictedPoints, bool visible)
+        public void SetAim(int shooterIndex, float launchX01, float launchY01, Vector2 dir, int predictedCount, Vector2[] predictedPoints, bool visible)
         {
             var player = Mathf.Clamp(shooterIndex, 0, cats.Length - 1);
             var cat = cats[player];
             var guide = aimGuides[player];
-            cat.SetLaunchX(launchX01);
+            cat.SetLaunch(launchX01, launchY01);
             cat.SetAim(ArenaGeometry.ClampAim(rules.arena, dir), visible);
             if (!visible)
             {
@@ -262,7 +262,7 @@ namespace Nex.BilliardRogue
             }
             else
             {
-                var origin = ArenaGeometry.LaunchOrigin(rules.arena, launchX01);
+                var origin = ArenaGeometry.LaunchOrigin(rules.arena, launchX01, launchY01);
                 fallbackPath[0] = origin;
                 fallbackPath[1] = origin + ArenaGeometry.ClampAim(rules.arena, dir) * 3f;
                 guide.SetPath(2, fallbackPath);

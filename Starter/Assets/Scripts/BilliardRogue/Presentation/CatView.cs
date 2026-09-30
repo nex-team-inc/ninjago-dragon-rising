@@ -48,6 +48,8 @@ namespace Nex.BilliardRogue
         int playerIndex;
         float currentX01 = 0.5f;
         float targetX01 = 0.5f;
+        float currentY01 = 0.5f;
+        float targetY01 = 0.5f;
         float phase;
         float earTimer;
         float strikeT = 1f;
@@ -130,6 +132,7 @@ namespace Nex.BilliardRogue
             {
                 var step = settings.walkSpeed / layout.Rules.columns * dt;
                 currentX01 = Mathf.MoveTowards(currentX01, targetX01, step);
+                currentY01 = Mathf.MoveTowards(currentY01, targetY01, step);
             }
 
             Place();
@@ -217,6 +220,13 @@ namespace Nex.BilliardRogue
             targetX01 = Mathf.Clamp01(x01);
         }
 
+        /// <summary>Launch X and the small vertical nudge (GDD v2 §21) the ball / cue follow.</summary>
+        public void SetLaunch(float x01, float y01)
+        {
+            targetX01 = Mathf.Clamp01(x01);
+            targetY01 = Mathf.Clamp01(y01);
+        }
+
         /// <summary>Active shooter: pennant on, stands at the launch X; inactive: waits at the side.</summary>
         public void SetActive(bool isActive)
         {
@@ -224,6 +234,7 @@ namespace Nex.BilliardRogue
             pennant.gameObject.SetActive(isActive);
             if (isActive) return;
             targetX01 = playerIndex == 0 ? settings.waitingX01 : 1f - settings.waitingX01;
+            targetY01 = 0.5f;
             aimVisible = false;
         }
 
@@ -322,7 +333,7 @@ namespace Nex.BilliardRogue
 
             if (!shown) return;
             var rules = layout.Rules;
-            var origin = Simulation.ArenaGeometry.LaunchOrigin(rules, targetX01);
+            var origin = Simulation.ArenaGeometry.LaunchOrigin(rules, targetX01, targetY01);
             var ball = layout.ToWorld(origin, rules.ballRadius);
             var flat = layout.ToWorld(origin + aimDirection, rules.ballRadius) - ball;
             flat.y = 0f;

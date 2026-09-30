@@ -51,6 +51,7 @@ namespace Nex.BilliardRogue
         public int PlayerIndex { get; private set; }
         public bool IsTracking { get; private set; } = true;
         public float LaunchX01 { get; private set; } = 0.5f;
+        public float LaunchY01 => 0.5f;
         public Vector2 AimDirection { get; private set; } = Vector2.up;
         /// <summary>Simulated motion energy: the Hype key held = 1, else the mouse speed (IMotionEnergy).</summary>
         public float Energy01 { get; private set; }

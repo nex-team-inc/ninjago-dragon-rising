@@ -112,6 +112,7 @@ namespace Nex.BilliardRogue
 
         public bool IsTracking => active.IsTracking;
         public float LaunchX01 => active.LaunchX01;
+        public float LaunchY01 => active.LaunchY01;
         public Vector2 AimDirection => active.AimDirection;
 
         public bool TryConsumeStrike(out StrikeInfo strike) => active.TryConsumeStrike(out strike);

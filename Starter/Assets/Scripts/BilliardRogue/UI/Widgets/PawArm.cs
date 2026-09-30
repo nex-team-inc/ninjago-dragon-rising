@@ -80,6 +80,15 @@ namespace Nex.BilliardRogue
             Apply(rise);
         }
 
+        /// <summary>Moving shoulder (gameplay arms): the shoulder at shoulderPosition, the paw at pawPosition, no smoothing.</summary>
+        public void Reach(Vector2 shoulderPosition, Vector2 pawPosition)
+        {
+            home = shoulderPosition;
+            current = pawPosition;
+            hasCurrent = true;
+            Apply(1f);
+        }
+
         /// <summary>rise 0 = shoulder and paw pulled below the screen edge, 1 = in place.</summary>
         void Apply(float rise)
         {

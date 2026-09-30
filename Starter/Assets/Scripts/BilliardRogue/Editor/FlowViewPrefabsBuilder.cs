@@ -138,15 +138,16 @@ namespace Nex.BilliardRogue.Editor
             var stage = kit.Image(card, "Stage", theme.BarBackground, Kit.Top, new Vector2(0f, -104f), new Vector2(576f, 288f), Fill.Sliced);
             stage.gameObject.AddComponent<RectMask2D>();
             var s = stage.transform;
-            // GDD v2 §16: the upper paw holds the ball, the lower paw (the cue) thrusts up into it.
-            var ballPaw = Paw(kit, s, "BallPaw", new Vector2(-24f, 20f), 0f, LocKeys.Calibration.BallPawTag, new Vector2(-120f, 0f));
+            // GDD v2 §16, §19: cat arms rise into the stage; the upper paw holds the ball, the lower paw grips the cue
+            // and thrusts it up into the ball paw.
+            var ballPaw = CatArm(kit, s, "BallPaw", new Vector2(-24f, 20f), -15f, theme.PawOpen(0), false, LocKeys.Calibration.BallPawTag, new Vector2(-128f, 0f));
             var ball = kit.Image(s, "Ball", theme.Ball, Kit.Center, new Vector2(-24f, 92f), new Vector2(64f, 64f));
             var ballGroup = ball.gameObject.AddComponent<CanvasGroup>();
             var burst = kit.Image(s, "Burst", theme.Strike, Kit.Center, Vector2.zero, new Vector2(64f, 64f));
             var burstGroup = burst.gameObject.AddComponent<CanvasGroup>();
             burstGroup.alpha = 0f;
-            // Toes point up at the ball paw.
-            var cuePaw = Paw(kit, s, "CuePaw", new Vector2(48f, -84f), 20f, LocKeys.Calibration.CuePawTag, new Vector2(120f, 0f));
+            // The cue points from the fist up at the ball paw (the rest offset is 72 right, 104 down).
+            var cuePaw = CatArm(kit, s, "CuePaw", new Vector2(48f, -84f), 35f, theme.PawGrab(0), true, LocKeys.Calibration.CuePawTag, new Vector2(128f, 0f));
             ball.transform.SetAsLastSibling();
 
             var illustration = stage.gameObject.AddComponent<CalibrationTutorialIllustration>();
@@ -169,14 +170,36 @@ namespace Nex.BilliardRogue.Editor
             return illustration;
         }
 
-        /// <summary>Paw root (moved by the illustration) with the glyph (rotated) and an unrotated Ball / Cue tag beside it.</summary>
-        static RectTransform Paw(Kit kit, Transform parent, string name, Vector2 pos, float rotation, string tagKey, Vector2 tagOffset)
+        /// <summary>
+        /// Arm root (moved by the illustration): a rotated cat arm (P1 fur sleeve running down out of the clipped stage,
+        /// the paw sprite at its end, optionally a cue stick gripped in the fist and pointing along the arm) and an
+        /// unrotated Ball / Cue tag beside it.
+        /// </summary>
+        static RectTransform CatArm(Kit kit, Transform parent, string name, Vector2 pos, float rotation, Sprite? pawSprite, bool holdsCue,
+            string tagKey, Vector2 tagOffset)
         {
+            // make_arms.py sprites (sleeve 24 px wide, paw 36x40 px, cuff bottom 6 px above the paw's lower edge) at 3x.
+            const float scale = 3f;
             var theme = kit.Theme;
             var root = kit.Ui(name, parent);
-            var rect = Kit.Place(root, Kit.Center, pos, new Vector2(96f, 96f));
-            var glyph = kit.Image(root.transform, "Glyph", theme.Paw, Kit.Center, Vector2.zero, new Vector2(96f, 96f));
-            glyph.rectTransform.localRotation = Quaternion.Euler(0f, 0f, rotation);
+            var rect = Kit.Place(root, Kit.Center, pos, new Vector2(36f * scale, 40f * scale));
+            var arm = kit.Ui("Arm", root.transform);
+            Kit.Place(arm, Kit.Center, Vector2.zero, new Vector2(36f * scale, 40f * scale));
+            arm.transform.localRotation = Quaternion.Euler(0f, 0f, rotation);
+            var sleeve = kit.Image(arm.transform, "Sleeve", theme.Arm(0), Kit.Center, new Vector2(0f, -14f * scale), new Vector2(24f * scale, 400f));
+            sleeve.rectTransform.pivot = new Vector2(0.5f, 1f);
+            sleeve.type = Image.Type.Tiled;
+            sleeve.preserveAspect = false;
+            sleeve.pixelsPerUnitMultiplier = 3f / scale;
+            if (holdsCue)
+            {
+                var stick = kit.Image(arm.transform, "Cue", null, Kit.Center, new Vector2(0f, -8f * scale), new Vector2(10f, 136f), color: new Color(0.62f, 0.39f, 0.2f, 1f));
+                stick.rectTransform.pivot = new Vector2(0.5f, 0f);
+                var tip = kit.Image(stick.transform, "Tip", null, Kit.Top, Vector2.zero, new Vector2(10f, 12f), color: new Color(0.93f, 0.95f, 1f, 1f));
+                tip.rectTransform.pivot = new Vector2(0.5f, 1f);
+            }
+
+            kit.Image(arm.transform, "Paw", pawSprite, Kit.Center, Vector2.zero, new Vector2(36f * scale, 40f * scale));
             var tag = kit.Image(root.transform, "Tag", theme.Chip, Kit.Center, tagOffset, new Vector2(128f, 48f), Fill.Sliced);
             kit.Label(tag.transform, "Label", tagKey, 32, theme.Accent, Kit.Center, new Vector2(0f, 2f), new Vector2(120f, 48f));
             return rect;

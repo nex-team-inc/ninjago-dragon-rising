@@ -12,8 +12,8 @@ namespace Nex.BilliardRogue.Editor
 {
     /// <summary>
     /// Builds the board-level prefabs for WorldPrefabsBuilder: the cat knight (model, cue, pennant, palettes), the
-    /// UI label prefabs (WorldLabel, DamageNumber, WorldLabelLayer) and World/BoardPresenter.prefab with its pools,
-    /// aim guide, two cats and camera shaker, wiring every serialized reference.
+    /// UI label prefabs (WorldLabel, DamageNumber, WorldLabelLayer), the cat arms layer and World/BoardPresenter.prefab
+    /// with its pools, aim guide, two cats and camera shaker, wiring every serialized reference.
     /// </summary>
     public static class BoardPrefabBuilder
     {
@@ -22,6 +22,10 @@ namespace Nex.BilliardRogue.Editor
         const string LabelPath = Root + "/Board/WorldLabel.prefab";
         const string NumberPath = Root + "/Board/DamageNumber.prefab";
         const string LabelLayerPath = Root + "/Board/WorldLabelLayer.prefab";
+        public const string CatArmsPath = Root + "/Board/CatArmsLayer.prefab";
+        const string UiSprites = "Assets/Sprites/BilliardRogue/UI/";
+        // Cat arm sprites (make_arms.py: sleeve 24 px wide, paw 36x40 px) at 2x canvas units per sprite pixel.
+        const float ArmScale = 2f;
         const string PresenterPath = Root + "/World/BoardPresenter.prefab";
         const int BounceMarkers = 8;
 
@@ -157,6 +161,72 @@ namespace Nex.BilliardRogue.Editor
             SerializedPropertyWriter.Write(layerSo.FindProperty("telegraphIcons"), telegraphIcons);
             layerSo.ApplyModifiedPropertiesWithoutUndo();
             WorldPrefabModels.SavePrefab(layer, LabelLayerPath);
+            BuildCatArms();
+        }
+
+        /// <summary>
+        /// Cat arms layer (GDD v2 §19): a full-stretch canvas with, per player, a ball arm (open paw) and a cue arm (fist)
+        /// in P1 orange / P2 charcoal; the ball arms draw first, so a cue fist sits over a crossing ball arm.
+        /// </summary>
+        public static void BuildCatArms()
+        {
+            var layer = NewRect("CatArmsLayer", null, Vector2.zero);
+            var layerRect = layer.GetComponent<RectTransform>();
+            layerRect.anchorMin = Vector2.zero;
+            layerRect.anchorMax = Vector2.one;
+            layerRect.offsetMin = Vector2.zero;
+            layerRect.offsetMax = Vector2.zero;
+            // The arms move every frame: an own canvas keeps those rebuilds off the GameplayView canvas.
+            layer.AddComponent<Canvas>();
+            var ballArms = new List<PawArm>();
+            var cueArms = new List<PawArm>();
+            for (var p = 1; p <= 2; p++)
+            {
+                ballArms.Add(BuildArm(layer.transform, $"BallArm_P{p}", $"Arm_P{p}.png", $"Paw_P{p}_Open.png"));
+            }
+
+            for (var p = 1; p <= 2; p++)
+            {
+                cueArms.Add(BuildArm(layer.transform, $"CueArm_P{p}", $"Arm_P{p}.png", $"Paw_P{p}_Grab.png"));
+            }
+
+            var view = layer.AddComponent<CatArmsLayer>();
+            var so = new SerializedObject(view);
+            so.FindProperty("rect").objectReferenceValue = layerRect;
+            SerializedPropertyWriter.Write(so.FindProperty("ballArms"), ballArms);
+            SerializedPropertyWriter.Write(so.FindProperty("cueArms"), cueArms);
+            so.ApplyModifiedPropertiesWithoutUndo();
+            WorldPrefabModels.SavePrefab(layer, CatArmsPath);
+        }
+
+        /// <summary>Shoulder (pivot, rotated) → tiled fur sleeve (bottom pivot) + paw (palm-centre pivot) at the sleeve end.</summary>
+        static PawArm BuildArm(Transform parent, string name, string sleeveFile, string pawFile)
+        {
+            var go = NewRect(name, parent, new Vector2(24f * ArmScale, 24f * ArmScale));
+            var sleeveGo = NewRect("Sleeve", go.transform, new Vector2(24f * ArmScale, 200f));
+            var sleeveRect = sleeveGo.GetComponent<RectTransform>();
+            sleeveRect.pivot = new Vector2(0.5f, 0f);
+            var sleeve = sleeveGo.AddComponent<Image>();
+            sleeve.sprite = WorldPrefabModels.LoadSprite(UiSprites + sleeveFile);
+            sleeve.type = Image.Type.Tiled;
+            // UI sprites import at 3x (PPU 100/3); 1.5 tiles them at 2x.
+            sleeve.pixelsPerUnitMultiplier = 3f / ArmScale;
+            sleeve.raycastTarget = false;
+            var pawGo = NewRect("Paw", go.transform, new Vector2(36f * ArmScale, 40f * ArmScale));
+            pawGo.transform.localPosition = new Vector3(0f, 200f, 0f);
+            var paw = pawGo.AddComponent<Image>();
+            paw.sprite = WorldPrefabModels.LoadSprite(UiSprites + pawFile);
+            paw.raycastTarget = false;
+            var arm = go.AddComponent<PawArm>();
+            var so = new SerializedObject(arm);
+            so.FindProperty("shoulder").objectReferenceValue = go.transform;
+            so.FindProperty("sleeve").objectReferenceValue = sleeveRect;
+            so.FindProperty("sleeveImage").objectReferenceValue = sleeve;
+            so.FindProperty("paw").objectReferenceValue = pawGo.transform;
+            so.FindProperty("pawImage").objectReferenceValue = paw;
+            so.FindProperty("minLength").floatValue = 40f;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            return arm;
         }
 
         static GameObject NewRect(string name, Transform? parent, Vector2 size)
@@ -250,6 +320,7 @@ namespace Nex.BilliardRogue.Editor
             so.FindProperty("labelLayerPrefab").objectReferenceValue = AssetDatabase.LoadAssetAtPath<WorldLabelLayer>(LabelLayerPath);
             so.FindProperty("labelPrefab").objectReferenceValue = AssetDatabase.LoadAssetAtPath<WorldLabel>(LabelPath);
             so.FindProperty("damageNumberPrefab").objectReferenceValue = AssetDatabase.LoadAssetAtPath<DamageNumber>(NumberPath);
+            so.FindProperty("catArmsPrefab").objectReferenceValue = AssetDatabase.LoadAssetAtPath<CatArmsLayer>(CatArmsPath);
             so.ApplyModifiedPropertiesWithoutUndo();
             WorldPrefabModels.SavePrefab(root, PresenterPath);
         }

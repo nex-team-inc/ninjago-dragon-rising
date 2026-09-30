@@ -42,6 +42,8 @@ namespace Nex.BilliardRogue
         [SerializeField] WorldLabelLayer labelLayerPrefab = null!;
         [SerializeField] WorldLabel labelPrefab = null!;
         [SerializeField] DamageNumber damageNumberPrefab = null!;
+        [Tooltip("Cat arms holding the ball and the cue (GDD v2 §19); under the labels, so numbers draw on top.")]
+        [SerializeField] CatArmsLayer? catArmsPrefab;
 
         BilliardRogueConfig config = null!;
         GameRules rules = null!;
@@ -75,6 +77,7 @@ namespace Nex.BilliardRogue
             layout = aLayout;
             var worldLayer = WorldLayers.Resolve();
             WorldLayers.Apply(gameObject, worldLayer);
+            if (catArmsPrefab != null) Instantiate(catArmsPrefab, labelLayer).Initialize(display, config.Juice, layout, cats);
             labels = Instantiate(labelLayerPrefab, labelLayer);
             labels.Initialize(display, config.Juice, labelPrefab, damageNumberPrefab);
             cameraShaker.Initialize(display.WorldCamera, layout.GridCenterWorld, config.Visual.RenderResolution.y);
@@ -295,7 +298,7 @@ namespace Nex.BilliardRogue
         /// <summary>
         /// Hype 0..1 (GDD v2 §3) scales the flight and hit juice: ball glow / size / trail, hit VFX and extra sparks,
         /// camera shake, damage numbers, the tier-3 rim aura and the dancing cats. Call every frame (or on change);
-        /// the look follows smoothly. Hit-stop time stays with Gameplay.
+        /// the look follows smoothly. Time scaling stays with Gameplay.
         /// </summary>
         public void SetHype(float hype01)
         {

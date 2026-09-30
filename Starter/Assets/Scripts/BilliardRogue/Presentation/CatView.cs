@@ -40,6 +40,7 @@ namespace Nex.BilliardRogue
         Renderer[] renderers = System.Array.Empty<Renderer>();
         Renderer[] cueRenderers = System.Array.Empty<Renderer>();
         float cueTipLocalZ;
+        float cueButtLocalZ;
         Vector2 aimDirection = Vector2.up;
         bool aimVisible;
         bool cueShown;
@@ -68,6 +69,13 @@ namespace Nex.BilliardRogue
         public Vector3 Position { get; private set; }
         public Vector3 LabelAnchor => Position + Vector3.up * (labelHeight * layout.CellSize * settings.modelScale);
         public Vector3 Center => Position + Vector3.up * (0.5f * layout.CellSize * settings.modelScale);
+        /// <summary>The cue lies behind the waiting ball (no cat, a shot waits): the cat arms hold the ball and the cue.</summary>
+        public bool CueShown => cueShown && !visible;
+        /// <summary>Centre of the waiting ball (valid while CueShown).</summary>
+        public Vector3 BallWorld { get; private set; }
+        /// <summary>Cue tip and butt (valid while CueShown; they follow the strike thrust).</summary>
+        public Vector3 CueTipWorld { get; private set; }
+        public Vector3 CueButtWorld { get; private set; }
 
         #region Life Cycle
 
@@ -101,7 +109,7 @@ namespace Nex.BilliardRogue
             {
                 renderers = GetComponentsInChildren<Renderer>(true);
                 cueRenderers = cue.GetComponentsInChildren<Renderer>(true);
-                cueTipLocalZ = MeasureCueTip();
+                MeasureCue(out cueButtLocalZ, out cueTipLocalZ);
             }
 
             ApplyVisibility();
@@ -321,13 +329,18 @@ namespace Nex.BilliardRogue
             // The strike thrusts the tip through the ball's spot and draws it back; at rest it breathes a little.
             var reach = rules.ballRadius + settings.cueGap - Easing.Punch(strikeT) * settings.cuePullBack + Mathf.Sin(phase * 2.4f) * 0.02f;
             var tip = ball - forward * (reach * layout.CellSize);
-            cue.SetPositionAndRotation(tip - forward * (cueTipLocalZ * cue.lossyScale.z), Quaternion.LookRotation(forward, Vector3.up));
+            var cueOrigin = tip - forward * (cueTipLocalZ * cue.lossyScale.z);
+            cue.SetPositionAndRotation(cueOrigin, Quaternion.LookRotation(forward, Vector3.up));
+            BallWorld = ball;
+            CueTipWorld = tip;
+            CueButtWorld = cueOrigin + forward * (cueButtLocalZ * cue.lossyScale.z);
         }
 
-        /// <summary>The cue tip's distance along the cue's +Z (TDD §14.1: the cue points along +Z), in its own space.</summary>
-        float MeasureCueTip()
+        /// <summary>The cue's butt and tip along its +Z (TDD §14.1: the cue points along +Z), in its own space.</summary>
+        void MeasureCue(out float butt, out float tip)
         {
-            var tip = 0f;
+            tip = 0f;
+            butt = float.PositiveInfinity;
             var toCue = cue.worldToLocalMatrix;
             foreach (var filter in cue.GetComponentsInChildren<MeshFilter>(true))
             {
@@ -340,11 +353,13 @@ namespace Nex.BilliardRogue
                         (corner & 1) == 0 ? bounds.min.x : bounds.max.x,
                         (corner & 2) == 0 ? bounds.min.y : bounds.max.y,
                         (corner & 4) == 0 ? bounds.min.z : bounds.max.z);
-                    tip = Mathf.Max(tip, toCueFromMesh.MultiplyPoint3x4(point).z);
+                    var z = toCueFromMesh.MultiplyPoint3x4(point).z;
+                    tip = Mathf.Max(tip, z);
+                    butt = Mathf.Min(butt, z);
                 }
             }
 
-            return tip;
+            if (float.IsPositiveInfinity(butt)) butt = 0f;
         }
 
         void Place()

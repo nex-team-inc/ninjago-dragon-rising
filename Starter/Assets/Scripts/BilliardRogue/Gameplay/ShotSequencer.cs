@@ -72,7 +72,7 @@ namespace Nex.BilliardRogue
         }
 
         /// <summary>
-        /// Counts the cooldowns down in real time (PlayerTurnLoop passes unscaled time, so hit-stop and slow-mo do not
+        /// Counts the cooldowns down in real time (PlayerTurnLoop passes unscaled time, so slow-mo and fast-forward do not
         /// stretch them; the loop is not ticked while paused).
         /// </summary>
         public void Tick(float unscaledDeltaTime)

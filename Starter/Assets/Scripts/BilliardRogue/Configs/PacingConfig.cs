@@ -12,7 +12,7 @@ namespace Nex.BilliardRogue
 
         [Header("Shots")]
         [SerializeField, Range(0f, 2f)] float shotCooldown = 0.35f;
-        [Tooltip("Seconds between two balls of a volley (gameplay time, so hit-stop and slow-mo stretch it).")]
+        [Tooltip("Seconds between two balls of a volley (gameplay time, so slow-mo stretches it).")]
         [SerializeField, Range(0.02f, 0.5f)] float volleyInterval = 0.09f;
         [Tooltip("Seconds of straggler flight (no balls left to shoot) before fast-forward kicks in.")]
         [SerializeField, Range(0f, 10f)] float fastForwardDelay = 2.5f;
@@ -54,8 +54,6 @@ namespace Nex.BilliardRogue
         [SerializeField, Range(0.2f, 5f)] float victoryDuration = 2.2f;
 
         [Header("Time effects")]
-        [SerializeField, Range(0f, 0.3f)] float hitStopKill = 0.04f;
-        [SerializeField, Range(0f, 0.3f)] float hitStopBoss = 0.06f;
         [SerializeField, Range(0f, 2f)] float lastEnemySlowMoDuration = 0.3f;
         [SerializeField, Range(0.05f, 1f)] float lastEnemySlowMoScale = 0.3f;
 
@@ -90,8 +88,6 @@ namespace Nex.BilliardRogue
         public float BossIntroDuration => bossIntroDuration;
         public float DefeatDuration => defeatDuration;
         public float VictoryDuration => victoryDuration;
-        public float HitStopKill => hitStopKill;
-        public float HitStopBoss => hitStopBoss;
         public float LastEnemySlowMoDuration => lastEnemySlowMoDuration;
         public float LastEnemySlowMoScale => lastEnemySlowMoScale;
         public float BgmCrossfadeSeconds => bgmCrossfadeSeconds;

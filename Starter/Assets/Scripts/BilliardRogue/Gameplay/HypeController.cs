@@ -9,8 +9,8 @@ namespace Nex.BilliardRogue
     /// .MotionEnergy, the maximum across players; a missing source counts as 0) charges POWER 0..1 through
     /// HypeConfig.Charge on unscaled time, paid from the run's energy; with no energy dancing charges nothing. POWER
     /// never drains on its own: it holds until ResetTurn (every turn start and end). Every player-turn frame it pushes
-    /// the ball speed / damage multipliers to the simulation, the juice value to the board, the meter tier, energy and
-    /// MOVE! prompt to the HUD and the hit-stop scaling to TimeScaleController, and feeds the per-shot analytics.
+    /// the ball speed / damage multipliers to the simulation, the juice value to the board and the meter tier, energy
+    /// and MOVE! prompt to the HUD, and feeds the per-shot analytics.
     /// Debug: DebugOverride (DebugHooks.SetHype) or DebugSettings.forceHype (≥ 0) set POWER while balls fly, free of
     /// energy. Never touches aim or strikes. Allocation-free.
     /// </summary>
@@ -83,7 +83,6 @@ namespace Nex.BilliardRogue
             services.Hud.SetHype(0f, 0);
             services.Hud.SetEnergy(services.Run.energy, false);
             services.Hud.ShowMovePrompt(false);
-            services.TimeScale.SetHitStopScale(1f, config.HitStopExtraCapPerSecond);
         }
 
         #endregion
@@ -96,7 +95,6 @@ namespace Nex.BilliardRogue
             services.Sim.Balls.SetHype(config.SpeedMultiplier(hype), config.DamageMultiplier(hype), minBonus);
             services.Board.SetHype(hype);
             services.Hud.SetHype(hype, tier);
-            services.TimeScale.SetHitStopScale(config.HitStopMultiplier(hype), config.HitStopExtraCapPerSecond);
         }
 
         // MOVE! asks for dancing only when dancing would pay: balls flying, energy left, the bar not yet full.

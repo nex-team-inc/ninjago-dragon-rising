@@ -122,7 +122,7 @@ namespace Nex.BilliardRogue
         {
             var scaledDeltaTime = unscaledDeltaTime * services.TimeScale.GameplayTimeScale;
             var inputs = services.Inputs;
-            // Real time: hit-stop and slow-mo must not stretch the cooldowns. This loop does not tick under the menu
+            // Real time: slow-mo and fast-forward must not stretch the cooldowns. This loop does not tick under the menu
             // pause or the tracking-lost hold, so both still freeze them.
             services.Sequencer.Tick(unscaledDeltaTime);
             for (var p = 0; p < inputs.Length; p++)

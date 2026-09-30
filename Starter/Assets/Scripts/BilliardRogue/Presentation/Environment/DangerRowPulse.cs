@@ -9,7 +9,7 @@ namespace Nex.BilliardRogue
     /// Emissive pulse of the danger-row inlays (M_DangerTile emission is script-driven, TDD §16). Presentation-Core
     /// reports how threatened the row is through SetDangerLevel (0 = empty: steady dim glow, 1 = fully occupied: fast
     /// bright pulse). All inlays share one runtime material instance so they stay in one SRP batch; the pulse runs on
-    /// unscaled time so hit-stop and pause never freeze it. The component starts disabled and enables itself in Initialize.
+    /// unscaled time so slow-mo and pause never freeze it. The component starts disabled and enables itself in Initialize.
     /// </summary>
     public sealed class DangerRowPulse : MonoBehaviour
     {

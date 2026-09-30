@@ -34,7 +34,7 @@ namespace Nex.BilliardRogue
     /// Hype (GDD v2 §3) → juice. Smooths the gameplay Hype, detects tier rises and pushes the scaled look to the ball
     /// views (glow, size, trail), BoardEventPlayer (hit VFX scale, extra sparks), CameraShaker (shake multiplier),
     /// WorldLabelLayer (damage number size / colour / pop), the tier-3 rim aura and the cats (dance, tier pose).
-    /// Allocation-free; ticked by BoardPresenter.Update with unscaled time so hit-stop never freezes the fade.
+    /// Allocation-free; ticked by BoardPresenter.Update with unscaled time so slow-mo never stretches the fade.
     /// </summary>
     public sealed class HypeJuice
     {

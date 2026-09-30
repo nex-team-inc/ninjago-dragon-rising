@@ -8,7 +8,7 @@ namespace Nex.BilliardRogue
     /// <summary>
     /// Ambient life of one act diorama in a single allocation-free Update: fire lights flicker (with their flame
     /// meshes), crystal lights pulse, tree canopies and banners sway, water bobs. Entries are baked by
-    /// EnvironmentBuilder; base poses are captured in Initialize. Runs on unscaled time (hit-stop never freezes the
+    /// EnvironmentBuilder; base poses are captured in Initialize. Runs on unscaled time (slow-mo never stretches the
     /// world). The component starts disabled and enables itself in Initialize.
     /// </summary>
     public sealed class DioramaAnimator : MonoBehaviour

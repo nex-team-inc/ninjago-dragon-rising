@@ -6,7 +6,7 @@ using Nex.BilliardRogue.Simulation;
 namespace Nex.BilliardRogue
 {
     /// <summary>
-    /// Session-level reactions to player-turn events: hit-stop on kills, crits and boss hits, slow-mo on the last
+    /// Session-level reactions to player-turn events: HUD refreshes on boss hits, heals and pickups, slow-mo on the last
     /// enemy of a stage, boss analytics and the HUD values those events change. Visual/audio hit feedback belongs to
     /// BoardPresenter.Consume.
     /// </summary>
@@ -42,28 +42,14 @@ namespace Nex.BilliardRogue
                 switch (ev.kind)
                 {
                     case SimEventKind.EnemyHit:
-                        if (sim.IsBoss(ev.enemyType))
-                        {
-                            timeScale.HitStop(pacing.HitStopBoss);
-                            bossDirty = true;
-                        }
-                        else if (ev.flag)
-                        {
-                            timeScale.HitStop(pacing.HitStopKill);
-                        }
-
+                        bossDirty |= sim.IsBoss(ev.enemyType);
                         break;
                     case SimEventKind.EnemyKilled:
                         killed = true;
                         if (ev.flag)
                         {
-                            timeScale.HitStop(pacing.HitStopBoss);
                             services.Analytics.BossDefeated(ev.enemyType, services.Run.turnInStage + 1);
                             bossDirty = true;
-                        }
-                        else
-                        {
-                            timeScale.HitStop(pacing.HitStopKill);
                         }
 
                         break;

@@ -8,7 +8,7 @@ namespace Nex.BilliardRogue
     /// POWER (GDD v2 §17, playtest 5): while balls fly, the players' body motion charges the POWER bar 0..1 and every bit
     /// of charge spends run energy (RunState.energy; defeating enemies refills it, BalanceRules). With no energy dancing
     /// charges nothing. The bar never drains on its own and resets at every turn. Read by HypeController (Gameplay),
-    /// which pushes the speed / damage / hit-stop multipliers and the HUD meter tier. Presentation juice (glow, shake,
+    /// which pushes the speed / damage multipliers and the HUD meter tier. Presentation juice (glow, shake,
     /// VFX scale) lives in JuiceConfig and follows the pushed value.
     /// </summary>
     [CreateAssetMenu(fileName = "HypeConfig", menuName = "Nex/Billiard Rogue/Hype Config", order = 55)]
@@ -46,12 +46,6 @@ namespace Nex.BilliardRogue
         [SerializeField, Range(1, TierCount)] int minBonusTier = 2;
         [SerializeField, Range(0, 5)] int minBonusDamage = 1;
 
-        [Header("Hit-stop")]
-        [Tooltip("Hit-stop duration multiplier at power 1 (lerp from 1).")]
-        [SerializeField, Range(1f, 5f)] float maxHitStopMultiplier = 3f;
-        [Tooltip("Most extra hit-stop (seconds) the power may add per real second, so pacing never stalls.")]
-        [SerializeField, Range(0f, 0.5f)] float hitStopExtraCapPerSecond = 0.12f;
-
         public float EnergyPerFullPower => energyPerFullPower;
         public float MovePromptBelowMotion => movePromptBelowMotion;
         public float MovePromptDelay => movePromptDelay;
@@ -59,7 +53,6 @@ namespace Nex.BilliardRogue
         public float TierHysteresis => tierHysteresis;
         public int MinBonusTier => minBonusTier;
         public int MinBonusDamage => minBonusDamage;
-        public float HitStopExtraCapPerSecond => hitStopExtraCapPerSecond;
 
         /// <summary>
         /// One charge step: motion01 for seconds raises power (never past 1) as far as energy pays for it. Returns the
@@ -86,7 +79,5 @@ namespace Nex.BilliardRogue
         public float SpeedMultiplier(float power01) => Mathf.Lerp(1f, maxSpeedMultiplier, power01);
 
         public float DamageMultiplier(float power01) => Mathf.Lerp(1f, maxDamageMultiplier, power01);
-
-        public float HitStopMultiplier(float power01) => Mathf.Lerp(1f, maxHitStopMultiplier, power01);
     }
 }

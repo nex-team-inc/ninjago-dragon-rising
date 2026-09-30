@@ -1,0 +1,61 @@
+# Arm_P1 - P1's orange-tabby fur sleeve. The UI stretches it from the shoulder (below the screen) to the paw and
+# tiles it vertically (Image Tiled, 2x), so the painting wraps top to bottom ('tile').
+# Painted as a lit cylinder: light top-left, so the left outline catches light, a highlight band sits a third of the
+# way in, and the form shadow is a crescent on the right with a thin reflected light before the dark outline.
+# Tabby stripes are rings round the leg; the arm points away from the viewer, so each ring bows up in the middle.
+# A stripe is the deep tone on the base and shadow, the shadow tone where it crosses the highlight.
+# Columns match the cuff of Paw_P1_* (paw x = sleeve x + 6) so the paw joins seamlessly.
+size 24 16
+tile
+key
+  K #3a1a0a  ink: outline on the shadow side (the darkest fur tone)
+  X #8f4c0d  deep fur: lit-side outline, core shadow, stripes in shadow
+  H #ee8a5e  lit fur
+  F #d67244  fur base
+  S #bb612a  fur shadow, reflected light
+draft
+  X......................K
+  X......................K
+  X......................K
+  X......................K
+  X......................K
+  X......................K
+  X......................K
+  X......................K
+  X......................K
+  X......................K
+  X......................K
+  X......................K
+  X......................K
+  X......................K
+  X......................K
+  X......................K
+seeds
+  F 11 8
+ops
+  # the highlight band, dragged down the lit side, then the rim just inside the outline turns away again
+  band F H -1 0 5
+  band =H F -1 0 1
+  # the form shadow on the far side, its core, and the thin reflected light against the outline
+  band F S 1 0 8
+  band =S X 1 0 4
+  band =X S 1 0 1
+# tabby rings, placed by hand: a bold 2 px ring (top and bottom edges step together so it keeps its thickness,
+# tapering to a point at each end) and a thin ring that breaks off before the highlight
+shade
+  ........................
+  ........................
+  ........................
+  ........XXXXXXX.........
+  .....SXXXXXXXXXXXX......
+  ..SSSSXX.......XXXXXX...
+  ...SS.............XX....
+  ........................
+  ........................
+  ........................
+  .........XXXXX..........
+  ......XXX.....XXXX......
+  ..................XXX...
+  ........................
+  ........................
+  ........................

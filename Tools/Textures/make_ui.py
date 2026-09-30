@@ -28,6 +28,7 @@ sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.join(os.path.dirname(HERE), "Fonts"))
 import build_pixel_font as bpf  # noqa: E402
 import make_icons as mi  # noqa: E402
+import paintkit  # noqa: E402
 import pixelkit as pk  # noqa: E402
 
 OUT_DIR = ("Sprites", "BilliardRogue", "UI")
@@ -809,7 +810,9 @@ def main():
         "Overlay_Vignette": overlay_vignette(),
         "Logo_BilliardRogue": logo(),
     }
-    sprites["Arrow_Left"] = (pk.flip_h(sprites["Arrow"][0]), {"note": "left chevron"})
+    sprites = {k: (paintkit.override(OUT_DIR, k, img), info) for k, (img, info) in sprites.items()}
+    sprites["Arrow_Left"] = (paintkit.override(OUT_DIR, "Arrow_Left", pk.flip_h(sprites["Arrow"][0])),
+                             {"note": "left chevron"})
     meta, failures = {}, []
     for name, (img, info) in sprites.items():
         h, w = img.shape[:2]
@@ -837,7 +840,9 @@ def main():
     pk.save_rgb(os.path.join(preview_dir, "ui_kit.png"), pk.contact_sheet(items, scale=4, cols=7))
     pk.save_rgb(os.path.join(preview_dir, "ui_logo.png"),
                 pk.contact_sheet([("Logo_BilliardRogue 1x", sprites["Logo_BilliardRogue"][0])], scale=2, cols=1, checker_bg=False, bg=(24, 30, 56)))
-    icons = [mi.BALL_FUNCS["Flame"](mi.BALLS["Flame"][0]), mi.reward_heal(), mi.reward_maxhp()]
+    icons = [paintkit.override(mi.OUT_DIR, "Ball_Flame", mi.BALL_FUNCS["Flame"](mi.BALLS["Flame"][0])),
+             paintkit.override(mi.OUT_DIR, "Reward_Heal", mi.reward_heal()),
+             paintkit.override(mi.OUT_DIR, "Reward_MaxHp", mi.reward_maxhp())]
     sprites["_icons"] = icons
     pk.save_rgb(os.path.join(preview_dir, "ui_mockup.png"), mockup(sprites))
     print("UI", {"sprites": len(meta), "preview": preview_dir})

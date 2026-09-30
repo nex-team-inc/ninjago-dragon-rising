@@ -1,0 +1,28 @@
+# Frame_ButtonFocused - the same button, lit up: brighter rim and face and a crisp 2 px gold glow ring in the
+# 3 px glowMargin (hard alpha: a bright inner ring and a gold outer ring, like light spilling off the rim).
+# 32x32, Sliced, border L7 B8 R7 T7, the same geometry as Frame_Button (visible button 26x26 at (3,3)).
+size 32 32
+key
+  K #0a0c18  ink (outer line)
+  W #fff4b8  glow, inner ring / rim highlight
+  L #ffd65a  gold rim, shade sides
+  O #e8a830  glow, outer ring
+  X #5c360c  gold deep line
+  a #4a5ea0  face, lit edge
+  c #34447a  face
+  e #1f2c56  face, shade edge / slab side
+strokes
+  line K 5 3 26 3 28 5 28 26 26 28 5 28 3 26 3 5 5 3
+  rect X 5 5 26 26
+  # the glow: two rings parallel to the outline, each with a clean 45 degree corner
+  line W 5 2 26 2 29 5 29 26 26 29 5 29 2 26 2 5 5 2
+  line O 5 1 26 1 30 5 30 26 26 30 5 30 1 26 1 5 5 1
+seeds
+  W 12 4 4 12
+  L 12 27 27 12
+  c 15 15
+ops
+  band c a 0 -1 1
+  band c a -1 0 1
+  band c e 1 0 1
+  band c e 0 1 2

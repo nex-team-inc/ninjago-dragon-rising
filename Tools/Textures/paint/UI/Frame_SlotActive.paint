@@ -1,0 +1,28 @@
+# Frame_SlotActive - the socket of the ball that is up next: the same socket lit up, with a 2 px bright gold rim
+# and a lighter floor, so the eye finds it first in the row of slots.
+# 40x40, Sliced, border 4 on every side (same geometry as Frame_Slot); the centre (4..35) is flat.
+size 40 40
+key
+  K #0a0c18  ink (outer line)
+  H #fff4b8  gold rim highlight (outer ring, lit sides)
+  L #ffd65a  gold rim light
+  G #e8a830  gold rim (inner ring, shade sides)
+  c #172246  socket wall in shadow (top, left)
+  a #34447a  socket wall catching light (bottom, right)
+  b #283867  socket floor
+strokes
+  line K 2 0 37 0 39 2 39 37 37 39 2 39 0 37 0 2 2 0
+  # inner ring of the rim: lit colour on the top and left sides (they own the two anti-diagonal corners)
+  line L 2 2 37 2
+  line L 2 3 2 37
+  line G 37 3 37 37
+  line G 3 37 36 37
+seeds
+  H 12 1 1 12
+  L 12 38 38 12
+  b 20 20
+ops
+  band b a 0 1 1
+  band b a 1 0 1
+  band b c 0 -1 1
+  band b c -1 0 1

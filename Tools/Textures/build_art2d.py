@@ -1,15 +1,18 @@
-"""One command for the whole Billiard Rogue 2D-art area: pixel fonts, surfaces, particles, icons, UI kit + logo.
+"""One command for the whole Billiard Rogue 2D-art area: pixel fonts, surfaces, particles, icons, UI kit + logo, the
+extra UI glyphs, the cat arms / paws and the painted-only sprites (enemy icons, cat portraits).
 
 Run:  Tools/.venv/bin/python Tools/Textures/build_art2d.py [--preview-dir DIR] [--check]
 Out:  Tools/Staging/Assets/{Fonts/BilliardRogue, Textures/BilliardRogue/Surfaces,
-      Sprites/BilliardRogue/{Particles,UI,Icons}} (Icons: Ball_/Status_/Telegraph_/Reward_ only; Enemy_* belongs to
-      the models pipeline, UI/Portrait_* to the hero pipeline) + previews in DIR (default $BR_PREVIEW_DIR/art2d).
+      Sprites/BilliardRogue/{Particles,UI,Icons}} + previews in DIR (default $BR_PREVIEW_DIR/art2d).
       Prints an inventory (path, bytes, pixel size) of every file this area owns.
+Paintings: a sprite with a painting in Tools/Textures/paint/<folder>/<name>.paint is painted by hand (draft -> flats
+-> shading -> line colour, see paintkit.py) and replaces the procedural sprite of the same name; Enemy_* icons and
+UI/Portrait_* exist only as paintings (make_painted.py).
 Ownership = what the run writes (file mtimes >= the build start, in the folders below), recorded in
 Tools/Staging/_work/art2d_manifest.json (outside Assets, never synced). A file the PREVIOUS run wrote that this run no
 longer writes (a renamed or removed sprite) is STALE: it is deleted from staging and listed so the integrator deletes
-it from Starter/Assets too. Files other pipelines put in these shared folders (Enemy_* icons, UI/Portrait_*,
-make_ui_extra's icons) are never in the manifest and are never touched.
+it from Starter/Assets too. Files other pipelines put in these shared folders are never in the manifest and are never
+touched.
 --check: builds twice and fails if any owned output differs between the runs (determinism gate).
 Order matters: the fonts are built first because the UI mock-up renders text with them.
 Unity side (after copying the staging mirror into Starter/Assets): ImportSettingsBuilder.Run() then
@@ -33,6 +36,9 @@ STEPS = [
     os.path.join(HERE, "make_particles.py"),
     os.path.join(HERE, "make_icons.py"),
     os.path.join(HERE, "make_ui.py"),
+    os.path.join(HERE, "make_ui_extra.py"),
+    os.path.join(HERE, "make_arms.py"),
+    os.path.join(HERE, "make_painted.py"),
 ]
 FOLDERS = ["Fonts/BilliardRogue", "Textures/BilliardRogue/Surfaces", "Sprites/BilliardRogue/Particles",
            "Sprites/BilliardRogue/UI", "Sprites/BilliardRogue/Icons"]  # shared with other pipelines (UI, Icons)

@@ -17,6 +17,7 @@ sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.join(os.path.dirname(HERE), "Fonts"))
 import make_icons as mi  # noqa: E402
 import make_ui as mu  # noqa: E402
+import paintkit  # noqa: E402
 import pixelkit as pk  # noqa: E402
 
 CAMERA = ["...####.......",
@@ -112,6 +113,7 @@ def main():
         "Icon_Cue": icon_cue(),
         "Icon_Strike": icon_strike(),
     }
+    sprites = {k: paintkit.override(mu.OUT_DIR, k, img) for k, img in sprites.items()}
     for name, img in sprites.items():
         h, w = img.shape[:2]
         assert w % 4 == 0 and h % 4 == 0, (name, w, h)

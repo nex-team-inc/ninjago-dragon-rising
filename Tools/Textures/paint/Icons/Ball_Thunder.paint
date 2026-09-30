@@ -1,0 +1,47 @@
+# Ball_Thunder - yellow ball with a white-hot lightning bolt decal.
+# Ball family structure (see Ball_Basic.paint); the ramp is the UI gold ramp pushed to the ball's lemon yellow.
+size 32 32
+key
+  K #4a1c14  ink (outer line)
+  k #82401a  outline on the lit side
+  M #ffd81c  ball base (icons.json color)
+  s #eea21e  shadow / reflected light, and the bolt's cast shadow
+  S #b8621c  core shadow
+  H #fffbe0  highlight and the bolt
+strokes
+  ellipse K 16 16 14.8 14.8
+seeds
+  M 16 16
+ops
+  band M s 1 1 7
+  band M S 1 1 3
+  band M s 1 1 1
+# the bolt: an upper blade leaning right, a jog out to the right, a spike tapering down-left; the
+# ball takes a 1 px shadow right of and under its edges (the decal is embossed, not outlined); the tip
+# that crosses the shadow crescent turns lemon (the bolt in shade)
+shade at 9 8
+  ......HHHHHs
+  ......HHHHs.
+  .....HHHHHs.
+  .....HHHHs..
+  ....HHHHHs..
+  ....HHHHs...
+  ...HHHHHHHHH
+  ...HHHHHHHHs
+  ...ssssHHHs.
+  ......HHHHs.
+  ......HHHs..
+  .....HHHHs..
+  .....HHHs...
+  ....HHMs....
+  ....MMs.....
+  ....Ms......
+shade at 6 5
+  ....HH
+  ..HHHH
+  .HHHH.
+  .HH...
+ops
+  edge K k -1 -1
+  px k 2 19 19 2
+  px K 3 23 23 3

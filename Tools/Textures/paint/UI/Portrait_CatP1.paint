@@ -1,0 +1,86 @@
+# Portrait_CatP1 - the orange tabby cat knight, bust, 3/4 view looking to screen-right.
+# Painted by hand at 128x128 (it used to be a downsampled Blender render). Colours from the 3D cat
+# (heroprops_models.py): orange fur, white lower face / belly / mittens, pink nose and inner ears, blue cape
+# and collar with a gold bell, a silver pauldron with a gold rim on the near shoulder, brown belt.
+# Silhouette lines are explicit pixel runs (each polyline segment is a straight, vertical or 45-degree step).
+size 128 128
+key
+  K #5a2414  fur outline (darkest fur tone)
+  d #9c4424  fur deep: stripes, sel-out lines in the fur
+  s #c65e36  fur shadow
+  F #e47b52  fur base  line=d
+  l #f6a371  fur light
+  W #f4f6fb  white fur, silver  line=V
+  v #d3d8e4  white shadow
+  V #aab0c4  white deep shadow
+  P #e88aa6  pink (inner ear, nose)  line=p
+  p #bb698e  pink shade
+  E #1c1630  eye
+  e #3c2f68  eye lower glow
+  L #6d93dc  collar  line=b
+  B #4a6cc0  cape  line=b
+  b #34489a  cape shadow
+  n #1f2458  cape outline
+  Y #fff4b8  gold glint
+  G #ffd65a  gold  line=o
+  g #e8a830  gold mid
+  o #a8661a  gold shadow
+  m #7a5536  belt leather  line=M
+  M #4e3322  belt shadow
+strokes
+  # --- head: near ear outer edge (runs 4 4 3 3 3 3 2 2 2 2 2 2 2 1 1 1 1)
+  line K 28 47 28 44 29 43 29 40 30 39 30 37 31 36 31 34 32 33 32 31 33 30 33 28 34 27 34 26 35 25 35 24 36 23 36 22 37 21 37 20 38 19 38 18 39 17 39 16 40 15 40 14 44 10
+  # near ear tip (2 px flat) and inner edge, V notch at the skull, skull top (runs 1 1 2 2 3 6 4 3)
+  line K 44 10 45 10 46 11 46 12 47 13 47 14 48 15 48 16 49 17 49 18 50 19 50 20 51 21 51 22 60 31 62 29 63 28 64 28 65 27 66 27 67 26 69 26 70 25 75 25 76 26 79 26 80 27 82 27
+  # far ear inner edge, tip, outer edge, far skull side, far cheek, jaw, chin
+  line K 82 27 83 26 83 25 84 24 84 23 85 22 85 21 86 20 86 19 87 18 87 17 88 16 88 15 95 8 96 9 96 12 97 13 97 17 98 18 98 23 99 24 99 30 100 31 100 36 101 37 101 38 102 39 102 40 103 41 103 43 104 44 104 47 105 48 105 60 104 61 104 65 103 66 103 69 102 70 102 72 101 73 101 75 100 76 100 77 99 78 99 79 94 84 93 85 92 85 91 86 90 86 89 87 87 87 86 88 84 88 83 89 79 89 78 90
+  # near cheek (runs 1 1 2 2 3 3 4 8), three shingled cheek tufts, the head's lower edge to the chin
+  line K 28 47 27 48 26 49 25 50 25 51 24 52 24 53 23 54 23 56 22 57 22 59 21 60 21 63 20 64 20 71 19 72 19 73 18 74 18 75 17 76 18 77 20 77 21 78 22 79 22 80 21 81 21 82 20 83 21 84 22 84 23 85 24 85 25 86 25 87 24 88 24 89 23 90 24 91 26 91 27 92 46 92 47 91 56 91 57 90 78 90
+  # --- inner ears: near ear a rounded triangle, far ear pink runs up to its outer outline
+  line K 44 18 43 19 43 21 42 22 42 24 41 25 41 27 40 28 40 30 39 31 39 33 38 34 38 36 37 37 37 38 38 39 40 39 41 38 43 38 44 37 46 37 47 36 48 36 49 35 50 35 51 34 52 34 55 31
+  line K 44 18 45 19 45 20 46 21 46 22 55 31
+  line K 96 13 95 14 95 16 94 17 94 19 93 20 93 22 92 23 92 25 91 26 91 28 90 29 90 30 91 31 93 31 94 32 96 32 97 33 99 33
+  # --- white lower face: rim under the near cheek, blaze between the eyes, under the far eye
+  line K 23 79 32 79 33 78 40 78 41 77 47 77 48 76 52 76 53 75 56 75 57 74 59 74 60 73 61 73 62 72 63 72 64 71 65 70 68 67 69 67 70 66 71 66 72 65 73 65 74 64 80 64 81 65 81 68 82 69 82 70 83 71 84 72 101 72
+  # --- eyes
+  ellipse E 59 62 7 8.8
+  ellipse E 88 61.5 5 8.6
+  # --- pauldron dome (its top hides behind the cheek tufts), symmetric about x 37
+  line K 23 91 23 99 24 100 24 101 25 102 25 103 26 104 27 105 28 106 29 106 30 107 32 107 33 108 41 108 42 107 44 107 45 106 46 106 47 105 48 104 49 103 49 102 50 101 50 100 51 99 51 92
+  # --- collar: lower edge sagging to the bell, far flap
+  line K 52 96 56 96 57 97 61 97 62 98 66 98 67 99 71 99
+  ellipse K 76.5 98.5 4.5 4.5
+  line K 98 81 109 92
+  line K 109 92 108 93 106 93 105 94 103 94 102 95 99 95 98 96 95 96 94 97 90 97 89 98 85 98 84 99 81 99
+  # --- cape silhouettes, arms, mittens
+  line K 24 102 23 103 23 108 22 109 22 116 21 117 21 127
+  line K 109 93 109 100 110 101 110 110 111 111 111 127
+  line K 28 107 28 117
+  line K 103 95 103 97 104 98 104 103 105 104 105 117
+  arc K 36 124 9.5 9 180 360
+  arc K 98 124 9.5 9 180 360
+  # --- belly, belt, buckle
+  line K 48 105 54 105 55 104 86 104 87 105 91 105 92 106 93 107 93 115
+  line K 46 107 46 119
+  line K 47 121 61 121
+  line K 73 121 87 121
+  rect K 62 119 72 128
+draft at 75 68
+  PPPPP
+  PPPPP
+  .PPP.
+  ..p..
+draft at 73 72
+  ....d....
+  ....d....
+  d..d.d..d
+  .dd...dd.
+seeds
+  F 70 45 35 112 60 101 99 105
+  P 45 30 96 25
+  W 70 82 37 98 70 112 36 121 98 121
+  E 59 62 88 61
+  L 60 94 100 90
+  B 24 112 109 115
+  G 76 98 67 124
+  m 55 124 80 124

@@ -1,0 +1,60 @@
+# Ball_Bomb - the ball is a round black bomb: a metal collar at the top-right, a short fuse, a spark.
+# Ball family structure (see Ball_Basic.paint) on a blue-black body; the collar, fuse and spark are the only
+# parts that leave the family circle.
+size 32 32
+key
+  K #05060c  ink (outer line)
+  M #2c3048  bomb body (icons.json color)
+  s #1d2034  shadow
+  S #12142a  core shadow
+  R #3e4570  reflected light, lit outline, collar light
+  H #d4daf6  highlight
+  F #b08850  fuse cord
+  Y #ffd040  spark
+  O #ff7a30  spark tips (icons.json glowColor)
+  W #fffbe0  spark core
+strokes
+  ellipse K 16 16 14.8 14.8
+# the collar: a short cylinder pointing up-right, sunk 2 px into the ball (its base line is inside the rim)
+draft at 20 0
+  ............
+  ............
+  ....K.......
+  ...K.K......
+  ..K...K.....
+  ...K...K....
+  ....K...K...
+  .....K...K..
+  ......K.K...
+  .......K....
+seeds
+  M 16 16
+  M 24 3 23 4
+ops
+  band M s 1 1 7
+  band M S 1 1 3
+  band M R 1 1 1
+# collar shading across its axis: lit top-left side, dark bottom-right side; the ball rim under it is repainted
+shade at 23 3
+  .R....
+  RRM...
+  .MMM..
+  ..MMs.
+  ...sss
+  ....ss
+shade at 27 1
+  ...Y.
+  ..YWY
+  .FYY.
+  F....
+ops
+  px O 28 1 30 3
+shade at 6 5
+  ....HH
+  ..HHHH
+  .HHHH.
+  .HH...
+ops
+  edge K R -1 -1
+  px R 2 19 19 2
+  px K 3 23

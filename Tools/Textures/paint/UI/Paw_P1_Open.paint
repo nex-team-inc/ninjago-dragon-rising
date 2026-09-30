@@ -1,0 +1,109 @@
+# Paw_P1_Open - P1's open paw holding the waiting ball, palm towards the viewer: white sock, pink toe beans and pad,
+# over the orange-tabby cuff that continues the Arm_P1 sleeve (rows 30+, paw x = sleeve x + 6).
+# Toes point up the screen (the arm reaches up from the bottom); palm centre (18, 20) = pivot.
+# One silhouette with four round toe lobes (notches between them, not four outlined circles); the white fur ends in
+# uneven tufts over the orange, their line in the deep fur tone (the shadow the tufts cast).
+size 36 40
+key
+  K #3a1a0a  ink (outer line)
+  X #8f4c0d  deep fur: lit-side outline, core shadow, stripes, the shadow under the white tufts
+  H #ee8a5e  lit fur
+  F #d67244  fur base  line=X
+  S #bb612a  fur shadow, reflected light
+  L #f4f6fb  paw highlight
+  W #e3e8f2  paw base  line=w
+  w #babdc9  paw shadow
+  P #e88aa6  bean
+  p #bb698e  bean shade
+draft
+  ....................................
+  ....................................
+  ............KKK......KKK............
+  ...........K...K....K...K...........
+  ..........K.....K..K.....K..........
+  ..........K.....K..K.....K..........
+  ...KKKK...K......KK......K...KKKK...
+  ..K....K..K..............K..K....K..
+  .K......K.K..............K.K......K.
+  .K.......K................K.......K.
+  .K.......K................K.......K.
+  .K.......K................K.......K.
+  .K................................K.
+  .K................................K.
+  .K................................K.
+  .K................................K.
+  .K................................K.
+  ..K..............................K..
+  ..K..............................K..
+  ..K..............................K..
+  ...K............................K...
+  ...K............................K...
+  ....K..........................K....
+  ....K..........................K....
+  .....K........................K.....
+  .....K........................K.....
+  .....K........................K.....
+  ......K......................K......
+  ......K......................K......
+  ......K.....K........K...K...K......
+  ......KK...K.K......K.K.K.K..K......
+  ......K.K.K...KK...K...K...K.K......
+  ......K..K......K.K.........KK......
+  ......K..........K...........K......
+  ......K......................K......
+  ......K......................K......
+  ......K......................K......
+  ......K......................K......
+  ......K......................K......
+  ......K......................K......
+seeds
+  W 18 20
+  F 18 37
+ops
+  # the white paw: form shadow as a crescent on the bottom-right
+  band W w 1 1 2
+  # the cuff: the sleeve's columns (highlight, shadow, core, reflected light)
+  poly F H 8 28 11 28 11 39 8 39
+  poly F S 21 28 28 28 28 39 21 39
+  poly F X 25 28 27 28 27 39 25 39
+# the sleeve's bold tabby ring, carried onto the cuff (sleeve rows 3-6, x + 6)
+shade at 8 35
+  ......XXXXXXX.........
+  ...SXXXXXXXXXXXX......
+  SSSSXX.......XXXXXX...
+  .SS.............XX....
+# beans and pad, painted on the shaded fur like decals (no outline)
+shade at 12 5
+  .PP.
+  PPPP
+  PPPP
+  .PP.
+shade at 20 5
+  .PP.
+  PPPP
+  PPPP
+  .PP.
+shade at 3 8
+  .PP.
+  PPPP
+  PPPP
+  .PP.
+shade at 29 8
+  .PP.
+  PPPP
+  PPPP
+  .PP.
+shade at 12 14
+  ....PPPP....
+  ..PPPPPPPP..
+  .PPPPPPPPPP.
+  PPPPPPPPPPPP
+  PPPPPPPPPPPP
+  PPPPPPPPPPPP
+  PPP.PPPP.PPP
+  .PP.PPPP.PP.
+  .....PP.....
+ops
+  band =P p 1 1 1
+  lines K
+  edge K X -1 -1

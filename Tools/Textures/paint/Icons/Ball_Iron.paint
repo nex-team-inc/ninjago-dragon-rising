@@ -1,0 +1,40 @@
+# Ball_Iron - heavy grey ball with four rivets and a band across the middle.
+# Ball family structure (see Ball_Basic.paint); cool steel ramp.
+size 32 32
+key
+  K #24262e  ink (outer line, darkest of the ramp)
+  k #474a56  outline on the lit side
+  M #7a7c88  ball base (icons.json color)
+  s #5a5d6a  shadow / reflected light
+  S #34363f  core shadow / rivet + band shade
+  H #f0f2f6  highlight
+  R #c6cad6  rivet / band highlight
+strokes
+  ellipse K 16 16 14.8 14.8
+seeds
+  M 16 16
+ops
+  band M s 1 1 7
+  band M S 1 1 3
+  band M s 1 1 1
+# a bolted band across the middle: a lit row over a shade row
+shade at 4 14
+  RRRRRRRRRRRRRRRRRRRRRRRR
+  SSSSSSSSSSSSSSSSSSSSSSSS
+# four rivets (2x2) above and below the band: lit on the left, shadowed on the right
+shade at 7 11
+  RR......SS
+  RR......SS
+shade at 7 20
+  RR......SS
+  RR......SS
+# highlight: one window streak following the top-left rim
+shade at 6 5
+  ....HH
+  ..HHHH
+  .HHHH.
+  .HH...
+ops
+  edge K k -1 -1
+  px k 2 19 19 2
+  px K 3 23 23 3

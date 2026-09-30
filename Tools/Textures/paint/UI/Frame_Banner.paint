@@ -1,0 +1,58 @@
+# Frame_Banner - the crimson title ribbon (CHOOSE A REWARD): a front band with gold braid along both edges, its
+# ends folding back into two notched tails behind it.
+# 64x32, Sliced horizontal only, border L20 B10 R20 T6: columns 20..43 stretch, so every row there is one colour;
+# the tails, folds and band ends live in the 20 px side borders. Text rows 6..21 (a 16 px line centred on row 14).
+# Light from the top-left: the band has a lit top row and a 2 px shade at the bottom (the cloth curving under),
+# braid lit on top and in shade at the bottom; the right end of the band curls away into shade; the tails sit behind (one step darker, lit strip on top); the band
+# casts a 1 px shadow onto the right tail only.
+size 64 32
+symmetric x
+key
+  O #1a0610  ribbon ink (outer line)
+  L #ffd65a  braid, lit
+  G #e8a830  braid
+  D #a8661a  braid, shade
+  X #5c360c  braid deep line (sel-out between gold and crimson)
+  a #e0485a  crimson, lit
+  b #b8283a  crimson (band)
+  B #b8283a  crimson, the tails' lit top strip (a region of its own so the band's shading skips it)
+  c #8c1c2c  crimson shade (tails)
+  d #6a1222  crimson deep shade
+  e #4a0a16  back of the ribbon (the fold)
+strokes
+  # front band (left half; the right half is its mirror)
+  line O 12 2 31 2
+  line O 12 25 31 25
+  line O 12 2 12 25
+  line X 13 5 31 5
+  line X 13 22 31 22
+  # tail: top edge, the notch (runs of 2 to a 1 px point) and the bottom edge, tips bevelled by one pixel
+  line O 2 9 11 9
+  line O 1 10 1 11 2 12 2 13 3 14 3 15 4 16 4 17 5 18 5 19 6 20 5 21 5 22 4 23 4 24 3 25 3 26 2 27 2 28 1 29 1 30 2 31 18 31
+  line O 18 26 18 31
+  # the crease where the band turns back into the tail
+  line e 13 26 17 30
+  # gold braid along the tail
+  line G 2 11 11 11
+  line D 2 29 15 29
+seeds
+  L 20 3
+  b 20 12
+  G 20 23
+  B 6 10
+  c 8 20
+  d 8 30
+  e 16 27
+ops
+  # braid: lit row over a gold row on top, gold over shade at the bottom
+  band L G 0 1 1
+  band G D 0 1 1
+  # band: lit top row, the bottom two rows turn under
+  band b c 1 0 1
+  band b a 0 -1 1
+  band b c 0 1 2
+  # the band casts a 1 px shadow onto the right tail (light from the left: the left tail gets none)
+  px D 52 11
+  px d 52 12 52 13 52 14 52 15 52 16 52 17 52 18 52 19 52 20 52 21 52 22 52 23 52 24 52 25 52 26 52 27 52 28
+  px X 52 29
+  px e 52 30

@@ -1,0 +1,18 @@
+# Bar_Fill_Boss - the boss's health: a violet bar lit from above (highlights shift warm toward pink, shadows cool
+# toward indigo). 64x8, Filled Horizontal: every row is one colour along x (stretches and crops cleanly).
+# Same build as Bar_Fill_Hp: light edge, lit, body (3 rows), shade (2 rows), deep edge.
+size 64 8
+key
+  H #d88cff  lit top edge (pink-violet)
+  L #a254ea  lit
+  V #6c2cb2  body violet
+  S #4c1f96  shade (cooler, toward indigo)
+  s #2c1266  deep bottom edge
+strokes
+  line H 0 0 63 0
+  line L 0 1 63 1
+  line S 0 5 63 5
+  line S 0 6 63 6
+  line s 0 7 63 7
+seeds
+  V 0 3

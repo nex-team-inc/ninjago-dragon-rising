@@ -22,6 +22,7 @@ import sys
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import paintkit  # noqa: E402
 import pixelkit as pk  # noqa: E402
 
 FRAMES = 8
@@ -632,10 +633,17 @@ def main():
     preview_dir = a.preview_dir or pk.default_preview_dir("art2d")
     meta, items, touching, strips = {}, [], [], {}
     for name, (gen, size, loop, fps, color, usage) in SHEETS.items():
-        frames = gen(size)
-        assert len(frames) == FRAMES
-        touching += [f"{name}[{i}]" for i, fr in enumerate(frames) if border_ink(fr.a)]
-        strip = np.concatenate([fr.rgba() for fr in frames], axis=1)
+        painted = paintkit.paint_path(OUT_DIR[-1], name)
+        if os.path.exists(painted):
+            strip = paintkit.render(painted)
+            assert strip.shape == (size, size * FRAMES, 4), (name, strip.shape)
+            touching += [f"{name}[{i}]" for i in range(FRAMES)
+                         if border_ink(strip[:, i * size:(i + 1) * size, 3] > 0)]
+        else:
+            frames = gen(size)
+            assert len(frames) == FRAMES
+            touching += [f"{name}[{i}]" for i, fr in enumerate(frames) if border_ink(fr.a)]
+            strip = np.concatenate([fr.rgba() for fr in frames], axis=1)
         a_vals = set(np.unique(strip[..., 3]).tolist())
         assert a_vals <= {0, 255}, (name, a_vals)
         pk.save_rgba(pk.staging(*OUT_DIR, name + ".png"), strip)

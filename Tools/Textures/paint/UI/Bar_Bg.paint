@@ -1,0 +1,25 @@
+# Bar_Bg - the trough of the HP / boss bars: ink outline, a thin gold rim, a dark lip, and a sunken navy floor
+# that shows wherever the fill is empty.
+# 12x12, Sliced, border 4 on every side; Bar_Fill_* sits inset by 3 px (it covers ring 3 and the centre).
+# Light from the top-left: the rim is lit on the top/left and in shade on the bottom/right (mitred on the
+# anti-diagonal); the trough is sunk, so its top and left walls are in shadow and its bottom and right walls lit.
+size 12 12
+key
+  K #0a0c18  ink (outer line, lip)
+  G #e8a830  gold rim, lit sides
+  D #a8661a  gold rim, shade sides
+  f #0c1228  trough wall in shadow
+  d #172246  trough wall catching light
+  e #111936  trough floor
+strokes
+  line K 1 0 10 0 11 1 11 10 10 11 1 11 0 10 0 1 1 0
+  rect K 2 2 9 9
+seeds
+  G 5 1
+  e 5 5
+ops
+  poly =G D 12 0 12 12 0 12
+  band e d 0 1 1
+  band e d 1 0 1
+  band e f 0 -1 1
+  band e f -1 0 1

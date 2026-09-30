@@ -1,0 +1,59 @@
+# Frame_Panel - the HUD / menu window: a round gold moulding, a navy bevelled band, a thin inner gold fillet and
+# a recessed, flat navy field (HUD text sits on it, so the centre carries no texture).
+# 36x36, Tiled, border 10 on every side: rows / columns 0..9 are the frame, 10..25 the centre tile.
+# Light from the top-left: the moulding is a half-round bar (lit face up-left, dark face down-right), the band is a
+# mitred bevel (top/left faces lit, bottom/right in shade) and the frame casts a 1 px shadow into the field on the
+# top and left. The four corner bosses are painted with the same light (not mirrored).
+size 36 36
+key
+  K #0a0c18  ink (outer line)
+  H #fff4b8  gold highlight (lit face of the moulding)
+  L #ffd65a  gold light (lit face on the shade sides)
+  G #e8a830  gold (moulding base, inner fillet)
+  D #a8661a  gold shade
+  X #5c360c  gold deep line (sel-out between gold and navy)
+  B #283867  navy band, lit faces
+  N #1f2c56  navy band, shade faces
+  C #172246  navy field
+  E #111936  groove / cast shadow
+strokes
+  # outer silhouette: straight sides, a clean 45 degree chamfer of 3 at every corner
+  line K 3 0 32 0 35 3 35 32 32 35 3 35 0 32 0 3 3 0
+  # inner edge of the moulding
+  rect X 3 3 32 32
+  # groove, then the inner gold fillet (square corners so the centre tile stays clean)
+  rect E 7 7 28 28
+  rect G 8 8 27 27
+seeds
+  G 12 1
+  B 12 5
+  C 18 18
+ops
+  # the moulding: the face that looks up and the face that looks left catch the light
+  band G H 0 -1 1
+  band G H -1 0 1
+  # mitre: everything on the bottom-right of the anti-diagonal is on the shade side
+  poly =H L 36 0 36 36 0 36
+  poly =G D 36 0 36 36 0 36
+  poly =B N 36 0 36 36 0 36
+  # the frame casts a 1 px shadow into the recessed field (top and left only)
+  band C E 0 -1 1
+  band C E -1 0 1
+# corner blocks: where the band's sides meet, a square gold block (like the corner block of a picture frame),
+# bevelled with the same top-left light in all four corners (never mirrored)
+shade at 4 4
+  HHL
+  HLD
+  LDD
+shade at 29 4
+  HHL
+  HLD
+  LDD
+shade at 4 29
+  HHL
+  HLD
+  LDD
+shade at 29 29
+  HHL
+  HLD
+  LDD

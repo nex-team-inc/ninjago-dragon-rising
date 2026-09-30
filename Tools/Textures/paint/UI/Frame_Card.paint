@@ -1,0 +1,83 @@
+# Frame_Card - the reward card: the panel's gold moulding and navy band around a sheet of parchment.
+# 48x48, Tiled, border 16 on every side: 0..15 frame + parchment margin, 16..31 the centre tile.
+# Light from the top-left, same frame build as Frame_Panel (half-round gold moulding, mitred navy band, gold corner
+# blocks, inner gold fillet). The parchment lies below the frame: the frame casts a two-step shadow onto it along
+# the top and left, and gold book corners hold the sheet down in its four corners.
+size 48 48
+key
+  K #0a0c18  ink (outer line)
+  H #fff4b8  gold highlight
+  L #ffd65a  gold light
+  G #e8a830  gold
+  D #a8661a  gold shade
+  X #5c360c  gold deep line / edge of the parchment sheet
+  B #283867  navy band, lit faces
+  N #1f2c56  navy band, shade faces
+  E #111936  groove
+  P #f2e2b4  parchment
+  p #e6d29e  parchment, soft shadow
+  q #d4b97e  parchment, cast shadow
+strokes
+  line K 3 0 44 0 47 3 47 44 44 47 3 47 0 44 0 3 3 0
+  rect X 3 3 44 44
+  rect E 7 7 40 40
+  rect G 8 8 39 39
+  rect X 9 9 38 38
+seeds
+  G 12 1
+  B 12 5
+  P 24 24
+ops
+  band G H 0 -1 1
+  band G H -1 0 1
+  poly =H L 48 0 48 48 0 48
+  poly =G D 48 0 48 48 0 48
+  poly =B N 48 0 48 48 0 48
+  # the frame's shadow on the parchment: two steps along the top and the left only
+  band P p 0 -1 2
+  band P p -1 0 2
+  band P q 0 -1 1
+  band P q -1 0 1
+shade at 4 4
+  HHL
+  HLD
+  LDD
+shade at 41 4
+  HHL
+  HLD
+  LDD
+shade at 4 41
+  HHL
+  HLD
+  LDD
+shade at 41 41
+  HHL
+  HLD
+  LDD
+# gold book corners on the parchment: a flat plate, the long edge catching the light where it faces up-left
+# (bottom-right corner) and turning away from it where it faces down-right (top-left corner, which also drops a
+# 1 px shadow onto the sheet); the other two long edges face across the light and stay plain
+shade at 10 10
+  GGGGD
+  GGGDq
+  GGDq.
+  GDq..
+  Dq...
+shade at 33 10
+  GGGGG
+  .GGGG
+  ..GGG
+  ...GG
+  ....G
+shade at 10 33
+  G....
+  GG...
+  GGG..
+  GGGG.
+  GGGGG
+shade at 33 33
+  ....H
+  ...HG
+  ..HGG
+  .HGGG
+  HGGGG

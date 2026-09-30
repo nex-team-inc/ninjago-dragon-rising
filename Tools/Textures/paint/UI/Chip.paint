@@ -1,0 +1,22 @@
+# Chip - the small rounded tag (Fast-forward, P1/P2, BOSS, TURN 3, rarity): a navy pill in a gold ring.
+# 20x16, Sliced, border 6 on every side; interior 10 px tall (rows 3..12), centre (6..13 x 6..9) flat.
+# The corners are a hand-drawn radius-4 curve (runs 2-2, mirror-symmetric), the gold ring fills the space between
+# the outline and the dark inner line, lit on the top/left and in shade on the bottom/right, each corner mitred.
+size 20 16
+symmetric x
+key
+  K #0a0c18  ink (outer line, inner line)
+  L #ffd65a  gold ring, lit
+  D #a8661a  gold ring, shade
+  n #172246  navy face
+strokes
+  line K 4 0 9 0
+  line K 3 1 2 1 1 2 1 3 0 4 0 11 1 12 1 13 2 14 3 14 4 15 9 15
+  line K 4 2 9 2
+  line K 3 3 2 4 2 11 3 12 4 13 9 13
+seeds
+  L 6 1
+  n 6 7
+ops
+  # shade side: below the top-right mitre (x + y = 19) and right of the bottom-left mitre (x + y = 15)
+  poly =L D 20 -1 20 16 -1 16 8 7 12 7

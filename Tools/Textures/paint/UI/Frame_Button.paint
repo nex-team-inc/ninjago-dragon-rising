@@ -1,0 +1,28 @@
+# Frame_Button - the resting menu button: a navy slab in a gold rim, one line of 16 px caps on it.
+# 32x32, Sliced, border L7 B8 R7 T7. The visible button is 26x26 at (3,3)..(28,28): the 3 px glowMargin stays
+# empty so it has the same geometry as Frame_ButtonFocused. The face (rows 7..23, cols 7..24) is flat.
+# Light from the top-left: rim lit on top/left, in shade on bottom/right (the corner chamfer splits the rim into
+# four sides, so the mitre falls out of the draft); the face has a lit top and left edge and a 2 px darker slab
+# side along the bottom (the button's thickness, what makes it look pressable).
+size 32 32
+key
+  K #0a0c18  ink (outer line)
+  G #e8a830  gold rim, lit sides
+  D #a8661a  gold rim, shade sides
+  X #5c360c  gold deep line
+  a #34447a  face, lit edge
+  c #1f2c56  face
+  e #111936  face, shade edge / slab side
+strokes
+  # a chamfer of 2 at each corner reads as a rounded corner at 3x
+  line K 5 3 26 3 28 5 28 26 26 28 5 28 3 26 3 5 5 3
+  rect X 5 5 26 26
+seeds
+  G 12 4 4 12
+  D 12 27 27 12
+  c 15 15
+ops
+  band c a 0 -1 1
+  band c a -1 0 1
+  band c e 1 0 1
+  band c e 0 1 2

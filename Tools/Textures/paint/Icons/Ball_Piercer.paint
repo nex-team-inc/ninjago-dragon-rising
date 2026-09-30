@@ -1,0 +1,42 @@
+# Ball_Piercer - blue ball, a pale arrow pointing up (it pierces through enemies).
+# Ball family structure (see Ball_Basic.paint).
+size 32 32
+key
+  K #16233f  ink (outer line, darkest of the ramp)
+  k #34538c  outline on the lit side
+  M #5a8ae0  ball base (icons.json color)
+  s #3f68b8  shadow / reflected light
+  S #26417a  core shadow
+  H #eef4ff  highlight and the arrow (lit)
+  d #9cbcee  arrow shade (edge and inside the shadow crescent)
+strokes
+  ellipse K 16 16 14.8 14.8
+seeds
+  M 16 16
+ops
+  band M s 1 1 7
+  band M S 1 1 3
+  band M s 1 1 1
+# a tall arrow: head, shaft, a bar of flights near the bottom; the right edge in the crescent
+shade at 10 7
+  ...H......
+  ..HHH.....
+  .HHHHH....
+  HHHHHHH...
+  ..HHHd....
+  ...HHd....
+  ...HHd....
+  .HHHHHd...
+  .HHHHHd...
+  ...HHd....
+  ...HHd....
+# highlight: one window streak following the top-left rim
+shade at 6 5
+  ....HH
+  ..HHHH
+  .HHHH.
+  .HH...
+ops
+  edge K k -1 -1
+  px k 2 19 19 2
+  px K 3 23 23 3

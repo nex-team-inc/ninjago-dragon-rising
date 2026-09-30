@@ -1,0 +1,18 @@
+# Bar_Fill_Hp - the player's health: a red bar lit from above (warm orange light on top, cooler crimson shade
+# underneath). 64x8, Filled Horizontal: every row is one colour along x, so it stretches to any Bar_Bg width and
+# crops cleanly at any fill amount. 5 hand-picked steps: light edge, lit, body (3 rows), shade (2 rows), deep edge.
+size 64 8
+key
+  H #ff9a5c  lit top edge (warm orange)
+  L #f0503a  lit
+  R #d8283a  body red
+  S #a81a38  shade (cooler)
+  s #6c1032  deep bottom edge
+strokes
+  line H 0 0 63 0
+  line L 0 1 63 1
+  line S 0 5 63 5
+  line S 0 6 63 6
+  line s 0 7 63 7
+seeds
+  R 0 3

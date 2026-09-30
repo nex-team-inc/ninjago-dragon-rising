@@ -1,0 +1,46 @@
+# Ball_Venom - purple ball dripping toxic green goo, with two bubbles.
+# Ball family structure (see Ball_Basic.paint); purple ramp, the decal is the poison green.
+size 32 32
+key
+  K #2b1240  ink (outer line, darkest of the ramp)
+  k #571f78  outline on the lit side
+  M #9a40c8  ball base (icons.json color)
+  s #7a2ea6  shadow / reflected light
+  S #3f145c  core shadow
+  H #ecd6f7  highlight
+  G #b8ff50  venom (lit)
+  g #6fb320  venom shade (edge and inside the shadow crescent)
+strokes
+  ellipse K 16 16 14.8 14.8
+seeds
+  M 16 16
+ops
+  band M s 1 1 7
+  band M S 1 1 3
+  band M s 1 1 1
+# a pool of goo across the top with two drips running down, worn to g on the shadow side
+shade at 7 8
+  .GGGG..GGGGg.
+  GGGGGGGGGGgg.
+  GGGGGGGGGgGg.
+  .GGGGGGGGggg.
+  ..GGg.GGGgg..
+  ..GGg..Gggg..
+  ...Gg..gg....
+  ...gg........
+# two round bubbles low on the ball
+shade at 11 22
+  GG....
+  Gg..GG
+  gg..Gg
+  ....gg
+# highlight: one window streak following the top-left rim
+shade at 6 5
+  ....HH
+  ..HHHH
+  .HHHH.
+  .HH...
+ops
+  edge K k -1 -1
+  px k 2 19 19 2
+  px K 3 23 23 3

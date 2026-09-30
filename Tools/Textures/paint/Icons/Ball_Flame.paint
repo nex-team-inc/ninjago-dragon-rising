@@ -1,0 +1,46 @@
+# Ball_Flame - orange fire ball: a yellow flame decal with a pale-hot core.
+# Ball family structure (see Ball_Basic.paint); ramp hue-shifts from yellow-white light to wine shadows.
+size 32 32
+key
+  K #3e0c1c  ink (outer line, darkest of the ramp)
+  k #7c1a26  outline on the lit side
+  M #ff6a1c  ball base (icons.json color)
+  s #dc3c1e  shadow / reflected light
+  S #a41f2a  core shadow
+  H #fff3b0  highlight and the flame's hot core
+  Y #ffc93a  flame
+  y #f7a02a  flame shade (edge and inside the shadow crescent)
+strokes
+  ellipse K 16 16 14.8 14.8
+seeds
+  M 16 16
+ops
+  band M s 1 1 7
+  band M S 1 1 3
+  band M s 1 1 1
+# the flame: one tall tongue leaning left, a small tongue each side, a round belly with the hot core low
+shade at 10 8
+  .....Y......
+  .....Yy.....
+  ....YYY.....
+  ....YYYy....
+  ...YYYYy..Y.
+  .Y.YYYYY.Yy.
+  .YYYYYYYYYy.
+  .YYYYYHYYYY.
+  YYYYYHHYYYYy
+  YYYYHHHHYYyy
+  YYYYHHHHHyyy
+  YYYYHHHHYyyy
+  .YYYHHHYyyy.
+  ..yYYyyyyy..
+  ....yyyy....
+shade at 6 5
+  ....HH
+  ..HHHH
+  .HHHH.
+  .HH...
+ops
+  edge K k -1 -1
+  px k 2 19 19 2
+  px K 3 23 23 3

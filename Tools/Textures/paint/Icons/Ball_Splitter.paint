@@ -1,0 +1,43 @@
+# Ball_Splitter - teal ball, a pale fork/split emblem (the ball splits into minis).
+# Ball family structure (see Ball_Basic.paint): one circle, top-left light, crescent/core/rim bands, decal on top.
+size 32 32
+key
+  K #0d3b32  ink (outer line, darkest of the ramp)
+  k #1c6b57  outline on the lit side
+  M #2cc8a4  ball base (icons.json color)
+  s #1f9e82  shadow / reflected light
+  S #135e4d  core shadow
+  H #eafff7  highlight and the fork (lit)
+  d #79dcc0  fork shade (edge and inside the shadow crescent)
+strokes
+  ellipse K 16 16 14.8 14.8
+seeds
+  M 16 16
+ops
+  band M s 1 1 7
+  band M S 1 1 3
+  band M s 1 1 1
+# the fork: two prongs up, one stem down, the right side worn into the crescent
+shade at 10 8
+  H........H..
+  HH......HH..
+  .HH....HHd..
+  ..HH..HHd...
+  ..dHHHHd....
+  ...HHHHd....
+  ....HHd.....
+  ....HHd.....
+  ....HHd.....
+  ....HHd.....
+  ...dHHd.....
+  ....dd......
+# highlight: one window streak following the top-left rim
+shade at 6 5
+  ....HH
+  ..HHHH
+  .HHHH.
+  .HH...
+ops
+  edge K k -1 -1
+  px k 2 19 19 2
+  px K 3 23 23 3

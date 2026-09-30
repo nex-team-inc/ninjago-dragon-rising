@@ -25,8 +25,10 @@ _PALETTE_CANDIDATES = [
 
 
 def staging(*parts):
-    """Absolute path inside the staging mirror (Tools/Staging/Assets/...); creates the parent folder."""
-    path = os.path.join(STAGING_ASSETS, *parts)
+    """Absolute path inside the staging mirror (Tools/Staging/Assets/...); creates the parent folder.
+    BR_STAGING_DIR redirects the writes (a private mirror for trial runs; reads such as the built fonts still use
+    STAGING_ASSETS)."""
+    path = os.path.join(os.environ.get("BR_STAGING_DIR") or STAGING_ASSETS, *parts)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     return path
 

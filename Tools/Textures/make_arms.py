@@ -22,6 +22,7 @@ import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
+import paintkit  # noqa: E402
 import pixelkit as pk  # noqa: E402
 
 OUT_DIR = ("Sprites", "BilliardRogue", "UI")
@@ -175,7 +176,7 @@ def build():
     sprites["Glow_Disc"] = glow_disc()
     sprites["Shadow_Ball"] = shadow_ball()
     sprites["Bar_Fill_Hype"] = bar_fill_hype()
-    return sprites
+    return {k: paintkit.override(OUT_DIR, k, img) for k, img in sprites.items()}
 
 
 def main():
@@ -190,7 +191,8 @@ def main():
         assert w % 4 == 0 and h % 4 == 0, (name, w, h)
         staged = pk.staging(*OUT_DIR, name + ".png")
         pk.save_rgba(staged, img)
-        shutil.copyfile(staged, os.path.join(STARTER_UI, name + ".png"))
+        if not os.environ.get("BR_STAGING_DIR"):  # trial runs into a private mirror leave the project alone
+            shutil.copyfile(staged, os.path.join(STARTER_UI, name + ".png"))
     # Preview: a tiled 4-segment arm under each paw frame.
     items = list(sprites.items())
     for player in FUR:

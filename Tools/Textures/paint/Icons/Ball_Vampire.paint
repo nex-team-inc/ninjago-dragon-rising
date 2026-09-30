@@ -1,0 +1,38 @@
+# Ball_Vampire - dark-crimson ball with two white fangs and a blood drip.
+# Ball family structure (see Ball_Basic.paint); crimson ramp, warm rim light.
+size 32 32
+key
+  K #360a14  ink (outer line, darkest of the ramp)
+  k #781421  outline on the lit side
+  M #b01a2e  ball base (icons.json color)
+  s #8a1424  shadow / reflected light
+  S #560d18  core shadow
+  H #ffd9c0  highlight (warm)
+  F #fbf2f0  fang (lit)
+  f #c98f96  fang shade (edge and inside the shadow crescent)
+strokes
+  ellipse K 16 16 14.8 14.8
+seeds
+  M 16 16
+ops
+  band M s 1 1 7
+  band M S 1 1 3
+  band M s 1 1 1
+# a fanged grin: a bar of teeth with a long fang at each corner, worn to f on the shadow side
+shade at 10 14
+  FFFFFFFFFFFF
+  FFFFFFFFFFFf
+  FF.FF.FF.FFf
+  FF.FF.FF.Fff
+  FF.......FFf
+  ff.......fff
+# highlight: one window streak following the top-left rim
+shade at 6 5
+  ....HH
+  ..HHHH
+  .HHHH.
+  .HH...
+ops
+  edge K k -1 -1
+  px k 2 19 19 2
+  px K 3 23 23 3

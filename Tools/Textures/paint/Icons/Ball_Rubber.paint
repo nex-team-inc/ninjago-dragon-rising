@@ -1,0 +1,38 @@
+# Ball_Rubber - glossy pink bouncy ball: a big gloss window and a small spark, no emblem.
+# Ball family structure (see Ball_Basic.paint); the "rubber" read comes from the strong gloss.
+size 32 32
+key
+  K #45123a  ink (outer line, darkest of the ramp)
+  k #9c2870  outline on the lit side
+  M #f050a8  ball base (icons.json color)
+  s #d0348c  shadow / reflected light
+  S #94215f  core shadow
+  H #ffe6f4  highlight (gloss)
+strokes
+  ellipse K 16 16 14.8 14.8
+seeds
+  M 16 16
+ops
+  band M s 1 1 7
+  band M S 1 1 3
+  band M s 1 1 1
+# a big glossy window high-left and a small secondary spark to its lower-right
+shade at 7 6
+  .HHHH..
+  HHHHHH.
+  HHHHHH.
+  .HHHHH.
+  ..HHH..
+shade at 18 15
+  HH
+  HH
+# highlight: one window streak following the top-left rim (ties into the gloss)
+shade at 6 5
+  ....HH
+  ..HHHH
+  .HHHH.
+  .HH...
+ops
+  edge K k -1 -1
+  px k 2 19 19 2
+  px K 3 23 23 3

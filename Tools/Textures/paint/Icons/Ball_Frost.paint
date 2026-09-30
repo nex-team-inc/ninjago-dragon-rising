@@ -1,0 +1,43 @@
+# Ball_Frost - ice-blue ball with a six-armed snowflake decal.
+# Ball family structure (see Ball_Basic.paint); shadows shift from sky blue to indigo.
+size 32 32
+key
+  K #141d4a  ink (outer line)
+  k #2c3f86  outline on the lit side
+  M #78c4f4  ball base (icons.json color)
+  s #4b8fdc  shadow / reflected light
+  S #3059b0  core shadow
+  H #f4fdff  highlight and the snowflake
+  w #bfeaff  snowflake inside the shadow crescent
+strokes
+  ellipse K 16 16 14.8 14.8
+seeds
+  M 16 16
+ops
+  band M s 1 1 7
+  band M S 1 1 3
+  band M s 1 1 1
+# the snowflake: a vertical arm with a V branch near each end, two arms at 30 degrees (2:1 steps), a solid core
+shade at 9 9
+  ......H......
+  ......H......
+  ....H.H.H....
+  HH...HHH...HH
+  ..HH..H..HH..
+  ....HHHHH....
+  .....HHH.....
+  ....HHHHH....
+  ..HH..H..HH..
+  HH...HHH...ww
+  ....H.H.H....
+  ......H......
+  ......w......
+shade at 6 5
+  ....HH
+  ..HHHH
+  .HHHH.
+  .HH...
+ops
+  edge K k -1 -1
+  px k 2 19 19 2
+  px K 3 23 23 3

@@ -1,0 +1,26 @@
+# Frame_Slot - a socket in the HUD that holds one 32x32 ball icon (the ball queue).
+# 40x40, Sliced, border 4 on every side: the whole frame is 4 px, the centre (4..35) is flat and sits under the ball.
+# Light from the top-left: the gold rim is lit on the top/left sides and in shade on the bottom/right (the corner
+# chamfer splits it into four mitred sides); the socket is sunk into the panel, so its top and left inner walls are
+# in shadow and its bottom and right walls catch the light. The floor is darker than the panel so the ball pops.
+size 40 40
+key
+  K #0a0c18  ink (outer line)
+  G #e8a830  gold rim, lit sides
+  D #a8661a  gold rim, shade sides
+  X #5c360c  gold deep line (rim meets the socket)
+  f #0c1228  socket wall in shadow (top, left)
+  c #1f2c56  socket wall catching light (bottom, right)
+  e #111936  socket floor
+strokes
+  line K 2 0 37 0 39 2 39 37 37 39 2 39 0 37 0 2 2 0
+  rect X 2 2 37 37
+seeds
+  G 12 1 1 12
+  D 12 38 38 12
+  e 20 20
+ops
+  band e c 0 1 1
+  band e c 1 0 1
+  band e f 0 -1 1
+  band e f -1 0 1

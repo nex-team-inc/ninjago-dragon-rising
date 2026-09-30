@@ -110,3 +110,10 @@ These override GDD.md where they conflict. Every number is a default in a config
 ## 18. Balance with one volley and energy (`Tools/sim_smoke_eval.cs`, 24 seeds, the bot dancing whenever it has energy)
 - With §15's HP one volley a turn lost every run. Enemy HP is now 0.3× the §15 values (Slime 2, Bat 1, Bomber 2, Healer 3, Mage 3, Shield Knight 4, Skeleton 4, Totem 6, Bone Wall 2; King Slime 28, Bone Lich 42, Crystal Golem 45), growing 50 % per stage (`hpScalePerStage` 0.5); co-op enemies have 3× HP (`coopEnemyHpScale`; 2 made 2P far easier than 1P).
 - Result: 1P aimed 18/24 wins (5.0 turns a stage, 4.5 hits taken a run, POWER 0.40 a turn on average), 1P casual (half the shots random) 2/24, 2P aimed 17/24, 2P casual 3/24. The same aimed bot never dancing wins 17/24 but takes 6.1 hits a run and 5.5 turns a stage: dancing makes runs faster and safer, it does not carry them. At 6 energy a bar the bot averaged 0.83 POWER a turn (energy was never short), hence 12.
+
+## 19. Cat arms hold the ball and the cue (playtest 6)
+- While a shot waits, two cat arms (P1 orange, P2 charcoal) reach up from below the screen edge (`CatArmsLayer`, `JuiceConfig.arms`): an open paw holds the waiting ball from the side away from the cue, and a fist grips the cue under it (`gripFromTip` 0.9 cells behind the tip, slid toward the tip to stay `minPawHeight` above the screen bottom). They follow the ball along the launch line, the cue around the aim and its thrust on the strike, swap sides with the cue so they never cross, and sink out of view once the shot is fired. The arms reuse the reward-pick sprites (`make_arms.py`) at 2×; the damage numbers and HP labels draw on top.
+- The calibration card's illustration shows the same arms: the upper arm holds the ball on an open paw, the lower arm grips a cue and thrusts it up into the ball paw.
+
+## 20. No hit-stop (playtest 6)
+- Kills, crits and boss hits no longer freeze the game, and POWER no longer lengthens freezes (`PacingConfig.hitStopKill` / `hitStopBoss` and `HypeConfig` hit-stop fields removed, `TimeScaleController.HitStop` gone). The last enemy's slow-mo, fast-forward and pause stay.

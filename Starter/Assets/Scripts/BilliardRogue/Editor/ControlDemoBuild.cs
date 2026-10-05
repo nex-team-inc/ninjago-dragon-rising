@@ -177,7 +177,8 @@ namespace Nex.BilliardRogue.Editor
                 extraScriptingDefines = DemoDefines,
             };
             var watch = Stopwatch.StartNew();
-            var report = BuildPipeline.BuildPlayer(options);
+            // Inside namespace Nex, BuildPipeline binds to Nex.BuildPipeline, which has no BuildPlayer.
+            var report = UnityEditor.BuildPipeline.BuildPlayer(options);
             summary.playerSeconds = watch.Elapsed.TotalSeconds;
             summary.result = report.summary.result.ToString();
             summary.totalErrors = report.summary.totalErrors;

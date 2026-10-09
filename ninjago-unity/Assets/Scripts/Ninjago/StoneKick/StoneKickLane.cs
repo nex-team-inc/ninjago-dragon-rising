@@ -1,7 +1,6 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
@@ -10,8 +9,9 @@ namespace Nex.Ninjago
 {
     /// <summary>
     /// One player's Stone Kick world: a block boss on the far side and a camera rendering into that player's screen
-    /// region. Runs that player's throws only: lob → hang (that player's cursors may slash) → KICK prompt (that
-    /// player's knee pulses launch the pieces back into the boss), or the whole rock reaches the player.
+    /// region. Runs that player's throws only: lob → hang → the first slash with that player's cursors opens a slashing
+    /// frenzy where every slash cuts one more stone → KICK prompt where one knee pulse of that player launches every
+    /// stone back into the boss. A rock nobody slashed reaches the player.
     /// </summary>
     public class StoneKickLane : MonoBehaviour
     {
@@ -20,12 +20,10 @@ namespace Nex.Ninjago
         [Header("Rock")]
         [SerializeField] Transform rock = null!;
         [Header("Rock Hit Radius")]
-        [Tooltip("World radius of the rock for the cursor hit test.")]
+        [Tooltip("World radius of the whole rock for the cursor hit test.")]
         [SerializeField] float rockRadius = 0.75f;
-        [Header("Piece Prefab")]
-        [SerializeField] Transform piecePrefab = null!;
-        [Header("Pieces Root")]
-        [SerializeField] Transform piecesRoot = null!;
+        [Header("Stones")]
+        [SerializeField] RockPieces pieces = null!;
         [Header("Hang Point")]
         [SerializeField] Transform hangPoint = null!;
         [Header("Impact Point")]
@@ -42,39 +40,43 @@ namespace Nex.Ninjago
         [SerializeField] float windupSeconds = 0.6f;
         [Header("Throw Arc Height")]
         [SerializeField] float arcHeight = 1.4f;
-        [Header("Piece Spacing")]
-        [SerializeField] float pieceSpacing = 0.95f;
-        [Header("Row Max Width")]
-        [Tooltip("The piece row never gets wider than this, so every piece stays on screen.")]
-        [SerializeField] float rowMaxWidth = 2.6f;
-        [Header("Ground Height")]
-        [SerializeField] float groundHeight;
+        [Header("Slash Pop Seconds")]
+        [Tooltip("How long the rock pops and shakes after each slash.")]
+        [SerializeField] float slashPopSeconds = 0.15f;
+        [Header("Smallest Rock Scale")]
+        [Tooltip("Scale of the rock once it has been cut into the most stones.")]
+        [SerializeField, Range(0.2f, 1f)] float smallestRockScale = 0.55f;
+        [Header("Slash Pitch Step")]
+        [Tooltip("Each slash in a frenzy plays the slash sound this much higher.")]
+        [SerializeField] float slashPitchStep = 0.07f;
 
         readonly SlashDetector[] slashDetectors = { new(), new() };
-        readonly List<Transform> pieces = new();
         PlayerBody body = null!;
         StoneKickConfig config = null!;
         HandCursorTracker cursors = null!;
         StoneKickHud hud = null!;
         PlayerKicks kicks = null!;
         Rect region;
+        Vector3 rockBaseScale;
         int currentThrow;
+        int throwSlashes;
+        float slashPopStart = float.NegativeInfinity;
         bool promptOpen;
         int queuedKicks;
-        float kickGapSum;
-        int kickGapCount;
+        float kickTimeSum;
 
         public int PlayerIndex => body.PlayerIndex;
         public Color PlayerColor => body.Color;
         public int Hearts { get; private set; }
+        /// <summary>Every slash that landed, all frenzies together.</summary>
         public int Slashes { get; private set; }
-        public int FullReturns { get; private set; }
-        public int KicksFired { get; private set; }
-        /// <summary>Kicks there was a piece for: the pieces of every landed slash.</summary>
-        public int KicksPossible { get; private set; }
+        /// <summary>Throws whose stones went back to the boss on a kick in time.</summary>
+        public int Returns { get; private set; }
+        public int StonesCut { get; private set; }
+        public int StonesReturned { get; private set; }
         public bool IsOut { get; private set; }
-        /// <summary>Mean seconds between consecutive accepted kicks inside one prompt; -1 before any such pair.</summary>
-        public float AverageKickGap => kickGapCount > 0 ? kickGapSum / kickGapCount : -1f;
+        /// <summary>Mean seconds from the KICK prompt to the kick; -1 before the first kick.</summary>
+        public float AverageKickTime => Returns > 0 ? kickTimeSum / Returns : -1f;
 
         #region Initialization
 
@@ -89,8 +91,10 @@ namespace Nex.Ninjago
             laneCamera.targetTexture = target;
             laneCamera.fieldOfView = region.width < 1f ? splitFieldOfView : soloFieldOfView;
             boss.Initialize(body.PlayerIndex, body.Color);
+            pieces.Initialize(hangPoint, laneCamera, boss, config);
             Hearts = config.Hearts;
             hud.Initialize(body.PlayerIndex, body.Color, Hearts, config.ThrowsPerPlayer);
+            rockBaseScale = rock.localScale;
             rock.gameObject.SetActive(false);
         }
 
@@ -125,7 +129,7 @@ namespace Nex.Ninjago
             for (currentThrow = 0; currentThrow < throws; currentThrow++)
             {
                 hud.SetThrow(currentThrow + 1, throws);
-                if (await ThrowAndHangAsync(cancellationToken))
+                if (await ThrowAndSlashAsync(cancellationToken))
                 {
                     await KickAsync(cancellationToken);
                 }
@@ -141,8 +145,8 @@ namespace Nex.Ninjago
             hud.ShowFinished();
         }
 
-        // True when one of this player's cursors slashed the rock before it left the hang point.
-        async UniTask<bool> ThrowAndHangAsync(CancellationToken cancellationToken)
+        // True when this player's cursors slashed the rock; the slashing frenzy keeps the rock up until it ends.
+        async UniTask<bool> ThrowAndSlashAsync(CancellationToken cancellationToken)
         {
             boss.PlayThrow(windupSeconds);
             await WaitAsync(windupSeconds, cancellationToken);
@@ -152,100 +156,105 @@ namespace Nex.Ninjago
             var hang = hangPoint.position;
             var flySeconds = config.ThrowSeconds;
             var airborneSeconds = flySeconds + config.HangSecondsFor(currentThrow);
+            var frenzyEnd = float.PositiveInfinity;
+            throwSlashes = 0;
             hud.ShowSlashHint(currentThrow < config.LongHangCount);
+            rock.localScale = rockBaseScale;
             rock.gameObject.SetActive(true);
             var elapsed = 0f;
-            while (elapsed < airborneSeconds)
+            while (throwSlashes > 0 ? Time.unscaledTime < frenzyEnd : elapsed < airborneSeconds)
             {
                 elapsed += Time.unscaledDeltaTime;
-                rock.position = RockPosition(start, hang, elapsed, flySeconds);
+                var pop = 1f - Mathf.Clamp01((Time.unscaledTime - slashPopStart) / slashPopSeconds);
+                var shake = Vector3.right * (Mathf.Sin(Time.unscaledTime * 90f) * 0.08f * pop);
+                rock.position = RockPosition(start, hang, elapsed, flySeconds) + shake;
                 rock.Rotate(new Vector3(70f, 35f, 0f) * Time.unscaledDeltaTime, Space.Self);
-                if (TrySlash(out var stroke, out var speed))
-                {
-                    hud.ShowSlashHint(false);
-                    OnSlash(stroke, speed, elapsed);
-                    return true;
-                }
-
+                var slashesBefore = throwSlashes;
+                CollectSlashes(elapsed);
+                if (slashesBefore == 0 && throwSlashes > 0) frenzyEnd = Time.unscaledTime + config.SlashFrenzySeconds;
+                var carved = config.StonesFor(throwSlashes) / (float)config.MaxStones;
+                rock.localScale = rockBaseScale * (Mathf.Lerp(1f, smallestRockScale, carved) * (1f + 0.2f * pop));
+                if (config.StonesFor(throwSlashes) >= config.MaxStones) break;
                 await UniTask.Yield(PlayerLoopTiming.PreLateUpdate, cancellationToken);
             }
 
             hud.ShowSlashHint(false);
-            return false;
+            hud.HideSlashCount();
+            return throwSlashes > 0;
         }
 
+        // Every slash: a rising slash sound, a streak along the stroke, stone chips, a rock pop and the counter.
         void OnSlash(Vector2 stroke, float speed, float airborneSeconds)
         {
+            throwSlashes++;
             Slashes++;
-            StoneKickAnalytics.SlashHit(PlayerIndex, currentThrow, speed, airborneSeconds);
-            SfxManager.Instance.PlaySoundEffect(SfxManager.SoundEffect.RockSlash);
+            slashPopStart = Time.unscaledTime;
+            StoneKickAnalytics.SlashHit(PlayerIndex, currentThrow, throwSlashes, speed, airborneSeconds);
+            SfxManager.Instance.PlaySoundEffect(SfxManager.SoundEffect.RockSlash, 1f + slashPitchStep * Mathf.Min(throwSlashes - 1, 8));
             var angle = Mathf.Atan2(stroke.y, stroke.x) * Mathf.Rad2Deg;
             VfxManager.Instance.PlayVisualEffect(VfxManager.VisualEffect.RockSlash, rock.position,
                 laneCamera.transform.rotation * Quaternion.Euler(0f, 0f, angle));
-            rock.gameObject.SetActive(false);
+            VfxManager.Instance.PlayVisualEffect(VfxManager.VisualEffect.RockImpact, rock.position);
+            hud.ShowSlashCount(throwSlashes);
         }
 
         async UniTask KickAsync(CancellationToken cancellationToken)
         {
-            var required = config.KicksRequired;
-            KicksPossible += required;
-            await SplitAsync(required, cancellationToken);
+            var stones = config.StonesFor(throwSlashes);
+            StonesCut += stones;
+            var burstPoint = rock.position;
+            rock.gameObject.SetActive(false);
+            VfxManager.Instance.PlayVisualEffect(VfxManager.VisualEffect.RockImpact, burstPoint);
+            await pieces.SplitAsync(burstPoint, stones, cancellationToken);
 
             queuedKicks = 0;
             promptOpen = true;
-            hud.ShowKick(0, required);
-            var launched = 0;
+            hud.ShowKick(stones);
             var promptStart = Time.unscaledTime;
-            var lastKickTime = 0f;
-            var promptGapSum = 0f;
-            while (launched < required && Time.unscaledTime - promptStart < config.KickWindowSeconds)
+            while (queuedKicks == 0 && Time.unscaledTime - promptStart < config.KickWindowSeconds)
             {
-                for (; queuedKicks > 0 && launched < required; queuedKicks--)
-                {
-                    var now = Time.unscaledTime;
-                    if (launched > 0)
-                    {
-                        promptGapSum += now - lastKickTime;
-                        kickGapSum += now - lastKickTime;
-                        kickGapCount++;
-                    }
-
-                    lastKickTime = now;
-                    LaunchPieceAsync(pieces[launched], destroyCancellationToken).Forget();
-                    launched++;
-                    KicksFired++;
-                    hud.ShowKick(launched, required);
-                    SfxManager.Instance.PlaySoundEffect(SfxManager.SoundEffect.KickThud);
-                    StoneKickAnalytics.KickAccepted(PlayerIndex, currentThrow, launched, now - promptStart);
-                }
-
-                BobRow(launched, required);
+                pieces.Bob();
                 await UniTask.Yield(PlayerLoopTiming.PreLateUpdate, cancellationToken);
             }
 
+            var kicked = queuedKicks > 0;
             promptOpen = false;
             queuedKicks = 0;
             hud.HideKick();
-            if (launched == required)
+            var settleSeconds = config.PieceDropSeconds;
+            if (kicked)
             {
-                FullReturns++;
-                StoneKickAnalytics.FullReturn(PlayerIndex, currentThrow, launched, Time.unscaledTime - promptStart,
-                    launched > 1 ? promptGapSum / (launched - 1) : 0f);
+                var kickTime = Time.unscaledTime - promptStart;
+                Returns++;
+                StonesReturned += stones;
+                kickTimeSum += kickTime;
+                SfxManager.Instance.PlaySoundEffect(SfxManager.SoundEffect.KickThud);
+                StoneKickAnalytics.KickAccepted(PlayerIndex, currentThrow, stones, kickTime);
+                StoneKickAnalytics.FullReturn(PlayerIndex, currentThrow, stones, kickTime);
+                settleSeconds = pieces.LaunchAll(destroyCancellationToken);
             }
             else
             {
-                StoneKickAnalytics.IncompleteReturn(PlayerIndex, currentThrow, launched, required);
+                StoneKickAnalytics.IncompleteReturn(PlayerIndex, currentThrow, stones);
+                pieces.DropAll(destroyCancellationToken);
             }
 
-            for (var i = launched; i < required; i++) DropPieceAsync(pieces[i], destroyCancellationToken).Forget();
-            await WaitAsync(Mathf.Max(config.PieceFlySeconds, config.PieceDropSeconds), cancellationToken);
+            await WaitAsync(settleSeconds, cancellationToken);
         }
 
         async UniTask MissAsync(CancellationToken cancellationToken)
         {
             var from = rock.position;
             var to = impactPoint.position;
-            await AnimateAsync(config.MissFlySeconds, t => rock.position = Vector3.Lerp(from, to, t * t), cancellationToken);
+            var elapsed = 0f;
+            while (elapsed < config.MissFlySeconds)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                var t = Mathf.Clamp01(elapsed / config.MissFlySeconds);
+                rock.position = Vector3.Lerp(from, to, t * t);
+                await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
+            }
+
             rock.gameObject.SetActive(false);
             Hearts--;
             hud.SetHearts(Hearts);
@@ -264,66 +273,6 @@ namespace Nex.Ninjago
 
         #endregion
 
-        #region Pieces
-
-        async UniTask SplitAsync(int count, CancellationToken cancellationToken)
-        {
-            while (pieces.Count < count) pieces.Add(Instantiate(piecePrefab, piecesRoot));
-            var center = rock.position;
-            for (var i = 0; i < pieces.Count; i++)
-            {
-                pieces[i].gameObject.SetActive(i < count);
-                pieces[i].position = center;
-            }
-
-            await AnimateAsync(config.SplitSeconds, t =>
-            {
-                var eased = 1f - (1f - t) * (1f - t);
-                for (var i = 0; i < count; i++) pieces[i].position = Vector3.Lerp(center, RowSlot(i, count), eased);
-            }, cancellationToken);
-        }
-
-        Vector3 RowSlot(int index, int count)
-        {
-            var spacing = count > 1 ? Mathf.Min(pieceSpacing, rowMaxWidth / (count - 1)) : 0f;
-            return hangPoint.position + laneCamera.transform.right * ((index - (count - 1) * 0.5f) * spacing);
-        }
-
-        void BobRow(int launched, int count)
-        {
-            var time = Time.unscaledTime;
-            for (var i = launched; i < count; i++)
-            {
-                pieces[i].position = RowSlot(i, count) + Vector3.up * (Mathf.Sin(time * 3f + i * 1.7f) * 0.05f);
-            }
-        }
-
-        async UniTaskVoid LaunchPieceAsync(Transform piece, CancellationToken cancellationToken)
-        {
-            var from = piece.position;
-            var to = boss.ChestPosition;
-            VfxManager.Instance.PlayVisualEffect(VfxManager.VisualEffect.PieceLaunch, from);
-            await AnimateAsync(config.PieceFlySeconds, t =>
-            {
-                piece.position = Vector3.Lerp(from, to, t) + Vector3.up * (Mathf.Sin(t * Mathf.PI) * 0.5f);
-                piece.Rotate(new Vector3(600f, 0f, 200f) * Time.unscaledDeltaTime, Space.Self);
-            }, cancellationToken);
-            piece.gameObject.SetActive(false);
-            boss.PlayFlinch();
-            VfxManager.Instance.PlayVisualEffect(VfxManager.VisualEffect.BossHit, to);
-            SfxManager.Instance.PlaySoundEffect(SfxManager.SoundEffect.PieceHit);
-        }
-
-        async UniTaskVoid DropPieceAsync(Transform piece, CancellationToken cancellationToken)
-        {
-            var from = piece.position;
-            var to = new Vector3(from.x, groundHeight, from.z);
-            await AnimateAsync(config.PieceDropSeconds, t => piece.position = Vector3.Lerp(from, to, t * t), cancellationToken);
-            piece.gameObject.SetActive(false);
-        }
-
-        #endregion
-
         #region Helpers
 
         Vector3 RockPosition(Vector3 start, Vector3 hang, float elapsed, float flySeconds)
@@ -333,11 +282,10 @@ namespace Nex.Ninjago
             return Vector3.Lerp(start, hang, eased) + Vector3.up * (arcHeight * 4f * eased * (1f - eased));
         }
 
-        bool TrySlash(out Vector2 stroke, out float speed)
+        // Both of this player's hands can slash in the same frame; each crossing counts.
+        void CollectSlashes(float airborneSeconds)
         {
-            stroke = default;
-            speed = 0f;
-            if (!TryProject(rock.position, out var center) || !TryProject(rock.position + laneCamera.transform.right * rockRadius, out var edge)) return false;
+            if (!TryProject(rock.position, out var center) || !TryProject(rock.position + laneCamera.transform.right * rockRadius, out var edge)) return;
             var radius = (edge - center).magnitude;
             var pixels = new Vector2(Screen.width, Screen.height);
             for (var hand = 0; hand < 2; hand++)
@@ -350,14 +298,12 @@ namespace Nex.Ninjago
                     continue;
                 }
 
-                if (!detector.Update(Vector2.Scale(cursor.ScreenPosition, pixels), cursor.SpeedInchesPerSecond, cursor.Continuity, center, radius,
-                        Time.unscaledTime, config.SlashSpeedInchesPerSecond, config.SlashMaxCrossSeconds)) continue;
-                stroke = detector.LastStep;
-                speed = cursor.SpeedInchesPerSecond;
-                return true;
+                if (detector.Update(Vector2.Scale(cursor.ScreenPosition, pixels), cursor.SpeedInchesPerSecond, cursor.Continuity, center, radius,
+                        Time.unscaledTime, config.SlashSpeedInchesPerSecond, config.SlashMaxCrossSeconds))
+                {
+                    OnSlash(detector.LastStep, cursor.SpeedInchesPerSecond, airborneSeconds);
+                }
             }
-
-            return false;
         }
 
         // World point → screen pixels, through this lane's camera and the screen region its feed fills.
@@ -371,19 +317,6 @@ namespace Nex.Ninjago
         static UniTask WaitAsync(float seconds, CancellationToken cancellationToken)
         {
             return UniTask.Delay(TimeSpan.FromSeconds(seconds), DelayType.UnscaledDeltaTime, PlayerLoopTiming.Update, cancellationToken);
-        }
-
-        static async UniTask AnimateAsync(float seconds, Action<float> step, CancellationToken cancellationToken)
-        {
-            var elapsed = 0f;
-            while (elapsed < seconds)
-            {
-                elapsed += Time.unscaledDeltaTime;
-                step(Mathf.Clamp01(elapsed / seconds));
-                await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
-            }
-
-            step(1f);
         }
 
         #endregion

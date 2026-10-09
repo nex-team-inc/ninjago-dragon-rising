@@ -1217,7 +1217,7 @@ MonoBehaviour:
       m_Items:
       - rid: 3461314759755304034
   - m_Id: 196458566535602181
-    m_Localized: Slash the rock!
+    m_Localized: Slash it like crazy!
     m_Metadata:
       m_Items: []
   - m_Id: 196458566535602182
@@ -1235,7 +1235,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 196458566535602185
-    m_Localized: P{player}    Slashes {slashes}/{throws}    Full returns {returns}/{throws}   
+    m_Localized: P{player}    Slashes {slashes}    Returns {returns}/{throws}   
       Hearts {hearts}/{maxHearts}
     m_Metadata:
       m_Items:
@@ -1251,7 +1251,7 @@ MonoBehaviour:
       m_Items:
       - rid: 3461314759755304034
   - m_Id: 196458566535602188
-    m_Localized: Best    Slashes {slashes}    Full returns {returns}    Kicks {kicks}
+    m_Localized: Best    Slashes {slashes}    Returns {returns}    Stones {stones}
     m_Metadata:
       m_Items:
       - rid: 3461314759755304034
@@ -1281,6 +1281,27 @@ MonoBehaviour:
       - rid: 3461314759755304034
   - m_Id: 196458566535602194
     m_Localized: Best    Seals {seals}    Two-hand seals {twoHands}
+    m_Metadata:
+      m_Items:
+      - rid: 3461314759755304034
+  - m_Id: 196468021683806208
+    m_Localized: x{count}
+    m_Metadata:
+      m_Items:
+      - rid: 3461314759755304034
+  - m_Id: 196468021692194816
+    m_Localized: SLASH x{count}
+    m_Metadata:
+      m_Items:
+      - rid: 3461314759755304034
+  - m_Id: 196468021692194817
+    m_Localized: P{player}    Stones returned {stones}/{cut}    Kick time {time:0.00}
+      s
+    m_Metadata:
+      m_Items:
+      - rid: 3461314759755304034
+  - m_Id: 196468021692194818
+    m_Localized: P{player}    Stones returned {stones}/{cut}    Kick time -
     m_Metadata:
       m_Items:
       - rid: 3461314759755304034
@@ -1346,3 +1367,7 @@ MonoBehaviour:
         - id: 196458566535602192
         - id: 196458566535602193
         - id: 196458566535602194
+        - id: 196468021683806208
+        - id: 196468021692194816
+        - id: 196468021692194817
+        - id: 196468021692194818

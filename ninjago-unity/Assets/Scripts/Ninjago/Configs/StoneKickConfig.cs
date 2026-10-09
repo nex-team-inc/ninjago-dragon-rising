@@ -41,13 +41,15 @@ namespace Nex.Ninjago
         [SerializeField, Range(10f, 300f)] float slashSpeedInchesPerSecond = 55f;
         [Tooltip("Seconds a cursor may stay inside the rock between entering and leaving it; longer is a rest, not a slash.")]
         [SerializeField, Range(0.05f, 2f)] float slashMaxCrossSeconds = 0.4f;
-        [Tooltip("Seconds the pieces take to spread into their row after the slash.")]
+        [Tooltip("Seconds of slashing after the first slash lands; every slash in that time cuts one more stone.")]
+        [SerializeField, Range(0.3f, 6f)] float slashFrenzySeconds = 2f;
+        [Tooltip("Most stones one rock can be cut into. The first slash splits it in two; slashing stops counting at the cap.")]
+        [SerializeField, Range(2, 12)] int maxStones = 8;
+        [Tooltip("Seconds the stones take to spread out after the slashing ends.")]
         [SerializeField, Range(0.05f, 1.5f)] float splitSeconds = 0.35f;
 
         [Header("Kick")]
-        [Tooltip("Pieces a slash makes; each accepted kick launches one, and all of them in time is a full return.")]
-        [SerializeField, Range(1, 6)] int kicksRequired = 3;
-        [Tooltip("Seconds the KICK prompt stays open once the pieces hang in their row.")]
+        [Tooltip("Seconds the KICK prompt stays open once the stones hang; one kick launches every stone.")]
         [SerializeField, Range(0.5f, 6f)] float kickWindowSeconds = 2f;
         [Tooltip("Knee lift toward the hip (body inches above its resting drop) that counts as a kick pulse.")]
         [SerializeField, Range(1f, 14f)] float kneeLiftInches = 4.5f;
@@ -61,9 +63,9 @@ namespace Nex.Ninjago
         [SerializeField, Range(0.2f, 10f)] float kneeRestAdaptSeconds = 2f;
 
         [Header("Pieces")]
-        [Tooltip("Seconds a kicked piece takes to fly back into the boss.")]
+        [Tooltip("Seconds a kicked stone takes to fly back into the boss.")]
         [SerializeField, Range(0.1f, 2f)] float pieceFlySeconds = 0.45f;
-        [Tooltip("Seconds a leftover piece takes to fall after the prompt closes.")]
+        [Tooltip("Seconds the stones take to fall when the prompt closes without a kick.")]
         [SerializeField, Range(0.1f, 2f)] float pieceDropSeconds = 0.8f;
 
         #region Public API
@@ -80,8 +82,9 @@ namespace Nex.Ninjago
         public float HitRecoverSeconds => hitRecoverSeconds;
         public float SlashSpeedInchesPerSecond { get => slashSpeedInchesPerSecond; set => slashSpeedInchesPerSecond = value; }
         public float SlashMaxCrossSeconds { get => slashMaxCrossSeconds; set => slashMaxCrossSeconds = Mathf.Max(0.05f, value); }
+        public float SlashFrenzySeconds { get => slashFrenzySeconds; set => slashFrenzySeconds = Mathf.Max(0.1f, value); }
+        public int MaxStones { get => maxStones; set => maxStones = Mathf.Max(2, value); }
         public float SplitSeconds => splitSeconds;
-        public int KicksRequired { get => kicksRequired; set => kicksRequired = Mathf.Clamp(value, 1, 6); }
         public float KickWindowSeconds { get => kickWindowSeconds; set => kickWindowSeconds = value; }
         public float KneeLiftInches { get => kneeLiftInches; set => kneeLiftInches = value; }
         public float KneeReleaseRatio { get => kneeReleaseRatio; set => kneeReleaseRatio = Mathf.Clamp(value, 0.05f, 0.95f); }
@@ -92,6 +95,9 @@ namespace Nex.Ninjago
         public float PieceDropSeconds => pieceDropSeconds;
 
         public float HangSecondsFor(int throwIndex) => throwIndex < longHangCount ? longHangSeconds : hangSeconds;
+
+        /// <summary>Stones a rock is cut into by this many slashes (0 slashes leaves it whole).</summary>
+        public int StonesFor(int slashes) => slashes <= 0 ? 0 : Mathf.Min(maxStones, slashes + 1);
 
         public KickDetector.Settings KickSettings => new(kneeLiftInches, kneeReleaseRatio, kickRiseMaxSeconds, kickCooldownSeconds, kneeRestAdaptSeconds);
 

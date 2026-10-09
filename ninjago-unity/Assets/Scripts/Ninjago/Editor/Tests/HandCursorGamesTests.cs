@@ -134,11 +134,46 @@ namespace Nex.Ninjago.Editor.Tests
         }
 
         [Test]
+        public void BackAndForthStrokesCountEveryCrossing()
+        {
+            var detector = new SlashDetector();
+            var slashes = 0;
+            var time = 0f;
+            for (var pass = 0; pass < 6; pass++)
+            {
+                var from = pass % 2 == 0 ? 300f : 700f;
+                var to = pass % 2 == 0 ? 700f : 300f;
+                for (var i = 0; i <= 8; i++)
+                {
+                    if (Step(detector, new Vector2(Mathf.Lerp(from, to, i / 8f), 500f), 90f, time)) slashes++;
+                    time += 1f / 60f;
+                }
+            }
+
+            Assert.AreEqual(6, slashes);
+        }
+
+        [Test]
         public void SignalChangeMidStrokeRestarts()
         {
             var detector = new SlashDetector();
             Assert.IsFalse(Step(detector, new Vector2(300f, 500f), 80f, 0f));
             Assert.IsFalse(Step(detector, new Vector2(700f, 500f), 80f, 0.02f, 2));
+        }
+    }
+
+    public class StoneCountTests
+    {
+        [Test]
+        public void FirstSlashSplitsInTwoAndEachSlashAddsOneUpToTheCap()
+        {
+            var config = ScriptableObject.CreateInstance<StoneKickConfig>();
+            config.MaxStones = 5;
+            Assert.AreEqual(0, config.StonesFor(0));
+            Assert.AreEqual(2, config.StonesFor(1));
+            Assert.AreEqual(4, config.StonesFor(3));
+            Assert.AreEqual(5, config.StonesFor(9));
+            Object.DestroyImmediate(config);
         }
     }
 

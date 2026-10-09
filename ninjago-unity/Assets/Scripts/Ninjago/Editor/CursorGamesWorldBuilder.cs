@@ -47,13 +47,13 @@ namespace Nex.Ninjago.Editor
             var rock = BuildRock(root.transform);
             var hang = Empty("HangPoint", root.transform, new Vector3(0f, 1.55f, 2.5f));
             var impact = Empty("ImpactPoint", root.transform, new Vector3(0f, 1.7f, -1.05f));
-            var pieces = Empty("Pieces", root.transform, Vector3.zero);
+            var pieces = Empty("Stones", root.transform, Vector3.zero).gameObject.AddComponent<RockPieces>();
+            Set(pieces, "piecePrefab", piecePrefab);
             // Low behind the player's spot: the rock hangs mid-screen and the boss stands above it on the ledge.
             var camera = NinjagoWorldBuilder.NewCamera(root.transform, new Vector3(0f, 1.8f, -1.5f), new Vector3(4f, 0f, 0f), 62f);
             Set(lane, "boss", boss);
             Set(lane, "rock", rock);
-            Set(lane, "piecePrefab", piecePrefab);
-            Set(lane, "piecesRoot", pieces);
+            Set(lane, "pieces", pieces);
             Set(lane, "hangPoint", hang);
             Set(lane, "impactPoint", impact);
             Set(lane, "laneCamera", camera);

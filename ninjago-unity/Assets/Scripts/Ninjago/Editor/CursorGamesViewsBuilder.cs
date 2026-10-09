@@ -193,13 +193,16 @@ namespace Nex.Ninjago.Editor
             var hearts = Row(root, "Hearts", new Vector2(0f, 1f), new Vector2(200f, -36f), new Vector2(500f, 64f), 10f, TextAnchor.MiddleLeft);
             var throwLabel = Label(root, "ThrowLabel", null, "Throw 1/6", 54f, Color.white, outline, TextAlignmentOptions.Right);
             Place((RectTransform)throwLabel.transform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-40f, -32f), new Vector2(420f, 70f));
-            // Above the piece row, which hangs at the middle of the half.
+            // Above the rock and then its stones, which hang at the middle of the half.
+            var slashCount = Label(root, "SlashCount", null, "SLASH x1", 120f, Color.white, outline);
+            Place((RectTransform)slashCount.transform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 150f),
+                new Vector2(900f, 160f));
             var kick = NewRect("KickPrompt", root);
             Place(kick, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 135f), new Vector2(900f, 170f));
             var kickWord = Label(kick, "KickWord", "ninjago.kick.kick", "KICK", 150f, kickYellow, outline, TextAlignmentOptions.Right);
             Place((RectTransform)kickWord.transform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(1f, 0.5f), new Vector2(100f, 0f), new Vector2(520f, 170f));
-            var kickCount = Label(kick, "KickCount", null, "0/3", 110f, Color.white, outline, TextAlignmentOptions.Left);
-            Place((RectTransform)kickCount.transform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 0.5f), new Vector2(125f, -6f), new Vector2(300f, 150f));
+            var stoneCount = Label(kick, "StoneCount", null, "x3", 110f, Color.white, outline, TextAlignmentOptions.Left);
+            Place((RectTransform)stoneCount.transform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 0.5f), new Vector2(125f, -6f), new Vector2(300f, 150f));
             var slash = NinjagoViewsBuilder.Banner(root, "SlashHint", "ninjago.kick.slash_hint", "Slash the rock!", 84f, Color.white, new Vector2(0f, -220f));
             var outBanner = NinjagoViewsBuilder.Banner(root, "OutBanner", "ninjago.fight.out", "OUT", 170f, warnRed, new Vector2(0f, 80f));
             var finished = NinjagoViewsBuilder.Banner(root, "FinishedBanner", "ninjago.fight.finished", "Finished!", 96f, safeGreen, new Vector2(0f, 330f));
@@ -209,9 +212,12 @@ namespace Nex.Ninjago.Editor
             Set(hud, "heartPrefab", heartPrefab);
             Set(hud, "throwLabel", throwLabel);
             SetLocalized(hud, "throwText", "ninjago.kick.throw");
+            Set(hud, "slashCount", (RectTransform)slashCount.transform);
+            Set(hud, "slashCountLabel", slashCount);
+            SetLocalized(hud, "slashCountText", "ninjago.kick.slash_count");
             Set(hud, "kickPrompt", kick.gameObject);
-            Set(hud, "kickCountLabel", kickCount);
-            SetLocalized(hud, "kickCountText", "ninjago.kick.count");
+            Set(hud, "stoneCountLabel", stoneCount);
+            SetLocalized(hud, "stoneCountText", "ninjago.kick.stones");
             Set(hud, "slashHint", slash.gameObject);
             Set(hud, "hitFlash", flash);
             Set(hud, "outBanner", outBanner.gameObject);

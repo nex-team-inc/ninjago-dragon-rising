@@ -12,9 +12,11 @@ namespace Nex.Ninjago
 
         #region Slash
 
-        public static void SlashHit(int playerIndex, int throwIndex, float speedInchesPerSecond, float secondsAirborne)
+        /// <param name="slashNumber">1 for the slash that starts the frenzy, then counting up within the throw.</param>
+        public static void SlashHit(int playerIndex, int throwIndex, int slashNumber, float speedInchesPerSecond, float secondsAirborne)
         {
             var props = Throw(playerIndex, throwIndex);
+            props["slash"] = slashNumber;
             props["speed_in_s"] = Round(speedInchesPerSecond);
             props["seconds_airborne"] = Round(secondsAirborne);
             Analytics.TrackEvent("slash_hit", props);
@@ -31,15 +33,15 @@ namespace Nex.Ninjago
 
         #region Kick
 
-        public static void KickAccepted(int playerIndex, int throwIndex, int kickNumber, float secondsIntoPrompt)
+        public static void KickAccepted(int playerIndex, int throwIndex, int stones, float secondsIntoPrompt)
         {
             var props = Throw(playerIndex, throwIndex);
-            props["kick"] = kickNumber;
+            props["stones"] = stones;
             props["seconds_into_prompt"] = Round(secondsIntoPrompt);
             Analytics.TrackEvent("kick_accepted", props);
         }
 
-        /// <param name="reason">"cooldown" (double count) or "no_prompt" (no pieces hanging).</param>
+        /// <param name="reason">"cooldown" (double count) or "no_prompt" (no stones hanging, or already kicked).</param>
         public static void KickRejected(int playerIndex, int throwIndex, string reason)
         {
             var props = Throw(playerIndex, throwIndex);
@@ -47,20 +49,20 @@ namespace Nex.Ninjago
             Analytics.TrackEvent("kick_rejected", props);
         }
 
-        public static void FullReturn(int playerIndex, int throwIndex, int kicks, float promptSeconds, float averageGapSeconds)
+        /// <summary>The kick came in time and every stone went back to the boss.</summary>
+        public static void FullReturn(int playerIndex, int throwIndex, int stones, float kickSeconds)
         {
             var props = Throw(playerIndex, throwIndex);
-            props["kicks"] = kicks;
-            props["prompt_seconds"] = Round(promptSeconds);
-            props["average_gap_s"] = Round(averageGapSeconds);
+            props["stones"] = stones;
+            props["kick_seconds"] = Round(kickSeconds);
             Analytics.TrackEvent("full_return", props);
         }
 
-        public static void IncompleteReturn(int playerIndex, int throwIndex, int kicks, int kicksRequired)
+        /// <summary>No kick before the prompt closed; every stone dropped.</summary>
+        public static void IncompleteReturn(int playerIndex, int throwIndex, int stones)
         {
             var props = Throw(playerIndex, throwIndex);
-            props["kicks"] = kicks;
-            props["kicks_required"] = kicksRequired;
+            props["stones"] = stones;
             Analytics.TrackEvent("incomplete_return", props);
         }
 

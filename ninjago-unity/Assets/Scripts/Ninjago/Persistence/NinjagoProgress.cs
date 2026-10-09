@@ -25,9 +25,9 @@ namespace Nex.Ninjago
         public int stoneKickRuns;
         public int stoneKickBestSlashes;
         public int stoneKickBestFullReturns;
-        public int stoneKickBestKicks;
-        // -1 until a run with two kicks inside one prompt.
-        public float stoneKickBestAverageKickGap = -1f;
+        public int stoneKickBestStones;
+        // Fastest average seconds from KICK to the kick; -1 until the first kick.
+        public float stoneKickBestKickTime = -1f;
 
         public int earthSealRuns;
         public int earthSealBestSeals;

@@ -26,14 +26,24 @@ namespace Nex.Ninjago
         [Header("Throw Text")]
         [Tooltip("Smart string with {current} {total}.")]
         [SerializeField] LocalizedString throwText = new();
+        [Header("Slash Count")]
+        [Tooltip("Above the rock during the slashing frenzy; punches on every slash.")]
+        [SerializeField] RectTransform slashCount = null!;
+        [Header("Slash Count Label")]
+        [SerializeField] NexLocalizedString slashCountLabel = null!;
+        [Header("Slash Count Text")]
+        [Tooltip("Smart string with {count}.")]
+        [SerializeField] LocalizedString slashCountText = new();
+        [Header("Slash Punch Seconds")]
+        [SerializeField] float slashPunchSeconds = 0.18f;
         [Header("Kick Prompt")]
-        [Tooltip("The big KICK word and its count, near the hanging pieces.")]
+        [Tooltip("The big KICK word and the stone count beside it, near the hanging stones.")]
         [SerializeField] GameObject kickPrompt = null!;
-        [Header("Kick Count Label")]
-        [SerializeField] NexLocalizedString kickCountLabel = null!;
-        [Header("Kick Count Text")]
-        [Tooltip("Smart string with {count} {total}.")]
-        [SerializeField] LocalizedString kickCountText = new();
+        [Header("Stone Count Label")]
+        [SerializeField] NexLocalizedString stoneCountLabel = null!;
+        [Header("Stone Count Text")]
+        [Tooltip("Smart string with {count}.")]
+        [SerializeField] LocalizedString stoneCountText = new();
         [Header("Slash Hint")]
         [SerializeField] GameObject slashHint = null!;
         [Header("Hit Flash")]
@@ -47,6 +57,7 @@ namespace Nex.Ninjago
 
         readonly List<Image> hearts = new();
         float hitFlashStart = float.NegativeInfinity;
+        float slashPunchStart = float.NegativeInfinity;
 
         #region Initialization
 
@@ -60,6 +71,7 @@ namespace Nex.Ninjago
 
             SetHearts(maxHearts);
             SetThrow(1, throws);
+            HideSlashCount();
             HideKick();
             ShowSlashHint(false);
             hitFlash.enabled = false;
@@ -84,10 +96,23 @@ namespace Nex.Ninjago
             throwLabel.StringReference = LocalizedStrings.WithArguments(throwText, ("current", current), ("total", total));
         }
 
-        public void ShowKick(int count, int total)
+        public void ShowSlashCount(int count)
+        {
+            slashCount.gameObject.SetActive(true);
+            slashCountLabel.StringReference = LocalizedStrings.WithArguments(slashCountText, ("count", count));
+            slashPunchStart = Time.unscaledTime;
+        }
+
+        public void HideSlashCount()
+        {
+            slashCount.gameObject.SetActive(false);
+        }
+
+        /// <summary>KICK with the number of stones one kick will send back.</summary>
+        public void ShowKick(int stones)
         {
             kickPrompt.SetActive(true);
-            kickCountLabel.StringReference = LocalizedStrings.WithArguments(kickCountText, ("count", count), ("total", total));
+            stoneCountLabel.StringReference = LocalizedStrings.WithArguments(stoneCountText, ("count", stones));
         }
 
         public void HideKick()
@@ -109,6 +134,7 @@ namespace Nex.Ninjago
         public void ShowOut()
         {
             HideKick();
+            HideSlashCount();
             ShowSlashHint(false);
             outBanner.SetActive(true);
         }
@@ -124,6 +150,8 @@ namespace Nex.Ninjago
 
         void Update()
         {
+            var punch = 1f - Mathf.Clamp01((Time.unscaledTime - slashPunchStart) / slashPunchSeconds);
+            slashCount.localScale = Vector3.one * (1f + 0.35f * punch);
             if (!hitFlash.enabled) return;
             var t = (Time.unscaledTime - hitFlashStart) / hitFlashSeconds;
             if (t >= 1f)

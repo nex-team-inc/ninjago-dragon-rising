@@ -9,7 +9,7 @@ using UnityEngine.Localization;
 
 namespace Nex.Ninjago
 {
-    /// <summary>Mini-game A: slash the boss's rock with a hand cursor, then kick the pieces back with fast knee pulses.</summary>
+    /// <summary>Mini-game A: slash the boss's rock into stones in a cursor frenzy, then send every stone back with one kick.</summary>
     public class StoneKickGame : HandCursorGame
     {
         [Header("Stone Kick View")]
@@ -23,14 +23,14 @@ namespace Nex.Ninjago
         [Header("Result: Player Line")]
         [Tooltip("Smart string with {player} {slashes} {throws} {returns} {hearts} {maxHearts}.")]
         [SerializeField] LocalizedString playerLine = new();
-        [Header("Result: Player Kicks Line")]
-        [Tooltip("Smart string with {player} {kicks} {possible} {gap} (seconds).")]
-        [SerializeField] LocalizedString kicksLine = new();
-        [Header("Result: Player Kicks Line Without Gap")]
-        [Tooltip("Smart string with {player} {kicks} {possible}, for a player who never kicked twice in one prompt.")]
-        [SerializeField] LocalizedString kicksLineNoGap = new();
+        [Header("Result: Player Stones Line")]
+        [Tooltip("Smart string with {player} {stones} {cut} {time} (seconds from KICK to the kick).")]
+        [SerializeField] LocalizedString stonesLine = new();
+        [Header("Result: Player Stones Line Without Kicks")]
+        [Tooltip("Smart string with {player} {stones} {cut}, for a player who never kicked in time.")]
+        [SerializeField] LocalizedString stonesLineNoKick = new();
         [Header("Result: Best Line")]
-        [Tooltip("Smart string with {slashes} {returns} {kicks}.")]
+        [Tooltip("Smart string with {slashes} {returns} {stones}.")]
         [SerializeField] LocalizedString bestLine = new();
         [Header("Result: New Best Line")]
         [SerializeField] LocalizedString newBestLine = new();
@@ -57,52 +57,52 @@ namespace Nex.Ninjago
             var lines = new List<ResultLine.Data>();
             var details = new GameAnalyticsProperties();
             var anyStanding = false;
-            int bestSlashes = 0, bestReturns = 0, bestKicks = 0;
-            var bestGap = -1f;
+            int bestSlashes = 0, bestReturns = 0, bestStones = 0;
+            var bestKickTime = -1f;
             foreach (var lane in lanes)
             {
                 anyStanding |= !lane.IsOut;
                 bestSlashes = Mathf.Max(bestSlashes, lane.Slashes);
-                bestReturns = Mathf.Max(bestReturns, lane.FullReturns);
-                bestKicks = Mathf.Max(bestKicks, lane.KicksFired);
-                var gap = lane.AverageKickGap;
-                if (gap >= 0f && (bestGap < 0f || gap < bestGap)) bestGap = gap;
+                bestReturns = Mathf.Max(bestReturns, lane.Returns);
+                bestStones = Mathf.Max(bestStones, lane.StonesReturned);
+                var kickTime = lane.AverageKickTime;
+                if (kickTime >= 0f && (bestKickTime < 0f || kickTime < bestKickTime)) bestKickTime = kickTime;
                 var player = lane.PlayerIndex + 1;
                 lines.Add(new ResultLine.Data(playerLine, lane.PlayerColor, ("player", player), ("slashes", lane.Slashes), ("throws", throws),
-                    ("returns", lane.FullReturns), ("hearts", lane.Hearts), ("maxHearts", config.Hearts)));
-                lines.Add(gap >= 0f
-                    ? new ResultLine.Data(kicksLine, lane.PlayerColor, ("player", player), ("kicks", lane.KicksFired), ("possible", lane.KicksPossible), ("gap", gap))
-                    : new ResultLine.Data(kicksLineNoGap, lane.PlayerColor, ("player", player), ("kicks", lane.KicksFired), ("possible", lane.KicksPossible)));
+                    ("returns", lane.Returns), ("hearts", lane.Hearts), ("maxHearts", config.Hearts)));
+                lines.Add(kickTime >= 0f
+                    ? new ResultLine.Data(stonesLine, lane.PlayerColor, ("player", player), ("stones", lane.StonesReturned), ("cut", lane.StonesCut), ("time", kickTime))
+                    : new ResultLine.Data(stonesLineNoKick, lane.PlayerColor, ("player", player), ("stones", lane.StonesReturned), ("cut", lane.StonesCut)));
                 var prefix = $"p{player}_";
                 details[prefix + "slashes"] = lane.Slashes;
-                details[prefix + "full_returns"] = lane.FullReturns;
-                details[prefix + "kicks"] = lane.KicksFired;
-                details[prefix + "kicks_possible"] = lane.KicksPossible;
-                details[prefix + "average_kick_gap_s"] = Mathf.Round(gap * 100f) / 100f;
+                details[prefix + "returns"] = lane.Returns;
+                details[prefix + "stones_cut"] = lane.StonesCut;
+                details[prefix + "stones_returned"] = lane.StonesReturned;
+                details[prefix + "average_kick_s"] = Mathf.Round(kickTime * 100f) / 100f;
                 details[prefix + "hearts"] = lane.Hearts;
                 details[prefix + "out"] = lane.IsOut;
             }
 
             var progress = PlayerDataManager.Instance.NinjagoProgress;
             var isNewBest = progress.stoneKickRuns > 0 && (bestSlashes > progress.stoneKickBestSlashes ||
-                bestReturns > progress.stoneKickBestFullReturns || bestKicks > progress.stoneKickBestKicks);
+                bestReturns > progress.stoneKickBestFullReturns || bestStones > progress.stoneKickBestStones);
             PlayerDataManager.Instance.ScopedNinjagoProgressUpdate(saved =>
             {
                 saved.stoneKickRuns++;
                 saved.stoneKickBestSlashes = Mathf.Max(saved.stoneKickBestSlashes, bestSlashes);
                 saved.stoneKickBestFullReturns = Mathf.Max(saved.stoneKickBestFullReturns, bestReturns);
-                saved.stoneKickBestKicks = Mathf.Max(saved.stoneKickBestKicks, bestKicks);
-                if (bestGap >= 0f && (saved.stoneKickBestAverageKickGap < 0f || bestGap < saved.stoneKickBestAverageKickGap))
+                saved.stoneKickBestStones = Mathf.Max(saved.stoneKickBestStones, bestStones);
+                if (bestKickTime >= 0f && (saved.stoneKickBestKickTime < 0f || bestKickTime < saved.stoneKickBestKickTime))
                 {
-                    saved.stoneKickBestAverageKickGap = bestGap;
+                    saved.stoneKickBestKickTime = bestKickTime;
                 }
             });
 
             if (isNewBest) lines.Add(new ResultLine.Data(newBestLine, bestColor));
             lines.Add(new ResultLine.Data(bestLine, Color.white, ("slashes", progress.stoneKickBestSlashes),
-                ("returns", progress.stoneKickBestFullReturns), ("kicks", progress.stoneKickBestKicks)));
+                ("returns", progress.stoneKickBestFullReturns), ("stones", progress.stoneKickBestStones)));
             details["throws"] = throws;
-            details["kicks_required"] = config.KicksRequired;
+            details["max_stones"] = config.MaxStones;
             return new NinjagoOutcome(anyStanding ? victoryTitle : defeatTitle, lines, anyStanding ? "win" : "lose", details);
         }
 

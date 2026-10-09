@@ -129,8 +129,10 @@ namespace Nex
         public float KickHang { get => StoneKick.HangSeconds; set => StoneKick.HangSeconds = value; }
         [DebugOrder(-186), Description("Kick: Throw Flight (s)"), NumericSteps(Steps = 0.1, Min = 0.3, Max = 4), ES3NonSerializable]
         public float KickThrowFlight { get => StoneKick.ThrowSeconds; set => StoneKick.ThrowSeconds = value; }
-        [DebugOrder(-185), Description("Kick: Kicks Required (pieces)"), NumericSteps(IntSteps = 1, IntMin = 1, IntMax = 6), ES3NonSerializable]
-        public int KickRequired { get => StoneKick.KicksRequired; set => StoneKick.KicksRequired = value; }
+        [DebugOrder(-185), Description("Kick: Slash Frenzy (s)"), NumericSteps(Steps = 0.1, Min = 0.3, Max = 6), ES3NonSerializable]
+        public float KickSlashFrenzy { get => StoneKick.SlashFrenzySeconds; set => StoneKick.SlashFrenzySeconds = value; }
+        [DebugOrder(-176), Description("Kick: Max Stones Per Rock"), NumericSteps(IntSteps = 1, IntMin = 2, IntMax = 12), ES3NonSerializable]
+        public int KickMaxStones { get => StoneKick.MaxStones; set => StoneKick.MaxStones = value; }
         [DebugOrder(-184), Description("Kick: Kick Window (s)"), NumericSteps(Steps = 0.1, Min = 0.5, Max = 6), ES3NonSerializable]
         public float KickWindow { get => StoneKick.KickWindowSeconds; set => StoneKick.KickWindowSeconds = value; }
         [DebugOrder(-183), Description("Kick: Knee Pulse Lift (in)"), NumericSteps(Steps = 0.5, Min = 1, Max = 14), ES3NonSerializable]

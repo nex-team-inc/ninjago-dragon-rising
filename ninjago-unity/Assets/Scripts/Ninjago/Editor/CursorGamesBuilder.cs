@@ -125,8 +125,8 @@ namespace Nex.Ninjago.Editor
                 SetLocalized(game, "victoryTitle", "ninjago.result.victory");
                 SetLocalized(game, "defeatTitle", "ninjago.result.defeat");
                 SetLocalized(game, "playerLine", "ninjago.result.kick_player");
-                SetLocalized(game, "kicksLine", "ninjago.result.kick_kicks");
-                SetLocalized(game, "kicksLineNoGap", "ninjago.result.kick_kicks_no_gap");
+                SetLocalized(game, "stonesLine", "ninjago.result.kick_stones");
+                SetLocalized(game, "stonesLineNoKick", "ninjago.result.kick_stones_no_kick");
                 SetLocalized(game, "bestLine", "ninjago.result.kick_best");
                 SetLocalized(game, "newBestLine", "ninjago.result.new_best");
             });

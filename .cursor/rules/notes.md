@@ -1,0 +1,13 @@
+Make use of the follow is a must, use alternative way is not allowed:
+- Use ViewManager for UI flow stacks. For example start screen is a view of stack 1, then setup screen is also a view, in the second stack. Then the gameplay and summary should be also a view. Make sure every step is a view, even that step have no UI.
+- Please make sure the game UI flow is start with a SingletonSpawner.
+- Make sure just before anything that make use of camera, have a setup view that calibrate player, try using PreviewsManager and SetupStateManager to do it.
+- During the whole gameplay which need use of camera, make sure somewhere to put a picture in picture camera preview in a corner. And please have a small indicator over the player's head to keep inform player who is controlling.
+- Make use of DetectionManager to track the player body and gather information of the node of body. For multiple player control, please also follow DetectionManager flow to enable a multiplayer gameplay.
+- Make use of Easy save and PlayerDataManager to save every progress and settings.
+- Make use of Debug setting view if there are anything that want to test or adjust in the game, while it is not something player himself can adjust.
+- Make use of Localization, to enable the game having multiple language.
+- Please make sure every UI action, gameplay result, and turns in a turn base game, have a corresponding log making use of AnalyticsManager to collect/gather.
+- For any visual effect, make use of VfxManager.
+- For any audio, make use of SfxManager and BgmManager.
+- Please let everything that can tune globally, become a config inside a scriptable object. Make sure a game designer can tune anything critical without writing code. Make use of EnumDictionary if the config is in Enum.

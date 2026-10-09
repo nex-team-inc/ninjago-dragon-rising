@@ -1,0 +1,52 @@
+---
+alwaysApply: true
+---
+
+### Unity Development Rule
+
+## Ambiguity and Clarification
+- When a requirement is unclear, make the most reasonable assumption based on the existing codebase, architecture, and conventions.
+- Clearly state any assumption that materially affects the implementation.
+- If clarification is required before proceeding, ask a multiple-choice question instead of an open-ended question.
+- Provide a recommended or default option when possible.
+- Keep the number of options concise and include an `Other` option when the expected answer may not be covered.
+- If the ambiguity is minor and does not risk breaking behavior or architecture, proceed with the most reasonable assumption without blocking implementation.
+
+## Initialization
+- Always use an explicit `Initialize(...)` method for component setup and dependency wiring.
+- Do not use Unity's `Awake()` or `Start()` event functions for initialization.
+- Have the owning composition root, factory, or container call `Initialize(...)` in a clear and deterministic order.
+- Assume each `Initialize(...)` method is called exactly once.
+- Do not add initialization guards, repeated-call checks, or idempotency logic unless explicitly requested.
+
+## Serialized Fields
+- Always add a descriptive `[Header("...")]` attribute when adding a new `[SerializeField]`.
+- Place the `[Header("...")]` attribute immediately above its corresponding serialized field.
+- Use concise header names that clearly describe the field's responsibility.
+
+## Async Operations
+- Always use UniTask for asynchronous operations.
+- Do not use Unity coroutines or IEnumerator-based flows.
+- Pass and observe a CancellationToken when an operation can outlive its caller or owning object.
+
+## Async Operations
+- Always use UniTask for asynchronous operations.
+- Do not use Unity coroutines or IEnumerator-based flows.
+- Pass and observe a CancellationToken when an operation can outlive its caller or owning object.
+
+##Code Organization
+- Group every new function into a #region / #endregion block by responsibility, such as #region Initialization, #region - - Public API, #region Animation, or #region Private Helpers.
+- Add new functions to an existing matching region.
+- Create a new clearly named region only when no matching region exists.
+- Do not nest regions.
+- Keep one responsibility per region.
+
+##Component References
+- Avoid using GetComponent, GetComponentInChildren, GetComponentInParent, or similar runtime component lookups.
+- Avoid using AddComponent to construct dependencies dynamically.
+- Prefer explicit [SerializeField] references assigned in the Unity Inspector.
+- Validate required references during Initialize(...) when appropriate.
+
+##Fail fast rule
+- Avoid ensure() functions or return if a nullable object is null
+- Make sure to fail as early as possible when needed

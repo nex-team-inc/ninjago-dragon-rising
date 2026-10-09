@@ -193,8 +193,8 @@ namespace Nex.Ninjago.Editor
             var carPose = Empty("CarCameraPose", root.transform, new Vector3(0f, 3f, -6.5f));
             carPose.localRotation = Quaternion.Euler(8.8f, 0f, 0f);
             // Close behind the craft and centered on its vertical band, so climbs and dives read clearly.
-            var skyPose = Empty("SkyCameraPose", root.transform, new Vector3(0f, 3.6f, -5f));
-            skyPose.localRotation = Quaternion.Euler(3f, 0f, 0f);
+            var skyPose = Empty("SkyCameraPose", root.transform, new Vector3(0f, 3.9f, -5f));
+            skyPose.localRotation = Quaternion.Euler(1f, 0f, 0f);
             var road = BuildRoad(root.transform, out var roadStrip);
             var sky = BuildSky(root.transform, out var skyStrip);
             var car = BuildCar(root.transform);
@@ -346,7 +346,7 @@ namespace Nex.Ninjago.Editor
             Block(PrimitiveType.Cube, "TailWings", body, new Vector3(0f, 0.02f, -0.92f), new Vector3(0.8f, 0.04f, 0.26f), trim);
             Block(PrimitiveType.Cube, "TailFin", body, new Vector3(0f, 0.2f, -0.92f), new Vector3(0.05f, 0.36f, 0.32f), trim);
             Block(PrimitiveType.Cube, "Engine", body, new Vector3(0f, 0f, -1.08f), new Vector3(0.3f, 0.12f, 0.08f), glow);
-            BuildSteerMarkers(rig, craft, 1.05f);
+            BuildSteerMarkers(rig, craft, 0.75f);
             Set(rig, "body", body);
             return rig;
         }

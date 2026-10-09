@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af90900759e8e4a528751586d7400a6f, type: 3}
+  m_Name: FightConfig
+  m_EditorClassIdentifier: Assembly-CSharp::Nex.Ninjago.FightConfig
+  hearts: 3
+  sweepsPerPlayer: 4
+  firstSafeSide: 0
+  introSeconds: 2.5
+  restBetweenSweepsSeconds: 3.2
+  telegraphSeconds: 0.6
+  slipWindowSeconds: 0.7
+  leanThresholdInches: 4.5
+  slipResolveSeconds: 0.22
+  counterWindowSeconds: 1
+  slowMotionScale: 0.55
+  slowMotionEaseSeconds: 0.12
+  handTravelInches: 60
+  handSpeedPeakInchesPerSecond: 55
+  handNoiseFloorInches: 0.35
+  handSampleGapSeconds: 0.25
+  useBodyHandFallback: 1
+  bodyFallbackAfterSeconds: 0.15
+  spinSeconds: 0.9
+  hitRecoverSeconds: 1
+  whiffRecoverSeconds: 0.6

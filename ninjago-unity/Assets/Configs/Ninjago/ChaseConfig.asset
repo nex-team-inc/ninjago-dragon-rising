@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 241a8e5155d9b412d9f9b8ae7c1f63da, type: 3}
+  m_Name: ChaseConfig
+  m_EditorClassIdentifier: Assembly-CSharp::Nex.Ninjago.ChaseConfig
+  vehicles:
+    pairs:
+    - key: 0
+      value:
+        segmentSeconds: 20
+        speed: 14
+        usesVerticalLean: 0
+        halfWidth: 2.2
+        centerHeight: 0
+        halfHeight: 0
+        steerSmoothingSeconds: 0.35
+        maxSteerSpeed: 7
+        obstacleSpacingSeconds: 1.7
+        obstacleLeadSeconds: 1.5
+        openingSeconds: 2
+        cellWidth: 2
+        cellHeight: 1.6
+        vehicleHalfExtents: {x: 0.7, y: 0.3}
+    - key: 1
+      value:
+        segmentSeconds: 20
+        speed: 13
+        usesVerticalLean: 1
+        halfWidth: 2.2
+        centerHeight: 3.2
+        halfHeight: 1.6
+        steerSmoothingSeconds: 0.3
+        maxSteerSpeed: 7
+        obstacleSpacingSeconds: 1.9
+        obstacleLeadSeconds: 1.5
+        openingSeconds: 2
+        cellWidth: 2
+        cellHeight: 1.6
+        vehicleHalfExtents: {x: 0.65, y: 0.25}
+  deadzoneInches: 1.5
+  fullLeanInches: 7
+  fullRiseInches: 4
+  playerOneSteerShare: 0.5
+  bumpSpeedDrop: 0.35
+  bumpRecoverSeconds: 1.2
+  introSeconds: 2
+  transitionSeconds: 1.2
+  wholeChestHintSeconds: 3

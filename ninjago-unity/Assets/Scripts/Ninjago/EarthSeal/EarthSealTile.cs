@@ -55,6 +55,7 @@ namespace Nex.Ninjago
         Vector3 monsterBaseScale;
         Vector3 monsterBasePosition;
         float aspect = 1f;
+        SealWall.TileState? shownState;
 
         #region Initialization
 
@@ -80,6 +81,7 @@ namespace Nex.Ninjago
             monsterBaseScale = monster.localScale;
             monsterBasePosition = monster.localPosition;
             ShowIntact();
+            shownState = SealWall.TileState.Intact;
         }
 
         #endregion
@@ -90,6 +92,9 @@ namespace Nex.Ninjago
         /// <param name="holderColor">Color of the player whose crust this is.</param>
         public void Show(SealWall.Tile tile, float pushProgress, Color holderColor)
         {
+            // Only a live crack changes from frame to frame.
+            if (!tile.IsLive && shownState == tile.State) return;
+            shownState = tile.State;
             switch (tile.State)
             {
                 case SealWall.TileState.Intact:

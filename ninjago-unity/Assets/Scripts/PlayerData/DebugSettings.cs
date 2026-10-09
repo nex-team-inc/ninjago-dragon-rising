@@ -100,13 +100,13 @@ namespace Nex
 
         // Ninjago playtest rows. The properties edit the config assets directly (session only, never saved with these
         // settings); keep good values by copying them into the assets under Assets/Configs/Ninjago.
-        [DebugOrder(-100), Description("Ninja: Simulated Body (keys A/D W/S Space, J/L I/K RightShift; mouse = P1 cursor, I/J/K/L = P2 cursor, Space/RightShift = kick)")]
+        [DebugOrder(-100), Description("Ninja: Simulated Body (keys A/D W/S Space, J/L I/K RightShift, mouse)")]
         public bool ninjaSimulatedBody;
 
         // Hand cursor games (Stone Kick, Earth Seal): same rule as the rows above, the config assets are edited live.
-        [DebugOrder(-200), Description("Cursor: Smoothing Min Cutoff (Hz, lower = steadier)"), NumericSteps(Steps = 0.1, Min = 0.1, Max = 10), ES3NonSerializable]
+        [DebugOrder(-200), Description("Cursor: Smoothing Min Cutoff (Hz)"), NumericSteps(Steps = 0.1, Min = 0.1, Max = 10), ES3NonSerializable]
         public float CursorMinCutoff { get => Cursor.SmoothingMinCutoffHz; set => Cursor.SmoothingMinCutoffHz = value; }
-        [DebugOrder(-199), Description("Cursor: Smoothing Speed Response (higher = less lag)"), NumericSteps(Steps = 0.01, Min = 0, Max = 1), ES3NonSerializable]
+        [DebugOrder(-199), Description("Cursor: Smoothing Speed Response"), NumericSteps(Steps = 0.01, Min = 0, Max = 1), ES3NonSerializable]
         public float CursorSpeedResponse { get => Cursor.SmoothingSpeedResponse; set => Cursor.SmoothingSpeedResponse = value; }
         [DebugOrder(-198), Description("Cursor: Reach Height (in)"), NumericSteps(Steps = 1, Min = 10, Max = 60), ES3NonSerializable]
         public float CursorReachHeight { get => Cursor.ReachHeightInches; set => Cursor.ReachHeightInches = value; }
@@ -154,7 +154,7 @@ namespace Nex
         public float SealDrain { get => EarthSeal.SealDrainSeconds; set => EarthSeal.SealDrainSeconds = value; }
         [DebugOrder(-160), Description("Seal W1: Grid Size"), NumericSteps(IntSteps = 1, IntMin = 2, IntMax = 6), ES3NonSerializable]
         public int SealW1Grid { get => W1.gridSize; set => W1.gridSize = value; }
-        [DebugOrder(-159), Description("Seal W1: Crack Chance (per tile per beat)"), NumericSteps(Steps = 0.01, Min = 0, Max = 1), ES3NonSerializable]
+        [DebugOrder(-159), Description("Seal W1: Crack Chance"), NumericSteps(Steps = 0.01, Min = 0, Max = 1), ES3NonSerializable]
         public float SealW1Chance { get => W1.crackChance; set => W1.crackChance = value; }
         [DebugOrder(-158), Description("Seal W1: Max Cracks"), NumericSteps(IntSteps = 1, IntMin = 1, IntMax = 6), ES3NonSerializable]
         public int SealW1MaxCracks { get => W1.maxCracks; set => W1.maxCracks = value; }
@@ -166,7 +166,7 @@ namespace Nex
         public float SealW1Breakthrough { get => W1.breakthroughSeconds; set => W1.breakthroughSeconds = value; }
         [DebugOrder(-150), Description("Seal W2: Grid Size"), NumericSteps(IntSteps = 1, IntMin = 2, IntMax = 6), ES3NonSerializable]
         public int SealW2Grid { get => W2.gridSize; set => W2.gridSize = value; }
-        [DebugOrder(-149), Description("Seal W2: Crack Chance (per tile per beat)"), NumericSteps(Steps = 0.01, Min = 0, Max = 1), ES3NonSerializable]
+        [DebugOrder(-149), Description("Seal W2: Crack Chance"), NumericSteps(Steps = 0.01, Min = 0, Max = 1), ES3NonSerializable]
         public float SealW2Chance { get => W2.crackChance; set => W2.crackChance = value; }
         [DebugOrder(-148), Description("Seal W2: Max Cracks"), NumericSteps(IntSteps = 1, IntMin = 1, IntMax = 6), ES3NonSerializable]
         public int SealW2MaxCracks { get => W2.maxCracks; set => W2.maxCracks = value; }
@@ -178,7 +178,7 @@ namespace Nex
         public float SealW2Breakthrough { get => W2.breakthroughSeconds; set => W2.breakthroughSeconds = value; }
         [DebugOrder(-140), Description("Seal W3: Grid Size"), NumericSteps(IntSteps = 1, IntMin = 2, IntMax = 6), ES3NonSerializable]
         public int SealW3Grid { get => W3.gridSize; set => W3.gridSize = value; }
-        [DebugOrder(-139), Description("Seal W3: Crack Chance (per tile per beat)"), NumericSteps(Steps = 0.01, Min = 0, Max = 1), ES3NonSerializable]
+        [DebugOrder(-139), Description("Seal W3: Crack Chance"), NumericSteps(Steps = 0.01, Min = 0, Max = 1), ES3NonSerializable]
         public float SealW3Chance { get => W3.crackChance; set => W3.crackChance = value; }
         [DebugOrder(-138), Description("Seal W3: Max Cracks"), NumericSteps(IntSteps = 1, IntMin = 1, IntMax = 6), ES3NonSerializable]
         public int SealW3MaxCracks { get => W3.maxCracks; set => W3.maxCracks = value; }
@@ -190,7 +190,7 @@ namespace Nex
         public float SealW3Breakthrough { get => W3.breakthroughSeconds; set => W3.breakthroughSeconds = value; }
         [DebugOrder(-130), Description("Seal W4: Grid Size"), NumericSteps(IntSteps = 1, IntMin = 2, IntMax = 6), ES3NonSerializable]
         public int SealW4Grid { get => W4.gridSize; set => W4.gridSize = value; }
-        [DebugOrder(-129), Description("Seal W4: Crack Chance (per tile per beat)"), NumericSteps(Steps = 0.01, Min = 0, Max = 1), ES3NonSerializable]
+        [DebugOrder(-129), Description("Seal W4: Crack Chance"), NumericSteps(Steps = 0.01, Min = 0, Max = 1), ES3NonSerializable]
         public float SealW4Chance { get => W4.crackChance; set => W4.crackChance = value; }
         [DebugOrder(-128), Description("Seal W4: Max Cracks"), NumericSteps(IntSteps = 1, IntMin = 1, IntMax = 6), ES3NonSerializable]
         public int SealW4MaxCracks { get => W4.maxCracks; set => W4.maxCracks = value; }

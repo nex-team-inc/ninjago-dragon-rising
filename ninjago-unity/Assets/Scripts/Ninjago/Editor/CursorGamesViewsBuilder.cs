@@ -77,7 +77,7 @@ namespace Nex.Ninjago.Editor
             var right = Feed(ui, "RightFeed", new Vector2(0.5f, 0f), Vector2.one);
             var divider = NewImage(ui, "SplitDivider", null, panelDark);
             Place(divider.rectTransform, new Vector2(0.5f, 0f), new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(10f, 0f));
-            var pip = NinjagoViewsBuilder.CameraPreview(ui, new Vector2(0.5f, 0f), new Vector2(0f, 24f), new Vector2(384f, 216f), out var pipFrame);
+            var pip = NinjagoViewsBuilder.CameraPreview(ui, new Vector2(1f, 0f), new Vector2(-24f, 24f), new Vector2(320f, 180f), out var pipFrame);
             var banner = NinjagoViewsBuilder.Banner(ui, "GetReady", "ninjago.fight.get_ready", "Get ready!", 120f, Color.white, new Vector2(0f, 120f));
             var layer = CursorLayer(ui, mark);
 

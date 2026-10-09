@@ -21,5 +21,19 @@ namespace Nex.Ninjago
         // -1 until the first finished chase.
         public int chaseFewestCarHits = -1;
         public int chaseFewestSkyHits = -1;
+
+        public int stoneKickRuns;
+        public int stoneKickBestSlashes;
+        public int stoneKickBestFullReturns;
+        public int stoneKickBestKicks;
+        // -1 until a run with two kicks inside one prompt.
+        public float stoneKickBestAverageKickGap = -1f;
+
+        public int earthSealRuns;
+        public int earthSealBestSeals;
+        public int earthSealBestHearts;
+        public int earthSealBestTwoHandSeals;
+        // -1 until the first finished wall.
+        public int earthSealFewestBreakthroughs = -1;
     }
 }

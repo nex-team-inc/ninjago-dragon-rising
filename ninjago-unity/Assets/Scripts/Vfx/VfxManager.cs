@@ -45,6 +45,13 @@ namespace Nex
             SpinjitzuBurst = 103,
             BruteBrickSpray = 104,
             VehicleBump = 110,
+            RockSlash = 120,
+            PieceLaunch = 121,
+            BossHit = 122,
+            RockImpact = 123,
+            SealDust = 130,
+            SealComplete = 131,
+            Breakthrough = 132,
         }
 
         #region Pool

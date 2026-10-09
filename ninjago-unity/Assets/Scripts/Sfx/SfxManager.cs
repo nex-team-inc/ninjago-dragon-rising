@@ -79,6 +79,11 @@ namespace Nex
             NinjaSpin = 702,
             NinjaHit = 703,
             VehicleBump = 704,
+            RockSlash = 710,
+            KickThud = 711,
+            PieceHit = 712,
+            SealComplete = 713,
+            Breakthrough = 714,
         }
 
         [SerializeField] AudioSource audioSource = null!;

@@ -54,6 +54,8 @@ namespace Nex
             Fight,
             Runner,
             NinjagoResult,
+            StoneKick,
+            EarthSeal,
         }
 
         /// <summary>

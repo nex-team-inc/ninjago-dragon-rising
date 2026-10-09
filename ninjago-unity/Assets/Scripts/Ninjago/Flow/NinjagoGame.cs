@@ -9,8 +9,8 @@ using UnityEngine;
 namespace Nex.Ninjago
 {
     /// <summary>
-    /// Shared flow of both mini-games: setup view (chest calibration) → gameplay view → result view, and Retry goes
-    /// back through setup. One detection engine and PlayerBody per player for the chosen player count.
+    /// Shared flow of every Ninjago mini-game: setup view (body calibration) → gameplay view → result view, and Retry
+    /// goes back through setup. One detection engine and PlayerBody per player for the chosen player count.
     /// </summary>
     public abstract class NinjagoGame : BaseGame
     {
@@ -30,7 +30,10 @@ namespace Nex.Ninjago
 
         protected DetectionManager Detection { get; private set; } = null!;
         protected ViewManager Views { get; private set; } = null!;
+        protected IReadOnlyList<PlayerBody> Bodies => bodies;
         protected abstract GameModeType Mode { get; }
+        /// <summary>Hand cursors the setup view confirms before gameplay; null for games without them.</summary>
+        protected virtual HandCursorTracker? SetupCursors => null;
 
         public override int NumOfPlayers => Mathf.Clamp(PlayerDataManager.Instance.PlayerPreference.numPlayers, 1, SimulatedBody.MaxPlayers);
 
@@ -63,7 +66,7 @@ namespace Nex.Ninjago
             while (true)
             {
                 var setupView = Instantiate(setupViewPrefab);
-                setupView.Initialize(bodies, Detection, playersConfig);
+                setupView.Initialize(bodies, Detection, playersConfig, SetupCursors);
                 if (firstRound)
                 {
                     await Views.PushView(setupView);

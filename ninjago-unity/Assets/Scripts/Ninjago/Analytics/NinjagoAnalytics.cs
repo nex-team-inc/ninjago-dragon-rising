@@ -42,6 +42,14 @@ namespace Nex.Ninjago
             });
         }
 
+        public static void PlayerHandsConfirmed(int playerIndex, float seconds)
+        {
+            Analytics.TrackEvent("setup_hands_confirmed", new GameAnalyticsProperties
+            {
+                ["player_index"] = playerIndex, ["seconds"] = Round(seconds),
+            });
+        }
+
         public static void SetupComplete(int requestedPlayers, int activePlayers, float seconds)
         {
             Analytics.TrackEvent("setup_complete", new GameAnalyticsProperties
@@ -118,7 +126,14 @@ namespace Nex.Ninjago
 
         #region Helpers
 
-        static string ContentName(GameModeType mode) => mode == GameModeType.SlipAndSpin ? "slip_and_spin" : "chest_chase";
+        static string ContentName(GameModeType mode) => mode switch
+        {
+            GameModeType.SlipAndSpin => "slip_and_spin",
+            GameModeType.ChestChase => "chest_chase",
+            GameModeType.StoneKick => "stone_kick",
+            GameModeType.EarthSeal => "earth_seal",
+            _ => mode.ToString(),
+        };
 
         static float Round(float value) => Mathf.Round(value * 100f) / 100f;
 

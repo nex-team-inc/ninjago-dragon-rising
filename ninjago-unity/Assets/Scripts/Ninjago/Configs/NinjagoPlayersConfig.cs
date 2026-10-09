@@ -22,6 +22,8 @@ namespace Nex.Ninjago
         [SerializeField, Range(1f, 30f)] float soloFallbackSeconds = 8f;
         [Tooltip("Seconds the 'Ready' (or 'Starting solo') message stays up before gameplay.")]
         [SerializeField, Range(0f, 3f)] float readyHoldSeconds = 0.8f;
+        [Tooltip("Hand cursor games: seconds a player's cursor must rest in their setup ring to confirm their hands drive a cursor.")]
+        [SerializeField, Range(0.2f, 3f)] float handCheckSeconds = 0.8f;
 
         #region Public API
 
@@ -30,6 +32,7 @@ namespace Nex.Ninjago
         public float CalibrationStillnessInches => calibrationStillnessInches;
         public float SoloFallbackSeconds { get => soloFallbackSeconds; set => soloFallbackSeconds = value; }
         public float ReadyHoldSeconds => readyHoldSeconds;
+        public float HandCheckSeconds => handCheckSeconds;
 
         #endregion
     }

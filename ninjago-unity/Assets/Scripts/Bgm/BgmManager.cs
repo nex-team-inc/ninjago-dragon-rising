@@ -22,6 +22,8 @@ namespace Nex
             Reward = 30,
             NinjaFight = 40,
             NinjaChase = 41,
+            StoneKick = 42,
+            EarthSeal = 43,
         }
 
         public enum StingerType

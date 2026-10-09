@@ -32,5 +32,18 @@ namespace Nex.Dev
             return Input.GetKeyUp(key);
 #endif
         }
+
+        /// <summary>Mouse position in screen pixels; zero in production builds.</summary>
+        public static Vector3 MousePosition
+        {
+            get
+            {
+#if PRODUCTION
+                return Vector3.zero;
+#else
+                return Input.mousePosition;
+#endif
+            }
+        }
     }
 }

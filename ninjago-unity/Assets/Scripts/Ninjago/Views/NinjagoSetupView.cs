@@ -9,8 +9,9 @@ using UnityEngine.Localization;
 namespace Nex.Ninjago
 {
     /// <summary>
-    /// Camera setup before either mini-game: every player stands in frame and holds still, and that player's chest
-    /// origin is stored. In two-player mode a player who never appears is dropped after the solo-fallback wait.
+    /// Camera setup before every mini-game: every player stands in frame and holds still, and that player's body
+    /// origin (chest, and resting knees for kicks) is stored. Games with hand cursors then confirm each player's hands
+    /// drive a cursor. In two-player mode a player who never appears is dropped after the solo-fallback wait.
     /// </summary>
     public class NinjagoSetupView : SimpleCanvasView
     {
@@ -19,6 +20,9 @@ namespace Nex.Ninjago
         [SerializeField] PreviewsManager previewsManagerPrefab = null!;
         [Header("Player Status Rows")]
         [SerializeField] SetupPlayerStatus[] playerStatuses = null!;
+        [Header("Hand Cursor Check")]
+        [Tooltip("Only in the setup view of the hand cursor games; runs after the body calibration.")]
+        [SerializeField] HandCursorCheck? handCheck;
         [Header("Prompt: Stand In Frame")]
         [SerializeField] LocalizedString standPrompt = new();
         [Header("Prompt: Hold Still")]
@@ -35,10 +39,13 @@ namespace Nex.Ninjago
             public Vector2 anchor;
             public Vector2 sum;
             public int count;
+            public Vector2 kneeDropSum;
+            public int kneeDropCount;
         }
 
         IReadOnlyList<PlayerBody> bodies = null!;
         DetectionManager detection = null!;
+        HandCursorTracker? cursors;
         PreviewsManager previewsManager = null!;
         NinjagoPlayersConfig config = null!;
         bool[] inGoodPosition = null!;
@@ -76,11 +83,13 @@ namespace Nex.Ninjago
 
         #region Initialization
 
-        public void Initialize(IReadOnlyList<PlayerBody> aBodies, DetectionManager aDetection, NinjagoPlayersConfig aConfig)
+        /// <param name="aCursors">The game's hand cursors, or null for games without them (no hand check).</param>
+        public void Initialize(IReadOnlyList<PlayerBody> aBodies, DetectionManager aDetection, NinjagoPlayersConfig aConfig, HandCursorTracker? aCursors)
         {
             bodies = aBodies;
             detection = aDetection;
             config = aConfig;
+            cursors = aCursors;
             inGoodPosition = new bool[bodies.Count];
             holds = new Hold[bodies.Count];
             previewsManager = Instantiate(previewsManagerPrefab);
@@ -120,6 +129,12 @@ namespace Nex.Ninjago
                 await UniTask.Delay((int)(config.ReadyHoldSeconds * 1000f), DelayType.UnscaledDeltaTime, cancellationToken: cancellationToken);
                 await previewsManager.MoveOut(true);
                 detection.ConfigForGameplay();
+                if (cursors != null)
+                {
+                    calibrated = await ConfirmHandsAsync(cursors, handCheck!, calibrated, cancellationToken);
+                    if (calibrated == null) return null;
+                }
+
                 NinjagoAnalytics.SetupComplete(bodies.Count, calibrated.Count, Time.unscaledTime - startTime);
                 return calibrated;
             }
@@ -171,7 +186,7 @@ namespace Nex.Ninjago
             ref var hold = ref holds[playerIndex];
             if (SimulatedBody.IsEnabled)
             {
-                body.SetOrigin(body.TryGetChest(out var simulatedChest) ? simulatedChest : Vector2.zero);
+                body.SetOrigin(body.TryGetChest(out var simulatedChest) ? simulatedChest : Vector2.zero, null);
                 playerStatuses[playerIndex].Show(SetupPlayerStatus.State.Ready);
                 return true;
             }
@@ -190,13 +205,58 @@ namespace Nex.Ninjago
 
             hold.sum += chest;
             hold.count++;
+            if (body.TryGetKneeDrops(out var kneeDrops))
+            {
+                hold.kneeDropSum += kneeDrops;
+                hold.kneeDropCount++;
+            }
+
             playerStatuses[playerIndex].Show(SetupPlayerStatus.State.Holding);
             if (now - hold.startTime < config.CalibrationSeconds) return false;
 
-            body.SetOrigin(hold.sum / hold.count);
+            body.SetOrigin(hold.sum / hold.count, hold.kneeDropCount > 0 ? hold.kneeDropSum / hold.kneeDropCount : null);
             hold.active = false;
             playerStatuses[playerIndex].Show(SetupPlayerStatus.State.Ready);
             return true;
+        }
+
+        // Every calibrated player fills their ring with a cursor; in two-player mode a player who never does is dropped
+        // after the solo-fallback wait, like a body that never appears.
+        async UniTask<List<PlayerBody>?> ConfirmHandsAsync(HandCursorTracker handCursors, HandCursorCheck check, List<PlayerBody> calibrated,
+            CancellationToken cancellationToken)
+        {
+            handCursors.SetDetecting(true);
+            check.Show(calibrated, handCursors, detection, bodies.Count);
+            var confirmed = new List<PlayerBody>(calibrated.Count);
+            var done = new bool[calibrated.Count];
+            var startTime = Time.unscaledTime;
+            float? firstConfirmTime = null;
+            while (!quitRequested)
+            {
+                var now = Time.unscaledTime;
+                for (var slot = 0; slot < calibrated.Count; slot++)
+                {
+                    if (done[slot] || !check.Tick(slot, Time.unscaledDeltaTime, config.HandCheckSeconds)) continue;
+                    done[slot] = true;
+                    confirmed.Add(calibrated[slot]);
+                    firstConfirmTime ??= now;
+                    NinjagoAnalytics.PlayerHandsConfirmed(calibrated[slot].PlayerIndex, now - startTime);
+                    SfxManager.Instance.PlaySoundEffect(SfxManager.SoundEffect.UiSelect);
+                }
+
+                var soloTimeUp = firstConfirmTime.HasValue && now - firstConfirmTime.Value >= config.SoloFallbackSeconds;
+                if (confirmed.Count == calibrated.Count || soloTimeUp)
+                {
+                    check.ShowReady();
+                    await UniTask.Delay((int)(config.ReadyHoldSeconds * 1000f), DelayType.UnscaledDeltaTime, cancellationToken: cancellationToken);
+                    confirmed.Sort((a, b) => a.PlayerIndex.CompareTo(b.PlayerIndex));
+                    return confirmed;
+                }
+
+                await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
+            }
+
+            return null;
         }
 
         List<PlayerBody> CollectCalibrated()

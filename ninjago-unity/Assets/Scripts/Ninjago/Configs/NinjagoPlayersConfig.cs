@@ -32,7 +32,7 @@ namespace Nex.Ninjago
         public float CalibrationStillnessInches => calibrationStillnessInches;
         public float SoloFallbackSeconds { get => soloFallbackSeconds; set => soloFallbackSeconds = value; }
         public float ReadyHoldSeconds => readyHoldSeconds;
-        public float HandCheckSeconds => handCheckSeconds;
+        public float HandCheckSeconds { get => handCheckSeconds; set => handCheckSeconds = Mathf.Max(0.1f, value); }
 
         #endregion
     }

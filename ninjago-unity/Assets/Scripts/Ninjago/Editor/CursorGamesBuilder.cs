@@ -69,9 +69,9 @@ namespace Nex.Ninjago.Editor
             var serialized = new SerializedObject(seal);
             var waves = serialized.FindProperty("waves");
             Wave(waves, EarthSealWave.Wave1, 3, 20f, 0.07f, 1, 1, 2.2f, 2f, 4f);
-            Wave(waves, EarthSealWave.Wave2, 3, 20f, 0.14f, 2, 1, 1.6f, 2f, 3.6f);
-            Wave(waves, EarthSealWave.Wave3, 3, 20f, 0.16f, 2, 2, 1.5f, 1.6f, 3.4f);
-            Wave(waves, EarthSealWave.Wave4, 4, 22f, 0.18f, 3, 1, 1f, 1.3f, 3.2f);
+            Wave(waves, EarthSealWave.Wave2, 3, 20f, 0.09f, 2, 1, 1.6f, 2f, 3.6f);
+            Wave(waves, EarthSealWave.Wave3, 3, 20f, 0.11f, 2, 2, 1.5f, 1.6f, 3.4f);
+            Wave(waves, EarthSealWave.Wave4, 4, 22f, 0.12f, 3, 1, 1f, 1.3f, 3.2f);
             serialized.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(seal);
         }

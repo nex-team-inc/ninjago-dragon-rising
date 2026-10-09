@@ -238,15 +238,15 @@ namespace Nex.Ninjago.Editor
         // Looping earth dust over a held Earth Seal tile (the box covers a tile face).
         static ParticleSystem BuildSealDust(Material material)
         {
-            var system = NewSystem("Vfx_SealDust", material, 1f, true, 90);
+            var system = NewSystem("Vfx_SealDust", material, 1f, true, 120);
             var main = system.main;
-            main.startLifetime = new ParticleSystem.MinMaxCurve(0.5f, 0.9f);
-            main.startSpeed = new ParticleSystem.MinMaxCurve(0.2f, 0.7f);
-            main.startSize = new ParticleSystem.MinMaxCurve(0.18f, 0.4f);
-            main.startColor = new Color(0.78f, 0.58f, 0.28f, 0.85f);
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.6f, 1f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(0.4f, 1.1f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.35f, 0.75f);
+            main.startColor = new Color(0.72f, 0.5f, 0.22f, 0.9f);
             main.gravityModifier = -0.15f;
             var emission = system.emission;
-            emission.rateOverTime = 40f;
+            emission.rateOverTime = 70f;
             var shape = system.shape;
             shape.shapeType = ParticleSystemShapeType.Box;
             shape.scale = new Vector3(3.6f, 1.8f, 0.2f);

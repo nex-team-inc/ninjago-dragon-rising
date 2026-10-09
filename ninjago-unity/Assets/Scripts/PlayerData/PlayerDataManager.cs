@@ -4,6 +4,7 @@ using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Nex.BilliardRogue.Simulation;
+using Nex.Ninjago;
 using Nex.Util;
 using Nex.Util.Attributes;
 using UnityEngine;
@@ -253,6 +254,50 @@ namespace Nex
                 // Keep the file for diagnosis until the next real save.
                 Debug.LogError($"[PlayerDataManager] Meta progress unreadable, using defaults: {e}");
                 return new MetaProgressData();
+            }
+#endif
+        }
+
+        #endregion
+
+        #region Ninjago Progress
+
+        const string ninjagoProgressKey = "ninjagoProgress";
+
+        NinjagoProgress? ninjagoProgress;
+
+        /// <summary>Last mini-game and best results; loaded lazily, defaults (without overwriting the file) when unreadable.</summary>
+        public NinjagoProgress NinjagoProgress => ninjagoProgress ??= LoadNinjagoProgress();
+
+        public void ScopedNinjagoProgressUpdate(Action<NinjagoProgress> modifier)
+        {
+            modifier(NinjagoProgress);
+#if !DISABLE_PERSISTENCE
+            ES3.Save(ninjagoProgressKey, NinjagoProgress);
+#endif
+        }
+
+        public void ResetNinjagoProgress()
+        {
+            ninjagoProgress = new NinjagoProgress();
+#if !DISABLE_PERSISTENCE
+            ES3.Save(ninjagoProgressKey, ninjagoProgress);
+#endif
+        }
+
+        static NinjagoProgress LoadNinjagoProgress()
+        {
+#if DISABLE_PERSISTENCE
+            return new NinjagoProgress();
+#else
+            try
+            {
+                return ES3.Load(ninjagoProgressKey, new NinjagoProgress());
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[PlayerDataManager] Ninjago progress unreadable, using defaults: {e}");
+                return new NinjagoProgress();
             }
 #endif
         }

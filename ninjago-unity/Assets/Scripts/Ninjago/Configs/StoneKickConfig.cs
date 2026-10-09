@@ -51,12 +51,12 @@ namespace Nex.Ninjago
         [Header("Kick")]
         [Tooltip("Seconds the KICK prompt stays open once the stones hang; one kick launches every stone.")]
         [SerializeField, Range(0.5f, 6f)] float kickWindowSeconds = 2f;
-        [Tooltip("Knee lift toward the hip (body inches above its resting drop) that counts as a kick pulse.")]
-        [SerializeField, Range(1f, 14f)] float kneeLiftInches = 4.5f;
+        [Tooltip("Fraction of the resting hip-to-knee drop the knee must rise toward the hip to kick; 0.75 = three quarters of the way to the hip. Scales with each player's thigh.")]
+        [SerializeField, Range(0.2f, 0.95f)] float kneeLiftRatio = 0.75f;
         [Tooltip("Fraction of the lift the knee must come back below before the next pulse; holding the knee up is one kick.")]
         [SerializeField, Range(0.1f, 0.9f)] float kneeReleaseRatio = 0.5f;
-        [Tooltip("Seconds the knee may take from the release height to the full lift; a slow raise is not a kick.")]
-        [SerializeField, Range(0.1f, 2f)] float kickRiseMaxSeconds = 0.3f;
+        [Tooltip("Seconds the knee may take from the release height to the full lift; a slower raise is not a kick.")]
+        [SerializeField, Range(0.1f, 2f)] float kickRiseMaxSeconds = 0.8f;
         [Tooltip("Seconds after an accepted kick in which another pulse is rejected as a double count.")]
         [SerializeField, Range(0f, 1f)] float kickCooldownSeconds = 0.18f;
         [Tooltip("Seconds the resting knee drop takes to follow a change of stance while the knees are down.")]
@@ -86,7 +86,7 @@ namespace Nex.Ninjago
         public int MaxStones { get => maxStones; set => maxStones = Mathf.Max(2, value); }
         public float SplitSeconds => splitSeconds;
         public float KickWindowSeconds { get => kickWindowSeconds; set => kickWindowSeconds = value; }
-        public float KneeLiftInches { get => kneeLiftInches; set => kneeLiftInches = value; }
+        public float KneeLiftRatio { get => kneeLiftRatio; set => kneeLiftRatio = Mathf.Clamp(value, 0.05f, 0.99f); }
         public float KneeReleaseRatio { get => kneeReleaseRatio; set => kneeReleaseRatio = Mathf.Clamp(value, 0.05f, 0.95f); }
         public float KickRiseMaxSeconds { get => kickRiseMaxSeconds; set => kickRiseMaxSeconds = value; }
         public float KickCooldownSeconds { get => kickCooldownSeconds; set => kickCooldownSeconds = Mathf.Max(0f, value); }
@@ -99,7 +99,7 @@ namespace Nex.Ninjago
         /// <summary>Stones a rock is cut into by this many slashes (0 slashes leaves it whole).</summary>
         public int StonesFor(int slashes) => slashes <= 0 ? 0 : Mathf.Min(maxStones, slashes + 1);
 
-        public KickDetector.Settings KickSettings => new(kneeLiftInches, kneeReleaseRatio, kickRiseMaxSeconds, kickCooldownSeconds, kneeRestAdaptSeconds);
+        public KickDetector.Settings KickSettings => new(kneeLiftRatio, kneeReleaseRatio, kickRiseMaxSeconds, kickCooldownSeconds, kneeRestAdaptSeconds);
 
         #endregion
     }

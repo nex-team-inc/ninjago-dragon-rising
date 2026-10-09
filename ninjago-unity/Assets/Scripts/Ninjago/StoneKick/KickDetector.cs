@@ -6,8 +6,9 @@ namespace Nex.Ninjago
 {
     /// <summary>
     /// Kicks from one player's knees against their hips: the hip-to-knee drop shrinks when a knee rises (up or toward
-    /// the camera). A kick is a fast lift past the threshold while the other knee stays down, then a release; holding
-    /// the knee up stays one kick, and a pulse inside the cooldown after an accepted kick is a rejected double count.
+    /// the camera). A kick is a lift of a set fraction of that leg's resting drop, reached in time, while the other knee
+    /// stays down, then a release; holding the knee up stays one kick, and a pulse inside the cooldown after an
+    /// accepted kick is a rejected double count. Fractions of each leg's own drop scale with the player's size.
     /// </summary>
     public sealed class KickDetector
     {
@@ -20,22 +21,25 @@ namespace Nex.Ninjago
 
         public readonly struct Settings
         {
-            public readonly float liftInches;
+            /// <summary>Fraction of the resting hip-to-knee drop the knee must rise (0.75 = three quarters of the way to the hip).</summary>
+            public readonly float liftRatio;
             public readonly float releaseRatio;
             public readonly float riseMaxSeconds;
             public readonly float cooldownSeconds;
             public readonly float restAdaptSeconds;
 
-            public Settings(float liftInches, float releaseRatio, float riseMaxSeconds, float cooldownSeconds, float restAdaptSeconds)
+            public Settings(float liftRatio, float releaseRatio, float riseMaxSeconds, float cooldownSeconds, float restAdaptSeconds)
             {
-                this.liftInches = liftInches;
+                this.liftRatio = liftRatio;
                 this.releaseRatio = releaseRatio;
                 this.riseMaxSeconds = riseMaxSeconds;
                 this.cooldownSeconds = cooldownSeconds;
                 this.restAdaptSeconds = restAdaptSeconds;
             }
 
-            public float ReleaseInches => liftInches * releaseRatio;
+            public float LiftFor(float restingDrop) => restingDrop * liftRatio;
+
+            public float ReleaseFor(float restingDrop) => LiftFor(restingDrop) * releaseRatio;
         }
 
         struct Leg
@@ -73,8 +77,7 @@ namespace Nex.Ninjago
             var leftPulse = UpdateLeg(ref left, drops.x, time, settings);
             var rightPulse = UpdateLeg(ref right, drops.y, time, settings);
             // A kick stands on the other leg: both knees rising together is a squat or a hop.
-            var release = settings.ReleaseInches;
-            var pulse = (leftPulse && right.lift < release) || (rightPulse && left.lift < release);
+            var pulse = (leftPulse && IsDown(right, settings)) || (rightPulse && IsDown(left, settings));
             return pulse ? Accept(time, settings.cooldownSeconds) : Pulse.None;
         }
 
@@ -91,6 +94,8 @@ namespace Nex.Ninjago
             lastKickTime = time;
             return Pulse.Kick;
         }
+
+        static bool IsDown(in Leg leg, in Settings settings) => leg.lift < settings.ReleaseFor(leg.baseline);
 
         // True on the frame this knee completes a fast lift.
         static bool UpdateLeg(ref Leg leg, float drop, float time, in Settings settings)
@@ -111,7 +116,7 @@ namespace Nex.Ninjago
             var deltaTime = time - leg.lastTime;
             leg.lastTime = time;
             leg.lift = leg.baseline - drop;
-            var release = settings.ReleaseInches;
+            var release = settings.ReleaseFor(leg.baseline);
             if (leg.raised)
             {
                 if (leg.lift > release) return false;
@@ -120,7 +125,7 @@ namespace Nex.Ninjago
                 return false;
             }
 
-            if (leg.lift >= settings.liftInches)
+            if (leg.lift >= settings.LiftFor(leg.baseline))
             {
                 leg.raised = true;
                 return time - leg.restTime <= settings.riseMaxSeconds;

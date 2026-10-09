@@ -135,8 +135,8 @@ namespace Nex
         public int KickMaxStones { get => StoneKick.MaxStones; set => StoneKick.MaxStones = value; }
         [DebugOrder(-184), Description("Kick: Kick Window (s)"), NumericSteps(Steps = 0.1, Min = 0.5, Max = 6), ES3NonSerializable]
         public float KickWindow { get => StoneKick.KickWindowSeconds; set => StoneKick.KickWindowSeconds = value; }
-        [DebugOrder(-183), Description("Kick: Knee Pulse Lift (in)"), NumericSteps(Steps = 0.5, Min = 1, Max = 14), ES3NonSerializable]
-        public float KickKneeLift { get => StoneKick.KneeLiftInches; set => StoneKick.KneeLiftInches = value; }
+        [DebugOrder(-183), Description("Kick: Knee Lift (fraction of thigh)"), NumericSteps(Steps = 0.05, Min = 0.2, Max = 0.95), ES3NonSerializable]
+        public float KickKneeLift { get => StoneKick.KneeLiftRatio; set => StoneKick.KneeLiftRatio = value; }
         [DebugOrder(-182), Description("Kick: Knee Release (fraction of lift)"), NumericSteps(Steps = 0.05, Min = 0.1, Max = 0.9), ES3NonSerializable]
         public float KickKneeRelease { get => StoneKick.KneeReleaseRatio; set => StoneKick.KneeReleaseRatio = value; }
         [DebugOrder(-181), Description("Kick: Knee Rise Max (s)"), NumericSteps(Steps = 0.05, Min = 0.1, Max = 2), ES3NonSerializable]

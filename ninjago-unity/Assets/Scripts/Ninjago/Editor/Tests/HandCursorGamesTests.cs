@@ -179,24 +179,26 @@ namespace Nex.Ninjago.Editor.Tests
 
     public class KickDetectorTests
     {
-        static readonly KickDetector.Settings settings = new(4f, 0.5f, 0.3f, 0.18f, 2f);
-        const float standing = 17f;
+        // Three quarters of the way to the hip, 0.8 s from the release height to the full lift.
+        static readonly KickDetector.Settings settings = new(0.75f, 0.5f, 0.8f, 0.18f, 2f);
+        // Resting hip-to-knee drop of an adult thigh: a kick lifts 12 in, the release height is 6 in.
+        const float adultThigh = 16f;
 
-        static KickDetector NewDetector()
+        static KickDetector NewDetector(float thigh = adultThigh)
         {
             var detector = new KickDetector();
-            detector.Begin(new Vector2(standing, standing));
+            detector.Begin(new Vector2(thigh, thigh));
             return detector;
         }
 
         // Left knee rises by lift inches over riseSeconds, holds, then drops back; 30 Hz samples.
-        static int Kicks(KickDetector detector, ref float time, float lift, float riseSeconds, float holdSeconds)
+        static int Kicks(KickDetector detector, ref float time, float lift, float riseSeconds, float holdSeconds, float thigh = adultThigh)
         {
             var kicks = 0;
             var now = time;
             void Sample(float leftLift)
             {
-                if (detector.Update(new Vector2(standing - leftLift, standing), now, settings) == KickDetector.Pulse.Kick) kicks++;
+                if (detector.Update(new Vector2(thigh - leftLift, thigh), now, settings) == KickDetector.Pulse.Kick) kicks++;
                 now += 1f / 30f;
             }
 
@@ -208,31 +210,47 @@ namespace Nex.Ninjago.Editor.Tests
         }
 
         [Test]
-        public void FastKneePulseIsOneKick()
+        public void HighKneeIsOneKick()
         {
             var time = 0f;
-            Assert.AreEqual(1, Kicks(NewDetector(), ref time, 7f, 0.15f, 0.1f));
+            Assert.AreEqual(1, Kicks(NewDetector(), ref time, 13f, 0.2f, 0.1f));
         }
 
         [Test]
         public void HoldingTheKneeUpIsStillOneKick()
         {
             var time = 0f;
-            Assert.AreEqual(1, Kicks(NewDetector(), ref time, 7f, 0.15f, 2f));
+            Assert.AreEqual(1, Kicks(NewDetector(), ref time, 13f, 0.2f, 2f));
         }
 
         [Test]
-        public void SlowKneeRaiseIsNotAKick()
+        public void DeliberateKneeUpInsideTheRiseLimitCounts()
         {
             var time = 0f;
-            Assert.AreEqual(0, Kicks(NewDetector(), ref time, 7f, 2f, 0.2f));
+            Assert.AreEqual(1, Kicks(NewDetector(), ref time, 13f, 0.9f, 0.2f));
         }
 
         [Test]
-        public void SmallKneeLiftIsNotAKick()
+        public void VerySlowKneeRaiseIsNotAKick()
         {
             var time = 0f;
-            Assert.AreEqual(0, Kicks(NewDetector(), ref time, 3f, 0.1f, 0.2f));
+            Assert.AreEqual(0, Kicks(NewDetector(), ref time, 13f, 3f, 0.2f));
+        }
+
+        [Test]
+        public void HalfwayKneeLiftIsNotAKick()
+        {
+            var time = 0f;
+            Assert.AreEqual(0, Kicks(NewDetector(), ref time, 8f, 0.2f, 0.3f));
+        }
+
+        [Test]
+        public void LiftScalesWithEachPlayersThigh()
+        {
+            var time = 0f;
+            Assert.AreEqual(1, Kicks(NewDetector(10f), ref time, 7.6f, 0.2f, 0.1f, 10f));
+            time = 0f;
+            Assert.AreEqual(0, Kicks(NewDetector(), ref time, 7.6f, 0.2f, 0.1f));
         }
 
         [Test]
@@ -241,7 +259,7 @@ namespace Nex.Ninjago.Editor.Tests
             var detector = NewDetector();
             var time = 0f;
             var kicks = 0;
-            for (var i = 0; i < 3; i++) kicks += Kicks(detector, ref time, 7f, 0.1f, 0.05f);
+            for (var i = 0; i < 3; i++) kicks += Kicks(detector, ref time, 13f, 0.15f, 0.05f);
             Assert.AreEqual(3, kicks);
         }
 
@@ -252,8 +270,8 @@ namespace Nex.Ninjago.Editor.Tests
             var kicks = 0;
             for (var i = 0; i < 20; i++)
             {
-                var lift = Mathf.Min(8f, i * 2f);
-                if (detector.Update(new Vector2(standing - lift, standing - lift), i / 30f, settings) == KickDetector.Pulse.Kick) kicks++;
+                var lift = Mathf.Min(13f, i * 2f);
+                if (detector.Update(new Vector2(adultThigh - lift, adultThigh - lift), i / 30f, settings) == KickDetector.Pulse.Kick) kicks++;
             }
 
             Assert.AreEqual(0, kicks);

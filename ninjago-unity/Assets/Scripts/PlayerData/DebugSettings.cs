@@ -100,61 +100,61 @@ namespace Nex
 
         // Ninjago playtest rows. The properties edit the config assets directly (session only, never saved with these
         // settings); keep good values by copying them into the assets under Assets/Configs/Ninjago.
-        [DebugOrder(100), Description("Ninja: Simulated Body (keys A/D W/S Space, J/L I/K RightShift)")]
+        [DebugOrder(-100), Description("Ninja: Simulated Body (keys A/D W/S Space, J/L I/K RightShift)")]
         public bool ninjaSimulatedBody;
 
-        [DebugOrder(101), Description("Fight: Slip Window (s)"), NumericSteps(Steps = 0.05, Min = 0.2, Max = 2), ES3NonSerializable]
+        [DebugOrder(-99), Description("Fight: Slip Window (s)"), NumericSteps(Steps = 0.05, Min = 0.2, Max = 2), ES3NonSerializable]
         public float FightSlipWindow { get => Fight.SlipWindowSeconds; set => Fight.SlipWindowSeconds = value; }
-        [DebugOrder(102), Description("Fight: Lean Threshold (in)"), NumericSteps(Steps = 0.5, Min = 1, Max = 12), ES3NonSerializable]
+        [DebugOrder(-98), Description("Fight: Lean Threshold (in)"), NumericSteps(Steps = 0.5, Min = 1, Max = 12), ES3NonSerializable]
         public float FightLeanThreshold { get => Fight.LeanThresholdInches; set => Fight.LeanThresholdInches = value; }
-        [DebugOrder(103), Description("Fight: Telegraph (s)"), NumericSteps(Steps = 0.05, Min = 0.2, Max = 2), ES3NonSerializable]
+        [DebugOrder(-97), Description("Fight: Telegraph (s)"), NumericSteps(Steps = 0.05, Min = 0.2, Max = 2), ES3NonSerializable]
         public float FightTelegraph { get => Fight.TelegraphSeconds; set => Fight.TelegraphSeconds = value; }
-        [DebugOrder(113), Description("Fight: First Telegraph (s)"), NumericSteps(Steps = 0.1, Min = 0.2, Max = 4), ES3NonSerializable]
+        [DebugOrder(-87), Description("Fight: First Telegraph (s)"), NumericSteps(Steps = 0.1, Min = 0.2, Max = 4), ES3NonSerializable]
         public float FightFirstTelegraph { get => Fight.FirstTelegraphSeconds; set => Fight.FirstTelegraphSeconds = value; }
-        [DebugOrder(104), Description("Fight: Counter Window (s)"), NumericSteps(Steps = 0.05, Min = 0.3, Max = 3), ES3NonSerializable]
+        [DebugOrder(-96), Description("Fight: Counter Window (s)"), NumericSteps(Steps = 0.05, Min = 0.3, Max = 3), ES3NonSerializable]
         public float FightCounterWindow { get => Fight.CounterWindowSeconds; set => Fight.CounterWindowSeconds = value; }
-        [DebugOrder(105), Description("Fight: Slow-mo Scale"), NumericSteps(Steps = 0.05, Min = 0.1, Max = 1), ES3NonSerializable]
+        [DebugOrder(-95), Description("Fight: Slow-mo Scale"), NumericSteps(Steps = 0.05, Min = 0.1, Max = 1), ES3NonSerializable]
         public float FightSlowMotion { get => Fight.SlowMotionScale; set => Fight.SlowMotionScale = value; }
-        [DebugOrder(106), Description("Fight: Hand Travel To Fill (in)"), NumericSteps(Steps = 5, Min = 10, Max = 300), ES3NonSerializable]
+        [DebugOrder(-94), Description("Fight: Hand Travel To Fill (in)"), NumericSteps(Steps = 5, Min = 10, Max = 300), ES3NonSerializable]
         public float FightHandTravel { get => Fight.HandTravelInches; set => Fight.HandTravelInches = value; }
-        [DebugOrder(107), Description("Fight: Hand Speed Peak (in/s)"), NumericSteps(Steps = 5, Min = 10, Max = 300), ES3NonSerializable]
+        [DebugOrder(-93), Description("Fight: Hand Speed Peak (in/s)"), NumericSteps(Steps = 5, Min = 10, Max = 300), ES3NonSerializable]
         public float FightSpeedPeak { get => Fight.HandSpeedPeakInchesPerSecond; set => Fight.HandSpeedPeakInchesPerSecond = value; }
-        [DebugOrder(108), Description("Fight: Hand Jitter Floor (in)"), NumericSteps(Steps = 0.05, Min = 0, Max = 2), ES3NonSerializable]
+        [DebugOrder(-92), Description("Fight: Hand Jitter Floor (in)"), NumericSteps(Steps = 0.05, Min = 0, Max = 2), ES3NonSerializable]
         public float FightHandNoiseFloor { get => Fight.HandNoiseFloorInches; set => Fight.HandNoiseFloorInches = value; }
-        [DebugOrder(109), Description("Fight: Body Hand Fallback"), ES3NonSerializable]
+        [DebugOrder(-91), Description("Fight: Body Hand Fallback"), ES3NonSerializable]
         public bool FightBodyHandFallback { get => Fight.UseBodyHandFallback; set => Fight.UseBodyHandFallback = value; }
-        [DebugOrder(110), Description("Fight: Hearts"), NumericSteps(IntSteps = 1, IntMin = 1, IntMax = 9), ES3NonSerializable]
+        [DebugOrder(-90), Description("Fight: Hearts"), NumericSteps(IntSteps = 1, IntMin = 1, IntMax = 9), ES3NonSerializable]
         public int FightHearts { get => Fight.Hearts; set => Fight.Hearts = value; }
-        [DebugOrder(111), Description("Fight: Sweeps Per Player"), NumericSteps(IntSteps = 1, IntMin = 1, IntMax = 12), ES3NonSerializable]
+        [DebugOrder(-89), Description("Fight: Sweeps Per Player"), NumericSteps(IntSteps = 1, IntMin = 1, IntMax = 12), ES3NonSerializable]
         public int FightSweeps { get => Fight.SweepsPerPlayer; set => Fight.SweepsPerPlayer = value; }
-        [DebugOrder(112), Description("Fight: Rest Between Sweeps (s)"), NumericSteps(Steps = 0.25, Min = 0.5, Max = 8), ES3NonSerializable]
+        [DebugOrder(-88), Description("Fight: Rest Between Sweeps (s)"), NumericSteps(Steps = 0.25, Min = 0.5, Max = 8), ES3NonSerializable]
         public float FightRest { get => Fight.RestBetweenSweepsSeconds; set => Fight.RestBetweenSweepsSeconds = value; }
 
-        [DebugOrder(120), Description("Chase: Deadzone (in)"), NumericSteps(Steps = 0.25, Min = 0, Max = 6), ES3NonSerializable]
+        [DebugOrder(-80), Description("Chase: Deadzone (in)"), NumericSteps(Steps = 0.25, Min = 0, Max = 6), ES3NonSerializable]
         public float ChaseDeadzone { get => Chase.DeadzoneInches; set => Chase.DeadzoneInches = value; }
-        [DebugOrder(121), Description("Chase: Full Lean X (in)"), NumericSteps(Steps = 0.5, Min = 2, Max = 20), ES3NonSerializable]
+        [DebugOrder(-79), Description("Chase: Full Lean X (in)"), NumericSteps(Steps = 0.5, Min = 2, Max = 20), ES3NonSerializable]
         public float ChaseFullLean { get => Chase.FullLeanInches; set => Chase.FullLeanInches = value; }
-        [DebugOrder(122), Description("Chase: Full Rise Y (in)"), NumericSteps(Steps = 0.5, Min = 1, Max = 20), ES3NonSerializable]
+        [DebugOrder(-78), Description("Chase: Full Rise Y (in)"), NumericSteps(Steps = 0.5, Min = 1, Max = 20), ES3NonSerializable]
         public float ChaseFullRise { get => Chase.FullRiseInches; set => Chase.FullRiseInches = value; }
-        [DebugOrder(123), Description("Chase: 2P Steer Blend (P1 share)"), NumericSteps(Steps = 0.05, Min = 0, Max = 1), ES3NonSerializable]
+        [DebugOrder(-77), Description("Chase: 2P Steer Blend (P1 share)"), NumericSteps(Steps = 0.05, Min = 0, Max = 1), ES3NonSerializable]
         public float ChaseSteerBlend { get => Chase.PlayerOneSteerShare; set => Chase.PlayerOneSteerShare = value; }
-        [DebugOrder(124), Description("Chase: Car Steer Smoothing (s)"), NumericSteps(Steps = 0.05, Min = 0.05, Max = 2), ES3NonSerializable]
+        [DebugOrder(-76), Description("Chase: Car Steer Smoothing (s)"), NumericSteps(Steps = 0.05, Min = 0.05, Max = 2), ES3NonSerializable]
         public float ChaseCarSmoothing { get => Car.steerSmoothingSeconds; set => Car.steerSmoothingSeconds = value; }
-        [DebugOrder(125), Description("Chase: Sky Steer Smoothing (s)"), NumericSteps(Steps = 0.05, Min = 0.05, Max = 2), ES3NonSerializable]
+        [DebugOrder(-75), Description("Chase: Sky Steer Smoothing (s)"), NumericSteps(Steps = 0.05, Min = 0.05, Max = 2), ES3NonSerializable]
         public float ChaseSkySmoothing { get => Sky.steerSmoothingSeconds; set => Sky.steerSmoothingSeconds = value; }
-        [DebugOrder(126), Description("Chase: Car Obstacle Spacing (s)"), NumericSteps(Steps = 0.1, Min = 0.6, Max = 5), ES3NonSerializable]
+        [DebugOrder(-74), Description("Chase: Car Obstacle Spacing (s)"), NumericSteps(Steps = 0.1, Min = 0.6, Max = 5), ES3NonSerializable]
         public float ChaseCarSpacing { get => Car.obstacleSpacingSeconds; set => Car.obstacleSpacingSeconds = value; }
-        [DebugOrder(127), Description("Chase: Sky Obstacle Spacing (s)"), NumericSteps(Steps = 0.1, Min = 0.6, Max = 5), ES3NonSerializable]
+        [DebugOrder(-73), Description("Chase: Sky Obstacle Spacing (s)"), NumericSteps(Steps = 0.1, Min = 0.6, Max = 5), ES3NonSerializable]
         public float ChaseSkySpacing { get => Sky.obstacleSpacingSeconds; set => Sky.obstacleSpacingSeconds = value; }
-        [DebugOrder(128), Description("Chase: Obstacle Lead (s)"), NumericSteps(Steps = 0.1, Min = 0.5, Max = 4), ES3NonSerializable]
+        [DebugOrder(-72), Description("Chase: Obstacle Lead (s)"), NumericSteps(Steps = 0.1, Min = 0.5, Max = 4), ES3NonSerializable]
         public float ChaseObstacleLead { get => Car.obstacleLeadSeconds; set => Car.obstacleLeadSeconds = Sky.obstacleLeadSeconds = value; }
-        [DebugOrder(129), Description("Chase: Bump Speed Drop"), NumericSteps(Steps = 0.05, Min = 0, Max = 0.9), ES3NonSerializable]
+        [DebugOrder(-71), Description("Chase: Bump Speed Drop"), NumericSteps(Steps = 0.05, Min = 0, Max = 0.9), ES3NonSerializable]
         public float ChaseBumpDrop { get => Chase.BumpSpeedDrop; set => Chase.BumpSpeedDrop = value; }
 
-        [DebugOrder(130), Description("Setup: Solo Fallback Wait (s)"), NumericSteps(Steps = 1, Min = 1, Max = 30), ES3NonSerializable]
+        [DebugOrder(-70), Description("Setup: Solo Fallback Wait (s)"), NumericSteps(Steps = 1, Min = 1, Max = 30), ES3NonSerializable]
         public float SetupSoloFallback { get => Players.SoloFallbackSeconds; set => Players.SoloFallbackSeconds = value; }
 
-        [DebugOrder(131), Description("Save: Reset Ninjago Progress"), SaveBeforeInvoking]
+        [DebugOrder(-69), Description("Save: Reset Ninjago Progress"), SaveBeforeInvoking]
         public void ResetNinjagoProgress() => PlayerDataManager.Instance.ResetNinjagoProgress();
 
         static FightConfig Fight => GameConfigsManager.Instance.FightConfig;

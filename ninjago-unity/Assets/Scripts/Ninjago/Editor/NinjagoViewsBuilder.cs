@@ -105,7 +105,6 @@ namespace Nex.Ninjago.Editor
 
         static void BuildSetup(NinjagoSetupView view, RectTransform ui, SetupPlayerStatus statusPrefab)
         {
-            var previews = (GameObject)PrefabUtility.InstantiatePrefab(Load<GameObject>("Assets/Prefabs/Detection/Preview/PreviewsManager.prefab"), ui);
             var statusRow = NewRect("PlayerStatuses", ui);
             Place(statusRow, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 40f), new Vector2(1200f, 90f));
             var layout = statusRow.gameObject.AddComponent<HorizontalLayoutGroup>();
@@ -120,7 +119,7 @@ namespace Nex.Ninjago.Editor
                 statuses.Add(status);
             }
 
-            Set(view, "previewsManager", previews.GetComponent<PreviewsManager>());
+            Set(view, "previewsManagerPrefab", LoadComponent<PreviewsManager>("Assets/Prefabs/Detection/Preview/PreviewsManager.prefab"));
             SetArray(view, "playerStatuses", statuses);
             SetLocalized(view, "standPrompt", "ninjago.setup.stand");
             SetLocalized(view, "holdPrompt", "ninjago.setup.hold");

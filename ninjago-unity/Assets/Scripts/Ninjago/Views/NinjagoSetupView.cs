@@ -14,8 +14,9 @@ namespace Nex.Ninjago
     /// </summary>
     public class NinjagoSetupView : SimpleCanvasView
     {
-        [Header("Camera Previews")]
-        [SerializeField] PreviewsManager previewsManager = null!;
+        [Header("Camera Previews Prefab")]
+        [Tooltip("Instantiated as its own root: its canvas is a screen-space overlay and does not size as a nested canvas.")]
+        [SerializeField] PreviewsManager previewsManagerPrefab = null!;
         [Header("Player Status Rows")]
         [SerializeField] SetupPlayerStatus[] playerStatuses = null!;
         [Header("Prompt: Stand In Frame")]
@@ -38,6 +39,7 @@ namespace Nex.Ninjago
 
         IReadOnlyList<PlayerBody> bodies = null!;
         DetectionManager detection = null!;
+        PreviewsManager previewsManager = null!;
         NinjagoPlayersConfig config = null!;
         bool[] inGoodPosition = null!;
         Hold[] holds = null!;
@@ -57,6 +59,19 @@ namespace Nex.Ninjago
             quitRequested = true;
         }
 
+        // The previews are a screen-space overlay, which would draw over any view pushed on top (Debug Settings).
+        public override async UniTask EnterBackground(ViewIdentifier childViewIdentifier, bool animate = true)
+        {
+            previewsManager.gameObject.SetActive(false);
+            await base.EnterBackground(childViewIdentifier, animate);
+        }
+
+        public override async UniTask EnterForeground(ViewIdentifier childViewIdentifier, bool animate = true)
+        {
+            await base.EnterForeground(childViewIdentifier, animate);
+            previewsManager.gameObject.SetActive(true);
+        }
+
         #endregion
 
         #region Initialization
@@ -68,12 +83,18 @@ namespace Nex.Ninjago
             config = aConfig;
             inGoodPosition = new bool[bodies.Count];
             holds = new Hold[bodies.Count];
+            previewsManager = Instantiate(previewsManagerPrefab);
             for (var i = 0; i < playerStatuses.Length; i++)
             {
                 var used = i < bodies.Count;
                 playerStatuses[i].gameObject.SetActive(used);
                 if (used) playerStatuses[i].Initialize(i, bodies[i].Color);
             }
+        }
+
+        void OnDestroy()
+        {
+            if (previewsManager != null) Destroy(previewsManager.gameObject);
         }
 
         #endregion

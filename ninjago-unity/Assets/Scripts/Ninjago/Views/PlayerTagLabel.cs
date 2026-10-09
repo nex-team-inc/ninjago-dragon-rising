@@ -14,15 +14,15 @@ namespace Nex.Ninjago
         [SerializeField] NexLocalizedString label = null!;
         [Header("Label Text")]
         [SerializeField] TMP_Text text = null!;
+        [Header("Tag Text")]
+        [Tooltip("Smart string with {player}.")]
+        [SerializeField] LocalizedString tagText = new();
 
         #region Initialization
 
         public void Initialize(int playerIndex, Color color)
         {
-            // Its own LocalizedString instance: smart arguments live on the instance and would leak between labels.
-            var template = label.StringReference;
-            label.StringReference = new LocalizedString(template.TableReference, template.TableEntryReference);
-            label.SetSmartStringArgument("player", playerIndex + 1);
+            label.StringReference = LocalizedStrings.WithArguments(tagText, ("player", playerIndex + 1));
             text.color = color;
         }
 

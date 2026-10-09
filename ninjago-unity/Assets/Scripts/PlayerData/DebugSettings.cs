@@ -109,6 +109,8 @@ namespace Nex
         public float FightLeanThreshold { get => Fight.LeanThresholdInches; set => Fight.LeanThresholdInches = value; }
         [DebugOrder(103), Description("Fight: Telegraph (s)"), NumericSteps(Steps = 0.05, Min = 0.2, Max = 2), ES3NonSerializable]
         public float FightTelegraph { get => Fight.TelegraphSeconds; set => Fight.TelegraphSeconds = value; }
+        [DebugOrder(113), Description("Fight: First Telegraph (s)"), NumericSteps(Steps = 0.1, Min = 0.2, Max = 4), ES3NonSerializable]
+        public float FightFirstTelegraph { get => Fight.FirstTelegraphSeconds; set => Fight.FirstTelegraphSeconds = value; }
         [DebugOrder(104), Description("Fight: Counter Window (s)"), NumericSteps(Steps = 0.05, Min = 0.3, Max = 3), ES3NonSerializable]
         public float FightCounterWindow { get => Fight.CounterWindowSeconds; set => Fight.CounterWindowSeconds = value; }
         [DebugOrder(105), Description("Fight: Slow-mo Scale"), NumericSteps(Steps = 0.05, Min = 0.1, Max = 1), ES3NonSerializable]

@@ -66,6 +66,19 @@ namespace Nex.Localization
             RefreshString();
         }
 
+        /// <summary>Sets several smart string arguments with a single refresh, so no format runs with some missing.</summary>
+        public void SetSmartStringArguments(params (string key, object value)[] arguments)
+        {
+            var dict = new Dictionary<string, object>();
+            foreach (var (key, value) in arguments)
+            {
+                dict[key] = value;
+            }
+
+            StringReference.Arguments = new List<object> { dict };
+            RefreshString();
+        }
+
         void OnDestroy()
         {
             OnUpdateString.RemoveAllListeners();

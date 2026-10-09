@@ -34,12 +34,13 @@ namespace Nex.Ninjago
 
         public void Initialize(Data data)
         {
-            label.StringReference = new LocalizedString(data.template.TableReference, data.template.TableEntryReference);
-            foreach (var (key, value) in data.arguments)
+            var arguments = new (string key, object value)[data.arguments.Count];
+            for (var i = 0; i < arguments.Length; i++)
             {
-                label.SetSmartStringArgument(key, value);
+                arguments[i] = data.arguments[i];
             }
 
+            label.StringReference = LocalizedStrings.WithArguments(data.template, arguments);
             text.color = data.color;
         }
 

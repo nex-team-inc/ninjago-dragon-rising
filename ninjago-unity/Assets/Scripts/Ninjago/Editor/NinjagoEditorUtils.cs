@@ -158,13 +158,16 @@ namespace Nex.Ninjago.Editor
             return Place(rect, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
         }
 
-        /// <summary>TMP label with a NexLocalizedString bound to key (English preview written into the text).</summary>
-        public static NexLocalizedString Label(Transform parent, string name, string key, string preview, float size, Color color,
+        /// <summary>
+        /// TMP label with a NexLocalizedString bound to key (English preview written into the text). Pass a null key
+        /// for smart strings: their owner assigns the reference together with its arguments at runtime.
+        /// </summary>
+        public static NexLocalizedString Label(Transform parent, string name, string? key, string preview, float size, Color color,
             Material? material = null, TextAlignmentOptions alignment = TextAlignmentOptions.Center)
         {
             var text = PlainText(parent, name, preview, size, color, material, alignment);
             var label = text.gameObject.AddComponent<NexLocalizedString>();
-            SetLocalized(label, "m_StringReference", key);
+            if (key != null) SetLocalized(label, "m_StringReference", key);
             return label;
         }
 

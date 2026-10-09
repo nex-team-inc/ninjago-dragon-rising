@@ -3,6 +3,7 @@
 using System.Collections.Generic;
 using Nex.Localization;
 using UnityEngine;
+using UnityEngine.Localization;
 using UnityEngine.UI;
 
 namespace Nex.Ninjago
@@ -22,6 +23,9 @@ namespace Nex.Ninjago
         [SerializeField] Color emptyHeartColor = new(0.15f, 0.15f, 0.15f, 0.5f);
         [Header("Sweep Label")]
         [SerializeField] NexLocalizedString sweepLabel = null!;
+        [Header("Sweep Text")]
+        [Tooltip("Smart string with {current} {total}.")]
+        [SerializeField] LocalizedString sweepText = new();
         [Header("Left Safe Arrow")]
         [SerializeField] GameObject leftArrow = null!;
         [Header("Right Safe Arrow")]
@@ -41,7 +45,7 @@ namespace Nex.Ninjago
 
         #region Initialization
 
-        public void Initialize(int playerIndex, Color color, int maxHearts)
+        public void Initialize(int playerIndex, Color color, int maxHearts, int sweeps)
         {
             playerTag.Initialize(playerIndex, color);
             for (var i = 0; i < maxHearts; i++)
@@ -50,6 +54,7 @@ namespace Nex.Ninjago
             }
 
             SetHearts(maxHearts);
+            SetSweep(1, sweeps);
             HideSafeSide();
             ShowSpinHint(false);
             outBanner.SetActive(false);
@@ -70,8 +75,7 @@ namespace Nex.Ninjago
 
         public void SetSweep(int current, int total)
         {
-            sweepLabel.SetSmartStringArgument("current", current);
-            sweepLabel.SetSmartStringArgument("total", total);
+            sweepLabel.StringReference = LocalizedStrings.WithArguments(sweepText, ("current", current), ("total", total));
         }
 
         public void ShowSafeSide(SweepSide safeSide, bool withSlipHint)

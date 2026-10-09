@@ -27,7 +27,7 @@ namespace Nex.Ninjago
         [Header("Split Field Of View")]
         [SerializeField] float splitFieldOfView = 64f;
         [Header("Staff Rest Lift")]
-        [SerializeField] float restLiftDegrees = 70f;
+        [SerializeField] float restLiftDegrees = 50f;
         [Header("Staff Cock Yaw")]
         [Tooltip("How far the staff winds up toward the danger side during the telegraph.")]
         [SerializeField] float cockYawDegrees = 85f;
@@ -63,7 +63,7 @@ namespace Nex.Ninjago
             laneCamera.fieldOfView = splitScreen ? splitFieldOfView : soloFieldOfView;
             ninja.Initialize(body.PlayerIndex, body.Color);
             Hearts = config.Hearts;
-            hud.Initialize(body.PlayerIndex, body.Color, Hearts);
+            hud.Initialize(body.PlayerIndex, body.Color, Hearts, config.SweepsPerPlayer);
             brute.SetStaff(0f, restLiftDegrees);
             brute.SetTrail(false);
         }
@@ -87,7 +87,6 @@ namespace Nex.Ninjago
         public async UniTask RunAsync(CancellationToken cancellationToken)
         {
             var sweeps = config.SweepsPerPlayer;
-            hud.SetSweep(1, sweeps);
             await WaitLocal(config.IntroSeconds, cancellationToken);
             var safeSide = firstSafeSide;
             for (var sweep = 0; sweep < sweeps; sweep++)
@@ -115,7 +114,7 @@ namespace Nex.Ninjago
         {
             hud.ShowSafeSide(safeSide, firstSweep);
             var cockYaw = CockYaw(safeSide);
-            await AnimateLocal(config.TelegraphSeconds, t =>
+            await AnimateLocal(firstSweep ? config.FirstTelegraphSeconds : config.TelegraphSeconds, t =>
             {
                 var eased = 1f - (1f - t) * (1f - t);
                 brute.SetStaff(Mathf.Lerp(0f, cockYaw, eased), Mathf.Lerp(restLiftDegrees, cockLiftDegrees, eased));
@@ -245,6 +244,7 @@ namespace Nex.Ninjago
                 await WaitLocal(config.WhiffRecoverSeconds, cancellationToken);
             }
 
+            ninja.ReturnToCenter();
             brute.SetStance(0f);
             brute.SetStaff(0f, restLiftDegrees);
             return meter.IsFilled;

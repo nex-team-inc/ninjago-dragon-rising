@@ -148,7 +148,7 @@ namespace Nex.Ninjago.Editor
 
             // The staff lies along the pivot's local -Z, reaching past the ninja at yaw 0.
             var pivot = Empty("StaffPivot", body, new Vector3(0f, 1.25f, -0.6f));
-            pivot.localRotation = Quaternion.Euler(70f, 0f, 0f);
+            pivot.localRotation = Quaternion.Euler(50f, 0f, 0f);
             var wood = Lit("Staff Wood", new Color(0.45f, 0.27f, 0.13f));
             var edge = Lit("Staff Edge", new Color(1f, 0.9f, 0.2f), 0.5f, new Color(2.2f, 1.6f, 0.2f));
             Block(PrimitiveType.Cylinder, "Shaft", pivot, new Vector3(0f, 0f, -2.2f), new Vector3(0.13f, 2.2f, 0.13f), wood, new Vector3(90f, 0f, 0f));
@@ -192,8 +192,9 @@ namespace Nex.Ninjago.Editor
             camera.farClipPlane = 140f;
             var carPose = Empty("CarCameraPose", root.transform, new Vector3(0f, 3f, -6.5f));
             carPose.localRotation = Quaternion.Euler(8.8f, 0f, 0f);
-            var skyPose = Empty("SkyCameraPose", root.transform, new Vector3(0f, 3.7f, -8f));
-            skyPose.localRotation = Quaternion.Euler(1.8f, 0f, 0f);
+            // Close behind the craft and centered on its vertical band, so climbs and dives read clearly.
+            var skyPose = Empty("SkyCameraPose", root.transform, new Vector3(0f, 3.6f, -5f));
+            skyPose.localRotation = Quaternion.Euler(3f, 0f, 0f);
             var road = BuildRoad(root.transform, out var roadStrip);
             var sky = BuildSky(root.transform, out var skyStrip);
             var car = BuildCar(root.transform);
@@ -326,6 +327,7 @@ namespace Nex.Ninjago.Editor
 
             BuildSteerMarkers(rig, car, 1.75f);
             Set(rig, "body", body);
+            Set(rig, "bankPerSpeed", property => property.floatValue = 2f);
             return rig;
         }
 
@@ -416,12 +418,13 @@ namespace Nex.Ninjago.Editor
 
         public static PlayerTagLabel BuildPlayerTag(Transform parent, Vector2 position, float fontSize)
         {
-            var label = Label(parent, "PlayerTag", "ninjago.player.tag", "P1", fontSize, Color.white, OutlineTextMaterial());
+            var label = Label(parent, "PlayerTag", null, "P1", fontSize, Color.white, OutlineTextMaterial());
             var rect = (RectTransform)label.transform;
             Place(rect, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), position, new Vector2(200f, fontSize * 1.2f));
             var tag = label.gameObject.AddComponent<PlayerTagLabel>();
             Set(tag, "label", label);
             Set(tag, "text", label.GetComponent<TMPro.TextMeshProUGUI>());
+            SetLocalized(tag, "tagText", "ninjago.player.tag");
             return tag;
         }
 

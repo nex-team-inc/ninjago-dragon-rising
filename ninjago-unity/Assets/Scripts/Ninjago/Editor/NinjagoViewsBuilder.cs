@@ -161,9 +161,9 @@ namespace Nex.Ninjago.Editor
             Place((RectTransform)vehicle.transform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(50f, -30f), new Vector2(600f, 90f));
             var time = PlainText(ui, "TimeLeft", "20", 120f, Color.white, outline);
             Place(time.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -20f), new Vector2(300f, 140f));
-            var dodges = Label(ui, "DodgesLabel", "ninjago.chase.dodges", "Dodges 0", 56f, safeGreen, outline, TextAlignmentOptions.Right);
+            var dodges = Label(ui, "DodgesLabel", null, "Dodges 0", 56f, safeGreen, outline, TextAlignmentOptions.Right);
             Place((RectTransform)dodges.transform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-50f, -30f), new Vector2(500f, 70f));
-            var hits = Label(ui, "HitsLabel", "ninjago.chase.hits", "Hits 0", 56f, warnRed, outline, TextAlignmentOptions.Right);
+            var hits = Label(ui, "HitsLabel", null, "Hits 0", 56f, warnRed, outline, TextAlignmentOptions.Right);
             Place((RectTransform)hits.transform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-50f, -100f), new Vector2(500f, 70f));
             var lean = Banner(ui, "LeanHint", "ninjago.chase.lean_to_steer", "Lean to steer", 100f, Color.white, new Vector2(0f, 160f));
             var chest = Banner(ui, "WholeChestHint", "ninjago.chase.whole_chest", "Use your whole chest", 100f, new Color(1f, 0.9f, 0.35f), new Vector2(0f, 160f));
@@ -176,7 +176,9 @@ namespace Nex.Ninjago.Editor
             SetLocalized(view, "skycraftName", "ninjago.chase.skycraft");
             Set(view, "timeLeft", time);
             Set(view, "dodgesLabel", dodges);
+            SetLocalized(view, "dodgesText", "ninjago.chase.dodges");
             Set(view, "hitsLabel", hits);
+            SetLocalized(view, "hitsText", "ninjago.chase.hits");
             Set(view, "leanHint", lean.gameObject);
             Set(view, "wholeChestHint", chest.gameObject);
             Set(view, "pipFrame", pipFrame);
@@ -237,7 +239,8 @@ namespace Nex.Ninjago.Editor
             layout.childAlignment = TextAnchor.MiddleLeft;
             layout.childControlWidth = false;
             layout.childControlHeight = false;
-            var sweep = Label(root, "SweepLabel", "ninjago.fight.sweep", "Sweep 1/4", 54f, Color.white, outline, TextAlignmentOptions.Right);
+            layout.childForceExpandWidth = false;
+            var sweep = Label(root, "SweepLabel", null, "Sweep 1/4", 54f, Color.white, outline, TextAlignmentOptions.Right);
             Place((RectTransform)sweep.transform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-40f, -32f), new Vector2(420f, 70f));
             var leftArrow = SafeArrow(root, "LeftArrow", true, out var leftHint);
             var rightArrow = SafeArrow(root, "RightArrow", false, out var rightHint);
@@ -249,6 +252,7 @@ namespace Nex.Ninjago.Editor
             Set(hud, "heartsRow", hearts);
             Set(hud, "heartPrefab", heartPrefab);
             Set(hud, "sweepLabel", sweep);
+            SetLocalized(hud, "sweepText", "ninjago.fight.sweep");
             Set(hud, "leftArrow", leftArrow);
             Set(hud, "rightArrow", rightArrow);
             Set(hud, "leftSlipHint", leftHint);
@@ -300,7 +304,7 @@ namespace Nex.Ninjago.Editor
             var root = NewRect("ResultLine", null!);
             root.sizeDelta = new Vector2(1700f, 76f);
             var line = root.gameObject.AddComponent<ResultLine>();
-            var label = Label(root, "Text", "ninjago.result.new_best", "New best!", 54f, Color.white, outline);
+            var label = Label(root, "Text", null, "New best!", 54f, Color.white, outline);
             Stretch((RectTransform)label.transform);
             Set(line, "label", label);
             Set(line, "text", label.GetComponent<TextMeshProUGUI>());

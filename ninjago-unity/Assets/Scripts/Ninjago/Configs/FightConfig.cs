@@ -20,13 +20,15 @@ namespace Nex.Ninjago
 
         [Header("Pacing")]
         [Tooltip("Seconds of 'Get ready' before the first sweep.")]
-        [SerializeField, Range(0f, 6f)] float introSeconds = 2.5f;
-        [Tooltip("Seconds between the end of one exchange and the next telegraph.")]
-        [SerializeField, Range(0.5f, 8f)] float restBetweenSweepsSeconds = 3.2f;
+        [SerializeField, Range(0f, 6f)] float introSeconds = 3f;
+        [Tooltip("Seconds between the end of one exchange and the next telegraph; players catch their breath after a storm.")]
+        [SerializeField, Range(0.5f, 10f)] float restBetweenSweepsSeconds = 5.5f;
 
         [Header("Telegraph")]
         [Tooltip("The brute cocks the staff to the danger side and the arrow shows the safe side.")]
         [SerializeField, Range(0.2f, 2f)] float telegraphSeconds = 0.6f;
+        [Tooltip("The first sweep winds up longer so a new player can read the SLIP hint before the staff comes.")]
+        [SerializeField, Range(0.2f, 4f)] float firstTelegraphSeconds = 1.6f;
 
         [Header("Slip")]
         [Tooltip("Real seconds to lean the chest past the threshold toward the safe side.")]
@@ -72,6 +74,7 @@ namespace Nex.Ninjago
         public float IntroSeconds => introSeconds;
         public float RestBetweenSweepsSeconds { get => restBetweenSweepsSeconds; set => restBetweenSweepsSeconds = value; }
         public float TelegraphSeconds { get => telegraphSeconds; set => telegraphSeconds = value; }
+        public float FirstTelegraphSeconds { get => firstTelegraphSeconds; set => firstTelegraphSeconds = value; }
         public float SlipWindowSeconds { get => slipWindowSeconds; set => slipWindowSeconds = value; }
         public float LeanThresholdInches { get => leanThresholdInches; set => leanThresholdInches = value; }
         public float SlipResolveSeconds => slipResolveSeconds;

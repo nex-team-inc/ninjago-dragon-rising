@@ -31,8 +31,14 @@ namespace Nex.Ninjago
         [SerializeField] TMP_Text timeLeft = null!;
         [Header("Dodges Label")]
         [SerializeField] NexLocalizedString dodgesLabel = null!;
+        [Header("Dodges Text")]
+        [Tooltip("Smart string with {count}.")]
+        [SerializeField] LocalizedString dodgesText = new();
         [Header("Hits Label")]
         [SerializeField] NexLocalizedString hitsLabel = null!;
+        [Header("Hits Text")]
+        [Tooltip("Smart string with {count}.")]
+        [SerializeField] LocalizedString hitsText = new();
         [Header("Lean To Steer Hint")]
         [SerializeField] GameObject leanHint = null!;
         [Header("Whole Chest Hint")]
@@ -72,6 +78,8 @@ namespace Nex.Ninjago
             config = aConfig;
             texture = new RenderTexture(Screen.width, Screen.height, 24) { name = "RunnerWorld" };
             feed.texture = texture;
+            dodgesLabel.StringReference = LocalizedStrings.WithArguments(dodgesText, ("count", 0));
+            hitsLabel.StringReference = LocalizedStrings.WithArguments(hitsText, ("count", 0));
             world = Instantiate(worldPrefab, worldOrigin, Quaternion.identity);
             world.VehicleShown += HandleVehicleShown;
             world.CountsChanged += HandleCountsChanged;

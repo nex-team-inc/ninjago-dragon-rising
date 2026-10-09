@@ -29,6 +29,7 @@ namespace Nex.Ninjago.Editor
             NinjagoWorldBuilder.Build();
             NinjagoViewsBuilder.Build();
             NinjagoGamesBuilder.Build();
+            CursorGamesBuilder.Build();
             AssetDatabase.SaveAssets();
             return $"[NinjagoBuildAll] done ({localization})";
         }

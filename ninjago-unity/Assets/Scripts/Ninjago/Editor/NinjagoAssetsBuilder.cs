@@ -248,7 +248,7 @@ namespace Nex.Ninjago.Editor
             });
         }
 
-        static void Clips(SerializedProperty dict, SfxManager.SoundEffect effect, string root, params string[] names)
+        internal static void Clips(SerializedProperty dict, SfxManager.SoundEffect effect, string root, params string[] names)
         {
             var clips = EnumDictionaryEditorUtils.GetValueProperty(dict, (int)effect).FindPropertyRelative("clips");
             clips.arraySize = names.Length;

@@ -26,6 +26,14 @@ namespace Nex.Ninjago.Editor
             var burst = Save("Vfx_SpinjitzuBurst", BuildBurst(soft));
             var spray = Save("Vfx_BruteBrickSpray", BuildBrickSpray("Vfx_BruteBrickSpray", brick, cube, new Color(0.62f, 0.63f, 0.66f), 16, -1f));
             var bump = Save("Vfx_VehicleBump", BuildBrickSpray("Vfx_VehicleBump", brick, cube, new Color(0.9f, 0.35f, 0.2f), 14, 1f));
+            var warmStone = new Color(0.74f, 0.64f, 0.54f);
+            var rockSlash = Save("Vfx_RockSlash", BuildSlashStreak(soft));
+            var pieceLaunch = Save("Vfx_PieceLaunch", BuildPuff(soft, new Color(0.86f, 0.78f, 0.64f, 0.9f)));
+            var bossHit = Save("Vfx_BossHit", BuildBrickSpray("Vfx_BossHit", brick, cube, warmStone, 18, -1f));
+            var rockImpact = Save("Vfx_RockImpact", BuildChunks(brick, cube, warmStone));
+            var sealDust = Save("Vfx_SealDust", BuildSealDust(soft));
+            var sealComplete = Save("Vfx_SealComplete", BuildRingBurst(soft));
+            var breakthrough = Save("Vfx_Breakthrough", BuildBrickSpray("Vfx_Breakthrough", brick, cube, new Color(0.26f, 0.2f, 0.24f), 22, -1f));
 
             NinjagoAssetsBuilder.EditPrefab<VfxManager>("Assets/Prefabs/Singletons/VfxManager.prefab", "effectSpecs", dict =>
             {
@@ -35,6 +43,13 @@ namespace Nex.Ninjago.Editor
                 Register(dict, VfxManager.VisualEffect.SpinjitzuBurst, burst, 2, 4);
                 Register(dict, VfxManager.VisualEffect.BruteBrickSpray, spray, 2, 4);
                 Register(dict, VfxManager.VisualEffect.VehicleBump, bump, 2, 4);
+                Register(dict, VfxManager.VisualEffect.RockSlash, rockSlash, 2, 4);
+                Register(dict, VfxManager.VisualEffect.PieceLaunch, pieceLaunch, 4, 8);
+                Register(dict, VfxManager.VisualEffect.BossHit, bossHit, 4, 8);
+                Register(dict, VfxManager.VisualEffect.RockImpact, rockImpact, 2, 4);
+                Register(dict, VfxManager.VisualEffect.SealDust, sealDust, 4, 8);
+                Register(dict, VfxManager.VisualEffect.SealComplete, sealComplete, 2, 6);
+                Register(dict, VfxManager.VisualEffect.Breakthrough, breakthrough, 2, 6);
             });
         }
 
@@ -158,6 +173,102 @@ namespace Nex.Ninjago.Editor
             rotation.enabled = true;
             rotation.z = new ParticleSystem.MinMaxCurve(-6f, 6f);
             MeshRenderer(system, cube);
+            return system;
+        }
+
+        // A bright streak along the system's local X; Stone Kick turns it to the slash direction.
+        static ParticleSystem BuildSlashStreak(Material material)
+        {
+            var system = NewSystem("Vfx_RockSlash", material, 0.5f, false, 60);
+            var main = system.main;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.18f, 0.32f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(0.2f, 1.2f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.22f, 0.4f);
+            main.startColor = new Color(1f, 0.95f, 0.7f, 1f);
+            Burst(system, 45);
+            var shape = system.shape;
+            shape.shapeType = ParticleSystemShapeType.SingleSidedEdge;
+            shape.radius = 1.4f;
+            FadeOut(system);
+            GrowOverLife(system, 0.2f);
+            return system;
+        }
+
+        static ParticleSystem BuildPuff(Material material, Color color)
+        {
+            var system = NewSystem("Vfx_PieceLaunch", material, 0.6f, false, 30);
+            var main = system.main;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.3f, 0.55f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(1f, 2.5f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.18f, 0.36f);
+            main.startColor = color;
+            Burst(system, 16);
+            var shape = system.shape;
+            shape.shapeType = ParticleSystemShapeType.Sphere;
+            shape.radius = 0.2f;
+            FadeOut(system);
+            GrowOverLife(system, 1.6f);
+            return system;
+        }
+
+        // Rock chunks bursting in every direction (the rock that reached the player).
+        static ParticleSystem BuildChunks(Material material, Mesh cube, Color color)
+        {
+            var system = NewSystem("Vfx_RockImpact", material, 1f, false, 32);
+            var main = system.main;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.6f, 0.9f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(3f, 6f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.08f, 0.18f);
+            main.startColor = color;
+            main.gravityModifier = 1.2f;
+            main.startRotation3D = true;
+            main.startRotationX = new ParticleSystem.MinMaxCurve(0f, Mathf.PI * 2f);
+            main.startRotationY = new ParticleSystem.MinMaxCurve(0f, Mathf.PI * 2f);
+            Burst(system, 18);
+            var shape = system.shape;
+            shape.shapeType = ParticleSystemShapeType.Sphere;
+            shape.radius = 0.2f;
+            var rotation = system.rotationOverLifetime;
+            rotation.enabled = true;
+            rotation.z = new ParticleSystem.MinMaxCurve(-6f, 6f);
+            MeshRenderer(system, cube);
+            return system;
+        }
+
+        // Looping earth dust over a held Earth Seal tile (the box covers a tile face).
+        static ParticleSystem BuildSealDust(Material material)
+        {
+            var system = NewSystem("Vfx_SealDust", material, 1f, true, 90);
+            var main = system.main;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.5f, 0.9f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(0.2f, 0.7f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.18f, 0.4f);
+            main.startColor = new Color(0.78f, 0.58f, 0.28f, 0.85f);
+            main.gravityModifier = -0.15f;
+            var emission = system.emission;
+            emission.rateOverTime = 40f;
+            var shape = system.shape;
+            shape.shapeType = ParticleSystemShapeType.Box;
+            shape.scale = new Vector3(3.6f, 1.8f, 0.2f);
+            FadeOut(system);
+            GrowOverLife(system, 1.5f);
+            return system;
+        }
+
+        // Gold ring bursting out in the wall plane when a seal completes.
+        static ParticleSystem BuildRingBurst(Material material)
+        {
+            var system = NewSystem("Vfx_SealComplete", material, 0.8f, false, 80);
+            var main = system.main;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.45f, 0.7f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(3f, 5f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.25f, 0.45f);
+            main.startColor = new Color(1f, 0.82f, 0.3f, 1f);
+            Burst(system, 50);
+            var shape = system.shape;
+            shape.shapeType = ParticleSystemShapeType.Circle;
+            shape.radius = 1f;
+            FadeOut(system);
             return system;
         }
 

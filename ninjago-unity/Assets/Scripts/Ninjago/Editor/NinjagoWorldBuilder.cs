@@ -374,7 +374,7 @@ namespace Nex.Ninjago.Editor
 
         #region Shared
 
-        static Camera NewCamera(Transform parent, Vector3 position, Vector3 euler, float fieldOfView)
+        internal static Camera NewCamera(Transform parent, Vector3 position, Vector3 euler, float fieldOfView)
         {
             var go = new GameObject("Camera");
             go.transform.SetParent(parent, false);
@@ -391,7 +391,7 @@ namespace Nex.Ninjago.Editor
             return camera;
         }
 
-        static Canvas WorldCanvas(Transform parent, string name, Vector3 position, float scale, Vector2 size)
+        internal static Canvas WorldCanvas(Transform parent, string name, Vector3 position, float scale, Vector2 size)
         {
             var rect = NewRect(name, parent);
             var canvas = rect.gameObject.AddComponent<Canvas>();
@@ -402,7 +402,7 @@ namespace Nex.Ninjago.Editor
             return canvas;
         }
 
-        static PlayerTagLabel BuildPlayerTagCanvas(Transform parent, string name, Vector3 position, float scale, float fontSize, bool withPointer)
+        internal static PlayerTagLabel BuildPlayerTagCanvas(Transform parent, string name, Vector3 position, float scale, float fontSize, bool withPointer)
         {
             var canvas = WorldCanvas(parent, name, position, scale, new Vector2(200f, 140f));
             var tag = BuildPlayerTag(canvas.transform, new Vector2(0f, 25f), fontSize);

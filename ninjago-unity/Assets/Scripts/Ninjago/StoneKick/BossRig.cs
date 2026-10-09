@@ -21,9 +21,15 @@ namespace Nex.Ninjago
         [Header("Player Marker")]
         [SerializeField] PlayerTagLabel marker = null!;
         [Header("Arm Rest Angle")]
-        [SerializeField] float armRestDegrees = 15f;
+        [SerializeField] float armRestDegrees = 12f;
         [Header("Arm Wind-up Angle")]
-        [SerializeField] float armWindupDegrees = -150f;
+        [Tooltip("Swung back, away from the player.")]
+        [SerializeField] float armWindupDegrees = -70f;
+        [Header("Arm Release Angle")]
+        [Tooltip("Swung forward and up: where the rock leaves the hand.")]
+        [SerializeField] float armReleaseDegrees = 110f;
+        [Header("Arm Settle Seconds")]
+        [SerializeField] float armSettleSeconds = 0.4f;
         [Header("Flinch Seconds")]
         [SerializeField] float flinchSeconds = 0.35f;
 
@@ -47,7 +53,7 @@ namespace Nex.Ninjago
 
         #region Public API
 
-        /// <summary>Winds the arm back and swings it forward over the given seconds; the rock leaves at the end.</summary>
+        /// <summary>Underhand lob: the arm swings back, then forward and up over the given seconds; the rock leaves at the end.</summary>
         public void PlayThrow(float seconds)
         {
             throwStart = Time.unscaledTime;
@@ -66,11 +72,21 @@ namespace Nex.Ninjago
         void Update()
         {
             var now = Time.unscaledTime;
-            var t = Mathf.Clamp01((now - throwStart) / throwSeconds);
-            // Back over the first 70%, then a fast swing through and past the rest angle.
-            var angle = t < 0.7f
-                ? Mathf.Lerp(armRestDegrees, armWindupDegrees, Mathf.SmoothStep(0f, 1f, t / 0.7f))
-                : Mathf.Lerp(armWindupDegrees, armRestDegrees, (t - 0.7f) / 0.3f);
+            var elapsed = now - throwStart;
+            float angle;
+            if (elapsed < throwSeconds * 0.6f)
+            {
+                angle = Mathf.Lerp(armRestDegrees, armWindupDegrees, Mathf.SmoothStep(0f, 1f, elapsed / (throwSeconds * 0.6f)));
+            }
+            else if (elapsed < throwSeconds)
+            {
+                angle = Mathf.Lerp(armWindupDegrees, armReleaseDegrees, (elapsed - throwSeconds * 0.6f) / (throwSeconds * 0.4f));
+            }
+            else
+            {
+                angle = Mathf.Lerp(armReleaseDegrees, armRestDegrees, Mathf.SmoothStep(0f, 1f, (elapsed - throwSeconds) / armSettleSeconds));
+            }
+
             armPivot.localRotation = Quaternion.Euler(angle, 0f, 0f);
 
             var flinch = 1f - Mathf.Clamp01((now - flinchStart) / flinchSeconds);

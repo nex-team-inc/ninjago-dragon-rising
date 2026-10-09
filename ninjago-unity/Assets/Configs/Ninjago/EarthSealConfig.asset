@@ -1,0 +1,64 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 133cb803a663245858104e60b968cd05, type: 3}
+  m_Name: EarthSealConfig
+  m_EditorClassIdentifier: Assembly-CSharp::Nex.Ninjago.EarthSealConfig
+  waves:
+    pairs:
+    - key: 0
+      value:
+        gridSize: 3
+        waveSeconds: 20
+        beatSeconds: 1
+        crackChance: 0.07
+        maxCracks: 1
+        minCrackSpacing: 1
+        warningSeconds: 2.2
+        sealSeconds: 2
+        breakthroughSeconds: 4
+    - key: 1
+      value:
+        gridSize: 3
+        waveSeconds: 20
+        beatSeconds: 1
+        crackChance: 0.14
+        maxCracks: 2
+        minCrackSpacing: 1
+        warningSeconds: 1.6
+        sealSeconds: 2
+        breakthroughSeconds: 3.6
+    - key: 2
+      value:
+        gridSize: 3
+        waveSeconds: 20
+        beatSeconds: 1
+        crackChance: 0.16
+        maxCracks: 2
+        minCrackSpacing: 2
+        warningSeconds: 1.5
+        sealSeconds: 1.6
+        breakthroughSeconds: 3.4
+    - key: 3
+      value:
+        gridSize: 4
+        waveSeconds: 22
+        beatSeconds: 1
+        crackChance: 0.18
+        maxCracks: 3
+        minCrackSpacing: 1
+        warningSeconds: 1
+        sealSeconds: 1.3
+        breakthroughSeconds: 3.2
+  hearts: 5
+  sealDrainSeconds: 4
+  introSeconds: 3
+  waveBreakSeconds: 2.5

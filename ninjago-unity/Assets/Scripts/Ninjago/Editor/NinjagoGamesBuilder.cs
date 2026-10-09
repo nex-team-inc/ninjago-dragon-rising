@@ -16,10 +16,10 @@ namespace Nex.Ninjago.Editor
     /// </summary>
     public static class NinjagoGamesBuilder
     {
-        const string GamesRoot = PrefabsRoot + "/Games";
+        internal const string GamesRoot = PrefabsRoot + "/Games";
         const string SlipAndSpinPath = GamesRoot + "/SlipAndSpinGame.prefab";
         const string ChestChasePath = GamesRoot + "/ChestChaseGame.prefab";
-        const string GameModeConfigPath = "Assets/Configs/GameModeConfig.asset";
+        internal const string GameModeConfigPath = "Assets/Configs/GameModeConfig.asset";
 
         #region Entry Point
 
@@ -75,7 +75,7 @@ namespace Nex.Ninjago.Editor
             SavePrefab(root, ChestChasePath);
         }
 
-        static void WireShared(NinjagoGame game, Transform root)
+        internal static void WireShared(NinjagoGame game, Transform root)
         {
             var sun = new GameObject("Sun");
             sun.transform.SetParent(root, false);
@@ -107,16 +107,17 @@ namespace Nex.Ninjago.Editor
             var modes = serialized.FindProperty("modes");
             Mode(settings, modes, GameModeType.SlipAndSpin, SlipAndSpinPath, "ninjago.mode.slip_and_spin");
             Mode(settings, modes, GameModeType.ChestChase, ChestChasePath, "ninjago.mode.chest_chase");
-            // The menu shows the two mini-games; the PressButtonToWin test entry stays defined but unlisted.
+            // The menu shows the Ninjago mini-games; the PressButtonToWin test entry stays defined but unlisted. The
+            // StoneKick and EarthSeal definitions come from CursorGamesBuilder.
             var order = serialized.FindProperty("modeOrders");
-            order.arraySize = 2;
-            order.GetArrayElementAtIndex(0).intValue = (int)GameModeType.SlipAndSpin;
-            order.GetArrayElementAtIndex(1).intValue = (int)GameModeType.ChestChase;
+            var listed = new[] { GameModeType.SlipAndSpin, GameModeType.ChestChase, GameModeType.StoneKick, GameModeType.EarthSeal };
+            order.arraySize = listed.Length;
+            for (var i = 0; i < listed.Length; i++) order.GetArrayElementAtIndex(i).intValue = (int)listed[i];
             serialized.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(config);
         }
 
-        static void Mode(UnityEditor.AddressableAssets.Settings.AddressableAssetSettings settings, SerializedProperty modes,
+        internal static void Mode(UnityEditor.AddressableAssets.Settings.AddressableAssetSettings settings, SerializedProperty modes,
             GameModeType mode, string prefabPath, string nameKey)
         {
             var guid = AssetDatabase.AssetPathToGUID(prefabPath);

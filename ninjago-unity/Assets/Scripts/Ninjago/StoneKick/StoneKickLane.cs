@@ -145,7 +145,7 @@ namespace Nex.Ninjago
         async UniTask<bool> ThrowAndHangAsync(CancellationToken cancellationToken)
         {
             boss.PlayThrow(windupSeconds);
-            await WaitAsync(windupSeconds * 0.7f, cancellationToken);
+            await WaitAsync(windupSeconds, cancellationToken);
             SfxManager.Instance.PlaySoundEffect(SfxManager.SoundEffect.StaffWhoosh);
             foreach (var detector in slashDetectors) detector.Reset();
             var start = boss.HandPosition;

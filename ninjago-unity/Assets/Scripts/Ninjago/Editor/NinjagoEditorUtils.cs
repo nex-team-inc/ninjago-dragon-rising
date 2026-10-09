@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Nex.KeyboardNavigation;
 using Nex.Localization;
 using TMPro;
 using UnityEditor;
@@ -195,6 +196,24 @@ namespace Nex.Ninjago.Editor
             image.color = color;
             image.raycastTarget = false;
             return image;
+        }
+
+        /// <summary>Key responder for views without buttons: Enter/Escape press the top-level Back button.</summary>
+        public static KeyResponder BackProxy(RectTransform ui)
+        {
+            var proxy = ui.gameObject.AddComponent<TopLevelControlProxyKeyResponder>();
+            Set(proxy, "control", property => property.intValue = (int)TopLevelControlPanel.ControlConfig.Back);
+            return proxy;
+        }
+
+        /// <summary>Raw image showing a world camera's render texture over the given screen part.</summary>
+        public static UnityEngine.UI.RawImage Feed(RectTransform ui, string name, Vector2 anchorMin, Vector2 anchorMax)
+        {
+            var rect = NewRect(name, ui);
+            Place(rect, anchorMin, anchorMax, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            var raw = rect.gameObject.AddComponent<UnityEngine.UI.RawImage>();
+            raw.raycastTarget = false;
+            return raw;
         }
 
         #endregion

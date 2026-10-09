@@ -20,8 +20,8 @@ namespace Nex.Ninjago.Editor
     public static class NinjagoViewsBuilder
     {
         const string TemplatePath = "Assets/Prefabs/Gameplay/Games/PressButtonToWin/PressButtonToWinView.prefab";
-        const string ViewsRoot = PrefabsRoot + "/Views";
-        const string WidgetsRoot = ViewsRoot + "/Widgets";
+        internal const string ViewsRoot = PrefabsRoot + "/Views";
+        internal const string WidgetsRoot = ViewsRoot + "/Widgets";
         public const string PlayerCountViewPath = ViewsRoot + "/PlayerCountView.prefab";
         public const string SetupViewPath = ViewsRoot + "/NinjagoSetupView.prefab";
         public const string FightViewPath = ViewsRoot + "/FightView.prefab";
@@ -37,9 +37,7 @@ namespace Nex.Ninjago.Editor
 
         public static void Build()
         {
-            outline = OutlineTextMaterial();
-            template = PrefabUtility.LoadPrefabContents(TemplatePath);
-            try
+            WithTemplate(() =>
             {
                 var heart = BuildHeart();
                 var hud = BuildFightHud(heart);
@@ -50,6 +48,17 @@ namespace Nex.Ninjago.Editor
                 BuildView<FightView>(FightViewPath, (view, ui) => BuildFight(view, ui, hud));
                 BuildView<RunnerView>(RunnerViewPath, BuildRunner);
                 BuildView<NinjagoResultView>(ResultViewPath, (view, ui) => BuildResult(view, ui, line));
+            });
+        }
+
+        /// <summary>Runs view building with the template view and the outlined text material loaded.</summary>
+        internal static void WithTemplate(System.Action build)
+        {
+            outline = OutlineTextMaterial();
+            template = PrefabUtility.LoadPrefabContents(TemplatePath);
+            try
+            {
+                build();
             }
             finally
             {
@@ -57,7 +66,7 @@ namespace Nex.Ninjago.Editor
             }
         }
 
-        static void BuildView<T>(string path, System.Action<T, RectTransform> build) where T : SimpleCanvasView
+        internal static void BuildView<T>(string path, System.Action<T, RectTransform> build) where T : SimpleCanvasView
         {
             if (AssetDatabase.LoadAssetAtPath<GameObject>(path) == null)
             {
@@ -103,7 +112,7 @@ namespace Nex.Ninjago.Editor
             Set(view, "keyResponder", group);
         }
 
-        static void BuildSetup(NinjagoSetupView view, RectTransform ui, SetupPlayerStatus statusPrefab)
+        internal static void BuildSetup(NinjagoSetupView view, RectTransform ui, SetupPlayerStatus statusPrefab)
         {
             var statusRow = NewRect("PlayerStatuses", ui);
             Place(statusRow, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 40f), new Vector2(1200f, 90f));
@@ -314,7 +323,7 @@ namespace Nex.Ninjago.Editor
 
         #region Helpers
 
-        static NexLocalizedString Title(RectTransform ui, string key, string preview, Vector2 position)
+        internal static NexLocalizedString Title(RectTransform ui, string key, string preview, Vector2 position)
         {
             var title = Object.Instantiate(template.transform.Find("UI/Title").gameObject, ui);
             title.name = "Title";
@@ -326,7 +335,7 @@ namespace Nex.Ninjago.Editor
             return label;
         }
 
-        static GameObject CloneButton(RectTransform parent, string name, string key, string preview, Vector2 position)
+        internal static GameObject CloneButton(RectTransform parent, string name, string key, string preview, Vector2 position)
         {
             var button = Object.Instantiate(template.transform.Find("UI/WinButton").gameObject, parent);
             button.name = name;
@@ -338,7 +347,7 @@ namespace Nex.Ninjago.Editor
             return button;
         }
 
-        static GroupKeyResponder Group(RectTransform row, params GameObject[] buttons)
+        internal static GroupKeyResponder Group(RectTransform row, params GameObject[] buttons)
         {
             var group = row.gameObject.AddComponent<GroupKeyResponder>();
             var responders = new List<Object>();
@@ -348,23 +357,7 @@ namespace Nex.Ninjago.Editor
             return group;
         }
 
-        static KeyResponder BackProxy(RectTransform ui)
-        {
-            var proxy = ui.gameObject.AddComponent<TopLevelControlProxyKeyResponder>();
-            Set(proxy, "control", property => property.intValue = (int)TopLevelControlPanel.ControlConfig.Back);
-            return proxy;
-        }
-
-        static RawImage Feed(RectTransform ui, string name, Vector2 anchorMin, Vector2 anchorMax)
-        {
-            var rect = NewRect(name, ui);
-            Place(rect, anchorMin, anchorMax, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
-            var raw = rect.gameObject.AddComponent<RawImage>();
-            raw.raycastTarget = false;
-            return raw;
-        }
-
-        static NexLocalizedString Banner(RectTransform parent, string name, string key, string preview, float size, Color color, Vector2 position)
+        internal static NexLocalizedString Banner(RectTransform parent, string name, string key, string preview, float size, Color color, Vector2 position)
         {
             var label = Label(parent, name, key, preview, size, color, outline);
             Place((RectTransform)label.transform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), position, new Vector2(1400f, size * 1.3f));
@@ -372,7 +365,7 @@ namespace Nex.Ninjago.Editor
         }
 
         // Corner camera feed with player indicators (AreaPreviewFrame + PlayerIndicatorsManager, as in ARGameExample).
-        static PlayerIndicatorsManager CameraPreview(RectTransform ui, Vector2 anchor, Vector2 position, Vector2 size, out AreaPreviewFrame frame)
+        internal static PlayerIndicatorsManager CameraPreview(RectTransform ui, Vector2 anchor, Vector2 position, Vector2 size, out AreaPreviewFrame frame)
         {
             var border = NewImage(ui, "CameraPreview", GetSprite("Panel"), new Color(0.08f, 0.08f, 0.1f, 0.9f));
             border.type = UnityEngine.UI.Image.Type.Sliced;

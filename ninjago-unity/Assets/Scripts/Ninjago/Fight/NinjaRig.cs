@@ -135,8 +135,12 @@ namespace Nex.Ninjago
             }
 
             if (isOut) pitch = -80f;
-            bodyRoot.localPosition = new Vector3(sideways * slipDistance, 0f, 0f);
+            var offset = new Vector3(sideways * slipDistance, 0f, 0f);
+            bodyRoot.localPosition = offset;
             bodyRoot.localRotation = Quaternion.Euler(pitch, yaw, roll);
+            // The ring stays flat on the ground under the ninja: it follows the slip, not the lean or the spin.
+            var ring = swirlRingRoot.transform;
+            ring.localPosition = new Vector3(offset.x, ring.localPosition.y, ring.localPosition.z);
         }
 
         #endregion

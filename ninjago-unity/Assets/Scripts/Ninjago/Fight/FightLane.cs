@@ -23,7 +23,7 @@ namespace Nex.Ninjago
         [Header("Lane Camera")]
         [SerializeField] Camera laneCamera = null!;
         [Header("Solo Field Of View")]
-        [SerializeField] float soloFieldOfView = 46f;
+        [SerializeField] float soloFieldOfView = 52f;
         [Header("Split Field Of View")]
         [SerializeField] float splitFieldOfView = 64f;
         [Header("Staff Rest Lift")]

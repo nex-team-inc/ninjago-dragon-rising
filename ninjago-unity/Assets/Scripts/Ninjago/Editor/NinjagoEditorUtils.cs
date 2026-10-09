@@ -133,12 +133,13 @@ namespace Nex.Ninjago.Editor
 
         #region UI
 
-        public static RectTransform NewRect(string name, Transform parent)
+        /// <param name="parent">Null for the root of a widget prefab.</param>
+        public static RectTransform NewRect(string name, Transform? parent)
         {
             var go = new GameObject(name, typeof(RectTransform));
-            go.layer = parent.gameObject.layer;
+            go.layer = parent != null ? parent.gameObject.layer : LayerMask.NameToLayer("UI");
             var rect = (RectTransform)go.transform;
-            rect.SetParent(parent, false);
+            if (parent != null) rect.SetParent(parent, false);
             return rect;
         }
 
@@ -178,12 +179,12 @@ namespace Nex.Ninjago.Editor
             tmp.fontSize = size;
             tmp.color = color;
             tmp.alignment = alignment;
-            tmp.enableWordWrapping = false;
+            tmp.textWrappingMode = TextWrappingModes.NoWrap;
             tmp.raycastTarget = false;
             return tmp;
         }
 
-        public static UnityEngine.UI.Image Image(Transform parent, string name, Sprite? sprite, Color color)
+        public static UnityEngine.UI.Image NewImage(Transform parent, string name, Sprite? sprite, Color color)
         {
             var rect = NewRect(name, parent);
             var image = rect.gameObject.AddComponent<UnityEngine.UI.Image>();

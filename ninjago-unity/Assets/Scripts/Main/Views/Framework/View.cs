@@ -47,6 +47,13 @@ namespace Nex
             // Game Selection
             GameModeSelection,
             PressButtonToWin,
+
+            // Ninjago (append only).
+            PlayerCount,
+            NinjagoSetup,
+            Fight,
+            Runner,
+            NinjagoResult,
         }
 
         /// <summary>

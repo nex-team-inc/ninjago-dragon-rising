@@ -1,6 +1,7 @@
 #nullable enable
 
 using Cysharp.Threading.Tasks;
+using Nex.Ninjago;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -11,6 +12,10 @@ namespace Nex
         [SerializeField] ViewManager viewManager = null!;
         [Header("Game Selection")]
         [SerializeField] GameModeSelectionView gameModeSelectionViewPrefab = null!;
+        [Header("Game Selection Config")]
+        [SerializeField] GameModeConfig gameModeConfig = null!;
+        [Header("Player Count")]
+        [SerializeField] PlayerCountView playerCountViewPrefab = null!;
 
         bool prepared;
 
@@ -52,7 +57,7 @@ namespace Nex
         GameModeSelectionView CreateGameModeSelectionView()
         {
             var gameModeSelectionView = Instantiate(gameModeSelectionViewPrefab);
-            gameModeSelectionView.Initialize();
+            gameModeSelectionView.Initialize(PlayerDataManager.Instance.NinjagoProgress.lastMiniGame);
             gameModeSelectionView.ModeSelected += GameModeSelectionOnModeSelected;
             gameModeSelectionView.ExitRequested += GameModeSelectionOnExitRequested;
             return gameModeSelectionView;
@@ -61,6 +66,27 @@ namespace Nex
         void GameModeSelectionOnModeSelected(GameModeType mode)
         {
             GameConfigsManager.Instance.SelectedMode = mode;
+            NinjagoAnalytics.UiAction(gameModeSelectionViewPrefab.AnalyticsScreenName, mode.ToString());
+            if (gameModeConfig.GetMode(mode).maxPlayers > 1)
+            {
+                viewManager.PushView(CreatePlayerCountView()).Forget();
+                return;
+            }
+
+            LoadGameSceneAsync().Forget();
+        }
+
+        PlayerCountView CreatePlayerCountView()
+        {
+            var playerCountView = Instantiate(playerCountViewPrefab);
+            playerCountView.Initialize(PlayerDataManager.Instance.PlayerPreference.numPlayers);
+            playerCountView.PlayersChosen += PlayerCountOnPlayersChosen;
+            return playerCountView;
+        }
+
+        void PlayerCountOnPlayersChosen(int numPlayers)
+        {
+            PlayerDataManager.Instance.ScopedPlayerPreferenceUpdate(preference => preference.numPlayers = numPlayers);
             LoadGameSceneAsync().Forget();
         }
 

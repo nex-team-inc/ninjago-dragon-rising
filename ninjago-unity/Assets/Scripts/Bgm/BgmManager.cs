@@ -20,6 +20,8 @@ namespace Nex
             Act3 = 12,
             Boss = 20,
             Reward = 30,
+            NinjaFight = 40,
+            NinjaChase = 41,
         }
 
         public enum StingerType

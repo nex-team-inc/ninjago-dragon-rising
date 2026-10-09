@@ -37,6 +37,14 @@ namespace Nex
             AmbientAct1 = 40,
             AmbientAct2 = 41,
             AmbientAct3 = 42,
+
+            // Ninjago
+            NinjaDustKick = 100,
+            NinjaBrickPop = 101,
+            SpinjitzuSwirl = 102,
+            SpinjitzuBurst = 103,
+            BruteBrickSpray = 104,
+            VehicleBump = 110,
         }
 
         #region Pool

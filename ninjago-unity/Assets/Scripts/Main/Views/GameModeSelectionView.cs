@@ -42,7 +42,8 @@ namespace Nex
 
         #region Initialization
 
-        public void Initialize()
+        /// <param name="initialMode">Mode focused first (e.g. the last one played); ignored when not in the menu.</param>
+        public void Initialize(GameModeType initialMode)
         {
             gridKeyResponder.NumColumns = gridLayout.constraintCount;
 
@@ -56,6 +57,29 @@ namespace Nex
             }
 
             gridKeyResponder.ReinitializeResponders(responders);
+            var initialIndex = IndexOf(gameModeConfig.ModeOrders, initialMode);
+            if (initialIndex >= 0) gridKeyResponder.SetInitialActiveIndex(initialIndex);
+        }
+
+        #endregion
+
+        #region View Lifecycle
+
+        public override void ViewDidBecomeTopView(bool afterPush)
+        {
+            base.ViewDidBecomeTopView(afterPush);
+            // Back from a follow-up step (player count) re-arms the selection.
+            modeChosen = false;
+        }
+
+        static int IndexOf(IReadOnlyList<GameModeType> modes, GameModeType mode)
+        {
+            for (var i = 0; i < modes.Count; i++)
+            {
+                if (modes[i] == mode) return i;
+            }
+
+            return -1;
         }
 
         #endregion

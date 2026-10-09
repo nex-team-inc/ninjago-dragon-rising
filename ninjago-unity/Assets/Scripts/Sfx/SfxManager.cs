@@ -72,6 +72,13 @@ namespace Nex
             BossAppear = 605,
             GameOver = 606,
             Victory = 607,
+
+            // Ninjago
+            StaffWhoosh = 700,
+            NinjaSlip = 701,
+            NinjaSpin = 702,
+            NinjaHit = 703,
+            VehicleBump = 704,
         }
 
         [SerializeField] AudioSource audioSource = null!;

@@ -18,6 +18,8 @@ namespace Nex
             public LocalizedString displayName = new();
             [Tooltip("Addressable prefab with a BaseGame component on its root.")]
             public AssetReferenceGameObject gamePrefab = null!;
+            [Tooltip("Above 1, the menu asks how many players before loading the game.")]
+            [Range(1, 2)] public int maxPlayers = 1;
         }
 
         [Header("Modes")]

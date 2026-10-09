@@ -53,12 +53,19 @@ namespace Nex.Ninjago.Editor.Tests
         static readonly Vector2 center = new(500f, 500f);
         const float radius = 100f;
         const float threshold = 50f;
+        const float maxCross = 0.4f;
 
+        static bool Step(SlashDetector detector, Vector2 position, float speed, float time, int continuity = 1)
+        {
+            return detector.Update(position, speed, continuity, center, radius, time, threshold, maxCross);
+        }
+
+        // 60 Hz samples along a straight line at a constant reported speed.
         static bool Stroke(SlashDetector detector, Vector2 from, Vector2 to, float speed, int steps = 10)
         {
             for (var i = 0; i <= steps; i++)
             {
-                if (detector.Update(Vector2.Lerp(from, to, i / (float)steps), speed, 1, center, radius, threshold)) return true;
+                if (Step(detector, Vector2.Lerp(from, to, i / (float)steps), speed, i / 60f)) return true;
             }
 
             return false;
@@ -80,7 +87,7 @@ namespace Nex.Ninjago.Editor.Tests
         public void RestingCursorOnTheRockDoesNothing()
         {
             var detector = new SlashDetector();
-            for (var i = 0; i < 60; i++) Assert.IsFalse(detector.Update(center + Vector2.one * Mathf.Sin(i), 3f, 1, center, radius, threshold));
+            for (var i = 0; i < 60; i++) Assert.IsFalse(Step(detector, center + Vector2.one * Mathf.Sin(i), 3f, i / 60f));
         }
 
         [Test]
@@ -90,25 +97,48 @@ namespace Nex.Ninjago.Editor.Tests
         }
 
         [Test]
-        public void StrokeStartingInsideTheRockMustStartOutside()
+        public void CursorAlreadyOnTheRockMustEnterFromOutside()
         {
             Assert.IsFalse(Stroke(new SlashDetector(), center, new Vector2(800f, 500f), 80f));
+        }
+
+        [Test]
+        public void SpeedThatPeaksInsideTheRockStillSlashes()
+        {
+            // The smoothed cursor speeds up while already crossing (the playtest case).
+            var detector = new SlashDetector();
+            var speeds = new[] { 20f, 30f, 42f, 65f, 86f, 88f, 81f, 69f };
+            for (var i = 0; i < speeds.Length; i++)
+            {
+                var slashed = Step(detector, new Vector2(370f + i * 40f, 500f), speeds[i], i / 60f);
+                Assert.AreEqual(i == 6, slashed, $"sample {i}");
+            }
+        }
+
+        [Test]
+        public void LingeringInsideTheRockIsNotASlash()
+        {
+            var detector = new SlashDetector();
+            Assert.IsFalse(Step(detector, new Vector2(350f, 500f), 80f, 0f));
+            Assert.IsFalse(Step(detector, new Vector2(450f, 500f), 80f, 0.02f));
+            Assert.IsFalse(Step(detector, new Vector2(470f, 500f), 5f, 0.6f));
+            Assert.IsFalse(Step(detector, new Vector2(700f, 500f), 80f, 0.62f));
         }
 
         [Test]
         public void OneFrameJumpThroughTheRockSlashes()
         {
             var detector = new SlashDetector();
-            Assert.IsFalse(detector.Update(new Vector2(300f, 500f), 80f, 1, center, radius, threshold));
-            Assert.IsTrue(detector.Update(new Vector2(700f, 500f), 80f, 1, center, radius, threshold));
+            Assert.IsFalse(Step(detector, new Vector2(300f, 500f), 80f, 0f));
+            Assert.IsTrue(Step(detector, new Vector2(700f, 500f), 80f, 0.02f));
         }
 
         [Test]
         public void SignalChangeMidStrokeRestarts()
         {
             var detector = new SlashDetector();
-            Assert.IsFalse(detector.Update(new Vector2(300f, 500f), 80f, 1, center, radius, threshold));
-            Assert.IsFalse(detector.Update(new Vector2(700f, 500f), 80f, 2, center, radius, threshold));
+            Assert.IsFalse(Step(detector, new Vector2(300f, 500f), 80f, 0f));
+            Assert.IsFalse(Step(detector, new Vector2(700f, 500f), 80f, 0.02f, 2));
         }
     }
 

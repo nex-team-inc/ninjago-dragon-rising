@@ -351,7 +351,7 @@ namespace Nex.Ninjago
                 }
 
                 if (!detector.Update(Vector2.Scale(cursor.ScreenPosition, pixels), cursor.SpeedInchesPerSecond, cursor.Continuity, center, radius,
-                        config.SlashSpeedInchesPerSecond)) continue;
+                        Time.unscaledTime, config.SlashSpeedInchesPerSecond, config.SlashMaxCrossSeconds)) continue;
                 stroke = detector.LastStep;
                 speed = cursor.SpeedInchesPerSecond;
                 return true;

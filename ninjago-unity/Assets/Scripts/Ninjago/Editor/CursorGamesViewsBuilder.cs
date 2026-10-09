@@ -195,11 +195,11 @@ namespace Nex.Ninjago.Editor
             Place((RectTransform)throwLabel.transform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-40f, -32f), new Vector2(420f, 70f));
             // Above the piece row, which hangs at the middle of the half.
             var kick = NewRect("KickPrompt", root);
-            Place(kick, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 250f), new Vector2(900f, 200f));
-            var kickWord = Label(kick, "KickWord", "ninjago.kick.kick", "KICK", 170f, kickYellow, outline, TextAlignmentOptions.Right);
-            Place((RectTransform)kickWord.transform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(1f, 0.5f), new Vector2(110f, 0f), new Vector2(560f, 200f));
-            var kickCount = Label(kick, "KickCount", null, "0/3", 120f, Color.white, outline, TextAlignmentOptions.Left);
-            Place((RectTransform)kickCount.transform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 0.5f), new Vector2(140f, -6f), new Vector2(320f, 160f));
+            Place(kick, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 135f), new Vector2(900f, 170f));
+            var kickWord = Label(kick, "KickWord", "ninjago.kick.kick", "KICK", 150f, kickYellow, outline, TextAlignmentOptions.Right);
+            Place((RectTransform)kickWord.transform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(1f, 0.5f), new Vector2(100f, 0f), new Vector2(520f, 170f));
+            var kickCount = Label(kick, "KickCount", null, "0/3", 110f, Color.white, outline, TextAlignmentOptions.Left);
+            Place((RectTransform)kickCount.transform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 0.5f), new Vector2(125f, -6f), new Vector2(300f, 150f));
             var slash = NinjagoViewsBuilder.Banner(root, "SlashHint", "ninjago.kick.slash_hint", "Slash the rock!", 84f, Color.white, new Vector2(0f, -220f));
             var outBanner = NinjagoViewsBuilder.Banner(root, "OutBanner", "ninjago.fight.out", "OUT", 170f, warnRed, new Vector2(0f, 80f));
             var finished = NinjagoViewsBuilder.Banner(root, "FinishedBanner", "ninjago.fight.finished", "Finished!", 96f, safeGreen, new Vector2(0f, 330f));

@@ -39,6 +39,8 @@ namespace Nex.Ninjago
         [Header("Slash")]
         [Tooltip("Cursor speed (body inches per second of the hand) a stroke must reach while it crosses the rock.")]
         [SerializeField, Range(10f, 300f)] float slashSpeedInchesPerSecond = 55f;
+        [Tooltip("Seconds a cursor may stay inside the rock between entering and leaving it; longer is a rest, not a slash.")]
+        [SerializeField, Range(0.05f, 2f)] float slashMaxCrossSeconds = 0.4f;
         [Tooltip("Seconds the pieces take to spread into their row after the slash.")]
         [SerializeField, Range(0.05f, 1.5f)] float splitSeconds = 0.35f;
 
@@ -77,6 +79,7 @@ namespace Nex.Ninjago
         public float MissFlySeconds => missFlySeconds;
         public float HitRecoverSeconds => hitRecoverSeconds;
         public float SlashSpeedInchesPerSecond { get => slashSpeedInchesPerSecond; set => slashSpeedInchesPerSecond = value; }
+        public float SlashMaxCrossSeconds { get => slashMaxCrossSeconds; set => slashMaxCrossSeconds = Mathf.Max(0.05f, value); }
         public float SplitSeconds => splitSeconds;
         public int KicksRequired { get => kicksRequired; set => kicksRequired = Mathf.Clamp(value, 1, 6); }
         public float KickWindowSeconds { get => kickWindowSeconds; set => kickWindowSeconds = value; }

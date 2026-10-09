@@ -119,6 +119,8 @@ namespace Nex
 
         [DebugOrder(-190), Description("Kick: Slash Speed (in/s)"), NumericSteps(Steps = 5, Min = 10, Max = 300), ES3NonSerializable]
         public float KickSlashSpeed { get => StoneKick.SlashSpeedInchesPerSecond; set => StoneKick.SlashSpeedInchesPerSecond = value; }
+        [DebugOrder(-191), Description("Kick: Slash Max Cross Time (s)"), NumericSteps(Steps = 0.05, Min = 0.05, Max = 2), ES3NonSerializable]
+        public float KickSlashCross { get => StoneKick.SlashMaxCrossSeconds; set => StoneKick.SlashMaxCrossSeconds = value; }
         [DebugOrder(-189), Description("Kick: Long Hang (s)"), NumericSteps(Steps = 0.25, Min = 0.5, Max = 10), ES3NonSerializable]
         public float KickLongHang { get => StoneKick.LongHangSeconds; set => StoneKick.LongHangSeconds = value; }
         [DebugOrder(-188), Description("Kick: Long Hang Throws"), NumericSteps(IntSteps = 1, IntMin = 0, IntMax = 12), ES3NonSerializable]

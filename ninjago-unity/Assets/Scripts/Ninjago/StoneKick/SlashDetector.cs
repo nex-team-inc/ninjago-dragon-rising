@@ -5,17 +5,18 @@ using UnityEngine;
 namespace Nex.Ninjago
 {
     /// <summary>
-    /// One cursor's slash test against a round target in screen pixels: a stroke that stays above the speed threshold,
-    /// starts outside the target, passes through it and leaves it. A resting or slow cursor never slashes.
+    /// One cursor's slash test against a round target in screen pixels: the cursor enters the target from outside and
+    /// leaves it within the crossing time, and its speed peaks above the threshold during the crossing. A cursor that
+    /// rests on the target, lingers in it or moves slowly never slashes.
     /// </summary>
     public sealed class SlashDetector
     {
         bool hasLast;
         Vector2 last;
         int continuity;
-        bool inStroke;
-        bool startedOutside;
-        bool touched;
+        bool crossing;
+        float enterTime;
+        float peakSpeed;
 
         /// <summary>The last frame's cursor movement in pixels (the slash direction on the frame it fires).</summary>
         public Vector2 LastStep { get; private set; }
@@ -25,21 +26,20 @@ namespace Nex.Ninjago
         public void Reset()
         {
             hasLast = false;
-            inStroke = false;
-            touched = false;
+            crossing = false;
         }
 
-        /// <param name="cursorContinuity">HandCursor.Continuity; a change (reappeared, new signal) restarts the stroke.</param>
-        /// <returns>True on the frame the stroke has crossed the target.</returns>
-        public bool Update(Vector2 position, float speed, int cursorContinuity, Vector2 center, float radius, float speedThreshold)
+        /// <param name="cursorContinuity">HandCursor.Continuity; a change (reappeared, new signal) restarts the test.</param>
+        /// <returns>True on the frame the cursor leaves the target after a fast crossing.</returns>
+        public bool Update(Vector2 position, float speed, int cursorContinuity, Vector2 center, float radius, float time, float speedThreshold,
+            float maxCrossSeconds)
         {
             if (!hasLast || cursorContinuity != continuity)
             {
                 hasLast = true;
                 continuity = cursorContinuity;
                 last = position;
-                inStroke = false;
-                touched = false;
+                crossing = false;
                 LastStep = Vector2.zero;
                 return false;
             }
@@ -47,26 +47,26 @@ namespace Nex.Ninjago
             var previous = last;
             last = position;
             LastStep = position - previous;
-            if (speed < speedThreshold)
+            var wasInside = (previous - center).magnitude <= radius;
+            var isInside = (position - center).magnitude <= radius;
+            // Entered from outside this frame, or passed straight through between two samples.
+            if (!wasInside && (isInside || DistanceToSegment(center, previous, position) <= radius))
             {
-                inStroke = false;
-                touched = false;
+                crossing = true;
+                enterTime = time;
+                peakSpeed = 0f;
+            }
+
+            if (!crossing) return false;
+            peakSpeed = Mathf.Max(peakSpeed, speed);
+            if (isInside)
+            {
+                if (time - enterTime > maxCrossSeconds) crossing = false;
                 return false;
             }
 
-            if (!inStroke)
-            {
-                inStroke = true;
-                startedOutside = (previous - center).magnitude > radius;
-                touched = false;
-            }
-
-            if (!startedOutside) return false;
-            touched |= DistanceToSegment(center, previous, position) <= radius;
-            if (!touched || (position - center).magnitude <= radius) return false;
-            inStroke = false;
-            touched = false;
-            return true;
+            crossing = false;
+            return peakSpeed >= speedThreshold;
         }
 
         #endregion

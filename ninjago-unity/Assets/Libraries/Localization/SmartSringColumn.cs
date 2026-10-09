@@ -7,6 +7,7 @@ using UnityEngine.Localization.Tables;
 /// This is an example of how the Smart String property can be synchronized.
 /// Any value in the column will cause the value to be marked as smart and leaving the field empty will indicate it should not be smart.
 /// </summary>
+[System.Serializable]
 public class SmartStringColumn : LocaleMetadataColumn<SmartFormatTag>
 {
     public override PushFields PushFields => PushFields.Value;

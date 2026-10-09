@@ -9,7 +9,8 @@ namespace Nex
     public class MainCoordinator : MonoBehaviour
     {
         [SerializeField] ViewManager viewManager = null!;
-        [SerializeField] WelcomeScreenView welcomeScreenViewPrefab = null!;
+        [Header("Game Selection")]
+        [SerializeField] GameModeSelectionView gameModeSelectionViewPrefab = null!;
 
         bool prepared;
 
@@ -41,34 +42,35 @@ namespace Nex
 
         public async UniTask StartMain()
         {
-            await viewManager.PushView(CreateWelcomeScreenView(), animate: true);
+            await viewManager.PushView(CreateGameModeSelectionView(), animate: true);
         }
 
         #endregion
 
-        #region Welcome
+        #region Game Selection
 
-        WelcomeScreenView CreateWelcomeScreenView()
+        GameModeSelectionView CreateGameModeSelectionView()
         {
-            var welcomeScreenView = Instantiate(welcomeScreenViewPrefab);
-            welcomeScreenView.Initialize();
-            welcomeScreenView.OnStartARGameButton += WelcomeScreenOnStartARGameButton;
-            welcomeScreenView.OnStartNonARGameButton += WelcomeScreenOnStartNonARGameButton;
-            welcomeScreenView.OnExitButton += WelcomeScreenOnExitButton;
-            return welcomeScreenView;
+            var gameModeSelectionView = Instantiate(gameModeSelectionViewPrefab);
+            gameModeSelectionView.Initialize();
+            gameModeSelectionView.ModeSelected += GameModeSelectionOnModeSelected;
+            gameModeSelectionView.ExitRequested += GameModeSelectionOnExitRequested;
+            return gameModeSelectionView;
         }
 
-        void WelcomeScreenOnStartARGameButton()
+        void GameModeSelectionOnModeSelected(GameModeType mode)
         {
-            SceneManager.LoadScene(GameConfigsManager.Instance.ARGameScene);
+            GameConfigsManager.Instance.SelectedMode = mode;
+            LoadGameSceneAsync().Forget();
         }
 
-        void WelcomeScreenOnStartNonARGameButton()
+        async UniTaskVoid LoadGameSceneAsync()
         {
-            SceneManager.LoadScene(GameConfigsManager.Instance.NonARGameScene);
+            await ScreenBlockerManager.Instance.Show();
+            SceneManager.LoadScene(GameConfigsManager.Instance.GameScene);
         }
 
-        void WelcomeScreenOnExitButton()
+        void GameModeSelectionOnExitRequested()
         {
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.isPlaying = false;

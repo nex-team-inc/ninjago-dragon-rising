@@ -5,6 +5,7 @@ using UnityEngine.UI;
 
 namespace Nex.MMF
 {
+	[System.Serializable]
 	[AddComponentMenu("")]
 	[FeedbackHelp("This feedback lets you play a sprite sequence over time.")]
 	[FeedbackPath("Nex/UI/ImageSpriteSequence")]

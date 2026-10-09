@@ -43,6 +43,10 @@ namespace Nex
             TrackingLost,
             Summary,
             Settings,
+
+            // Game Selection
+            GameModeSelection,
+            PressButtonToWin,
         }
 
         /// <summary>

@@ -5,6 +5,7 @@ using UnityEngine;
 
 namespace Nex.MMF
 {
+    [System.Serializable]
     [AddComponentMenu("")]
     [FeedbackHelp("This feedback will play a specific sound effect through SfxManager")]
     [FeedbackPath("Nex/SfxManager")]

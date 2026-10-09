@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &2958801518590519089
+--- !u!1 &7538112856596093064
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,43 +8,40 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1611413538398355889}
-  - component: {fileID: 2285151067470431253}
+  - component: {fileID: 7990635609918063212}
+  - component: {fileID: 5503182010434361530}
   m_Layer: 0
-  m_Name: GameConfigsManager
+  m_Name: PressButtonToWinGame
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &1611413538398355889
+--- !u!4 &7990635609918063212
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2958801518590519089}
+  m_GameObject: {fileID: 7538112856596093064}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2285151067470431253
+--- !u!114 &5503182010434361530
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2958801518590519089}
+  m_GameObject: {fileID: 7538112856596093064}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 67e14946370254175be6b7d9116422e7, type: 3}
+  m_Script: {fileID: 11500000, guid: f718d3a05402e4a7c82af7f41418812b, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Nex.GameConfigsManager
-  mainScene: MainScene
-  arGameScene: ARGameExample
-  nonARGameScene: NonARGameExample
-  gameScene: GameScene
+  m_EditorClassIdentifier: Assembly-CSharp::Nex.PressButtonToWinGame
+  viewPrefab: {fileID: 5201100052041612000, guid: ab6ccf85aa2be4d7799b3277879edd06, type: 3}
